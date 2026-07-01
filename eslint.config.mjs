@@ -1,10 +1,10 @@
-import { FlatCompat } from "@eslint/eslintrc";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 
-const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
-
+// eslint-config-next@16 endi FlatCompat kerak bo'lmaydigan tabiiy
+// ("flat") ESLint konfiguratsiya massivini eksport qiladi.
 const eslintConfig = [
   { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextCoreWebVitals,
 ];
 
 export default eslintConfig;

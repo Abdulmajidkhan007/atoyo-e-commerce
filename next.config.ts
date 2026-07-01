@@ -25,6 +25,17 @@ const nextConfig: NextConfig = {
     },
   },
 
+  // ESLATMA (Partial Prerendering / Cache Components): Next.js 16'da PPR
+  // `cacheComponents: true` orqali yoqiladi. Bu bayroq hali ATAYLAB
+  // o'chirilgan - u har bir dinamik ma'lumot (cookies(), foydalanuvchiga
+  // xos so'rovlar) atrofida to'g'ri `<Suspense>` chegaralarini talab
+  // qiladi. Katalog/mahsulot sahifalari UI bosqichida qurilib,
+  // Suspense chegaralari joyiga qo'yilgach, shu yerda
+  // `cacheComponents: true` qilib yoqiladi - hozir yoqilsa, hali
+  // Suspense bilan o'ralmagan dinamik sahifalar (savat, profil, admin)
+  // build vaqtida xato beradi.
+  // cacheComponents: true,
+
   async headers() {
     return [
       {

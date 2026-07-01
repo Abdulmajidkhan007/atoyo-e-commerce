@@ -5,7 +5,6 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  onIdTokenChanged,
   type User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -37,7 +36,7 @@ async function ensureUserDocument(user: User): Promise<void> {
   }
 }
 
-/** ID tokenni serverga yuborib, middleware/Server Component tekshira oladigan httpOnly cookie o'rnatadi. */
+/** ID tokenni serverga yuborib, Proxy/Server Component tekshira oladigan httpOnly session cookie o'rnatadi (14 kun amal qiladi). */
 async function syncSessionCookie(user: User): Promise<void> {
   const idToken = await user.getIdToken();
   await fetch("/api/auth/session", {
@@ -75,16 +74,4 @@ export async function signOutUser() {
 
 export function subscribeToAuthChanges(callback: (user: User | null) => void) {
   return onAuthStateChanged(auth, callback);
-}
-
-/**
- * Firebase ID tokeni har safar avtomatik yangilanganda (odatda ~1 soatda
- * bir marta) cookie'ni ham yangilaydi, aks holda middleware/layout
- * eskirgan tokenni rad etib, foydalanuvchini navbatdagi sahifa
- * o'tishida bosh sahifaga chiqarib yuboradi.
- */
-export function subscribeToIdTokenRefresh() {
-  return onIdTokenChanged(auth, async (user) => {
-    if (user) await syncSessionCookie(user);
-  });
 }

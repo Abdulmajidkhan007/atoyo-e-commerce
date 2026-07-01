@@ -6,37 +6,38 @@ import type { AppUser } from "@/types/user";
 export const SESSION_COOKIE_NAME = "__session";
 
 /**
- * Bu cookie Firebase ID tokenining o'zini saqlaydi (Firebase'ning alohida
- * "session cookie" formati emas). Sabab: ID tokenlar
- * `https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com`
- * manzilida ochiq, standart JWKS (JSON Web Key Set) formatida
- * hujjatlashtirilgan - shu tufayli middleware.ts ichida Edge runtime'da
- * (Node.js Admin SDK'siz) `jose` kutubxonasi bilan mustaqil tekshirish
- * mumkin. ID token ~1 soatda eskiradi, shuning uchun klient tomonda
- * `onIdTokenChanged` orqali muntazam yangilanadi (`lib/firebase/auth.ts`).
+ * Firebase'ning o'zining "session cookie" formati ishlatiladi (oddiy ID
+ * token emas). Bu Google tomonidan tavsiya etilgan standart yondashuv:
+ * uzoq muddatli (bu yerda 14 kun), bekor qilinishi mumkin
+ * (`revokeRefreshTokens` orqali) va Admin SDK bilan bir marta
+ * `createSessionCookie` chaqirilib yaratiladi. Next.js v16'da Proxy
+ * (avvalgi "middleware") standart holatda Node.js runtime'da ishlaganu
+ * uchun bu cookie `src/proxy.ts` ichida ham to'g'ridan-to'g'ri Admin SDK
+ * bilan tekshiriladi - alohida Edge-mos tekshiruv kerak emas.
  */
+const SESSION_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000; // 14 kun
 
-/** ID tokenni Admin SDK bilan tasdiqlaydi va shu asosda session cookie qiymatini qaytaradi. */
-export async function verifyIdTokenForCookie(idToken: string): Promise<string> {
-  await getAdminAuth().verifyIdToken(idToken, true /* checkRevoked */);
-  return idToken;
+export async function createSessionCookie(idToken: string): Promise<string> {
+  return getAdminAuth().createSessionCookie(idToken, { expiresIn: SESSION_MAX_AGE_MS });
 }
 
+export const SESSION_MAX_AGE_SECONDS = SESSION_MAX_AGE_MS / 1000;
+
 /**
- * Joriy so'rovdagi cookie'ni tekshiradi va Firestore'dagi haqiqiy rol
- * bilan birga foydalanuvchini qaytaradi. Cookie soxta, eskirgan yoki
+ * Joriy so'rovdagi session cookie'ni tekshiradi va Firestore'dagi haqiqiy
+ * rol bilan birga foydalanuvchini qaytaradi. Cookie soxta, eskirgan yoki
  * bekor qilingan bo'lsa `null` qaytadi.
  *
  * Faqat Server Component / Route Handler ichida ishlatiladi (Node.js runtime talab qiladi).
  */
 export async function getCurrentAppUser(): Promise<AppUser | null> {
   const cookieStore = await cookies();
-  const idToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-  if (!idToken) return null;
+  if (!sessionCookie) return null;
 
   try {
-    const decoded = await getAdminAuth().verifyIdToken(idToken, true /* checkRevoked */);
+    const decoded = await getAdminAuth().verifySessionCookie(sessionCookie, true /* checkRevoked */);
     const userDoc = await getAdminDb().collection("users").doc(decoded.uid).get();
 
     if (!userDoc.exists) return null;
@@ -44,7 +45,7 @@ export async function getCurrentAppUser(): Promise<AppUser | null> {
     const data = userDoc.data() as Omit<AppUser, "uid">;
     return { uid: decoded.uid, ...data };
   } catch {
-    // Yaroqsiz, muddati o'tgan yoki bekor qilingan token - tinch fail bo'ladi.
+    // Yaroqsiz, muddati o'tgan yoki bekor qilingan cookie - tinch fail bo'ladi.
     return null;
   }
 }
