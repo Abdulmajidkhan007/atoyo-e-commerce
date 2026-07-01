@@ -49,3 +49,14 @@ export async function getCurrentAppUser(): Promise<AppUser | null> {
     return null;
   }
 }
+
+/**
+ * Admin-only Route Handler'lar (masalan bulk narx yangilash, buyurtma
+ * statusini qo'lda o'zgartirish) uchun umumiy tekshiruv. Har bir shunday
+ * route'da alohida-alohida yozilmasligi uchun bu yerda markazlashtirilgan -
+ * Firestore rolini bir joydan tekshiradi.
+ */
+export async function requireAdminUser(): Promise<AppUser | null> {
+  const user = await getCurrentAppUser();
+  return user?.role === "admin" ? user : null;
+}

@@ -57,6 +57,9 @@ export async function getProductsPage(
     case "price-desc":
       constraints.push(orderBy("price", "desc"));
       break;
+    case "popular":
+      constraints.push(orderBy("salesCount", "desc"));
+      break;
     default:
       constraints.push(orderBy("createdAt", "desc"));
   }
@@ -128,4 +131,37 @@ export function subscribeToUserOrders(
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Order));
   });
+}
+
+export interface OrdersPage {
+  orders: Order[];
+  lastCursor: QueryDocumentSnapshot<DocumentData> | null;
+  hasMore: boolean;
+}
+
+/**
+ * Admin paneli uchun barcha buyurtmalarni (ixtiyoriy status filtri
+ * bilan) sahifalab o'qiydi. To'g'ridan-to'g'ri klient SDK orqali
+ * ishlaydi - `firestore.rules`dagi `isAdmin()` qoidasi buni faqat
+ * `role: 'admin'` bo'lgan foydalanuvchiga ruxsat beradi.
+ */
+export async function getOrdersPage(
+  status: OrderStatus | undefined,
+  pageSize = 20,
+  cursor: QueryDocumentSnapshot<DocumentData> | null = null
+): Promise<OrdersPage> {
+  const constraints: QueryConstraint[] = [];
+  if (status) constraints.push(where("status", "==", status));
+  constraints.push(orderBy("createdAt", "desc"));
+  constraints.push(limit(pageSize));
+  if (cursor) constraints.push(startAfter(cursor));
+
+  const q = query(collection(getFirebaseDb(), ORDERS_COLLECTION), ...constraints);
+  const snapshot = await getDocs(q);
+
+  return {
+    orders: snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Order),
+    lastCursor: snapshot.docs.at(-1) ?? null,
+    hasMore: snapshot.docs.length === pageSize,
+  };
 }

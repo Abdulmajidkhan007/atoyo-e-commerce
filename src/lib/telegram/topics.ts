@@ -1,18 +1,39 @@
 import "server-only";
+import { getAdminDb } from "@/lib/firebase/admin";
 import type { TelegramTopicConfig, TelegramTopicKey } from "@/types/telegram";
 
-/**
- * Guruhdagi forum-topic thread ID lari. Standart holatda .env dan
- * o'qiladi, lekin admin panel orqali Firestore `settings/telegram`
- * hujjatida qayta yozilishi mumkin (bot.ts ichidagi funksiyalar avval
- * Firestore'ni tekshiradi, topilmasa shu default qiymatlarga tushadi).
- */
-export function getDefaultTopicConfig(): TelegramTopicConfig {
+const SETTINGS_DOC_PATH = ["settings", "telegram"] as const;
+
+function getDefaultTopicConfig(): TelegramTopicConfig {
   return {
     orders: Number(process.env.TELEGRAM_TOPIC_ORDERS_ID ?? 0),
     contact: Number(process.env.TELEGRAM_TOPIC_CONTACT_ID ?? 0),
     subscribers: Number(process.env.TELEGRAM_TOPIC_SUBSCRIBERS_ID ?? 0),
   };
+}
+
+/**
+ * Guruhdagi forum-topic thread ID lari. Avval Firestore `settings/telegram`
+ * hujjatidan o'qiladi (admin panelning Bot Sozlamalari sahifasidan
+ * o'zgartirilishi mumkin) - hujjat mavjud bo'lmasa yoki bo'sh bo'lsa,
+ * `.env` dagi standart qiymatlarga tushadi.
+ */
+export async function resolveTopicConfig(): Promise<TelegramTopicConfig> {
+  const defaults = getDefaultTopicConfig();
+
+  try {
+    const snapshot = await getAdminDb().doc(SETTINGS_DOC_PATH.join("/")).get();
+    const data = snapshot.data();
+    if (!data) return defaults;
+
+    return {
+      orders: Number(data.orders ?? defaults.orders),
+      contact: Number(data.contact ?? defaults.contact),
+      subscribers: Number(data.subscribers ?? defaults.subscribers),
+    };
+  } catch {
+    return defaults;
+  }
 }
 
 export function resolveThreadId(config: TelegramTopicConfig, key: TelegramTopicKey): number {

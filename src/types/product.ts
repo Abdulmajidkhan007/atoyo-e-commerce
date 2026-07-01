@@ -42,6 +42,8 @@ export interface Product {
   images: string[];
   thumbnailUrl: string;
   isActive: boolean;
+  /** Necha marta buyurtma qilingani - admin tahlillarida "eng ko'p sotilgan" saralash uchun. */
+  salesCount: number;
   createdAt: number; // epoch millis
   updatedAt: number;
 }

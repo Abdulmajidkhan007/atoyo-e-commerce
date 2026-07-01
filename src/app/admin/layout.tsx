@@ -1,8 +1,18 @@
 import { redirect } from "next/navigation";
 import { getCurrentAppUser } from "@/lib/firebase/session";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
-// Middleware allaqachon /admin/* ni himoyalaydi, lekin defense-in-depth
-// prinsipiga ko'ra rolni bu yerda server komponentda ham qayta tekshiramiz.
+// /admin/* har doim so'rov vaqtida, joriy foydalanuvchi sessiyasiga
+// bog'liq holda render qilinishi kerak - hech qachon build vaqtida
+// statik sahifa sifatida keshlanmasligi (yoki prerender qilinmasligi)
+// kerak, aks holda eskirgan/xato ma'lumot yoki (bundan ham yomoni)
+// build vaqtida haqiqiy Firebase credentiallari mavjud bo'lmasa xato
+// butun build jarayonini to'xtatib qo'yishi mumkin.
+export const dynamic = "force-dynamic";
+
+// Proxy (src/proxy.ts) allaqachon /admin/* ni himoyalaydi, lekin
+// defense-in-depth prinsipiga ko'ra rolni bu yerda server komponentda
+// ham mustaqil qayta tekshiramiz.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentAppUser();
 
@@ -11,10 +21,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 shrink-0 border-r border-navy-100 bg-navy-900 text-white">
-        {/* Admin sidebar navigatsiyasi keyingi UI bosqichida */}
-      </aside>
+    <div className="flex min-h-screen bg-navy-50 dark:bg-navy-950">
+      <AdminSidebar />
       <main className="flex-1 p-6">{children}</main>
     </div>
   );

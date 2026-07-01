@@ -1,5 +1,5 @@
 import "server-only";
-import { getDefaultTopicConfig, resolveThreadId } from "./topics";
+import { resolveTopicConfig, resolveThreadId } from "./topics";
 import type { TelegramTopicKey } from "@/types/telegram";
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
@@ -48,7 +48,7 @@ export async function sendTopicMessage(
   text: string,
   replyMarkup?: InlineKeyboardMarkup
 ): Promise<SentMessage> {
-  const threadId = resolveThreadId(getDefaultTopicConfig(), topicKey);
+  const threadId = resolveThreadId(await resolveTopicConfig(), topicKey);
 
   return callTelegramApi<SentMessage>("sendMessage", {
     chat_id: getChatId(),

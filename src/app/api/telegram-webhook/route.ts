@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
-import { answerCallbackQuery, editTopicMessageText } from "@/lib/telegram/bot";
-import { decodeOrderStatusCallback, buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
-import { formatOrderMessage } from "@/lib/telegram/templates";
-import type { Order } from "@/types/order";
+import { answerCallbackQuery } from "@/lib/telegram/bot";
+import { decodeOrderStatusCallback } from "@/lib/telegram/keyboard";
+import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 
 interface TelegramCallbackQuery {
   id: string;
@@ -39,29 +37,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const orderRef = getAdminDb().collection("orders").doc(callback.orderId);
-  const orderSnapshot = await orderRef.get();
-
-  if (!orderSnapshot.exists) {
+  const updatedOrder = await applyOrderStatusUpdate(callback.orderId, callback.status);
+  if (!updatedOrder) {
     await answerCallbackQuery(callbackQuery.id, "Buyurtma topilmadi.");
     return NextResponse.json({ ok: true });
   }
-
-  const updatedOrder: Order = {
-    ...(orderSnapshot.data() as Order),
-    status: callback.status,
-    updatedAt: Date.now(),
-  };
-
-  await orderRef.update({ status: updatedOrder.status, updatedAt: updatedOrder.updatedAt });
-
-  // Buyurtma "Yakunlandi" holatiga o'tganda tugmalar olib tashlanadi,
-  // aks holda admin keyingi bosqichga o'tishi uchun tugmalar qoladi.
-  await editTopicMessageText(
-    callbackQuery.message.message_id,
-    formatOrderMessage(updatedOrder),
-    updatedOrder.status === "completed" ? undefined : buildOrderActionKeyboard(updatedOrder.id)
-  );
 
   await answerCallbackQuery(callbackQuery.id, "Status yangilandi ✅");
 

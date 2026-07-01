@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendTopicMessage } from "@/lib/telegram/bot";
 import { formatOrderMessage } from "@/lib/telegram/templates";
@@ -60,6 +61,28 @@ export async function POST(request: Request) {
   };
 
   await orderRef.set(order);
+
+  // Zaxirani kamaytirish, "eng ko'p sotilgan" tahlili uchun salesCount'ni
+  // oshirish va admin dashboard tahlillari uchun `stats/summary`
+  // hujjatidagi umumiy son/tushumni yangilash - bitta batch ichida,
+  // atomik ravishda. `stats/summary` orqali dashboard har safar
+  // buyurtmalar kolleksiyasini yig'ishtirmasdan, bitta hujjatni o'qib
+  // umumiy ko'rsatkichlarni oladi (O(1) o'qish, 10,000+ buyurtma
+  // bo'lsa ham tez).
+  const statsBatch = getAdminDb().batch();
+  for (const item of items) {
+    const productRef = getAdminDb().collection("products").doc(item.productId);
+    statsBatch.update(productRef, {
+      stock: FieldValue.increment(-item.quantity),
+      salesCount: FieldValue.increment(item.quantity),
+    });
+  }
+  statsBatch.set(
+    getAdminDb().collection("stats").doc("summary"),
+    { totalOrders: FieldValue.increment(1), totalRevenue: FieldValue.increment(totalAmount) },
+    { merge: true }
+  );
+  await statsBatch.commit();
 
   try {
     const sent = await sendTopicMessage(

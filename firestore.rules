@@ -52,5 +52,13 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+
+    // Dashboard tahlillari (umumiy buyurtmalar/tushum) - faqat server
+    // (Admin SDK, /api/orders) yozadi; admin panel ham server
+    // komponentda Admin SDK orqali o'qiydi, shuning uchun clientga
+    // hech qanday to'g'ridan-to'g'ri ruxsat kerak emas.
+    match /stats/{statId} {
+      allow read, write: if false;
+    }
   }
 }
