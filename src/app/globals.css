@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #ffffff;
+  --color-bg-elevated: #f4f7fa;
+  --color-fg: #0b1e33;
+  --color-border: #e2e8f0;
+}
+
+.dark {
+  --color-bg: #0b1e33;
+  --color-bg-elevated: #122844;
+  --color-fg: #f4f7fa;
+  --color-border: #1f3a5f;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}

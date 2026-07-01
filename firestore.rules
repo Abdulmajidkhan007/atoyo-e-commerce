@@ -1,0 +1,56 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Mahsulotlar - hamma o'qiy oladi, faqat admin yoza oladi.
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Foydalanuvchilar - faqat o'zi yoki admin o'qiy oladi.
+    // `role` maydonini faqat admin o'zgartira oladi (foydalanuvchi
+    // o'zini o'ziga admin qilib belgilab qo'yishining oldi olinadi).
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.role == 'user';
+      allow update: if isAdmin() ||
+        (isOwner(userId) && request.resource.data.role == resource.data.role);
+    }
+
+    // Buyurtmalar - foydalanuvchi faqat o'z buyurtmasini yaratishi va
+    // ko'rishi mumkin; statusni faqat admin/bot (server, Admin SDK orqali,
+    // bu qoidalarni chetlab o'tadi) o'zgartira oladi.
+    match /orders/{orderId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // Obunachilar - faqat server (Admin SDK) yozadi/o'qiydi.
+    match /subscribers/{subscriberId} {
+      allow read, write: if false;
+    }
+
+    // Bot sozlamalari (topic thread ID lar) - faqat admin.
+    match /settings/{settingId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}
