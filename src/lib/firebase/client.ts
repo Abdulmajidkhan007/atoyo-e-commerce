@@ -14,10 +14,34 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Next.js hot-reload / bir nechta import paytida ilova ikki marta
-// initsializatsiya qilinishining oldini oladi.
-export const firebaseApp: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Initsializatsiya ATAYLAB "lazy" (birinchi haqiqiy chaqiruvda amalga
+// oshadi). "use client" bo'lsa ham, Next.js "use client" sahifalarni
+// build vaqtida server tomonida (SSR/statik eksport) ham render qiladi -
+// agar bu yerda getAuth()/getFirestore() modul yuklanishi bilanoq
+// chaqirilsa, .env sozlanmagan har qanday build (masalan CI) yoki hatto
+// Firebase loyihasi hali ulanmagan mahalliy muhitda ham
+// "auth/invalid-api-key" xatosi bilan BUTUN build'ni to'xtatib qo'yadi.
+// Lazy pattern esa xatoni faqat funksiya haqiqatan brauzerda
+// chaqirilganda (masalan foydalanuvchi "Kirish" tugmasini bosganda)
+// ko'rsatadi.
 
-export const auth: Auth = getAuth(firebaseApp);
-export const db: Firestore = getFirestore(firebaseApp);
-export const storage: FirebaseStorage = getStorage(firebaseApp);
+let cachedApp: FirebaseApp | null = null;
+let cachedAuth: Auth | null = null;
+let cachedDb: Firestore | null = null;
+let cachedStorage: FirebaseStorage | null = null;
+
+function getFirebaseApp(): FirebaseApp {
+  return (cachedApp ??= getApps().length ? getApp() : initializeApp(firebaseConfig));
+}
+
+export function getFirebaseAuth(): Auth {
+  return (cachedAuth ??= getAuth(getFirebaseApp()));
+}
+
+export function getFirebaseDb(): Firestore {
+  return (cachedDb ??= getFirestore(getFirebaseApp()));
+}
+
+export function getFirebaseStorage(): FirebaseStorage {
+  return (cachedStorage ??= getStorage(getFirebaseApp()));
+}

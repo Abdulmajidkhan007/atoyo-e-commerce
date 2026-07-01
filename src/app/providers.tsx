@@ -7,10 +7,12 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import { store, persistor } from "@/redux/store";
 import { useAppSelector } from "@/redux/hooks";
 import { getMuiTheme } from "@/theme/muiTheme";
+import { useAuthListener } from "@/hooks/useAuthListener";
 
 function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   const themeMode = useAppSelector((s) => s.ui.themeMode);
   const theme = useMemo(() => getMuiTheme(themeMode), [themeMode]);
+  useAuthListener();
 
   return (
     <ThemeProvider theme={theme}>

@@ -13,7 +13,7 @@ import {
   type DocumentData,
   type Unsubscribe,
 } from "firebase/firestore";
-import { db } from "./client";
+import { getFirebaseDb } from "./client";
 import type { Product, ProductFilterParams } from "@/types/product";
 import type { Order, OrderStatus } from "@/types/order";
 
@@ -64,7 +64,7 @@ export async function getProductsPage(
   constraints.push(limit(pageSize));
   if (cursor) constraints.push(startAfter(cursor));
 
-  const q = query(collection(db, PRODUCTS_COLLECTION), ...constraints);
+  const q = query(collection(getFirebaseDb(), PRODUCTS_COLLECTION), ...constraints);
   const snapshot = await getDocs(q);
 
   return {
@@ -85,7 +85,7 @@ export async function searchProductsByPrefix(term: string, pageSize = 24): Promi
   if (!normalized) return [];
 
   const q = query(
-    collection(db, PRODUCTS_COLLECTION),
+    collection(getFirebaseDb(), PRODUCTS_COLLECTION),
     where("isActive", "==", true),
     orderBy("nameSearchIndex"),
     where("nameSearchIndex", ">=", normalized),
@@ -102,8 +102,30 @@ export function listenToOrderStatus(
   orderId: string,
   callback: (status: OrderStatus | null) => void
 ): Unsubscribe {
-  return onSnapshot(doc(db, ORDERS_COLLECTION, orderId), (snapshot) => {
+  return onSnapshot(doc(getFirebaseDb(), ORDERS_COLLECTION, orderId), (snapshot) => {
     const order = snapshot.data() as Order | undefined;
     callback(order?.status ?? null);
+  });
+}
+
+/**
+ * Profil sahifasida foydalanuvchining so'nggi buyurtmalarini real-vaqtda
+ * ko'rsatadi - admin Telegram tugmasidan statusni o'zgartirganda, mijoz
+ * sahifani yangilamasdan turib yangi statusni ko'radi (onSnapshot).
+ */
+export function subscribeToUserOrders(
+  userId: string,
+  callback: (orders: Order[]) => void,
+  pageSize = 20
+): Unsubscribe {
+  const q = query(
+    collection(getFirebaseDb(), ORDERS_COLLECTION),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc"),
+    limit(pageSize)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Order));
   });
 }

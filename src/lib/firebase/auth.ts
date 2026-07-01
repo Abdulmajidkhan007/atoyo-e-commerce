@@ -8,7 +8,7 @@ import {
   type User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "./client";
+import { getFirebaseAuth, getFirebaseDb } from "./client";
 import type { AppUser } from "@/types/user";
 
 const googleProvider = new GoogleAuthProvider();
@@ -20,7 +20,7 @@ const googleProvider = new GoogleAuthProvider();
  * yubormaslik uchun - masalan admin promote qilingan bo'lsa).
  */
 async function ensureUserDocument(user: User): Promise<void> {
-  const userRef = doc(db, "users", user.uid);
+  const userRef = doc(getFirebaseDb(), "users", user.uid);
   const snapshot = await getDoc(userRef);
 
   if (!snapshot.exists()) {
@@ -47,31 +47,31 @@ async function syncSessionCookie(user: User): Promise<void> {
 }
 
 export async function signInWithGoogle() {
-  const credential = await signInWithPopup(auth, googleProvider);
+  const credential = await signInWithPopup(getFirebaseAuth(), googleProvider);
   await ensureUserDocument(credential.user);
   await syncSessionCookie(credential.user);
   return credential.user;
 }
 
 export async function signInWithEmail(email: string, password: string) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
+  const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
   await syncSessionCookie(credential.user);
   return credential.user;
 }
 
 export async function registerWithEmail(email: string, password: string) {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
+  const credential = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
   await ensureUserDocument(credential.user);
   await syncSessionCookie(credential.user);
   return credential.user;
 }
 
 export async function signOutUser() {
-  await signOut(auth);
+  await signOut(getFirebaseAuth());
   // Server tomonidagi session cookie ham tozalanadi.
   await fetch("/api/auth/session", { method: "DELETE" });
 }
 
 export function subscribeToAuthChanges(callback: (user: User | null) => void) {
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(getFirebaseAuth(), callback);
 }
