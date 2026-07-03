@@ -25,7 +25,16 @@ async function callTelegramApi<T>(method: string, payload: Record<string, unknow
     cache: "no-store",
   });
 
-  const data = (await response.json()) as { ok: boolean; description?: string; result?: T };
+  // Telegram har doim JSON qaytaradi, lekin oradagi proksi/firewall
+  // xato holatida oddiy matn qaytarishi mumkin - JSON.parse yiqilib,
+  // asl sababni yashirib qo'ymasligi uchun avval matn sifatida o'qiymiz.
+  const rawBody = await response.text();
+  let data: { ok: boolean; description?: string; result?: T };
+  try {
+    data = JSON.parse(rawBody);
+  } catch {
+    throw new Error(`Telegram API'dan kutilmagan javob (${method}, HTTP ${response.status}): ${rawBody.slice(0, 120)}`);
+  }
 
   if (!data.ok) {
     throw new Error(`Telegram API xatosi (${method}): ${data.description ?? "noma'lum xato"}`);
