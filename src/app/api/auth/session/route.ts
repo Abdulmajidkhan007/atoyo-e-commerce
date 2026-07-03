@@ -25,7 +25,10 @@ export async function POST(request: Request) {
       path: "/",
     });
     return response;
-  } catch {
+  } catch (error) {
+    // Aniq sabab server loglarida ko'rinadi (masalan Admin SDK
+    // credentiallari yetishmasa yoki token yaroqsiz bo'lsa).
+    console.error("Session cookie yaratishda xato:", error);
     return NextResponse.json({ error: "Sessiya yaratib bo'lmadi." }, { status: 401 });
   }
 }

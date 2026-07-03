@@ -47,6 +47,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Kontakt arizalari - faqat server (Admin SDK) yozadi; admin panel
+    // ham server orqali o'qiydi.
+    match /contactRequests/{requestId} {
+      allow read, write: if false;
+    }
+
     // Bot sozlamalari (topic thread ID lar) - faqat admin.
     match /settings/{settingId} {
       allow read: if isAdmin();

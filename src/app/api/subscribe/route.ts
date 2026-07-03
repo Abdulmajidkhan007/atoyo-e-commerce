@@ -16,15 +16,27 @@ export async function POST(request: Request) {
   }
 
   const { email } = parsed.data;
-  const subscriberRef = getAdminDb().collection("subscribers").doc(email.toLowerCase());
-  const existing = await subscriberRef.get();
 
-  if (existing.exists) {
-    return NextResponse.json({ ok: true, alreadySubscribed: true });
+  try {
+    const subscriberRef = getAdminDb().collection("subscribers").doc(email.toLowerCase());
+    const existing = await subscriberRef.get();
+
+    if (existing.exists) {
+      return NextResponse.json({ ok: true, alreadySubscribed: true });
+    }
+
+    await subscriberRef.set({ email: email.toLowerCase(), createdAt: Date.now() });
+  } catch (error) {
+    console.error("Obunachini saqlashda xato:", error);
+    return NextResponse.json({ error: "Xatolik yuz berdi. Qayta urinib ko'ring." }, { status: 500 });
   }
 
-  await subscriberRef.set({ email: email.toLowerCase(), createdAt: Date.now() });
-  await sendTopicMessage("subscribers", formatSubscriberMessage(email));
+  try {
+    await sendTopicMessage("subscribers", formatSubscriberMessage(email));
+  } catch (error) {
+    // Obunachi allaqachon saqlangan - Telegram xatosi mijozga ta'sir qilmaydi.
+    console.error("Obuna xabarini Telegramga yuborishda xato:", error);
+  }
 
   return NextResponse.json({ ok: true });
 }

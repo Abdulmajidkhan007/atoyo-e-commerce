@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getAdminDb } from "@/lib/firebase/admin";
 import { sendTopicMessage } from "@/lib/telegram/bot";
 import { formatContactMessage } from "@/lib/telegram/templates";
 
@@ -16,7 +17,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forma ma'lumotlari noto'g'ri." }, { status: 400 });
   }
 
-  await sendTopicMessage("contact", formatContactMessage(parsed.data));
+  try {
+    // Avval Firestore'ga saqlanadi - Telegram vaqtincha ishlamasa ham
+    // mijozning arizasi hech qachon yo'qolmaydi.
+    await getAdminDb().collection("contactRequests").add({
+      ...parsed.data,
+      createdAt: Date.now(),
+    });
+  } catch (error) {
+    console.error("Kontakt arizasini saqlashda xato:", error);
+    return NextResponse.json({ error: "Xatolik yuz berdi. Qayta urinib ko'ring." }, { status: 500 });
+  }
+
+  try {
+    await sendTopicMessage("contact", formatContactMessage(parsed.data));
+  } catch (error) {
+    // Ariza allaqachon saqlangan - Telegram xatosi mijozga ta'sir qilmaydi.
+    console.error("Kontakt xabarini Telegramga yuborishda xato:", error);
+  }
 
   return NextResponse.json({ ok: true });
 }
