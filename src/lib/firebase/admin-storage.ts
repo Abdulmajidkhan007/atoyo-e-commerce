@@ -11,10 +11,12 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
  * "download token" URL'ini qaytaradi. Client SDK'dan farqli - bu client
  * autentifikatsiya holatiga bog'liq emas, shuning uchun admin panelda
  * ishonchli ishlaydi. URL token asosida ochiq bo'ladi (qoidalarni
- * chetlab o'tadi), shuning uchun mahsulot rasmlari hammaga ko'rinadi.
+ * chetlab o'tadi), shuning uchun rasmlar hammaga ko'rinadi.
+ *
+ * `folder` - storage yo'li prefiksi (masalan "products/ID" yoki "blog").
  */
-export async function uploadProductImageAdmin(
-  productId: string,
+export async function uploadImageAdmin(
+  folder: string,
   file: { buffer: Buffer; contentType: string; originalName: string }
 ): Promise<string> {
   if (!ALLOWED_TYPES.includes(file.contentType)) {
@@ -25,7 +27,8 @@ export async function uploadProductImageAdmin(
   }
 
   const safeName = file.originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-60);
-  const filePath = `products/${productId}/${randomUUID()}-${safeName}`;
+  const safeFolder = folder.replace(/[^a-zA-Z0-9/_-]/g, "_");
+  const filePath = `${safeFolder}/${randomUUID()}-${safeName}`;
   const token = randomUUID();
 
   const bucket = getAdminStorage().bucket(BUCKET_NAME);
@@ -43,4 +46,12 @@ export async function uploadProductImageAdmin(
   return `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o/${encodeURIComponent(
     filePath
   )}?alt=media&token=${token}`;
+}
+
+/** Mahsulot rasmi uchun qulaylik funksiyasi. */
+export async function uploadProductImageAdmin(
+  productId: string,
+  file: { buffer: Buffer; contentType: string; originalName: string }
+): Promise<string> {
+  return uploadImageAdmin(`products/${productId}`, file);
 }

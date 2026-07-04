@@ -13,6 +13,8 @@ import { SearchBar } from "@/components/product/SearchBar";
 const NAV_LINKS = [
   { href: "/", label: "Bosh sahifa" },
   { href: "/katalog", label: "Katalog" },
+  { href: "/blog", label: "Blog" },
+  { href: "/about", label: "Biz haqimizda" },
   { href: "/kontakt", label: "Kontakt" },
 ];
 

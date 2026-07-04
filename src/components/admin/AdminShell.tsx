@@ -12,12 +12,14 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", Icon: DashboardOutlinedIcon },
   { href: "/admin/katalog", label: "Katalog", Icon: Inventory2OutlinedIcon },
   { href: "/admin/buyurtmalar", label: "Buyurtmalar", Icon: ReceiptLongOutlinedIcon },
   { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar", Icon: GroupOutlinedIcon },
+  { href: "/admin/blog", label: "Blog", Icon: ArticleOutlinedIcon },
   { href: "/admin/sozlamalar", label: "Sozlamalar", Icon: SettingsOutlinedIcon },
 ];
 

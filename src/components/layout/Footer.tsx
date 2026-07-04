@@ -1,13 +1,26 @@
 import Link from "next/link";
 import { NewsletterForm } from "./NewsletterForm";
+import { getSiteSettings } from "@/lib/firebase/admin-content";
+import type { SocialLink } from "@/types/content";
 
 const FOOTER_LINKS = [
   { href: "/katalog", label: "Katalog" },
+  { href: "/blog", label: "Blog" },
+  { href: "/about", label: "Biz haqimizda" },
   { href: "/kontakt", label: "Bog'lanish" },
-  { href: "/kirish", label: "Kirish" },
 ];
 
-export function Footer() {
+const SOCIAL_LABELS: Record<SocialLink["platform"], string> = {
+  instagram: "Instagram",
+  telegram: "Telegram",
+  youtube: "YouTube",
+  facebook: "Facebook",
+};
+
+export async function Footer() {
+  const settings = await getSiteSettings();
+  const socials = settings.socials.filter((s) => s.url);
+
   return (
     <footer className="mt-16 border-t border-navy-100 bg-navy-900 text-navy-100 dark:border-navy-500">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 md:flex-row md:items-start md:justify-between">
@@ -17,9 +30,24 @@ export function Footer() {
             Quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari - sifatli
             santexnika mahsulotlari yetkazib beruvchi ishonchli hamkoringiz.
           </p>
+          {socials.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-4">
+              {socials.map((s) => (
+                <a
+                  key={s.platform}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-navy-300 hover:text-aqua-300"
+                >
+                  {SOCIAL_LABELS[s.platform]}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
-        <nav className="flex gap-6">
+        <nav className="flex flex-col gap-2">
           {FOOTER_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className="text-sm hover:text-aqua-300">
               {link.label}
@@ -28,8 +56,9 @@ export function Footer() {
         </nav>
 
         <div className="text-sm text-navy-300">
-          <p>Telefon: +998 90 123 45 67</p>
-          <p>Email: info@atoyo-santexnika.uz</p>
+          <p>Telefon: {settings.phone}</p>
+          <p>Email: {settings.email}</p>
+          <p>Manzil: {settings.address}</p>
         </div>
 
         <NewsletterForm />

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/firebase/session";
-import { uploadProductImageAdmin } from "@/lib/firebase/admin-storage";
+import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
 
 export const runtime = "nodejs";
 
@@ -21,9 +21,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Fayl topilmadi." }, { status: 400 });
   }
 
+  // Storage papkasi: mahsulot uchun "products/ID", blog uchun "blog",
+  // yoki eski mijozlar uchun productId (orqaga moslik).
   const productId = String(formData.get("productId") ?? "").trim();
-  if (!productId) {
-    return NextResponse.json({ error: "productId majburiy." }, { status: 400 });
+  const folderParam = String(formData.get("folder") ?? "").trim();
+  const folder = folderParam || (productId ? `products/${productId}` : "");
+  if (!folder) {
+    return NextResponse.json({ error: "folder yoki productId majburiy." }, { status: 400 });
   }
 
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
@@ -38,7 +42,7 @@ export async function POST(request: Request) {
     const urls: string[] = [];
     for (const file of files) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const url = await uploadProductImageAdmin(productId, {
+      const url = await uploadImageAdmin(folder, {
         buffer,
         contentType: file.type,
         originalName: file.name,

@@ -23,6 +23,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Blog postlari - hamma o'qiy oladi (public sahifa), faqat admin yoza
+    // oladi. Amaliy o'qish/yozishlar server (Admin SDK) orqali bo'ladi.
+    match /blogPosts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Foydalanuvchilar - faqat o'zi yoki admin o'qiy oladi.
     // `role` maydonini faqat admin o'zgartira oladi (foydalanuvchi
     // o'zini o'ziga admin qilib belgilab qo'yishining oldi olinadi).
