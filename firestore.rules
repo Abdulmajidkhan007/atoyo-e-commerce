@@ -58,6 +58,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Telegram bot orqali ro'yxatdan o'tgan mijozlar (telefon) - faqat server.
+    match /botUsers/{userId} {
+      allow read, write: if false;
+    }
+
     // Bot sozlamalari (topic thread ID lar) - faqat admin.
     match /settings/{settingId} {
       allow read: if isAdmin();

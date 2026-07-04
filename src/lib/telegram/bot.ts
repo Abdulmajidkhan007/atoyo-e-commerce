@@ -47,8 +47,14 @@ interface SentMessage {
   message_id: number;
 }
 
+interface InlineKeyboardButton {
+  text: string;
+  callback_data?: string;
+  url?: string;
+}
+
 interface InlineKeyboardMarkup {
-  inline_keyboard: { text: string; callback_data: string }[][];
+  inline_keyboard: InlineKeyboardButton[][];
 }
 
 /**
@@ -113,6 +119,50 @@ export async function editTopicMessageText(
   });
 }
 
+/**
+ * ReplyKeyboard bilan xabar yuboradi (masalan "📞 Telefon raqamni yuborish"
+ * request_contact tugmasi). InlineKeyboard'dan farqli - bu foydalanuvchi
+ * klaviaturasi ustida chiqadi.
+ */
+export async function sendChatMessageWithReplyKeyboard(
+  chatId: number | string,
+  text: string,
+  keyboard: { text: string; request_contact?: boolean }[][]
+): Promise<SentMessage> {
+  return callTelegramApi<SentMessage>("sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    reply_markup: { keyboard, resize_keyboard: true, one_time_keyboard: true },
+  });
+}
+
+/** ReplyKeyboard'ni olib tashlaydi (checkout tugagach). */
+export async function removeReplyKeyboard(chatId: number | string, text: string): Promise<SentMessage> {
+  return callTelegramApi<SentMessage>("sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    reply_markup: { remove_keyboard: true },
+  });
+}
+
+/** Foydalanuvchi biror kanal/guruh a'zosimi - tekshiradi (getChatMember). */
+export async function isChatMember(channelId: string, userId: number): Promise<boolean> {
+  try {
+    const result = await callTelegramApi<{ status: string }>("getChatMember", {
+      chat_id: channelId,
+      user_id: userId,
+    });
+    // "left" va "kicked" = a'zo emas; qolganlari (member/administrator/creator/restricted) = a'zo.
+    return !["left", "kicked"].includes(result.status);
+  } catch {
+    // Bot kanalda admin bo'lmasa yoki kanal noto'g'ri bo'lsa - tekshirib
+    // bo'lmaydi; majburlab qolib ketmaslik uchun "a'zo" deb hisoblaymiz.
+    return true;
+  }
+}
+
 export async function answerCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
   await callTelegramApi("answerCallbackQuery", {
     callback_query_id: callbackQueryId,
@@ -124,6 +174,6 @@ export async function setTelegramWebhook(webhookUrl: string, secretToken: string
   await callTelegramApi("setWebhook", {
     url: webhookUrl,
     secret_token: secretToken,
-    allowed_updates: ["callback_query"],
+    allowed_updates: ["message", "callback_query"],
   });
 }

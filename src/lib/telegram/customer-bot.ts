@@ -1,6 +1,13 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { sendChatMessage, answerCallbackQuery } from "./bot";
+import {
+  sendChatMessage,
+  answerCallbackQuery,
+  sendChatMessageWithReplyKeyboard,
+  removeReplyKeyboard,
+  isChatMember,
+} from "./bot";
+import { getRequiredChannels } from "./required-channels";
 import { createOrder } from "@/lib/orders/create-order";
 import type { Product, ProductCategory } from "@/types/product";
 import type { OrderItem } from "@/types/order";
@@ -10,8 +17,13 @@ import type { OrderItem } from "@/types/order";
  * modulni faqat chat.type === "private" bo'lganda chaqiradi, shuning
  * uchun bu oqim admin guruh buyruqlariga hech qanday yo'l ochmaydi.
  *
- * Holat mashinasi Firestore `botSessions/{chatId}` hujjatida saqlanadi:
- * savat, checkout bosqichi (ism -> telefon -> yakun).
+ * Kirish shartlari (avval ro'yxatdan o'tish, keyin majburiy kanallar):
+ *   1) Botdan foydalanish uchun mijoz avval telefon raqamini yuborib
+ *      (yoki saytda ro'yxatdan o'tib) tasdiqlanishi kerak - `botUsers`.
+ *   2) Admin belgilagan majburiy kanallarga obuna bo'lishi kerak.
+ * Ikkalasi bajarilmaguncha katalog ochilmaydi.
+ *
+ * Holat mashinasi Firestore `botSessions/{chatId}` hujjatida saqlanadi.
  */
 
 const PAGE_SIZE = 6;
@@ -28,7 +40,7 @@ const CATEGORY_LABELS: Record<ProductCategory, string> = {
 };
 
 interface BotSession {
-  state: "idle" | "awaiting_name" | "awaiting_phone";
+  state: "idle" | "awaiting_checkout_name" | "awaiting_phone";
   cart: OrderItem[];
   customerName?: string;
   updatedAt: number;
@@ -36,11 +48,115 @@ interface BotSession {
 
 interface InlineButton {
   text: string;
-  callback_data: string;
+  callback_data?: string;
+  url?: string;
 }
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
+}
+
+interface BotUser {
+  chatId: number;
+  userId: number;
+  phoneNumber: string;
+  name: string;
+  registeredAt: number;
+}
+
+async function getBotUser(userId: number): Promise<BotUser | null> {
+  const doc = await getAdminDb().collection("botUsers").doc(String(userId)).get();
+  return doc.exists ? (doc.data() as BotUser) : null;
+}
+
+/**
+ * KIRISH DARVOZASI: mijoz ro'yxatdan o'tganmi va majburiy kanallarga
+ * obuna bo'lganmi. Bajarilmagan bo'lsa - tegishli so'rovni yuboradi va
+ * `false` qaytaradi (chaqiruvchi to'xtaydi).
+ */
+async function ensureAccess(chatId: number, userId: number): Promise<boolean> {
+  // 1-shart: ro'yxatdan o'tish (telefon)
+  const user = await getBotUser(userId);
+  if (!user) {
+    await promptRegistration(chatId);
+    return false;
+  }
+
+  // 2-shart: majburiy kanallarga obuna
+  const channels = await getRequiredChannels();
+  if (channels.length > 0) {
+    const notJoined: typeof channels = [];
+    for (const ch of channels) {
+      const member = await isChatMember(ch.chatId, userId);
+      if (!member) notJoined.push(ch);
+    }
+    if (notJoined.length > 0) {
+      await promptChannels(chatId, notJoined);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+async function promptRegistration(chatId: number): Promise<void> {
+  await sendChatMessageWithReplyKeyboard(
+    chatId,
+    [
+      "👋 <b>Atoyo Santexnika</b> botiga xush kelibsiz!",
+      "",
+      "Botdan foydalanish uchun avval ro'yxatdan o'ting.",
+      "Quyidagi tugma orqali telefon raqamingizni yuboring 👇",
+      "",
+      `Yoki sayt orqali ro'yxatdan o'ting: ${SITE_URL}/kirish`,
+    ].join("\n"),
+    [[{ text: "📞 Telefon raqamni yuborish", request_contact: true }]]
+  );
+}
+
+async function promptChannels(
+  chatId: number,
+  channels: { title: string; url: string }[]
+): Promise<void> {
+  const rows: InlineButton[][] = channels
+    .filter((c) => c.url)
+    .map((c) => [{ text: `📢 ${c.title}`, url: c.url }]);
+  rows.push([{ text: "✅ Tekshirish", callback_data: "chk_sub" }]);
+
+  await sendChatMessage(
+    chatId,
+    [
+      "📢 <b>Botdan foydalanish uchun kanallarimizga obuna bo'ling:</b>",
+      "",
+      "Barcha kanallarga obuna bo'lgach, <b>✅ Tekshirish</b> tugmasini bosing.",
+    ].join("\n"),
+    { replyMarkup: { inline_keyboard: rows } }
+  );
+}
+
+/** Telefon kontakti kelganda mijozni ro'yxatdan o'tkazadi. */
+async function registerWithContact(params: {
+  chatId: number;
+  userId: number;
+  phoneNumber: string;
+  name: string;
+}): Promise<void> {
+  const { chatId, userId, phoneNumber, name } = params;
+  const botUser: BotUser = {
+    chatId,
+    userId,
+    phoneNumber: phoneNumber.startsWith("+") ? phoneNumber : `+${phoneNumber}`,
+    name,
+    registeredAt: Date.now(),
+  };
+  await getAdminDb().collection("botUsers").doc(String(userId)).set(botUser);
+  await removeReplyKeyboard(chatId, "✅ Ro'yxatdan o'tdingiz!");
+  // Ro'yxatdan keyin darvozani qayta ishga solamiz (kanallar tekshiriladi).
+  if (await ensureAccess(chatId, userId)) {
+    await showMainMenu(chatId);
+  }
 }
 
 async function getSession(chatId: number): Promise<BotSession> {
@@ -196,75 +312,113 @@ async function showCart(chatId: number): Promise<void> {
   });
 }
 
-async function startCheckout(chatId: number): Promise<void> {
+async function finishOrder(chatId: number, userId: number, customerName: string): Promise<void> {
   const session = await getSession(chatId);
   if (session.cart.length === 0) {
     await showCart(chatId);
     return;
   }
-  session.state = "awaiting_name";
-  await saveSession(chatId, session);
-  await sendChatMessage(chatId, "👤 Ism-familiyangizni yozib yuboring:");
+  const botUser = await getBotUser(userId);
+  const order = await createOrder({
+    customerName,
+    phoneNumber: botUser?.phoneNumber ?? "",
+    items: session.cart,
+    customerChatId: chatId,
+  });
+
+  await saveSession(chatId, { state: "idle", cart: [], updatedAt: Date.now() });
+  await sendChatMessage(
+    chatId,
+    [
+      `🎉 Buyurtmangiz qabul qilindi!`,
+      `Raqami: <b>#${order.id.slice(0, 8)}</b>`,
+      `Jami: <b>${formatSom(order.totalAmount)}</b>`,
+      ``,
+      `Holati o'zgarishi bilan shu chatda xabar beramiz. Rahmat! 🙌`,
+    ].join("\n"),
+    { replyMarkup: mainMenuKeyboard() }
+  );
 }
 
-/** Shaxsiy chatdagi matnli xabarlar (checkout bosqichlari yoki menyu). */
-export async function handleCustomerMessage(chatId: number, text: string): Promise<void> {
+async function startCheckout(chatId: number, userId: number): Promise<void> {
+  const session = await getSession(chatId);
+  if (session.cart.length === 0) {
+    await showCart(chatId);
+    return;
+  }
+  const botUser = await getBotUser(userId);
+  // Ro'yxatdan o'tishda ism olingan - tasdiqlash yoki o'zgartirish taklif qilinadi.
+  session.state = "awaiting_checkout_name";
+  session.customerName = botUser?.name;
+  await saveSession(chatId, session);
+  await sendChatMessage(
+    chatId,
+    `👤 Buyurtma uchun ism-familiyangizni tasdiqlang yoki qaytadan yozing:\n\nJoriy: <b>${botUser?.name ?? "—"}</b>`,
+    { replyMarkup: { inline_keyboard: [[{ text: `✅ ${botUser?.name ?? "Tasdiqlash"}`, callback_data: "cfm_name" }]] } }
+  );
+}
+
+/** Shaxsiy chatdagi matnli/kontaktli xabarlar. */
+export async function handleCustomerMessage(params: {
+  chatId: number;
+  userId: number;
+  text?: string;
+  contact?: { phone_number: string; first_name?: string; last_name?: string };
+}): Promise<void> {
+  const { chatId, userId, text, contact } = params;
+
+  // Telefon kontakti kelsa - ro'yxatdan o'tkazamiz.
+  if (contact?.phone_number) {
+    const name = [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || "Mijoz";
+    await registerWithContact({ chatId, userId, phoneNumber: contact.phone_number, name });
+    return;
+  }
+
+  // Kirish darvozasi (ro'yxat + kanallar) - o'tmaguncha oldinga o'tmaydi.
+  if (!(await ensureAccess(chatId, userId))) return;
+
   const session = await getSession(chatId);
 
-  if (session.state === "awaiting_name") {
+  // Checkout: ism qadamida yozilgan matn yangi ism sifatida qabul qilinadi.
+  if (session.state === "awaiting_checkout_name" && text) {
     const name = text.trim();
+    if (name.startsWith("/")) {
+      await showMainMenu(chatId);
+      return;
+    }
     if (name.length < 2) {
       await sendChatMessage(chatId, "Iltimos, to'liq ism-familiyangizni yozing:");
       return;
     }
-    session.customerName = name;
-    session.state = "awaiting_phone";
-    await saveSession(chatId, session);
-    await sendChatMessage(chatId, "📞 Telefon raqamingizni yozing (masalan +998901234567):");
+    await finishOrder(chatId, userId, name);
     return;
   }
 
-  if (session.state === "awaiting_phone") {
-    const phone = text.trim().replace(/[\s-]/g, "");
-    if (!/^\+?\d{9,15}$/.test(phone)) {
-      await sendChatMessage(chatId, "Raqam noto'g'ri ko'rinadi. Masalan: +998901234567");
-      return;
-    }
-
-    const order = await createOrder({
-      customerName: session.customerName ?? "Telegram mijoz",
-      phoneNumber: phone,
-      items: session.cart,
-      customerChatId: chatId,
-    });
-
-    await saveSession(chatId, { state: "idle", cart: [], updatedAt: Date.now() });
-    await sendChatMessage(
-      chatId,
-      [
-        `🎉 Buyurtmangiz qabul qilindi!`,
-        `Raqami: <b>#${order.id.slice(0, 8)}</b>`,
-        `Jami: <b>${formatSom(order.totalAmount)}</b>`,
-        ``,
-        `Holati o'zgarishi bilan shu chatda xabar beramiz. Rahmat! 🙌`,
-      ].join("\n"),
-      { replyMarkup: mainMenuKeyboard() }
-    );
-    return;
-  }
-
-  // Oddiy holat: har qanday matn (shu jumladan /start) bosh menyuni ochadi.
   await showMainMenu(chatId);
 }
 
 /** Shaxsiy chatdagi inline tugma bosishlari. */
 export async function handleCustomerCallback(params: {
   chatId: number;
+  userId: number;
   callbackQueryId: string;
   data: string;
 }): Promise<void> {
-  const { chatId, callbackQueryId, data } = params;
+  const { chatId, userId, callbackQueryId, data } = params;
   const [action, arg1, arg2] = data.split("|");
+
+  // "Tekshirish" tugmasi - obuna qayta tekshiriladi.
+  if (action === "chk_sub") {
+    await answerCallbackQuery(callbackQueryId);
+    if (await ensureAccess(chatId, userId)) await showMainMenu(chatId);
+    return;
+  }
+
+  // Boshqa barcha amallar uchun kirish darvozasidan o'tish shart.
+  if (!(await ensureAccess(chatId, userId))) {
+    await answerCallbackQuery(callbackQueryId);
+    return;
+  }
 
   switch (action) {
     case "m": {
@@ -301,7 +455,13 @@ export async function handleCustomerCallback(params: {
     }
     case "chk": {
       await answerCallbackQuery(callbackQueryId);
-      await startCheckout(chatId);
+      await startCheckout(chatId, userId);
+      return;
+    }
+    case "cfm_name": {
+      await answerCallbackQuery(callbackQueryId);
+      const session = await getSession(chatId);
+      await finishOrder(chatId, userId, session.customerName ?? "Mijoz");
       return;
     }
     default:

@@ -10,16 +10,25 @@ interface TelegramChat {
   type: "private" | "group" | "supergroup" | "channel";
 }
 
+interface TelegramContact {
+  phone_number: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 interface TelegramMessage {
   message_id: number;
   message_thread_id?: number;
   chat: TelegramChat;
+  from?: { id: number };
   text?: string;
+  contact?: TelegramContact;
 }
 
 interface TelegramCallbackQuery {
   id: string;
   data?: string;
+  from?: { id: number };
   message?: TelegramMessage;
 }
 
@@ -66,9 +75,11 @@ export async function POST(request: Request) {
       }
 
       // Mijoz-do'kon tugmalari - faqat shaxsiy chatda.
-      if (chat.type === "private") {
+      const callbackUserId = callbackQuery.from?.id;
+      if (chat.type === "private" && callbackUserId) {
         await handleCustomerCallback({
           chatId: chat.id,
+          userId: callbackUserId,
           callbackQueryId: callbackQuery.id,
           data: callbackQuery.data,
         });
@@ -79,20 +90,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // ============ 2) Matnli xabarlar ============
+    // ============ 2) Xabarlar (matn yoki telefon kontakti) ============
     const message = update?.message;
-    if (message?.text) {
+    if (message && (message.text || message.contact)) {
       if (isAdminGroupChat(message.chat)) {
         // Guruhda faqat "/" buyruqlarga javob beramiz - oddiy suhbatga aralashmaymiz.
-        if (message.text.trim().startsWith("/")) {
+        if (message.text?.trim().startsWith("/")) {
           await handleAdminCommand({
             chatId: message.chat.id,
             threadId: message.message_thread_id,
             text: message.text,
           });
         }
-      } else if (message.chat.type === "private") {
-        await handleCustomerMessage(message.chat.id, message.text);
+      } else if (message.chat.type === "private" && message.from?.id) {
+        await handleCustomerMessage({
+          chatId: message.chat.id,
+          userId: message.from.id,
+          text: message.text,
+          contact: message.contact,
+        });
       }
       // Boshqa guruhlar/kanallar e'tiborsiz qoldiriladi.
     }

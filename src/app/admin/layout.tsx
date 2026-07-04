@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentAppUser } from "@/lib/firebase/session";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminShell } from "@/components/admin/AdminShell";
 
 // /admin/* har doim so'rov vaqtida, joriy foydalanuvchi sessiyasiga
 // bog'liq holda render qilinishi kerak - hech qachon build vaqtida
@@ -20,10 +20,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/");
   }
 
-  return (
-    <div className="flex min-h-screen bg-navy-50 dark:bg-navy-950">
-      <AdminSidebar />
-      <main className="flex-1 p-6">{children}</main>
-    </div>
-  );
+  return <AdminShell>{children}</AdminShell>;
 }
