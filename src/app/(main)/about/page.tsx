@@ -7,22 +7,25 @@ import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { getServerDictionary } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Biz haqimizda | Atoyo Santexnika",
-};
-
-const FEATURES = [
-  { Icon: VerifiedOutlinedIcon, title: "Sifat kafolati", text: "Faqat ishonchli ishlab chiqaruvchilardan sifatli mahsulot." },
-  { Icon: LocalShippingOutlinedIcon, title: "Tez yetkazib berish", text: "Buyurtmangizni tez va ishonchli yetkazib beramiz." },
-  { Icon: SupportAgentOutlinedIcon, title: "Professional maslahat", text: "Har bir mijozga individual yondashuv va yordam." },
-];
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerDictionary();
+  return { title: t.about.metaTitle };
+}
 
 export default async function AboutPage() {
+  const t = await getServerDictionary();
   const settings = await getSiteSettings();
   const socials = settings.socials.filter((s) => s.url);
+
+  const features = [
+    { Icon: VerifiedOutlinedIcon, title: t.about.features.qualityTitle, text: t.about.features.qualityText },
+    { Icon: LocalShippingOutlinedIcon, title: t.about.features.deliveryTitle, text: t.about.features.deliveryText },
+    { Icon: SupportAgentOutlinedIcon, title: t.about.features.supportTitle, text: t.about.features.supportText },
+  ];
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-10">
@@ -50,7 +53,7 @@ export default async function AboutPage() {
       </div>
 
       <div className="mt-12 grid gap-5 sm:grid-cols-3">
-        {FEATURES.map(({ Icon, title, text }) => (
+        {features.map(({ Icon, title, text }) => (
           <div key={title} className="rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
             <Icon className="text-aqua-500" fontSize="large" />
             <p className="mt-3 font-semibold text-navy-900 dark:text-white">{title}</p>
@@ -60,7 +63,7 @@ export default async function AboutPage() {
       </div>
 
       <div className="mt-12 rounded-xl2 border border-navy-100 bg-white p-6 dark:border-navy-500 dark:bg-navy-700">
-        <h2 className="mb-4 text-lg font-semibold text-navy-900 dark:text-white">Bog&apos;lanish</h2>
+        <h2 className="mb-4 text-lg font-semibold text-navy-900 dark:text-white">{t.about.contactTitle}</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <a href={`tel:${settings.phone}`} className="flex items-center gap-3 text-navy-500 hover:text-aqua-600 dark:text-navy-100 dark:hover:text-aqua-300">
             <LocalPhoneOutlinedIcon className="text-aqua-500" />

@@ -2,22 +2,25 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getPublishedPosts } from "@/lib/firebase/admin-content";
+import { getServerDictionary } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Blog | Atoyo Santexnika",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerDictionary();
+  return { title: t.blog.metaTitle };
+}
 
 export default async function BlogPage() {
+  const t = await getServerDictionary();
   const posts = await getPublishedPosts();
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="mb-6 text-3xl font-bold text-navy-900 dark:text-white">Blog va yangiliklar</h1>
+      <h1 className="mb-6 text-3xl font-bold text-navy-900 dark:text-white">{t.blog.title}</h1>
 
       {posts.length === 0 ? (
-        <p className="text-navy-300">Hozircha maqolalar yo&apos;q.</p>
+        <p className="text-navy-300">{t.blog.empty}</p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((post) => (

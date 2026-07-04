@@ -6,6 +6,7 @@ import { CircularProgress } from "@mui/material";
 import { getProductsPage, searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { createFuzzySearcher } from "@/lib/search/fuzzy";
 import { ProductCard } from "./ProductCard";
+import { useTranslation } from "@/i18n/I18nProvider";
 import type { Product, ProductFilterParams } from "@/types/product";
 
 const PAGE_SIZE = 24;
@@ -17,6 +18,7 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
+  const t = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -55,7 +57,7 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
           setHasMore(page.hasMore);
         }
       } catch {
-        if (!cancelled) setError("Mahsulotlarni yuklashda xatolik yuz berdi.");
+        if (!cancelled) setError(t.product.grid.loadError);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -77,11 +79,11 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
       setCursor(page.lastCursor);
       setHasMore(page.hasMore);
     } catch {
-      setError("Ko'proq mahsulot yuklashda xatolik yuz berdi.");
+      setError(t.product.grid.loadMoreError);
     } finally {
       setIsLoading(false);
     }
-  }, [filters, cursor, hasMore, isLoading, trimmedSearch]);
+  }, [filters, cursor, hasMore, isLoading, trimmedSearch, t]);
 
   // 10,000+ mahsulot bo'lsa ham bir vaqtning o'zida faqat bitta sahifa
   // (limit: 24) xotirada bo'ladi - IntersectionObserver "sentinel" elementi
@@ -105,7 +107,7 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
   }
 
   if (!isLoading && products.length === 0) {
-    return <p className="py-12 text-center text-sm text-navy-300">Hech qanday mahsulot topilmadi.</p>;
+    return <p className="py-12 text-center text-sm text-navy-300">{t.product.grid.empty}</p>;
   }
 
   return (

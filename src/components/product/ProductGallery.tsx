@@ -6,6 +6,7 @@ import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { useTranslation } from "@/i18n/I18nProvider";
 
 interface ProductGalleryProps {
   images: string[];
@@ -18,12 +19,13 @@ interface ProductGalleryProps {
  * bilan surish, desktopda o'q tugmalar va nuqtalar.
  */
 export function ProductGallery({ images, alt }: ProductGalleryProps) {
+  const t = useTranslation();
   const validImages = images.filter(Boolean);
 
   if (validImages.length === 0) {
     return (
       <div className="flex aspect-square w-full items-center justify-center rounded-xl2 bg-navy-50 text-navy-300 dark:bg-navy-900">
-        Rasm yo&apos;q
+        {t.product.noImage}
       </div>
     );
   }

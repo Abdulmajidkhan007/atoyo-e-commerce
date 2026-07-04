@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getPostBySlug } from "@/lib/firebase/admin-content";
+import { getServerDictionary } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +13,19 @@ interface BlogPostPageParams {
 
 export async function generateMetadata({ params }: BlogPostPageParams): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
-  return { title: post ? `${post.title} | Atoyo Blog` : "Maqola topilmadi" };
+  const [post, t] = await Promise.all([getPostBySlug(slug), getServerDictionary()]);
+  return { title: post ? `${post.title} | ${t.blog.postMetaSuffix}` : t.blog.notFound };
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageParams) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const [post, t] = await Promise.all([getPostBySlug(slug), getServerDictionary()]);
 
   if (!post || !post.isPublished) notFound();
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-10">
-      <Link href="/blog" className="text-sm text-aqua-600 hover:underline dark:text-aqua-300">← Blogga qaytish</Link>
+      <Link href="/blog" className="text-sm text-aqua-600 hover:underline dark:text-aqua-300">{t.blog.back}</Link>
       <h1 className="mt-4 text-3xl font-bold text-navy-900 dark:text-white">{post.title}</h1>
       <p className="mt-2 text-sm text-navy-300">{new Date(post.createdAt).toLocaleDateString("uz-UZ")}</p>
 

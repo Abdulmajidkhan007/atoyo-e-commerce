@@ -5,13 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button, TextField, Divider, Alert, CircularProgress } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import { signInWithGoogle, signInWithEmail, registerWithEmail } from "@/lib/firebase/auth";
-
-function getErrorMessage(): string {
-  return "Kirishda xatolik yuz berdi. Ma'lumotlaringizni tekshirib qayta urinib ko'ring.";
-}
+import { useTranslation } from "@/i18n/I18nProvider";
 
 export function LoginForm() {
   const router = useRouter();
+  const t = useTranslation();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +23,7 @@ export function LoginForm() {
       await signInWithGoogle();
       router.push("/");
     } catch {
-      setError(getErrorMessage());
+      setError(t.login.error);
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +41,7 @@ export function LoginForm() {
       }
       router.push("/");
     } catch {
-      setError(getErrorMessage());
+      setError(t.login.error);
     } finally {
       setIsSubmitting(false);
     }
@@ -52,7 +50,7 @@ export function LoginForm() {
   return (
     <div className="flex flex-col gap-4 rounded-xl2 border border-navy-100 bg-white p-6 dark:border-navy-500 dark:bg-navy-700">
       <h1 className="text-xl font-bold text-navy-900 dark:text-white">
-        {mode === "login" ? "Hisobga kirish" : "Ro'yxatdan o'tish"}
+        {mode === "login" ? t.login.signIn : t.login.register}
       </h1>
 
       <Button
@@ -63,15 +61,15 @@ export function LoginForm() {
         disabled={isSubmitting}
         fullWidth
       >
-        Google orqali kirish
+        {t.login.google}
       </Button>
 
-      <Divider>yoki</Divider>
+      <Divider>{t.login.or}</Divider>
 
       <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3">
-        <TextField label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <TextField label={t.login.email} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <TextField
-          label="Parol"
+          label={t.login.password}
           type="password"
           required
           value={password}
@@ -85,9 +83,9 @@ export function LoginForm() {
           {isSubmitting ? (
             <CircularProgress size={22} color="inherit" />
           ) : mode === "login" ? (
-            "Kirish"
+            t.login.submitLogin
           ) : (
-            "Ro'yxatdan o'tish"
+            t.login.register
           )}
         </Button>
       </form>
@@ -97,7 +95,7 @@ export function LoginForm() {
         onClick={() => setMode(mode === "login" ? "register" : "login")}
         className="text-sm text-aqua-600 hover:underline dark:text-aqua-300"
       >
-        {mode === "login" ? "Hisobingiz yo'qmi? Ro'yxatdan o'ting" : "Hisobingiz bormi? Kiring"}
+        {mode === "login" ? t.login.toRegister : t.login.toLogin}
       </button>
     </div>
   );

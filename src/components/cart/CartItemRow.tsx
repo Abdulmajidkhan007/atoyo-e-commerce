@@ -9,13 +9,13 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useAppDispatch } from "@/redux/hooks";
 import { removeItem, updateQuantity } from "@/redux/slices/cartSlice";
 import type { CartItem } from "@/redux/slices/cartSlice";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { useTranslation } from "@/i18n/I18nProvider";
+import { formatPrice } from "@/lib/format";
 
 export function CartItemRow({ item }: { item: CartItem }) {
   const dispatch = useAppDispatch();
+  const t = useTranslation();
+  const formatSom = (amount: number) => formatPrice(amount, t.common.currencyUzs);
 
   return (
     <div className="flex items-center gap-3 border-b border-navy-100 py-4 last:border-b-0 dark:border-navy-500">
@@ -35,7 +35,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
       <div className="flex items-center gap-1 rounded-full border border-navy-100 dark:border-navy-500">
         <IconButton
           size="small"
-          aria-label="Sonini kamaytirish"
+          aria-label={t.cart.decrease}
           onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity - 1 }))}
           disabled={item.quantity <= 1}
         >
@@ -44,7 +44,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
         <span className="w-6 text-center text-sm">{item.quantity}</span>
         <IconButton
           size="small"
-          aria-label="Sonini oshirish"
+          aria-label={t.cart.increase}
           onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity + 1 }))}
           disabled={item.quantity >= item.stock}
         >
@@ -58,7 +58,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
 
       <IconButton
         size="small"
-        aria-label="Savatdan o'chirish"
+        aria-label={t.cart.remove}
         onClick={() => dispatch(removeItem({ productId: item.productId }))}
       >
         <DeleteOutlineIcon fontSize="small" className="text-red-400" />

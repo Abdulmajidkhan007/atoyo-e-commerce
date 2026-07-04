@@ -6,27 +6,16 @@ import { Chip, Button } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
+import { useTranslation } from "@/i18n/I18nProvider";
+import { formatPrice } from "@/lib/format";
 import type { Product } from "@/types/product";
-
-const CATEGORY_LABELS: Record<Product["category"], string> = {
-  pipes: "Quvurlar",
-  fittings: "Muftalar",
-  faucets: "Kranlar",
-  "shower-systems": "Dush tizimlari",
-  boilers: "Isitish qozonlari",
-  radiators: "Radiatorlar",
-  pumps: "Nasoslar",
-  "sanitary-ware": "Santexnika buyumlari",
-};
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();
+  const t = useTranslation();
   const hasDiscount = !!product.discountPrice && product.discountPrice < product.price;
   const outOfStock = product.stock <= 0;
+  const formatSom = (amount: number) => formatPrice(amount, t.common.currencyUzs);
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl2 border border-navy-100 bg-white transition hover:shadow-lg dark:border-navy-500 dark:bg-navy-700">
@@ -40,17 +29,17 @@ export function ProductCard({ product }: { product: Product }) {
             className="object-cover transition group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-navy-300">Rasm yo&apos;q</div>
+          <div className="flex h-full items-center justify-center text-navy-300">{t.product.noImage}</div>
         )}
         {outOfStock && (
           <span className="absolute left-2 top-2 rounded-full bg-navy-900/80 px-2 py-0.5 text-xs text-white">
-            Tugagan
+            {t.product.outOfStockBadge}
           </span>
         )}
       </Link>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <Chip label={CATEGORY_LABELS[product.category]} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
+        <Chip label={t.categories[product.category]} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
 
         <Link href={`/mahsulot/${product.id}`} className="line-clamp-2 text-sm font-medium text-navy-900 hover:text-aqua-600 dark:text-white">
           {product.name}
@@ -84,7 +73,7 @@ export function ProductCard({ product }: { product: Product }) {
                 })
               )
             }
-            aria-label={`${product.name} savatga qo'shish`}
+            aria-label={t.product.addToCartAria.replace("{name}", product.name)}
           >
             <AddShoppingCartIcon fontSize="small" />
           </Button>
