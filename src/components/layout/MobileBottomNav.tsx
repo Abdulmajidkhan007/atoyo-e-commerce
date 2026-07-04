@@ -5,13 +5,17 @@ import { usePathname } from "next/navigation";
 import { Badge } from "@mui/material";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
+import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { useAppSelector } from "@/redux/hooks";
 
 const TABS = [
-  { href: "/", label: "Bosh sahifa", icon: HomeOutlinedIcon },
+  { href: "/", label: "Bosh", icon: HomeOutlinedIcon },
   { href: "/katalog", label: "Katalog", icon: CategoryOutlinedIcon },
+  { href: "/blog", label: "Blog", icon: ArticleOutlinedIcon },
+  { href: "/about", label: "Haqida", icon: InfoOutlinedIcon },
   { href: "/savat", label: "Savat", icon: ShoppingCartOutlinedIcon },
   { href: "/profil", label: "Profil", icon: PersonOutlineIcon },
 ];
@@ -28,7 +32,7 @@ export function MobileBottomNav() {
           <Link
             key={href}
             href={href}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs ${
+            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] ${
               isActive ? "text-aqua-600 dark:text-aqua-300" : "text-navy-300"
             }`}
           >
@@ -39,7 +43,7 @@ export function MobileBottomNav() {
             ) : (
               <Icon fontSize="small" />
             )}
-            {label}
+            <span className="w-full truncate text-center">{label}</span>
           </Link>
         );
       })}

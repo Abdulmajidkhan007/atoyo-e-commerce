@@ -16,6 +16,8 @@ export interface BlogPost {
 export interface AboutContent {
   title: string;
   body: string;
+  /** Do'kon/jamoa rasmi (About sahifasida ko'rsatiladi). */
+  imageUrl: string;
 }
 
 export interface SocialLink {
@@ -43,6 +45,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   ],
   about: {
     title: "Biz haqimizda",
-    body: "Atoyo Santexnika — quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari bo'yicha ishonchli yetkazib beruvchi. Bizning maqsadimiz — sifatli mahsulotni qulay narxda yetkazib berish.",
+    body:
+      "Atoyo Santexnika & Otopleniye — santexnika va isitish tizimlari bo'yicha ishonchli yetkazib beruvchi hamkoringiz. Biz quvurlar, muftalar, kranlar, dush tizimlari, radiatorlar va isitish qozonlarini keng assortimentda taklif etamiz.\n\n" +
+      "Bizning maqsadimiz — sifatli mahsulotni qulay narxda, tez va ishonchli yetkazib berish. Har bir mijozimizga individual yondashamiz va professional maslahat beramiz.\n\n" +
+      "Yillar davomida to'plangan tajribamiz va ishonchli hamkorlarimiz tufayli mahsulotlarimiz sifatiga kafolat beramiz. Bizni tanlaganingiz uchun rahmat!",
+    imageUrl: "",
   },
 };

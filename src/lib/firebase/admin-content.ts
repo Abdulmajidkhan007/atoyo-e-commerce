@@ -16,6 +16,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       about: {
         title: data.about?.title ?? DEFAULT_SITE_SETTINGS.about.title,
         body: data.about?.body ?? DEFAULT_SITE_SETTINGS.about.body,
+        imageUrl: data.about?.imageUrl ?? DEFAULT_SITE_SETTINGS.about.imageUrl,
       },
     };
   } catch {
@@ -25,13 +26,30 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 
 /** Chop etilgan blog postlari (public sahifa uchun). */
 export async function getPublishedPosts(limitCount = 30): Promise<BlogPost[]> {
-  const snap = await getAdminDb()
-    .collection("blogPosts")
-    .where("isPublished", "==", true)
-    .orderBy("createdAt", "desc")
-    .limit(limitCount)
-    .get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as BlogPost);
+  try {
+    const snap = await getAdminDb()
+      .collection("blogPosts")
+      .where("isPublished", "==", true)
+      .orderBy("createdAt", "desc")
+      .limit(limitCount)
+      .get();
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as BlogPost);
+  } catch {
+    // Kompozit indeks hali yaratilmagan bo'lishi mumkin (isPublished + createdAt).
+    // Bunday holda sahifa yiqilmasligi uchun oddiy so'rov + xotirada saralash.
+    try {
+      const snap = await getAdminDb()
+        .collection("blogPosts")
+        .where("isPublished", "==", true)
+        .limit(limitCount)
+        .get();
+      return snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }) as BlogPost)
+        .sort((a, b) => b.createdAt - a.createdAt);
+    } catch {
+      return [];
+    }
+  }
 }
 
 /** Admin panel uchun barcha postlar (chop etilmaganlar ham). */

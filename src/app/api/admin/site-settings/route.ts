@@ -21,6 +21,7 @@ const settingsSchema = z.object({
     .object({
       title: z.string().max(200),
       body: z.string().max(10000),
+      imageUrl: z.string().url().or(z.literal("")).default(""),
     })
     .optional(),
 });

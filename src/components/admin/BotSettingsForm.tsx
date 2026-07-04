@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
-import { TextField, Button, Alert, CircularProgress, IconButton } from "@mui/material";
+import { TextField, Button, Alert, CircularProgress, IconButton, Snackbar } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
 import { getFirebaseDb } from "@/lib/firebase/client";
@@ -111,12 +111,22 @@ export function BotSettingsForm({ initialConfig, initialChannels }: BotSettingsF
         </Button>
       </div>
 
-      {result === "success" && <Alert severity="success">Sozlamalar saqlandi.</Alert>}
-      {result === "error" && <Alert severity="error">Saqlashda xatolik yuz berdi.</Alert>}
-
       <Button type="submit" variant="contained" disabled={isSaving} className="!w-fit">
         {isSaving ? <CircularProgress size={20} color="inherit" /> : "Saqlash"}
       </Button>
+
+      <Snackbar
+        open={result !== null}
+        autoHideDuration={4000}
+        onClose={() => setResult(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        {result ? (
+          <Alert severity={result} variant="filled" onClose={() => setResult(null)} sx={{ width: "100%" }}>
+            {result === "success" ? "Bot sozlamalari saqlandi." : "Saqlashda xatolik yuz berdi."}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </form>
   );
 }

@@ -13,6 +13,7 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", Icon: DashboardOutlinedIcon },
@@ -43,6 +44,16 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
         );
       })}
+
+      {/* Saytning bosh sahifasiga qaytish */}
+      <Link
+        href="/"
+        onClick={onNavigate}
+        className="mt-2 flex items-center gap-3 rounded-lg border-t border-navy-500/40 px-3 py-2.5 pt-4 text-sm text-navy-100 transition hover:bg-navy-700"
+      >
+        <HomeOutlinedIcon fontSize="small" />
+        Saytga qaytish
+      </Link>
     </>
   );
 }
@@ -90,10 +101,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <IconButton size="small" onClick={() => setDrawerOpen(true)} aria-label="Menyu">
             <MenuIcon className="text-white" />
           </IconButton>
-          <span className="flex items-center gap-2 font-bold">
+          {/* Logoni bosish - saytning bosh sahifasiga qaytaradi */}
+          <Link href="/" className="flex items-center gap-2 font-bold">
             <StorefrontOutlinedIcon className="text-aqua-400" fontSize="small" />
             Atoyo Admin
-          </span>
+          </Link>
+          <IconButton
+            component={Link}
+            href="/"
+            size="small"
+            aria-label="Saytga qaytish"
+            className="!ml-auto"
+          >
+            <HomeOutlinedIcon className="text-white" fontSize="small" />
+          </IconButton>
         </header>
 
         <main className="min-w-0 flex-1 p-4 sm:p-6">{children}</main>
