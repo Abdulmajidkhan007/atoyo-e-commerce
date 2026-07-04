@@ -54,6 +54,13 @@ interface InlineButton {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
 
+// next/og orqali serverda generatsiya qilinadigan brendlangan rasmlar.
+const WELCOME_IMAGE_URL = `${SITE_URL}/api/og/welcome`;
+function profileImageUrl(name: string, phone: string): string {
+  const q = new URLSearchParams({ name, phone });
+  return `${SITE_URL}/api/og/profile?${q.toString()}`;
+}
+
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
@@ -155,7 +162,7 @@ async function registerWithContact(params: {
   await removeReplyKeyboard(chatId, "✅ Ro'yxatdan o'tdingiz!");
   // Ro'yxatdan keyin darvozani qayta ishga solamiz (kanallar tekshiriladi).
   if (await ensureAccess(chatId, userId)) {
-    await showMainMenu(chatId);
+    await sendGreeting(chatId);
   }
 }
 
@@ -176,16 +183,52 @@ function mainMenuKeyboard(): { inline_keyboard: InlineButton[][] } {
   return {
     inline_keyboard: [
       [{ text: "🛍 Katalog", callback_data: "m|cat" }],
-      [{ text: "🛒 Savat", callback_data: "crt" }],
+      [
+        { text: "🛒 Savat", callback_data: "crt" },
+        { text: "👤 Profil", callback_data: "prof" },
+      ],
     ],
   };
+}
+
+/** Salomlashuv: generatsiya qilingan banner rasm + asosiy menyu (/start). */
+async function sendGreeting(chatId: number): Promise<void> {
+  await sendChatMessage(
+    chatId,
+    "🏪 <b>Atoyo Santexnika</b> botiga xush kelibsiz!\n\nKatalogdan mahsulot tanlab, shu yerning o'zida buyurtma bering.",
+    { replyMarkup: mainMenuKeyboard(), photoUrl: WELCOME_IMAGE_URL }
+  );
 }
 
 async function showMainMenu(chatId: number): Promise<void> {
   await sendChatMessage(
     chatId,
-    "🏪 <b>Atoyo Santexnika</b> botiga xush kelibsiz!\n\nKatalogdan mahsulot tanlab, shu yerning o'zida buyurtma bering. Sayt: atoyo-uz.netlify.app",
+    "🏪 <b>Bosh menyu</b>\n\nKatalogdan mahsulot tanlab, shu yerning o'zida buyurtma bering.",
     { replyMarkup: mainMenuKeyboard() }
+  );
+}
+
+/** Mijoz profili: generatsiya qilingan profil kartasi rasmi + ma'lumot. */
+async function showProfile(chatId: number, userId: number): Promise<void> {
+  const user = await getBotUser(userId);
+  if (!user) {
+    await promptRegistration(chatId);
+    return;
+  }
+  const registered = new Date(user.registeredAt).toLocaleDateString("uz-UZ");
+  await sendChatMessage(
+    chatId,
+    [
+      `👤 <b>${user.name}</b>`,
+      `📞 ${user.phoneNumber}`,
+      `🗓 Ro'yxatdan o'tgan: ${registered}`,
+      ``,
+      `Sozlamalarni saytdan o'zgartirishingiz mumkin: ${SITE_URL}/profil`,
+    ].join("\n"),
+    {
+      photoUrl: profileImageUrl(user.name, user.phoneNumber),
+      replyMarkup: { inline_keyboard: [[{ text: "🛍 Katalog", callback_data: "m|cat" }, { text: "⬅️ Bosh menyu", callback_data: "m|home" }]] },
+    }
   );
 }
 
@@ -394,6 +437,17 @@ export async function handleCustomerMessage(params: {
     return;
   }
 
+  // Buyruqlar
+  const command = text?.trim().toLowerCase();
+  if (command === "/profil") {
+    await showProfile(chatId, userId);
+    return;
+  }
+  if (command === "/start") {
+    await sendGreeting(chatId);
+    return;
+  }
+
   await showMainMenu(chatId);
 }
 
@@ -445,6 +499,11 @@ export async function handleCustomerCallback(params: {
     case "crt": {
       await answerCallbackQuery(callbackQueryId);
       await showCart(chatId);
+      return;
+    }
+    case "prof": {
+      await answerCallbackQuery(callbackQueryId);
+      await showProfile(chatId, userId);
       return;
     }
     case "clr": {
