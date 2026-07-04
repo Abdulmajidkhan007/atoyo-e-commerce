@@ -1,60 +1,41 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { SESSION_COOKIE_NAME } from "@/lib/firebase/session";
 
 /**
- * XAVFSIZLIK ESLATMASI (middleware/proxy bypass zaifliklari, masalan
- * CVE-2025-29927 klassidagi hujumlar haqida):
+ * XAVFSIZLIK ARXITEKTURASI (/admin himoyasi ikki qatlamda):
  *
- * O'sha zaiflik middleware'ni "x-middleware-subrequest" kabi ichki
- * so'rov headerlarini soxtalashtirish orqali butunlay chetlab o'tishga
- * imkon bergan edi. Next.js v16'da bu fayl konvensiyasi "middleware"dan
- * "proxy"ga o'zgartirildi va Proxy endi STANDART HOLATDA Node.js
- * runtime'da ishlaydi (Edge emas) - shu tufayli Firebase Admin SDK'ni
- * (Node.js API'lariga bog'liq) bu yerda to'g'ridan-to'g'ri, xavfsiz
- * ishlatish mumkin.
+ *   1) Bu Proxy - TEZKOR, arzon "birinchi to'siq": session cookie umuman
+ *      bo'lmagan (ya'ni tizimga kirmagan) foydalanuvchini darhol bosh
+ *      sahifaga qaytaradi.
+ *   2) ASOSIY (majburiy) chegara - `src/app/admin/layout.tsx`: u Node.js
+ *      runtime'da Firebase Admin SDK bilan session cookie'ni kriptografik
+ *      TASDIQLAYDI va Firestore'dan `role: 'admin'` ni LIVE o'qiydi.
+ *      Cookie soxta/eskirgan yoki rol admin bo'lmasa - o'sha yerda rad
+ *      etiladi. Shu tufayli middleware-bypass sinfidagi zaifliklar
+ *      (masalan CVE-2025-29927) /adminni ocholmaydi: proxy chetlab
+ *      o'tilsa ham layout tekshiruvi turibdi.
  *
- * Bunga qarshi baribir ikki qatlamli himoya saqlanadi (Next.js'ning
- * o'z hujjatlaridagi tavsiyasiga ko'ra: "A page-level authentication
- * check does not extend to the Server Actions/Route Handlers defined
- * within it. Always re-verify inside the action"):
- *
- *   1) Bu Proxy /admin/* uchun TEZKOR, session-darajasidagi to'siq:
- *      cookie'ni tasdiqlaydi va Firestore'dan `role` maydonini LIVE
- *      o'qiydi.
- *   2) `src/app/admin/layout.tsx` Server Component ichida
- *      `getCurrentAppUser()` orqali xuddi shu tekshiruv MUSTAQIL
- *      ravishda QAYTA amalga oshiriladi. Proxy qandaydir yo'l bilan
- *      chetlab o'tilsa ham (masalan yamalmagan/eski Next.js
- *      versiyasida yoki boshqa deploy muhitida Edge runtime'ga
- *      tushirilgan bo'lsa), /admin sahifalarining o'zi admin
- *      bo'lmagan foydalanuvchini serverda rad etadi.
+ * MUHIM CHEKLOV (nega bu yerda Firebase Admin SDK YO'Q): Next.js 16'ning
+ * o'zida Proxy Node.js runtime'da ishlaydi, LEKIN Netlify'ning Next.js
+ * adapteri (@netlify/plugin-nextjs) proxy/middleware'ni Deno asosidagi
+ * Edge Function sifatida joylashtiradi. firebase-admin Node API'lariga
+ * bog'liq bo'lgani uchun u Edge'da yuklanmaydi va butun /admin yo'nalishi
+ * "nextHandler is not a function" xatosi bilan yiqilar edi. Shuning uchun
+ * bu qatlam ATAYLAB faqat cookie mavjudligini tekshiradi - to'liq
+ * kriptografik tekshiruv yuqoridagi 2-qatlamda amalga oshadi.
  */
+
+const SESSION_COOKIE_NAME = "__session";
 
 export const config = {
   matcher: ["/admin/:path*"],
 };
 
-export async function proxy(request: NextRequest) {
-  const homeUrl = new URL("/", request.url);
+export function proxy(request: NextRequest) {
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   if (!sessionCookie) {
-    return NextResponse.redirect(homeUrl);
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
-  try {
-    const decoded = await getAdminAuth().verifySessionCookie(sessionCookie, true /* checkRevoked */);
-    const userDoc = await getAdminDb().collection("users").doc(decoded.uid).get();
-
-    if (!userDoc.exists || userDoc.data()?.role !== "admin") {
-      return NextResponse.redirect(homeUrl);
-    }
-
-    return NextResponse.next();
-  } catch {
-    // Cookie yaroqsiz, muddati o'tgan yoki bekor qilingan - xatoni
-    // fosh qilmasdan jim tarzda bosh sahifaga yo'naltiramiz.
-    return NextResponse.redirect(homeUrl);
-  }
+  return NextResponse.next();
 }
