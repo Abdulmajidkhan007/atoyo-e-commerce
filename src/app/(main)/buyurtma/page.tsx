@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TextField, Button, Alert, CircularProgress } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Alert,
+  CircularProgress,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+} from "@mui/material";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { clearCart } from "@/redux/slices/cartSlice";
@@ -19,6 +27,8 @@ export default function CheckoutPage() {
 
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash");
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +66,8 @@ export default function CheckoutPage() {
             thumbnailUrl: item.thumbnailUrl,
           })),
           location,
+          deliveryAddress: deliveryAddress.trim() || null,
+          paymentMethod,
         }),
       });
 
@@ -99,9 +111,32 @@ export default function CheckoutPage() {
 
         <div>
           <Button type="button" onClick={handleDetectLocation} startIcon={<MyLocationIcon />} variant="outlined" size="small">
-            {location ? "Lokatsiya aniqlandi ✓" : "Joylashuvni aniqlash"}
+            {location ? "Lokatsiya aniqlandi ✓" : "Joylashuvni aniqlash (GPS)"}
           </Button>
           {locationError && <p className="mt-1 text-xs text-red-500">{locationError}</p>}
+        </div>
+
+        <TextField
+          label="Yetkazish manzili"
+          placeholder="Tuman, mahalla, ko'cha, uy — lokatsiya yuborish qiyin bo'lsa yozing"
+          value={deliveryAddress}
+          onChange={(e) => setDeliveryAddress(e.target.value)}
+          multiline
+          minRows={2}
+        />
+
+        <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
+          <p className="mb-2 text-sm font-medium text-navy-900 dark:text-white">To&apos;lov usuli</p>
+          <RadioGroup value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "online")}>
+            <FormControlLabel value="cash" control={<Radio />} label="💵 Naqd — mahsulot yetkazilganda to'lash" />
+            <FormControlLabel value="online" control={<Radio />} label="💳 Onlayn — karta orqali (Humo/Uzcard/Visa)" />
+          </RadioGroup>
+          {paymentMethod === "online" && (
+            <p className="mt-1 text-xs text-navy-300">
+              Onlayn to&apos;lov to&apos;lov tizimi ulangandan so&apos;ng faollashadi. Hozircha buyurtma qabul
+              qilinadi va operator siz bilan bog&apos;lanadi.
+            </p>
+          )}
         </div>
 
         <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">

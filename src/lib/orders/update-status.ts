@@ -1,4 +1,5 @@
 import "server-only";
+import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { editTopicMessageText, sendChatMessage } from "@/lib/telegram/bot";
 import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
@@ -26,13 +27,37 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
 
   if (!snapshot.exists) return null;
 
+  const current = snapshot.data() as Order;
   const updatedOrder: Order = {
-    ...(snapshot.data() as Order),
+    ...current,
     status,
     updatedAt: Date.now(),
   };
 
-  await orderRef.update({ status: updatedOrder.status, updatedAt: updatedOrder.updatedAt });
+  // Buyurtma BEKOR qilinganda mahsulotlar zaxirasi joyiga qaytariladi
+  // (va salesCount kamaytiriladi) - lekin faqat BIR MARTA (`stockReturned`
+  // bayrog'i orqali takroriy qaytarishning oldi olinadi).
+  const shouldReturnStock = status === "cancelled" && !current.stockReturned;
+  if (shouldReturnStock) {
+    const batch = getAdminDb().batch();
+    for (const item of current.items) {
+      const productRef = getAdminDb().collection("products").doc(item.productId);
+      batch.update(productRef, {
+        stock: FieldValue.increment(item.quantity),
+        salesCount: FieldValue.increment(-item.quantity),
+      });
+    }
+    batch.set(
+      getAdminDb().collection("stats").doc("summary"),
+      { totalRevenue: FieldValue.increment(-current.totalAmount) },
+      { merge: true }
+    );
+    batch.update(orderRef, { status, updatedAt: updatedOrder.updatedAt, stockReturned: true });
+    await batch.commit();
+    updatedOrder.stockReturned = true;
+  } else {
+    await orderRef.update({ status: updatedOrder.status, updatedAt: updatedOrder.updatedAt });
+  }
 
   if (updatedOrder.telegramMessageId) {
     try {

@@ -25,6 +25,8 @@ const orderSchema = z.object({
     })
     .nullable()
     .optional(),
+  deliveryAddress: z.string().max(500).nullable().optional(),
+  paymentMethod: z.enum(["cash", "online"]).default("cash"),
 });
 
 export async function POST(request: Request) {
@@ -41,6 +43,8 @@ export async function POST(request: Request) {
       phoneNumber: parsed.data.phoneNumber,
       items: parsed.data.items,
       location: parsed.data.location ?? null,
+      deliveryAddress: parsed.data.deliveryAddress ?? null,
+      paymentMethod: parsed.data.paymentMethod,
       userId: currentUser?.uid ?? null,
     });
 

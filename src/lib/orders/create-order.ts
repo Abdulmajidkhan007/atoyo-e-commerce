@@ -11,6 +11,8 @@ export interface NewOrderInput {
   phoneNumber: string;
   items: OrderItem[];
   location?: OrderLocation | null;
+  deliveryAddress?: string | null;
+  paymentMethod?: "cash" | "online";
   userId?: string | null;
   /** Buyurtma Telegram botdan kelgan bo'lsa - mijozning chat ID'si. */
   customerChatId?: number | null;
@@ -29,6 +31,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
   const totalAmount = input.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const now = Date.now();
 
+  const paymentMethod = input.paymentMethod ?? "cash";
   const orderRef = getAdminDb().collection("orders").doc();
   const order: Order = {
     id: orderRef.id,
@@ -39,7 +42,11 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     totalAmount,
     currency: "UZS",
     location: input.location ?? null,
+    deliveryAddress: input.deliveryAddress ?? null,
+    paymentMethod,
+    paymentStatus: paymentMethod === "online" ? "pending" : "not_required",
     status: "pending",
+    stockReturned: false,
     telegramMessageId: null,
     customerChatId: input.customerChatId ?? null,
     createdAt: now,

@@ -16,29 +16,55 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: "❌ Bekor qilindi",
 };
 
+const PAYMENT_LABELS: Record<Order["paymentMethod"], string> = {
+  cash: "💵 Naqd (yetkazilganda)",
+  online: "💳 Onlayn (karta)",
+};
+
+const PAYMENT_STATUS_LABELS: Record<Order["paymentStatus"], string> = {
+  not_required: "",
+  pending: " — ⏳ to'lov kutilmoqda",
+  paid: " — ✅ to'landi",
+  failed: " — ❌ to'lov amalga oshmadi",
+};
+
 export function formatOrderMessage(order: Order): string {
   const itemsList = order.items
     .map((item) => `• ${escapeHtml(item.name)} — ${item.quantity} x ${item.price.toLocaleString("uz-UZ")} so'm`)
     .join("\n");
 
-  const locationLine = order.location
-    ? `📍 <a href="https://maps.google.com/?q=${order.location.latitude},${order.location.longitude}">Xaritada ko'rish</a>`
-    : "📍 Lokatsiya yuborilmagan";
-
-  return [
+  const lines = [
     `🛒 <b>Yangi buyurtma #${order.id.slice(0, 8)}</b>`,
     ``,
     `👤 <b>Xaridor:</b> ${escapeHtml(order.customerName)}`,
     `📞 <b>Telefon:</b> ${escapeHtml(order.phoneNumber)}`,
+  ];
+
+  // Manzil: lokatsiya bo'lsa xarita havolasi, bo'lmasa qo'lda yozilgan manzil.
+  if (order.location) {
+    lines.push(
+      `📍 <a href="https://maps.google.com/?q=${order.location.latitude},${order.location.longitude}">Xaritada ko'rish</a>`
+    );
+  }
+  if (order.deliveryAddress) {
+    lines.push(`🏠 <b>Manzil:</b> ${escapeHtml(order.deliveryAddress)}`);
+  }
+  if (!order.location && !order.deliveryAddress) {
+    lines.push(`📍 Manzil ko'rsatilmagan`);
+  }
+
+  lines.push(
     ``,
     `📦 <b>Mahsulotlar:</b>`,
     itemsList,
     ``,
     `💰 <b>Jami:</b> ${order.totalAmount.toLocaleString("uz-UZ")} so'm`,
-    locationLine,
+    `💳 <b>To'lov:</b> ${PAYMENT_LABELS[order.paymentMethod]}${PAYMENT_STATUS_LABELS[order.paymentStatus]}`,
     ``,
-    `Holat: ${STATUS_LABELS[order.status]}`,
-  ].join("\n");
+    `Holat: ${STATUS_LABELS[order.status]}`
+  );
+
+  return lines.join("\n");
 }
 
 export function formatContactMessage(params: { name: string; phone: string; question: string }): string {
