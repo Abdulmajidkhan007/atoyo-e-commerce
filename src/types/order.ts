@@ -26,6 +26,8 @@ export interface Order {
   status: OrderStatus;
   /** Guruhga yuborilgan Telegram xabarining message_id (statusni tugmalar orqali tahrirlash uchun) */
   telegramMessageId: number | null;
+  /** Buyurtma Telegram botdan berilgan bo'lsa - mijozning shaxsiy chat ID'si (status o'zgarishini DM qilish uchun) */
+  customerChatId: number | null;
   createdAt: number;
   updatedAt: number;
 }

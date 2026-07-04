@@ -1,9 +1,17 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { editTopicMessageText } from "@/lib/telegram/bot";
+import { editTopicMessageText, sendChatMessage } from "@/lib/telegram/bot";
 import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
 import { formatOrderMessage } from "@/lib/telegram/templates";
 import type { Order, OrderStatus } from "@/types/order";
+
+const STATUS_DM_TEXT: Record<OrderStatus, string> = {
+  pending: "🕓 kutilmoqda",
+  approved: "✅ qabul qilindi",
+  delivering: "🚚 yetkazilmoqda",
+  completed: "🎉 yakunlandi",
+  cancelled: "❌ bekor qilindi",
+};
 
 /**
  * Buyurtma statusini Firestore'da yangilaydi va (agar mavjud bo'lsa)
@@ -39,6 +47,18 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
       // Firestore statusi allaqachon yangilandi - Telegram xabari
       // tahrirlanmasa ham buyurtma holati to'g'ri qoladi, faqat log qilinadi.
       console.error("Telegram xabarini tahrirlashda xato:", error);
+    }
+  }
+
+  // Buyurtma bot orqali berilgan bo'lsa, mijozga shaxsiy xabar yuboriladi.
+  if (updatedOrder.customerChatId) {
+    try {
+      await sendChatMessage(
+        updatedOrder.customerChatId,
+        `📦 Buyurtmangiz <b>#${updatedOrder.id.slice(0, 8)}</b> holati: <b>${STATUS_DM_TEXT[updatedOrder.status]}</b>`
+      );
+    } catch (error) {
+      console.error("Mijozga DM yuborishda xato:", error);
     }
   }
 

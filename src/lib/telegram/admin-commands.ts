@@ -1,0 +1,261 @@
+import "server-only";
+import { getAdminDb } from "@/lib/firebase/admin";
+import { sendChatMessage } from "./bot";
+import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
+import type { Order } from "@/types/order";
+
+/**
+ * ADMIN BUYRUQLARI - FAQAT yopiq xodimlar guruhida ishlaydi.
+ * Webhook (route.ts) bu funksiyani faqat xabar aynan TELEGRAM_CHAT_ID
+ * guruhidan kelganida chaqiradi - shaxsiy chatdagi mijozlar bu
+ * buyruqlarga hech qachon eta olmaydi.
+ */
+
+const CATEGORY_ALIASES: Record<string, ProductCategory> = {
+  quvur: "pipes", quvurlar: "pipes", pipes: "pipes",
+  mufta: "fittings", muftalar: "fittings", fittings: "fittings",
+  kran: "faucets", kranlar: "faucets", faucets: "faucets",
+  dush: "shower-systems", "shower-systems": "shower-systems",
+  qozon: "boilers", qozonlar: "boilers", boilers: "boilers",
+  radiator: "radiators", radiatorlar: "radiators", radiators: "radiators",
+  nasos: "pumps", nasoslar: "pumps", pumps: "pumps",
+  santexnika: "sanitary-ware", "sanitary-ware": "sanitary-ware",
+};
+
+const MATERIAL_ALIASES: Record<string, ProductMaterial> = {
+  polipropilen: "polypropylene", polypropylene: "polypropylene",
+  metalplastik: "metal-plastic", "metal-plastic": "metal-plastic",
+  "po'lat": "steel", polat: "steel", steel: "steel",
+  mis: "copper", copper: "copper",
+  latun: "brass", brass: "brass",
+  "cho'yan": "cast-iron", choyan: "cast-iron", "cast-iron": "cast-iron",
+  pvx: "pvc", pvc: "pvc",
+};
+
+const HELP_TEXT = [
+  "🛠 <b>Admin buyruqlari</b>",
+  "",
+  "<code>/top nomi</code> — mahsulot qidirish (ID olish)",
+  "<code>/yangi Nomi | kategoriya | narx | zaxira | brend | davlat | material</code> — yangi mahsulot",
+  "<code>/narx ID summa</code> — narxni o'zgartirish",
+  "<code>/zaxira ID son</code> — zaxirani o'rnatish",
+  "<code>/tahrir ID nomi=... narx=... zaxira=... brend=...</code> — tahrirlash",
+  "<code>/uchir ID</code> — katalogdan olib tashlash (yashirish)",
+  "<code>/tikla ID</code> — qaytarish",
+  "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
+  "<code>/stat</code> — umumiy statistika",
+  "",
+  "Kategoriyalar: quvur, mufta, kran, dush, qozon, radiator, nasos, santexnika",
+].join("\n");
+
+function formatSom(amount: number): string {
+  return `${amount.toLocaleString("uz-UZ")} so'm`;
+}
+
+async function findProduct(idOrQuery: string): Promise<Product | null> {
+  const byId = await getAdminDb().collection("products").doc(idOrQuery).get();
+  if (byId.exists) return { id: byId.id, ...byId.data() } as Product;
+  return null;
+}
+
+export async function handleAdminCommand(params: {
+  chatId: number;
+  threadId?: number;
+  text: string;
+}): Promise<void> {
+  const { chatId, threadId, text } = params;
+  const reply = (message: string) => sendChatMessage(chatId, message, { threadId });
+
+  const [rawCommand, ...rest] = text.trim().split(/\s+/);
+  const command = (rawCommand ?? "").split("@")[0]?.toLowerCase() ?? "";
+  const argsText = text.trim().slice((rawCommand ?? "").length).trim();
+
+  try {
+    switch (command) {
+      case "/start":
+      case "/yordam":
+      case "/help": {
+        await reply(HELP_TEXT);
+        return;
+      }
+
+      case "/stat": {
+        const statsDoc = await getAdminDb().collection("stats").doc("summary").get();
+        const stats = statsDoc.data() ?? {};
+        const productsCount = await getAdminDb().collection("products").where("isActive", "==", true).count().get();
+        await reply(
+          [
+            "📊 <b>Statistika</b>",
+            `Buyurtmalar: <b>${stats.totalOrders ?? 0}</b>`,
+            `Tushum: <b>${formatSom(stats.totalRevenue ?? 0)}</b>`,
+            `Faol mahsulotlar: <b>${productsCount.data().count}</b>`,
+          ].join("\n")
+        );
+        return;
+      }
+
+      case "/buyurtmalar": {
+        const snapshot = await getAdminDb().collection("orders").orderBy("createdAt", "desc").limit(5).get();
+        if (snapshot.empty) {
+          await reply("Hozircha buyurtmalar yo'q.");
+          return;
+        }
+        const lines = snapshot.docs.map((d) => {
+          const o = d.data() as Order;
+          return `#${d.id.slice(0, 8)} — ${o.customerName}, ${formatSom(o.totalAmount)} [${o.status}]`;
+        });
+        await reply(`🧾 <b>So'nggi buyurtmalar</b>\n\n${lines.join("\n")}`);
+        return;
+      }
+
+      case "/top": {
+        if (!argsText) {
+          await reply("Foydalanish: <code>/top kran</code>");
+          return;
+        }
+        const term = argsText.toLowerCase();
+        const snapshot = await getAdminDb()
+          .collection("products")
+          .orderBy("nameSearchIndex")
+          .startAt(term)
+          .endAt(term + "")
+          .limit(5)
+          .get();
+        if (snapshot.empty) {
+          await reply(`"${argsText}" bo'yicha hech narsa topilmadi.`);
+          return;
+        }
+        const lines = snapshot.docs.map((d) => {
+          const p = d.data() as Product;
+          return `${p.name}\n  ID: <code>${d.id}</code> | ${formatSom(p.price)} | zaxira: ${p.stock}${p.isActive ? "" : " | 🚫 yashirin"}`;
+        });
+        await reply(`🔎 Topildi:\n\n${lines.join("\n\n")}`);
+        return;
+      }
+
+      case "/narx":
+      case "/zaxira": {
+        const [id, valueRaw] = argsText.split(/\s+/);
+        const value = Number(valueRaw);
+        if (!id || Number.isNaN(value) || value < 0) {
+          await reply(`Foydalanish: <code>${command} MAHSULOT_ID ${command === "/narx" ? "50000" : "25"}</code>`);
+          return;
+        }
+        const product = await findProduct(id);
+        if (!product) {
+          await reply("Mahsulot topilmadi. ID ni <code>/top nomi</code> bilan oling.");
+          return;
+        }
+        const field = command === "/narx" ? "price" : "stock";
+        await getAdminDb().collection("products").doc(id).update({ [field]: value, updatedAt: Date.now() });
+        await reply(`✅ <b>${product.name}</b>\n${command === "/narx" ? `Yangi narx: ${formatSom(value)}` : `Yangi zaxira: ${value} dona`}`);
+        return;
+      }
+
+      case "/yangi": {
+        const parts = argsText.split("|").map((s) => s.trim());
+        const [name, categoryRaw, priceRaw, stockRaw, brand, country, materialRaw] = parts;
+        const category = CATEGORY_ALIASES[(categoryRaw ?? "").toLowerCase()];
+        const price = Number(priceRaw);
+        const stock = Number(stockRaw);
+        if (!name || !category || Number.isNaN(price) || Number.isNaN(stock)) {
+          await reply(
+            "Foydalanish:\n<code>/yangi Sharli kran 1/2 | kran | 45000 | 30 | Valtec | Italiya | latun</code>\n(brend/davlat/material ixtiyoriy)"
+          );
+          return;
+        }
+        const material = MATERIAL_ALIASES[(materialRaw ?? "").toLowerCase()] ?? "brass";
+        const now = Date.now();
+        const ref = getAdminDb().collection("products").doc();
+        const product: Product = {
+          id: ref.id,
+          slug: `${name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-")}-${ref.id.slice(0, 6)}`,
+          name,
+          nameSearchIndex: name.toLowerCase(),
+          description: "",
+          category,
+          brand: brand ?? "",
+          manufacturerCountry: country ?? "",
+          material,
+          dimensions: {},
+          price,
+          discountPrice: null,
+          currency: "UZS",
+          stock,
+          images: [],
+          thumbnailUrl: "",
+          isActive: true,
+          salesCount: 0,
+          createdAt: now,
+          updatedAt: now,
+        };
+        await ref.set(product);
+        await reply(`✅ Qo'shildi: <b>${name}</b>\nID: <code>${ref.id}</code> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo-uz.netlify.app/admin/katalog`);
+        return;
+      }
+
+      case "/tahrir": {
+        const [id, ...pairs] = argsText.split(/\s+/);
+        if (!id || pairs.length === 0) {
+          await reply("Foydalanish: <code>/tahrir ID narx=50000 zaxira=10 nomi=Yangi nom</code>");
+          return;
+        }
+        const product = await findProduct(id);
+        if (!product) {
+          await reply("Mahsulot topilmadi.");
+          return;
+        }
+        // nomi=... bo'sh joyli bo'lishi mumkin - kalit=qiymat juftlarini qayta yig'amiz
+        const updates: Record<string, unknown> = { updatedAt: Date.now() };
+        const joined = pairs.join(" ");
+        const fieldRegex = /(nomi|narx|zaxira|chegirma|brend|davlat)=([^=]*?)(?=\s+\w+=|$)/g;
+        for (const match of joined.matchAll(fieldRegex)) {
+          const key = match[1];
+          const value = (match[2] ?? "").trim();
+          if (key === "nomi" && value) {
+            updates.name = value;
+            updates.nameSearchIndex = value.toLowerCase();
+          }
+          if (key === "narx" && !Number.isNaN(Number(value))) updates.price = Number(value);
+          if (key === "zaxira" && !Number.isNaN(Number(value))) updates.stock = Number(value);
+          if (key === "chegirma") updates.discountPrice = value ? Number(value) : null;
+          if (key === "brend") updates.brand = value;
+          if (key === "davlat") updates.manufacturerCountry = value;
+        }
+        if (Object.keys(updates).length === 1) {
+          await reply("Hech qanday o'zgarish topilmadi. Masalan: <code>narx=50000</code>");
+          return;
+        }
+        await getAdminDb().collection("products").doc(id).update(updates);
+        await reply(`✅ <b>${product.name}</b> yangilandi (${Object.keys(updates).filter((k) => k !== "updatedAt").join(", ")}).`);
+        return;
+      }
+
+      case "/uchir":
+      case "/tikla": {
+        const id = argsText.split(/\s+/)[0];
+        if (!id) {
+          await reply(`Foydalanish: <code>${command} MAHSULOT_ID</code>`);
+          return;
+        }
+        const product = await findProduct(id);
+        if (!product) {
+          await reply("Mahsulot topilmadi.");
+          return;
+        }
+        const isActive = command === "/tikla";
+        await getAdminDb().collection("products").doc(id).update({ isActive, updatedAt: Date.now() });
+        await reply(isActive ? `✅ <b>${product.name}</b> katalogga qaytarildi.` : `🚫 <b>${product.name}</b> katalogdan yashirildi.`);
+        return;
+      }
+
+      default:
+        // Guruhdagi oddiy suhbatga aralashmaymiz - faqat "/" bilan
+        // boshlangan noma'lum buyruqlarga yordam ko'rsatamiz.
+        if (command.startsWith("/")) await reply(HELP_TEXT);
+    }
+  } catch (error) {
+    console.error("Admin buyrug'ini bajarishda xato:", error);
+    await reply("❌ Buyruqni bajarishda xatolik yuz berdi.").catch(() => {});
+  }
+}

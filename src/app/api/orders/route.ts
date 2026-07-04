@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { FieldValue } from "firebase-admin/firestore";
-import { getAdminDb } from "@/lib/firebase/admin";
-import { sendTopicMessage } from "@/lib/telegram/bot";
-import { formatOrderMessage } from "@/lib/telegram/templates";
-import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
 import { getCurrentAppUser } from "@/lib/firebase/session";
-import type { Order } from "@/types/order";
+import { createOrder } from "@/lib/orders/create-order";
 
 const orderSchema = z.object({
   customerName: z.string().min(2).max(120),
@@ -39,72 +34,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Buyurtma ma'lumotlari noto'g'ri." }, { status: 400 });
   }
 
-  const { customerName, phoneNumber, items, location } = parsed.data;
-  const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const now = Date.now();
-
-  let order: Order;
   try {
     const currentUser = await getCurrentAppUser();
-
-    const orderRef = getAdminDb().collection("orders").doc();
-    order = {
-      id: orderRef.id,
+    const order = await createOrder({
+      customerName: parsed.data.customerName,
+      phoneNumber: parsed.data.phoneNumber,
+      items: parsed.data.items,
+      location: parsed.data.location ?? null,
       userId: currentUser?.uid ?? null,
-      customerName,
-      phoneNumber,
-      items,
-      totalAmount,
-      currency: "UZS",
-      location: location ?? null,
-      status: "pending",
-      telegramMessageId: null,
-      createdAt: now,
-      updatedAt: now,
-    };
+    });
 
-    await orderRef.set(order);
-
-    // Zaxirani kamaytirish, "eng ko'p sotilgan" tahlili uchun salesCount'ni
-    // oshirish va admin dashboard tahlillari uchun `stats/summary`
-    // hujjatidagi umumiy son/tushumni yangilash - bitta batch ichida,
-    // atomik ravishda. `stats/summary` orqali dashboard har safar
-    // buyurtmalar kolleksiyasini yig'ishtirmasdan, bitta hujjatni o'qib
-    // umumiy ko'rsatkichlarni oladi (O(1) o'qish, 10,000+ buyurtma
-    // bo'lsa ham tez).
-    const statsBatch = getAdminDb().batch();
-    for (const item of items) {
-      const productRef = getAdminDb().collection("products").doc(item.productId);
-      statsBatch.update(productRef, {
-        stock: FieldValue.increment(-item.quantity),
-        salesCount: FieldValue.increment(item.quantity),
-      });
-    }
-    statsBatch.set(
-      getAdminDb().collection("stats").doc("summary"),
-      { totalOrders: FieldValue.increment(1), totalRevenue: FieldValue.increment(totalAmount) },
-      { merge: true }
-    );
-    await statsBatch.commit();
+    return NextResponse.json({ orderId: order.id }, { status: 201 });
   } catch (error) {
-    // Aniq sabab server loglarida ko'rinadi (masalan Admin SDK
-    // credentiallari yetishmasa) - mijozga umumiy xabar qaytariladi.
+    // Aniq sabab server loglarida ko'rinadi - mijozga umumiy xabar qaytariladi.
     console.error("Buyurtmani saqlashda xato:", error);
     return NextResponse.json({ error: "Buyurtmani saqlashda xatolik yuz berdi." }, { status: 500 });
   }
-
-  try {
-    const sent = await sendTopicMessage(
-      "orders",
-      formatOrderMessage(order),
-      buildOrderActionKeyboard(order.id)
-    );
-    await getAdminDb().collection("orders").doc(order.id).update({ telegramMessageId: sent.message_id });
-  } catch (error) {
-    // Buyurtma Firestore'da saqlanib bo'ldi - Telegram xabari yuborilmasa
-    // ham buyurtma yo'qolmaydi, faqat log qilinadi.
-    console.error("Telegram xabarini yuborishda xato:", error);
-  }
-
-  return NextResponse.json({ orderId: order.id }, { status: 201 });
 }

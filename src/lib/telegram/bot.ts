@@ -51,6 +51,36 @@ interface InlineKeyboardMarkup {
   inline_keyboard: { text: string; callback_data: string }[][];
 }
 
+/**
+ * Istalgan chatga (shaxsiy chat yoki guruh thread'i) xabar yuboradi.
+ * Mijoz-bot oqimi va admin buyruqlariga javoblar uchun ishlatiladi.
+ */
+export async function sendChatMessage(
+  chatId: number | string,
+  text: string,
+  options?: { replyMarkup?: InlineKeyboardMarkup; threadId?: number; photoUrl?: string }
+): Promise<SentMessage> {
+  if (options?.photoUrl) {
+    return callTelegramApi<SentMessage>("sendPhoto", {
+      chat_id: chatId,
+      message_thread_id: options?.threadId,
+      photo: options.photoUrl,
+      caption: text,
+      parse_mode: "HTML",
+      reply_markup: options?.replyMarkup,
+    });
+  }
+
+  return callTelegramApi<SentMessage>("sendMessage", {
+    chat_id: chatId,
+    message_thread_id: options?.threadId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+    reply_markup: options?.replyMarkup,
+  });
+}
+
 /** Berilgan forum-topic (thread) ga xabar yuboradi. */
 export async function sendTopicMessage(
   topicKey: TelegramTopicKey,

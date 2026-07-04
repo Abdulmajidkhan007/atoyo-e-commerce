@@ -53,6 +53,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Telegram mijoz-bot sessiyalari (savat, checkout bosqichi) - faqat server.
+    match /botSessions/{chatId} {
+      allow read, write: if false;
+    }
+
     // Bot sozlamalari (topic thread ID lar) - faqat admin.
     match /settings/{settingId} {
       allow read: if isAdmin();
