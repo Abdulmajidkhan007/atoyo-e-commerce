@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogTitle,
@@ -12,13 +13,12 @@ import {
   Select,
   InputLabel,
   FormControl,
-  Avatar,
+  IconButton,
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { getFirebaseDb } from "@/lib/firebase/client";
-import { uploadProductImage } from "@/lib/firebase/storage";
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
 const CATEGORY_OPTIONS: { value: ProductCategory; label: string }[] = [
@@ -41,6 +41,8 @@ const MATERIAL_OPTIONS: { value: ProductMaterial; label: string }[] = [
   { value: "cast-iron", label: "Cho'yan" },
   { value: "pvc", label: "PVX" },
 ];
+
+const MAX_IMAGES = 10;
 
 interface ProductFormDialogProps {
   open: boolean;
@@ -65,26 +67,21 @@ const EMPTY_FORM = {
   weightKg: "",
 };
 
-function slugify(name: string): string {
-  return (
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-") || "mahsulot"
-  );
+interface NewImage {
+  file: File;
+  previewUrl: string;
 }
 
 export function ProductFormDialog({ open, onClose, onSaved, product }: ProductFormDialogProps) {
   const [form, setForm] = useState(EMPTY_FORM);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<NewImage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    function resetFormForCurrentTarget() {
+    function resetForTarget() {
       if (!open) return;
-
       setForm(
         product
           ? {
@@ -103,12 +100,21 @@ export function ProductFormDialog({ open, onClose, onSaved, product }: ProductFo
             }
           : EMPTY_FORM
       );
-      setImageFile(null);
+      setExistingImages(product?.images ?? []);
+      setNewImages([]);
       setError(null);
     }
-
-    resetFormForCurrentTarget();
+    resetForTarget();
   }, [open, product]);
+
+  const totalImages = existingImages.length + newImages.length;
+
+  const handleFilesSelected = (files: FileList | null) => {
+    if (!files) return;
+    const room = MAX_IMAGES - totalImages;
+    const picked = Array.from(files).slice(0, room);
+    setNewImages((prev) => [...prev, ...picked.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))]);
+  };
 
   const handleSave = async () => {
     setError(null);
@@ -119,48 +125,62 @@ export function ProductFormDialog({ open, onClose, onSaved, product }: ProductFo
 
     setIsSaving(true);
     try {
-      const id = product?.id ?? crypto.randomUUID();
-
-      let thumbnailUrl = product?.thumbnailUrl ?? "";
-      let images = product?.images ?? [];
-      if (imageFile) {
-        thumbnailUrl = await uploadProductImage(id, imageFile);
-        images = [thumbnailUrl];
+      // 1) Yangi rasmlarni serverga yuklaymiz (agar bo'lsa).
+      let uploadedUrls: string[] = [];
+      if (newImages.length > 0) {
+        const folderId = product?.id ?? crypto.randomUUID();
+        const fd = new FormData();
+        fd.append("productId", folderId);
+        newImages.forEach((img) => fd.append("files", img.file));
+        const uploadRes = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        if (!uploadRes.ok) {
+          const body = await uploadRes.json().catch(() => ({}));
+          throw new Error(body.error ?? "Rasm yuklashda xatolik.");
+        }
+        uploadedUrls = (await uploadRes.json()).urls ?? [];
       }
 
-      const now = Date.now();
-      const data: Product = {
-        id,
-        slug: product?.slug ?? `${slugify(form.name)}-${id.slice(0, 6)}`,
+      const images = [...existingImages, ...uploadedUrls].slice(0, MAX_IMAGES);
+
+      const payload = {
         name: form.name.trim(),
-        nameSearchIndex: form.name.trim().toLowerCase(),
         description: form.description.trim(),
         category: form.category,
+        material: form.material,
         brand: form.brand.trim(),
         manufacturerCountry: form.manufacturerCountry.trim(),
-        material: form.material,
-        dimensions: {
-          diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
-          lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
-          weightKg: form.weightKg ? Number(form.weightKg) : undefined,
-        },
         price: Number(form.price),
         discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
-        currency: "UZS",
         stock: Number(form.stock),
+        diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
+        lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
+        weightKg: form.weightKg ? Number(form.weightKg) : undefined,
         images,
-        thumbnailUrl,
-        isActive: product?.isActive ?? true,
-        salesCount: product?.salesCount ?? 0,
-        createdAt: product?.createdAt ?? now,
-        updatedAt: now,
       };
 
-      await setDoc(doc(getFirebaseDb(), "products", id), data);
-      onSaved(data);
+      // 2) Mahsulotni server API orqali saqlaymiz (Admin SDK - ishonchli).
+      const res = product?.id
+        ? await fetch(`/api/admin/products/${product.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/admin/products", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Saqlashda xatolik.");
+      }
+
+      const { product: saved } = await res.json();
+      onSaved(saved);
       onClose();
-    } catch {
-      setError("Saqlashda xatolik yuz berdi. Qayta urinib ko'ring.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Saqlashda xatolik yuz berdi.");
     } finally {
       setIsSaving(false);
     }
@@ -232,21 +252,55 @@ export function ProductFormDialog({ open, onClose, onSaved, product }: ProductFo
           <TextField size="small" type="number" label="Vazni (kg)" value={form.weightKg} onChange={(e) => setForm({ ...form, weightKg: e.target.value })} />
         </div>
 
-        <div className="flex items-center gap-3">
-          <Avatar
-            variant="rounded"
-            src={imageFile ? URL.createObjectURL(imageFile) : product?.thumbnailUrl}
-            sx={{ width: 56, height: 56 }}
-          />
-          <Button component="label" variant="outlined" size="small">
-            Rasm yuklash
-            <input
-              type="file"
-              hidden
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-            />
-          </Button>
+        {/* Rasmlar galereyasi (1-10 ta) */}
+        <div>
+          <p className="mb-2 text-sm font-medium text-navy-500 dark:text-navy-100">
+            Rasmlar ({totalImages}/{MAX_IMAGES}) — birinchisi asosiy rasm
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {existingImages.map((url, index) => (
+              <div key={url} className="relative h-20 w-20 overflow-hidden rounded-lg border border-navy-100 dark:border-navy-500">
+                <Image src={url} alt={`rasm ${index + 1}`} fill sizes="80px" className="object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setExistingImages((prev) => prev.filter((u) => u !== url))}
+                  className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+                  aria-label="O'chirish"
+                >
+                  <CloseIcon sx={{ fontSize: 14 }} />
+                </button>
+              </div>
+            ))}
+
+            {newImages.map((img, index) => (
+              <div key={img.previewUrl} className="relative h-20 w-20 overflow-hidden rounded-lg border border-aqua-300">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.previewUrl} alt={`yangi ${index + 1}`} className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setNewImages((prev) => prev.filter((_, i) => i !== index))}
+                  className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+                  aria-label="O'chirish"
+                >
+                  <CloseIcon sx={{ fontSize: 14 }} />
+                </button>
+              </div>
+            ))}
+
+            {totalImages < MAX_IMAGES && (
+              <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-navy-300 text-navy-300 hover:border-aqua-500 hover:text-aqua-500">
+                <AddPhotoAlternateOutlinedIcon />
+                <span className="text-[10px]">Qo&apos;shish</span>
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={(e) => handleFilesSelected(e.target.files)}
+                />
+              </label>
+            )}
+          </div>
         </div>
 
         {error && <Alert severity="error">{error}</Alert>}

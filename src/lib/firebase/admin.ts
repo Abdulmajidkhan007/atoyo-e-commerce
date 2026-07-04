@@ -2,6 +2,7 @@ import "server-only";
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getStorage, type Storage } from "firebase-admin/storage";
 
 // DIQQAT: Bu fayl faqat server tomonida ishlaydi (API Routes, Server
 // Actions, Server Components, middleware emas - middleware Edge runtime
@@ -41,6 +42,7 @@ function getAdminApp(): App {
 
 let cachedAuth: Auth | null = null;
 let cachedDb: Firestore | null = null;
+let cachedStorage: Storage | null = null;
 
 export function getAdminAuth(): Auth {
   return (cachedAuth ??= getAuth(getAdminApp()));
@@ -48,4 +50,8 @@ export function getAdminAuth(): Auth {
 
 export function getAdminDb(): Firestore {
   return (cachedDb ??= getFirestore(getAdminApp()));
+}
+
+export function getAdminStorage(): Storage {
+  return (cachedStorage ??= getStorage(getAdminApp()));
 }

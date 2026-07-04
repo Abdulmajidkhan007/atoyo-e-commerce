@@ -3,12 +3,10 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { Button, IconButton, TextField, CircularProgress } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import AddIcon from "@mui/icons-material/Add";
-import { getFirebaseDb } from "@/lib/firebase/client";
 import { getProductsPage, searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { ProductFormDialog } from "./ProductFormDialog";
 import { BulkPriceDialog } from "./BulkPriceDialog";
@@ -73,8 +71,14 @@ export function ProductTable() {
   const handleFieldSave = async (productId: string, field: "price" | "stock", value: number) => {
     setSavingFieldKey(`${productId}-${field}`);
     try {
-      await updateDoc(doc(getFirebaseDb(), "products", productId), { [field]: value, updatedAt: Date.now() });
-      setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, [field]: value } : p)));
+      const res = await fetch(`/api/admin/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (res.ok) {
+        setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, [field]: value } : p)));
+      }
     } finally {
       setSavingFieldKey(null);
     }
@@ -82,8 +86,10 @@ export function ProductTable() {
 
   const handleDelete = async (productId: string) => {
     if (!confirm("Mahsulotni o'chirishni tasdiqlaysizmi?")) return;
-    await deleteDoc(doc(getFirebaseDb(), "products", productId));
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    const res = await fetch(`/api/admin/products/${productId}`, { method: "DELETE" });
+    if (res.ok) {
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+    }
   };
 
   return (

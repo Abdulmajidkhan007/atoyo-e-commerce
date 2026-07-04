@@ -1,9 +1,9 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Chip } from "@mui/material";
 import { getProductById } from "@/lib/firebase/admin-products";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
+import { ProductGallery } from "@/components/product/ProductGallery";
 
 const CATEGORY_LABELS: Record<string, string> = {
   pipes: "Quvurlar",
@@ -41,13 +41,10 @@ export default async function ProductPage({ params }: ProductPageParams) {
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">
       <div className="grid gap-8 md:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-xl2 bg-navy-50 dark:bg-navy-900">
-          {product.thumbnailUrl ? (
-            <Image src={product.thumbnailUrl} alt={product.name} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center text-navy-300">Rasm yo&apos;q</div>
-          )}
-        </div>
+        <ProductGallery
+          images={product.images.length > 0 ? product.images : product.thumbnailUrl ? [product.thumbnailUrl] : []}
+          alt={product.name}
+        />
 
         <div className="flex flex-col gap-3">
           <Chip label={CATEGORY_LABELS[product.category] ?? product.category} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
