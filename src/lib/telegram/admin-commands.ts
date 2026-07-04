@@ -1,6 +1,7 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage } from "./bot";
+import { startNewProductFlow, startEditProductFlow, cancelAdminSession } from "./admin-session";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 import type { Order } from "@/types/order";
 
@@ -35,17 +36,19 @@ const MATERIAL_ALIASES: Record<string, ProductMaterial> = {
 const HELP_TEXT = [
   "🛠 <b>Admin buyruqlari</b>",
   "",
+  "<b>➕ Mahsulot qo'shish/tahrirlash (tugmali):</b>",
+  "<code>/yangi</code> — yangi mahsulotni bosqichma-bosqich qo'shish",
+  "<code>/tahrir ID</code> — mahsulotni tugmalar orqali tahrirlash",
+  "<code>/bekor</code> — joriy amalni bekor qilish",
+  "",
+  "<b>⚡ Tezkor buyruqlar:</b>",
   "<code>/top nomi</code> — mahsulot qidirish (ID olish)",
-  "<code>/yangi Nomi | kategoriya | narx | zaxira | brend | davlat | material</code> — yangi mahsulot",
   "<code>/narx ID summa</code> — narxni o'zgartirish",
   "<code>/zaxira ID son</code> — zaxirani o'rnatish",
-  "<code>/tahrir ID nomi=... narx=... zaxira=... brend=...</code> — tahrirlash",
-  "<code>/uchir ID</code> — katalogdan olib tashlash (yashirish)",
+  "<code>/uchir ID</code> — katalogdan yashirish",
   "<code>/tikla ID</code> — qaytarish",
   "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
   "<code>/stat</code> — umumiy statistika",
-  "",
-  "Kategoriyalar: quvur, mufta, kran, dush, qozon, radiator, nasos, santexnika",
 ].join("\n");
 
 function formatSom(amount: number): string {
@@ -62,8 +65,9 @@ export async function handleAdminCommand(params: {
   chatId: number;
   threadId?: number;
   text: string;
+  userId?: number;
 }): Promise<void> {
-  const { chatId, threadId, text } = params;
+  const { chatId, threadId, text, userId } = params;
   const reply = (message: string) => sendChatMessage(chatId, message, { threadId });
 
   const [rawCommand, ...rest] = text.trim().split(/\s+/);
@@ -152,7 +156,19 @@ export async function handleAdminCommand(params: {
         return;
       }
 
+      case "/bekor": {
+        if (userId) await cancelAdminSession(chatId, threadId, userId);
+        else await reply("Bekor qilish uchun ma'lumot topilmadi.");
+        return;
+      }
+
       case "/yangi": {
+        // Argument berilmasa - interaktiv (tugmali) oqimni boshlaymiz.
+        if (!argsText) {
+          if (userId) await startNewProductFlow(chatId, threadId, userId);
+          else await reply("Interaktiv rejim uchun foydalanuvchi aniqlanmadi.");
+          return;
+        }
         const parts = argsText.split("|").map((s) => s.trim());
         const [name, categoryRaw, priceRaw, stockRaw, brand, country, materialRaw] = parts;
         const category = CATEGORY_ALIASES[(categoryRaw ?? "").toLowerCase()];
@@ -196,8 +212,18 @@ export async function handleAdminCommand(params: {
 
       case "/tahrir": {
         const [id, ...pairs] = argsText.split(/\s+/);
-        if (!id || pairs.length === 0) {
-          await reply("Foydalanish: <code>/tahrir ID narx=50000 zaxira=10 nomi=Yangi nom</code>");
+        if (!id) {
+          await reply("Foydalanish: <code>/tahrir MAHSULOT_ID</code> — tugmali tahrirlash.\nID ni <code>/top nomi</code> bilan oling.");
+          return;
+        }
+        // Faqat ID berilsa - interaktiv (tugmali) tahrirlash menyusi.
+        if (pairs.length === 0) {
+          if (userId) {
+            const started = await startEditProductFlow(chatId, threadId, userId, id);
+            if (!started) await reply("Mahsulot topilmadi. ID ni tekshiring.");
+          } else {
+            await reply("Interaktiv rejim uchun foydalanuvchi aniqlanmadi.");
+          }
           return;
         }
         const product = await findProduct(id);

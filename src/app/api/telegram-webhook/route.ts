@@ -3,6 +3,7 @@ import { answerCallbackQuery } from "@/lib/telegram/bot";
 import { decodeOrderStatusCallback } from "@/lib/telegram/keyboard";
 import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 import { handleAdminCommand } from "@/lib/telegram/admin-commands";
+import { handleAdminSessionMessage, handleAdminSessionCallback } from "@/lib/telegram/admin-session";
 import { handleCustomerMessage, handleCustomerCallback } from "@/lib/telegram/customer-bot";
 
 interface TelegramChat {
@@ -74,8 +75,22 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true });
       }
 
-      // Mijoz-do'kon tugmalari - faqat shaxsiy chatda.
       const callbackUserId = callbackQuery.from?.id;
+
+      // Admin guruhdagi interaktiv oqim tugmalari (ap|...) - /yangi va /tahrir
+      // bosqichma-bosqich menyulari. Faqat yopiq xodimlar guruhida.
+      if (isAdminGroupChat(chat) && callbackUserId) {
+        await handleAdminSessionCallback({
+          chatId: chat.id,
+          userId: callbackUserId,
+          threadId: callbackQuery.message.message_thread_id,
+          callbackQueryId: callbackQuery.id,
+          data: callbackQuery.data,
+        });
+        return NextResponse.json({ ok: true });
+      }
+
+      // Mijoz-do'kon tugmalari - faqat shaxsiy chatda.
       if (chat.type === "private" && callbackUserId) {
         await handleCustomerCallback({
           chatId: chat.id,
@@ -94,10 +109,21 @@ export async function POST(request: Request) {
     const message = update?.message;
     if (message && (message.text || message.contact)) {
       if (isAdminGroupChat(message.chat)) {
-        // Guruhda faqat "/" buyruqlarga javob beramiz - oddiy suhbatga aralashmaymiz.
+        const adminUserId = message.from?.id;
         if (message.text?.trim().startsWith("/")) {
+          // "/" buyruqlar (jumladan interaktiv oqimni boshlovchi /yangi, /tahrir).
           await handleAdminCommand({
             chatId: message.chat.id,
+            threadId: message.message_thread_id,
+            text: message.text,
+            userId: adminUserId,
+          });
+        } else if (adminUserId && message.text) {
+          // Buyruq bo'lmagan matn - faol interaktiv sessiya bosqichi bo'lishi
+          // mumkin (nom/narx/zaxira kiritish). Sessiya bo'lmasa e'tiborsiz.
+          await handleAdminSessionMessage({
+            chatId: message.chat.id,
+            userId: adminUserId,
             threadId: message.message_thread_id,
             text: message.text,
           });

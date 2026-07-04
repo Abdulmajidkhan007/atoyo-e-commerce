@@ -70,6 +70,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Admin interaktiv oqim holati (/yangi, /tahrir bosqichlari) - faqat server.
+    match /adminSessions/{userId} {
+      allow read, write: if false;
+    }
+
     // Bot sozlamalari (topic thread ID lar) - faqat admin.
     match /settings/{settingId} {
       allow read: if isAdmin();
