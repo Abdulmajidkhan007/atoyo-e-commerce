@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { TextField, Button } from "@mui/material";
+import { useTranslation } from "@/i18n/I18nProvider";
 
 export function NewsletterForm() {
+  const t = useTranslation();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
@@ -26,23 +28,23 @@ export function NewsletterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <p className="text-sm font-medium text-white">Yangiliklarga obuna bo&apos;ling</p>
+      <p className="text-sm font-medium text-white">{t.newsletter.heading}</p>
       <div className="flex gap-2">
         <TextField
           size="small"
           type="email"
           required
-          placeholder="Email manzilingiz"
+          placeholder={t.newsletter.emailPlaceholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="[&_.MuiInputBase-root]:bg-white [&_.MuiInputBase-root]:rounded-md"
         />
         <Button type="submit" variant="contained" color="primary" disabled={status === "loading"}>
-          Obuna
+          {t.newsletter.submit}
         </Button>
       </div>
-      {status === "success" && <p className="text-xs text-aqua-300">Obuna bo&apos;ldingiz, rahmat!</p>}
-      {status === "error" && <p className="text-xs text-red-300">Xatolik yuz berdi, qayta urining.</p>}
+      {status === "success" && <p className="text-xs text-aqua-300">{t.newsletter.success}</p>}
+      {status === "error" && <p className="text-xs text-red-300">{t.newsletter.error}</p>}
     </form>
   );
 }

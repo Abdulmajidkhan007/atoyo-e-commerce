@@ -8,21 +8,24 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import PlumbingOutlinedIcon from "@mui/icons-material/PlumbingOutlined";
 import { useAppSelector } from "@/redux/hooks";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { SearchBar } from "@/components/product/SearchBar";
-
-const NAV_LINKS = [
-  { href: "/", label: "Bosh sahifa" },
-  { href: "/katalog", label: "Katalog" },
-  { href: "/blog", label: "Blog" },
-  { href: "/about", label: "Biz haqimizda" },
-  { href: "/kontakt", label: "Kontakt" },
-];
+import { useTranslation } from "@/i18n/I18nProvider";
 
 export function Header() {
   const router = useRouter();
+  const t = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
   const userProfile = useAppSelector((s) => s.user.profile);
+
+  const navLinks = [
+    { href: "/", label: t.nav.home },
+    { href: "/katalog", label: t.nav.catalog },
+    { href: "/blog", label: t.nav.blog },
+    { href: "/about", label: t.nav.about },
+    { href: "/kontakt", label: t.nav.contact },
+  ];
 
   const handleSearchSubmit = () => {
     const query = searchTerm.trim();
@@ -34,11 +37,11 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
         <Link href="/" className="flex items-center gap-2 text-navy-900 dark:text-white">
           <PlumbingOutlinedIcon className="text-aqua-500" />
-          <span className="text-lg font-bold whitespace-nowrap">Atoyo Santexnika</span>
+          <span className="text-lg font-bold whitespace-nowrap">{t.common.brand}</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -54,23 +57,24 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
+          <LanguageSwitcher />
           <ThemeToggle />
 
-          <IconButton component={Link} href="/savat" aria-label="Savat">
+          <IconButton component={Link} href="/savat" aria-label={t.nav.cart}>
             <Badge badgeContent={cartCount} color="primary" max={99}>
               <ShoppingCartOutlinedIcon />
             </Badge>
           </IconButton>
 
           {userProfile ? (
-            <IconButton component={Link} href="/profil" aria-label="Profil">
+            <IconButton component={Link} href="/profil" aria-label={t.nav.profile}>
               <Avatar src={userProfile.photoURL ?? undefined} sx={{ width: 32, height: 32 }}>
                 {userProfile.displayName?.[0] ?? userProfile.email?.[0] ?? "U"}
               </Avatar>
             </IconButton>
           ) : (
             <Button component={Link} href="/kirish" variant="contained" size="small" className="!ml-1 whitespace-nowrap">
-              Kirish
+              {t.nav.login}
             </Button>
           )}
         </div>

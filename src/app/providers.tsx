@@ -8,6 +8,8 @@ import { store, persistor } from "@/redux/store";
 import { useAppSelector } from "@/redux/hooks";
 import { getMuiTheme } from "@/theme/muiTheme";
 import { useAuthListener } from "@/hooks/useAuthListener";
+import { I18nProvider } from "@/i18n/I18nProvider";
+import type { Locale } from "@/i18n/config";
 
 function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   const themeMode = useAppSelector((s) => s.ui.themeMode);
@@ -22,11 +24,13 @@ function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ locale, children }: { locale: Locale; children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <MuiThemeBridge>{children}</MuiThemeBridge>
+        <I18nProvider locale={locale}>
+          <MuiThemeBridge>{children}</MuiThemeBridge>
+        </I18nProvider>
       </PersistGate>
     </Provider>
   );

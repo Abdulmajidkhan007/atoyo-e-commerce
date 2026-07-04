@@ -3,6 +3,7 @@
 import { InputBase, IconButton } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
+import { useTranslation } from "@/i18n/I18nProvider";
 
 interface SearchBarProps {
   value: string;
@@ -13,6 +14,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ value, onChange, onSubmit, placeholder, className }: SearchBarProps) {
+  const t = useTranslation();
   return (
     <form
       role="search"
@@ -26,13 +28,13 @@ export function SearchBar({ value, onChange, onSubmit, placeholder, className }:
       <InputBase
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? "Mahsulot qidirish (masalan: kran, quvur...)"}
+        placeholder={placeholder ?? t.search.placeholder}
         className="flex-1 text-sm"
-        inputProps={{ "aria-label": "Mahsulot qidirish" }}
+        inputProps={{ "aria-label": t.search.aria }}
         fullWidth
       />
       {value && (
-        <IconButton size="small" aria-label="Qidiruvni tozalash" onClick={() => onChange("")}>
+        <IconButton size="small" aria-label={t.search.clear} onClick={() => onChange("")}>
           <ClearIcon fontSize="small" />
         </IconButton>
       )}
