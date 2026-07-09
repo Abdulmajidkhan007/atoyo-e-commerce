@@ -7,22 +7,25 @@ import { Badge, IconButton, Avatar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import PlumbingOutlinedIcon from "@mui/icons-material/PlumbingOutlined";
 import { useAppSelector } from "@/redux/hooks";
+import { useI18n } from "@/lib/i18n/LocaleContext";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { SearchBar } from "@/components/product/SearchBar";
-
-const NAV_LINKS = [
-  { href: "/", label: "Bosh sahifa" },
-  { href: "/katalog", label: "Katalog" },
-  { href: "/blog", label: "Blog" },
-  { href: "/about", label: "Biz haqimizda" },
-  { href: "/kontakt", label: "Kontakt" },
-];
 
 export function Header() {
   const router = useRouter();
+  const { dict } = useI18n();
   const [searchTerm, setSearchTerm] = useState("");
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
   const userProfile = useAppSelector((s) => s.user.profile);
+
+  const navLinks = [
+    { href: "/", label: dict.nav.home },
+    { href: "/katalog", label: dict.nav.catalog },
+    { href: "/blog", label: dict.nav.blog },
+    { href: "/about", label: dict.nav.about },
+    { href: "/kontakt", label: dict.nav.contact },
+  ];
 
   const handleSearchSubmit = () => {
     const query = searchTerm.trim();
@@ -38,7 +41,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -54,23 +57,24 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
+          <LanguageSwitcher />
           <ThemeToggle />
 
-          <IconButton component={Link} href="/savat" aria-label="Savat">
+          <IconButton component={Link} href="/savat" aria-label={dict.nav.cart}>
             <Badge badgeContent={cartCount} color="primary" max={99}>
               <ShoppingCartOutlinedIcon />
             </Badge>
           </IconButton>
 
           {userProfile ? (
-            <IconButton component={Link} href="/profil" aria-label="Profil">
+            <IconButton component={Link} href="/profil" aria-label={dict.nav.profile}>
               <Avatar src={userProfile.photoURL ?? undefined} sx={{ width: 32, height: 32 }}>
                 {userProfile.displayName?.[0] ?? userProfile.email?.[0] ?? "U"}
               </Avatar>
             </IconButton>
           ) : (
             <Button component={Link} href="/kirish" variant="contained" size="small" className="!ml-1 whitespace-nowrap">
-              Kirish
+              {dict.nav.login}
             </Button>
           )}
         </div>

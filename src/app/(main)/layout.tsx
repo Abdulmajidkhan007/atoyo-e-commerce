@@ -1,6 +1,8 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { LocaleProvider } from "@/lib/i18n/LocaleContext";
+import { getLocale } from "@/lib/i18n/server";
 
 // Footer admin tomonidan tahrirlanadigan sayt sozlamalarini (kontakt,
 // ijtimoiy tarmoqlar) jonli o'qiydi, shuning uchun bu layout ostidagi
@@ -8,13 +10,17 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 // ko'rinadi, build vaqtidagi eski qiymatlar qotib qolmaydi).
 export const dynamic = "force-dynamic";
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
-      <Footer />
-      <MobileBottomNav />
-    </div>
+    <LocaleProvider initialLocale={locale}>
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1 pb-16 md:pb-0">{children}</main>
+        <Footer />
+        <MobileBottomNav />
+      </div>
+    </LocaleProvider>
   );
 }

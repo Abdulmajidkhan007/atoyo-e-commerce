@@ -10,23 +10,25 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { useAppSelector } from "@/redux/hooks";
-
-const TABS = [
-  { href: "/", label: "Bosh", icon: HomeOutlinedIcon },
-  { href: "/katalog", label: "Katalog", icon: CategoryOutlinedIcon },
-  { href: "/blog", label: "Blog", icon: ArticleOutlinedIcon },
-  { href: "/about", label: "Haqida", icon: InfoOutlinedIcon },
-  { href: "/savat", label: "Savat", icon: ShoppingCartOutlinedIcon },
-  { href: "/profil", label: "Profil", icon: PersonOutlineIcon },
-];
+import { useI18n } from "@/lib/i18n/LocaleContext";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const { dict } = useI18n();
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
+
+  const tabs = [
+    { href: "/", label: dict.nav.homeShort, icon: HomeOutlinedIcon },
+    { href: "/katalog", label: dict.nav.catalog, icon: CategoryOutlinedIcon },
+    { href: "/blog", label: dict.nav.blog, icon: ArticleOutlinedIcon },
+    { href: "/about", label: dict.nav.aboutShort, icon: InfoOutlinedIcon },
+    { href: "/savat", label: dict.nav.cart, icon: ShoppingCartOutlinedIcon },
+    { href: "/profil", label: dict.nav.profile, icon: PersonOutlineIcon },
+  ];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-navy-100 bg-white/95 backdrop-blur md:hidden dark:border-navy-500 dark:bg-navy-900/95">
-      {TABS.map(({ href, label, icon: Icon }) => {
+      {tabs.map(({ href, label, icon: Icon }) => {
         const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link
