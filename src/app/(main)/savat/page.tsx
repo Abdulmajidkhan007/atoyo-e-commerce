@@ -3,21 +3,23 @@
 import Link from "next/link";
 import { Button } from "@mui/material";
 import { useAppSelector } from "@/redux/hooks";
+import { useI18n } from "@/lib/i18n/LocaleContext";
 import { CartItemRow } from "@/components/cart/CartItemRow";
 import { CartSummary } from "@/components/cart/CartSummary";
 
 export default function CartPage() {
+  const { dict } = useI18n();
   const items = useAppSelector((s) => s.cart.items);
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-navy-900 dark:text-white">Savat</h1>
+      <h1 className="mb-6 text-2xl font-bold text-navy-900 dark:text-white">{dict.cart.title}</h1>
 
       {items.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-16 text-center">
-          <p className="text-navy-300">Savatingiz hozircha bo&apos;sh.</p>
+          <p className="text-navy-300">{dict.cart.empty}</p>
           <Button component={Link} href="/katalog" variant="contained">
-            Katalogga o&apos;tish
+            {dict.cart.goToCatalog}
           </Button>
         </div>
       ) : (

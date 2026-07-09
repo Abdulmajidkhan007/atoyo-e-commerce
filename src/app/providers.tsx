@@ -2,9 +2,8 @@
 
 import { useMemo } from "react";
 import { Provider } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
 import { ThemeProvider, CssBaseline } from "@mui/material";
-import { store, persistor } from "@/redux/store";
+import { store } from "@/redux/store";
 import { useAppSelector } from "@/redux/hooks";
 import { getMuiTheme } from "@/theme/muiTheme";
 import { useAuthListener } from "@/hooks/useAuthListener";
@@ -22,12 +21,19 @@ function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * MUHIM: Bu yerda ataylab PersistGate YO'Q. PersistGate server renderda
+ * (va client'dagi birinchi renderda) butun UI o'rniga `null` chizardi -
+ * natijada HTML bo'sh chiqib, SEO va birinchi ochilish yomonlashardi.
+ * redux-persist'ning REHYDRATE'i (store.ts'dagi persistStore) mount'dan
+ * keyin baribir ishlaydi: savat va tema localStorage'dan bir lahzada
+ * tiklanadi. Server va client'ning birinchi renderi bir xil boshlang'ich
+ * holatda bo'lgani uchun hydration mismatch bo'lmaydi.
+ */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <MuiThemeBridge>{children}</MuiThemeBridge>
-      </PersistGate>
+      <MuiThemeBridge>{children}</MuiThemeBridge>
     </Provider>
   );
 }

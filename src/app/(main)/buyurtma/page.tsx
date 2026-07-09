@@ -14,6 +14,7 @@ import {
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { clearCart } from "@/redux/slices/cartSlice";
+import { useI18n } from "@/lib/i18n/LocaleContext";
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
@@ -21,6 +22,7 @@ function formatSom(amount: number): string {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { dict } = useI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
   const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -37,12 +39,12 @@ export default function CheckoutPage() {
   const handleDetectLocation = () => {
     setLocationError(null);
     if (!navigator.geolocation) {
-      setLocationError("Brauzeringiz lokatsiyani aniqlashni qo'llab-quvvatlamaydi.");
+      setLocationError(dict.checkout.locationUnsupported);
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (position) => setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
-      () => setLocationError("Lokatsiyani aniqlab bo'lmadi. Ruxsat berilganini tekshiring.")
+      () => setLocationError(dict.checkout.locationFailed)
     );
   };
 
@@ -76,7 +78,7 @@ export default function CheckoutPage() {
       dispatch(clearCart());
       router.push("/profil");
     } catch {
-      setSubmitError("Buyurtmani yuborishda xatolik yuz berdi. Qayta urinib ko'ring.");
+      setSubmitError(dict.checkout.submitError);
     } finally {
       setIsSubmitting(false);
     }
@@ -85,24 +87,24 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <section className="mx-auto max-w-xl px-4 py-16 text-center">
-        <p className="text-navy-300">Buyurtma berish uchun avval savatga mahsulot qo&apos;shing.</p>
+        <p className="text-navy-300">{dict.checkout.addFirst}</p>
       </section>
     );
   }
 
   return (
     <section className="mx-auto max-w-xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-navy-900 dark:text-white">Buyurtmani rasmiylashtirish</h1>
+      <h1 className="mb-6 text-2xl font-bold text-navy-900 dark:text-white">{dict.checkout.title}</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <TextField
-          label="Ism-familiya"
+          label={dict.checkout.fullName}
           required
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
         />
         <TextField
-          label="Telefon raqami"
+          label={dict.checkout.phone}
           required
           placeholder="+998901234567"
           value={phoneNumber}
@@ -111,14 +113,14 @@ export default function CheckoutPage() {
 
         <div>
           <Button type="button" onClick={handleDetectLocation} startIcon={<MyLocationIcon />} variant="outlined" size="small">
-            {location ? "Lokatsiya aniqlandi ✓" : "Joylashuvni aniqlash (GPS)"}
+            {location ? dict.checkout.locationDetected : dict.checkout.detectLocation}
           </Button>
           {locationError && <p className="mt-1 text-xs text-red-500">{locationError}</p>}
         </div>
 
         <TextField
-          label="Yetkazish manzili"
-          placeholder="Tuman, mahalla, ko'cha, uy — lokatsiya yuborish qiyin bo'lsa yozing"
+          label={dict.checkout.address}
+          placeholder={dict.checkout.addressPlaceholder}
           value={deliveryAddress}
           onChange={(e) => setDeliveryAddress(e.target.value)}
           multiline
@@ -126,22 +128,19 @@ export default function CheckoutPage() {
         />
 
         <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
-          <p className="mb-2 text-sm font-medium text-navy-900 dark:text-white">To&apos;lov usuli</p>
+          <p className="mb-2 text-sm font-medium text-navy-900 dark:text-white">{dict.checkout.paymentTitle}</p>
           <RadioGroup value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "online")}>
-            <FormControlLabel value="cash" control={<Radio />} label="💵 Naqd — mahsulot yetkazilganda to'lash" />
-            <FormControlLabel value="online" control={<Radio />} label="💳 Onlayn — karta orqali (Humo/Uzcard/Visa)" />
+            <FormControlLabel value="cash" control={<Radio />} label={dict.checkout.payCash} />
+            <FormControlLabel value="online" control={<Radio />} label={dict.checkout.payOnline} />
           </RadioGroup>
           {paymentMethod === "online" && (
-            <p className="mt-1 text-xs text-navy-300">
-              Onlayn to&apos;lov to&apos;lov tizimi ulangandan so&apos;ng faollashadi. Hozircha buyurtma qabul
-              qilinadi va operator siz bilan bog&apos;lanadi.
-            </p>
+            <p className="mt-1 text-xs text-navy-300">{dict.checkout.onlineNote}</p>
           )}
         </div>
 
         <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
           <div className="flex justify-between text-lg font-bold text-navy-900 dark:text-white">
-            <span>Jami to&apos;lov</span>
+            <span>{dict.checkout.total}</span>
             <span>{formatSom(totalAmount)}</span>
           </div>
         </div>
@@ -149,7 +148,7 @@ export default function CheckoutPage() {
         {submitError && <Alert severity="error">{submitError}</Alert>}
 
         <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
-          {isSubmitting ? <CircularProgress size={22} color="inherit" /> : "Buyurtmani tasdiqlash"}
+          {isSubmitting ? <CircularProgress size={22} color="inherit" /> : dict.checkout.confirm}
         </Button>
       </form>
     </section>

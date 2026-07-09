@@ -7,27 +7,24 @@ import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { subscribeToUserOrders } from "@/lib/firebase/firestore";
 import { signOutUser } from "@/lib/firebase/auth";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
+import { useI18n } from "@/lib/i18n/LocaleContext";
 import type { Order, OrderStatus } from "@/types/order";
 
-const STATUS_LABELS: Record<OrderStatus, { label: string; color: "default" | "success" | "info" | "warning" | "error" }> = {
-  pending: { label: "Kutilmoqda", color: "warning" },
-  approved: { label: "Qabul qilindi", color: "info" },
-  delivering: { label: "Yetkazilmoqda", color: "info" },
-  completed: { label: "Yakunlandi", color: "success" },
-  cancelled: { label: "Bekor qilindi", color: "error" },
+const STATUS_COLORS: Record<OrderStatus, "default" | "success" | "info" | "warning" | "error"> = {
+  pending: "warning",
+  approved: "info",
+  delivering: "info",
+  completed: "success",
+  cancelled: "error",
 };
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
-const PAYMENT_LABELS: Record<Order["paymentMethod"], string> = {
-  cash: "💵 Naqd",
-  online: "💳 Onlayn",
-};
-
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
+  const { dict } = useI18n();
   const { profile, status } = useAppSelector((s) => s.user);
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -41,14 +38,14 @@ export default function ProfilePage() {
   if (status === "unauthenticated") {
     return (
       <section className="mx-auto max-w-md px-4 py-16 text-center">
-        <p className="mb-4 text-navy-300">Profilni ko&apos;rish uchun tizimga kiring.</p>
-        <Button component={Link} href="/kirish" variant="contained">Kirish</Button>
+        <p className="mb-4 text-navy-300">{dict.profile.loginPrompt}</p>
+        <Button component={Link} href="/kirish" variant="contained">{dict.nav.login}</Button>
       </section>
     );
   }
 
   if (!profile) {
-    return <section className="mx-auto max-w-5xl px-4 py-16 text-center text-navy-300">Yuklanmoqda...</section>;
+    return <section className="mx-auto max-w-5xl px-4 py-16 text-center text-navy-300">{dict.common.loading}</section>;
   }
 
   const handleSignOut = async () => {
@@ -68,15 +65,15 @@ export default function ProfilePage() {
           {profile.phoneNumber && <p className="text-sm text-navy-300">{profile.phoneNumber}</p>}
         </div>
         <div className="flex flex-col gap-2">
-          <Button component={Link} href="/profil/sozlamalar" variant="outlined" size="small">Tahrirlash</Button>
-          <Button onClick={handleSignOut} variant="text" size="small" color="error">Chiqish</Button>
+          <Button component={Link} href="/profil/sozlamalar" variant="outlined" size="small">{dict.common.edit}</Button>
+          <Button onClick={handleSignOut} variant="text" size="small" color="error">{dict.common.logout}</Button>
         </div>
       </div>
 
-      <h2 className="mb-4 text-lg font-semibold text-navy-900 dark:text-white">Buyurtmalar tarixi</h2>
+      <h2 className="mb-4 text-lg font-semibold text-navy-900 dark:text-white">{dict.profile.ordersTitle}</h2>
 
       {orders.length === 0 ? (
-        <p className="text-sm text-navy-300">Sizda hali buyurtmalar yo&apos;q.</p>
+        <p className="text-sm text-navy-300">{dict.profile.noOrders}</p>
       ) : (
         <div className="flex flex-col gap-3">
           {orders.map((order) => {
@@ -89,12 +86,12 @@ export default function ProfilePage() {
                   className="flex w-full items-center justify-between gap-2 p-4 text-left"
                 >
                   <div>
-                    <span className="text-sm font-medium text-navy-900 dark:text-white">Buyurtma #{order.id.slice(0, 8)}</span>
+                    <span className="text-sm font-medium text-navy-900 dark:text-white">{dict.profile.order} #{order.id.slice(0, 8)}</span>
                     <p className="text-sm text-navy-300">
-                      {order.items.length} ta mahsulot • {formatSom(order.totalAmount)} • {new Date(order.createdAt).toLocaleDateString("uz-UZ")}
+                      {order.items.length} {dict.profile.itemsCount} • {formatSom(order.totalAmount)} • {new Date(order.createdAt).toLocaleDateString("uz-UZ")}
                     </p>
                   </div>
-                  <Chip size="small" label={STATUS_LABELS[order.status].label} color={STATUS_LABELS[order.status].color} />
+                  <Chip size="small" label={dict.profile.status[order.status]} color={STATUS_COLORS[order.status]} />
                 </button>
 
                 {isOpen && (
@@ -108,8 +105,8 @@ export default function ProfilePage() {
                       ))}
                     </ul>
                     <div className="mt-3 flex flex-col gap-1 border-t border-navy-100 pt-2 text-xs text-navy-300 dark:border-navy-500">
-                      <span>To&apos;lov: {PAYMENT_LABELS[order.paymentMethod]}</span>
-                      {order.deliveryAddress && <span>Manzil: {order.deliveryAddress}</span>}
+                      <span>{dict.profile.payment}: {order.paymentMethod === "cash" ? dict.profile.cash : dict.profile.online}</span>
+                      {order.deliveryAddress && <span>{dict.profile.addressLabel}: {order.deliveryAddress}</span>}
                       {order.location && (
                         <a
                           href={`https://maps.google.com/?q=${order.location.latitude},${order.location.longitude}`}
@@ -117,7 +114,7 @@ export default function ProfilePage() {
                           rel="noopener noreferrer"
                           className="text-aqua-600 hover:underline dark:text-aqua-300"
                         >
-                          📍 Xaritada ko&apos;rish
+                          {dict.profile.viewOnMap}
                         </a>
                       )}
                     </div>
