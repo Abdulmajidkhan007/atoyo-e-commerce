@@ -240,6 +240,7 @@ async function showProfile(chatId: number, userId: number, t: BotDict): Promise<
           { text: t.catalog, callback_data: "m|cat" },
           { text: t.backToMenu, callback_data: "m|home" },
         ],
+        [{ text: t.deleteAccount, callback_data: "delacc" }],
       ],
     },
   });
@@ -784,6 +785,30 @@ export async function handleCustomerCallback(params: {
       session.state = arg1 === "name" ? "awaiting_profile_name" : "awaiting_profile_address";
       await saveSession(chatId, session);
       await sendChatMessage(chatId, arg1 === "name" ? t.askNewName : t.askNewAddress);
+      return;
+    }
+    case "delacc": {
+      await answerCallbackQuery(callbackQueryId);
+      if (arg1 === "yes") {
+        // Hisobni butunlay o'chirish: ro'yxat yozuvi + sessiya (savat, til).
+        await getAdminDb().collection("botUsers").doc(String(userId)).delete().catch(() => {});
+        await getAdminDb().collection("botSessions").doc(String(chatId)).delete().catch(() => {});
+        await sendChatMessage(chatId, t.deleteDone);
+        return;
+      }
+      if (arg1 === "no") {
+        await showProfile(chatId, userId, t);
+        return;
+      }
+      // Tasdiqlash bosqichi
+      await sendChatMessage(chatId, t.deleteConfirm, {
+        replyMarkup: {
+          inline_keyboard: [
+            [{ text: t.deleteYes, callback_data: "delacc|yes" }],
+            [{ text: t.deleteNo, callback_data: "delacc|no" }],
+          ],
+        },
+      });
       return;
     }
     default:

@@ -3,8 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TextField, Button, Alert, CircularProgress, Avatar } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Alert,
+  CircularProgress,
+  Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import DeleteForeverOutlinedIcon from "@mui/icons-material/DeleteForeverOutlined";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -12,12 +23,14 @@ import {
   verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { ensureSessionCookie, resetPassword } from "@/lib/firebase/auth";
-import { useAppSelector } from "@/redux/hooks";
+import { ensureSessionCookie, resetPassword, signOutUser } from "@/lib/firebase/auth";
+import { useAppSelector, useAppDispatch } from "@/redux/hooks";
+import { signOut as signOutAction } from "@/redux/slices/userSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 export default function ProfileSettingsPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { dict } = useI18n();
   const { profile, status } = useAppSelector((s) => s.user);
   const [displayName, setDisplayName] = useState("");
@@ -42,6 +55,31 @@ export default function ProfileSettingsPage() {
 
   // "Parolni unutdim" - joriy parolni bilmaydiganlar uchun emailga tiklash havolasi.
   const [resetSent, setResetSent] = useState(false);
+
+  // Hisobni butunlay o'chirish
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await ensureSessionCookie();
+      const res = await fetch("/api/profile/delete", { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "failed");
+      }
+      // Auth hisobi o'chdi - lokal sessiyani ham tozalab bosh sahifaga qaytamiz.
+      await signOutUser().catch(() => {});
+      dispatch(signOutAction());
+      router.push("/");
+    } catch (e) {
+      setDeleteError(e instanceof Error && e.message !== "failed" ? e.message : dict.common.errorRetry);
+      setIsDeleting(false);
+    }
+  };
 
   const handleForgotPassword = async () => {
     if (!profile?.email) return;
@@ -283,6 +321,38 @@ export default function ProfileSettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* Hisobni o'chirish (xavfli zona) */}
+      <div className="mt-10 flex flex-col gap-3 rounded-xl2 border border-red-200 p-4 dark:border-red-900">
+        <h2 className="text-lg font-semibold text-red-600 dark:text-red-400">{dict.profile.deleteTitle}</h2>
+        <p className="text-sm text-navy-300">{dict.profile.deleteWarning}</p>
+        <div>
+          <Button
+            color="error"
+            variant="outlined"
+            startIcon={<DeleteForeverOutlinedIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            {dict.profile.deleteBtn}
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={deleteDialogOpen} onClose={() => !isDeleting && setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{dict.profile.deleteConfirmQuestion}</DialogTitle>
+        <DialogContent>
+          <p className="text-sm text-navy-500 dark:text-navy-100">{dict.profile.deleteWarning}</p>
+          {deleteError && <Alert severity="error" className="!mt-3">{deleteError}</Alert>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+            {dict.common.cancel}
+          </Button>
+          <Button color="error" variant="contained" onClick={handleDeleteAccount} disabled={isDeleting}>
+            {isDeleting ? <CircularProgress size={20} color="inherit" /> : dict.profile.deleteBtn}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </section>
   );
 }

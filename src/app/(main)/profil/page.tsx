@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar, Button, Chip } from "@mui/material";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { subscribeToUserOrders } from "@/lib/firebase/firestore";
@@ -23,11 +24,18 @@ function formatSom(amount: number): string {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const { dict } = useI18n();
   const { profile, status } = useAppSelector((s) => s.user);
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Admin uchun profil sahifasi emas - to'g'ridan-to'g'ri boshqaruv paneli.
+  const isAdmin = profile?.role === "admin";
+  useEffect(() => {
+    if (isAdmin) router.replace("/admin");
+  }, [isAdmin, router]);
 
   useEffect(() => {
     if (!profile) return;
@@ -44,7 +52,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile) {
+  if (!profile || isAdmin) {
     return <section className="mx-auto max-w-5xl px-4 py-16 text-center text-navy-300">{dict.common.loading}</section>;
   }
 

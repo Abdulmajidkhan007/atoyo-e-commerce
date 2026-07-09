@@ -121,6 +121,10 @@ export interface Dictionary {
     newEmail: string;
     changeEmail: string;
     emailVerifySent: string;
+    deleteTitle: string;
+    deleteWarning: string;
+    deleteBtn: string;
+    deleteConfirmQuestion: string;
   };
   auth: {
     loginTitle: string;
@@ -291,6 +295,11 @@ const uz: Dictionary = {
     newEmail: "Yangi email",
     changeEmail: "Tasdiqlash xatini yuborish",
     emailVerifySent: "Yangi emailga tasdiqlash havolasi yuborildi. Havolani bosganingizdan keyin email yangilanadi.",
+    deleteTitle: "Hisobni o'chirish",
+    deleteWarning:
+      "Hisobingiz va profil ma'lumotlaringiz BUTUNLAY o'chiriladi. Bu amalni qaytarib bo'lmaydi.",
+    deleteBtn: "Hisobni butunlay o'chirish",
+    deleteConfirmQuestion: "Rostdan ham hisobingizni o'chirmoqchimisiz?",
   },
   auth: {
     loginTitle: "Hisobga kirish",
@@ -461,6 +470,10 @@ const en: Dictionary = {
     newEmail: "New email",
     changeEmail: "Send verification email",
     emailVerifySent: "A verification link was sent to the new email. Your email will update after you click it.",
+    deleteTitle: "Delete account",
+    deleteWarning: "Your account and profile data will be permanently deleted. This cannot be undone.",
+    deleteBtn: "Permanently delete account",
+    deleteConfirmQuestion: "Are you sure you want to delete your account?",
   },
   auth: {
     loginTitle: "Sign in",
@@ -631,6 +644,10 @@ const ru: Dictionary = {
     newEmail: "Новый email",
     changeEmail: "Отправить письмо-подтверждение",
     emailVerifySent: "Ссылка для подтверждения отправлена на новый email. Email обновится после перехода по ней.",
+    deleteTitle: "Удаление аккаунта",
+    deleteWarning: "Ваш аккаунт и данные профиля будут удалены НАВСЕГДА. Это действие необратимо.",
+    deleteBtn: "Удалить аккаунт навсегда",
+    deleteConfirmQuestion: "Вы действительно хотите удалить аккаунт?",
   },
   auth: {
     loginTitle: "Вход в аккаунт",

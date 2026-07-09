@@ -74,6 +74,11 @@ export interface BotDict {
   askNewAddress: string;
   savedOk: string;
   addressLabel: string;
+  deleteAccount: string;
+  deleteConfirm: string;
+  deleteYes: string;
+  deleteNo: string;
+  deleteDone: string;
   categories: Record<ProductCategory, string>;
 }
 
@@ -142,6 +147,12 @@ const uz: BotDict = {
   askNewAddress: "Yangi manzilingizni yozing:",
   savedOk: "✅ Saqlandi.",
   addressLabel: "Manzil",
+  deleteAccount: "🗑 Hisobni o'chirish",
+  deleteConfirm:
+    "⚠️ Hisobingiz va bot ma'lumotlaringiz BUTUNLAY o'chiriladi. Bu amalni qaytarib bo'lmaydi. Davom etasizmi?",
+  deleteYes: "🗑 Ha, o'chirilsin",
+  deleteNo: "⬅️ Yo'q, bekor qilish",
+  deleteDone: "Hisobingiz o'chirildi. Qayta ro'yxatdan o'tish uchun /start yuboring.",
   categories: {
     pipes: "🔧 Quvurlar",
     fittings: "🔩 Muftalar",
@@ -219,6 +230,12 @@ const en: BotDict = {
   askNewAddress: "Type your new address:",
   savedOk: "✅ Saved.",
   addressLabel: "Address",
+  deleteAccount: "🗑 Delete account",
+  deleteConfirm:
+    "⚠️ Your account and bot data will be permanently deleted. This cannot be undone. Continue?",
+  deleteYes: "🗑 Yes, delete",
+  deleteNo: "⬅️ No, cancel",
+  deleteDone: "Your account has been deleted. Send /start to register again.",
   categories: {
     pipes: "🔧 Pipes",
     fittings: "🔩 Fittings",
@@ -296,6 +313,12 @@ const ru: BotDict = {
   askNewAddress: "Введите новый адрес:",
   savedOk: "✅ Сохранено.",
   addressLabel: "Адрес",
+  deleteAccount: "🗑 Удалить аккаунт",
+  deleteConfirm:
+    "⚠️ Ваш аккаунт и данные в боте будут удалены НАВСЕГДА. Это действие необратимо. Продолжить?",
+  deleteYes: "🗑 Да, удалить",
+  deleteNo: "⬅️ Нет, отмена",
+  deleteDone: "Ваш аккаунт удалён. Отправьте /start, чтобы зарегистрироваться заново.",
   categories: {
     pipes: "🔧 Трубы",
     fittings: "🔩 Фитинги",
