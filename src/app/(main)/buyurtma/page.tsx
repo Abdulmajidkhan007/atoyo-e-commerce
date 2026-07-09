@@ -14,6 +14,7 @@ import {
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { clearCart } from "@/redux/slices/cartSlice";
+import { ensureSessionCookie } from "@/lib/firebase/auth";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 function formatSom(amount: number): string {
@@ -54,6 +55,9 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      // Cookie eskirgan bo'lsa yangilaymiz - aks holda buyurtma egasiz
+      // (userId=null) saqlanib, profildagi tarixda ko'rinmay qolardi.
+      await ensureSessionCookie();
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

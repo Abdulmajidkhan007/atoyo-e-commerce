@@ -151,9 +151,32 @@ export function subscribeToUserOrders(
     limit(pageSize)
   );
 
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Order));
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Order));
+    },
+    () => {
+      // Kompozit indeks (userId + createdAt) hali yaratilmagan bo'lsa,
+      // onSnapshot xato beradi va ILGARI jimgina bo'sh ro'yxat qolardi
+      // ("Buyurtmalaringiz yo'q"). Fallback: saralashsiz so'rab, mijoz
+      // tomonda tartiblaymiz (bunga indeks kerak emas).
+      const fallback = query(
+        collection(getFirebaseDb(), ORDERS_COLLECTION),
+        where("userId", "==", userId),
+        limit(pageSize)
+      );
+      getDocs(fallback)
+        .then((snap) => {
+          callback(
+            snap.docs
+              .map((d) => ({ id: d.id, ...d.data() }) as Order)
+              .sort((a, b) => b.createdAt - a.createdAt)
+          );
+        })
+        .catch(() => callback([]));
+    }
+  );
 }
 
 export interface OrdersPage {

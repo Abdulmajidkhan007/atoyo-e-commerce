@@ -3,6 +3,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
   type User,
@@ -64,6 +65,24 @@ export async function registerWithEmail(email: string, password: string) {
   await ensureUserDocument(credential.user);
   await syncSessionCookie(credential.user);
   return credential.user;
+}
+
+/** Parolni tiklash havolasini emailga yuboradi (login sahifasi va profil uchun). */
+export async function resetPassword(email: string): Promise<void> {
+  await sendPasswordResetEmail(getFirebaseAuth(), email);
+}
+
+/**
+ * Server session cookie'sini yangilaydi. Cookie faqat kirish paytida
+ * o'rnatiladi - vaqt o'tib yo'qolgan/eskirgan bo'lsa, server API'lari
+ * (profil PATCH, buyurtma POST) 401 qaytarardi yoki buyurtma egasiz
+ * (userId=null) saqlanardi. Muhim amaldan oldin shu funksiya chaqirilib
+ * cookie qayta tiklanadi (best-effort).
+ */
+export async function ensureSessionCookie(): Promise<void> {
+  const user = getFirebaseAuth().currentUser;
+  if (!user) return;
+  await syncSessionCookie(user).catch(() => {});
 }
 
 export async function signOutUser() {

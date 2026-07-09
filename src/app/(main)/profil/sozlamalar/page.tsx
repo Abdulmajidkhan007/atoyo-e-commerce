@@ -12,6 +12,7 @@ import {
   verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
+import { ensureSessionCookie, resetPassword } from "@/lib/firebase/auth";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
@@ -39,6 +40,19 @@ export default function ProfileSettingsPage() {
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [emailResult, setEmailResult] = useState<"sent" | "wrong" | "error" | null>(null);
 
+  // "Parolni unutdim" - joriy parolni bilmaydiganlar uchun emailga tiklash havolasi.
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!profile?.email) return;
+    try {
+      await resetPassword(profile.email);
+    } catch {
+      // Xabar baribir ko'rsatiladi - hisob mavjudligini oshkor qilmaymiz.
+    }
+    setResetSent(true);
+  };
+
   useEffect(() => {
     function hydrateFromProfile() {
       if (!profile) return;
@@ -64,6 +78,8 @@ export default function ProfileSettingsPage() {
     setIsUploading(true);
     setResult(null);
     try {
+      // Session cookie eskirgan bo'lsa yangilaymiz - aks holda server 401 qaytaradi.
+      await ensureSessionCookie();
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/profile/photo", { method: "POST", body: fd });
@@ -83,6 +99,8 @@ export default function ProfileSettingsPage() {
     setIsSaving(true);
     setResult(null);
     try {
+      // Session cookie eskirgan bo'lsa yangilaymiz - aks holda server 401 qaytaradi.
+      await ensureSessionCookie();
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -250,11 +268,19 @@ export default function ProfileSettingsPage() {
         {passwordResult === "success" && <Alert severity="success">{dict.profile.passwordChanged}</Alert>}
         {passwordResult === "wrong" && <Alert severity="error">{dict.profile.wrongPassword}</Alert>}
         {passwordResult === "error" && <Alert severity="error">{dict.common.errorRetry}</Alert>}
+        {resetSent && <Alert severity="success">{dict.auth.resetSent}</Alert>}
 
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="outlined" disabled={isChangingPassword || newPassword.length < 6 || !currentPassword}>
             {isChangingPassword ? <CircularProgress size={20} color="inherit" /> : dict.profile.changePassword}
           </Button>
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            className="text-sm text-navy-300 hover:underline"
+          >
+            {dict.auth.forgot}
+          </button>
         </div>
       </form>
     </section>

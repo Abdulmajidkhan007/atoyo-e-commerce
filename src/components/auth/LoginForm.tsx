@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, TextField, Divider, Alert, CircularProgress } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
-import { signInWithGoogle, signInWithEmail, registerWithEmail } from "@/lib/firebase/auth";
+import { signInWithGoogle, signInWithEmail, registerWithEmail, resetPassword } from "@/lib/firebase/auth";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 export function LoginForm() {
@@ -15,6 +15,24 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+
+  const handleForgotPassword = async () => {
+    setError(null);
+    setInfo(null);
+    if (!email.trim()) {
+      setError(dict.auth.enterEmailFirst);
+      return;
+    }
+    try {
+      await resetPassword(email.trim());
+      setInfo(dict.auth.resetSent);
+    } catch {
+      // Mavjud bo'lmagan email uchun ham xuddi shu xabar - hisob bor-yo'qligini
+      // tashqariga oshkor qilmaslik uchun.
+      setInfo(dict.auth.resetSent);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -78,6 +96,7 @@ export function LoginForm() {
         />
 
         {error && <Alert severity="error">{error}</Alert>}
+        {info && <Alert severity="success">{info}</Alert>}
 
         <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
           {isSubmitting ? (
@@ -89,6 +108,16 @@ export function LoginForm() {
           )}
         </Button>
       </form>
+
+      {mode === "login" && (
+        <button
+          type="button"
+          onClick={handleForgotPassword}
+          className="text-sm text-navy-300 hover:underline"
+        >
+          {dict.auth.forgot}
+        </button>
+      )}
 
       <button
         type="button"

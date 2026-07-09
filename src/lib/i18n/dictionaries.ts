@@ -132,6 +132,9 @@ export interface Dictionary {
     noAccount: string;
     haveAccount: string;
     error: string;
+    forgot: string;
+    resetSent: string;
+    enterEmailFirst: string;
   };
   product: {
     inStock: string;
@@ -299,6 +302,9 @@ const uz: Dictionary = {
     noAccount: "Hisobingiz yo'qmi? Ro'yxatdan o'ting",
     haveAccount: "Hisobingiz bormi? Kiring",
     error: "Kirishda xatolik yuz berdi. Ma'lumotlaringizni tekshirib qayta urinib ko'ring.",
+    forgot: "Parolni unutdingizmi?",
+    resetSent: "Parolni tiklash havolasi emailingizga yuborildi. Pochtangizni tekshiring.",
+    enterEmailFirst: "Avval yuqoriga email manzilingizni kiriting.",
   },
   product: {
     inStock: "Zaxirada",
@@ -466,6 +472,9 @@ const en: Dictionary = {
     noAccount: "No account? Sign up",
     haveAccount: "Already have an account? Sign in",
     error: "Sign-in failed. Check your details and try again.",
+    forgot: "Forgot password?",
+    resetSent: "A password reset link was sent to your email. Check your inbox.",
+    enterEmailFirst: "Enter your email address above first.",
   },
   product: {
     inStock: "In stock",
@@ -633,6 +642,9 @@ const ru: Dictionary = {
     noAccount: "Нет аккаунта? Зарегистрируйтесь",
     haveAccount: "Уже есть аккаунт? Войдите",
     error: "Не удалось войти. Проверьте данные и попробуйте снова.",
+    forgot: "Забыли пароль?",
+    resetSent: "Ссылка для сброса пароля отправлена на ваш email. Проверьте почту.",
+    enterEmailFirst: "Сначала введите email выше.",
   },
   product: {
     inStock: "В наличии",
