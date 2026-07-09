@@ -10,6 +10,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  TextField,
 } from "@mui/material";
 import { getOrdersPage } from "@/lib/firebase/firestore";
 import type { Order, OrderStatus } from "@/types/order";
@@ -30,11 +31,20 @@ const PAGE_SIZE = 20;
 
 export function AdminOrdersTable() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  // Sana oralig'i epoch millis'ga o'giriladi ("to" kun oxirigacha).
+  const dateRange = {
+    from: fromDate ? new Date(`${fromDate}T00:00:00`).getTime() : undefined,
+    to: toDate ? new Date(`${toDate}T23:59:59`).getTime() : undefined,
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -42,7 +52,10 @@ export function AdminOrdersTable() {
     async function load() {
       setIsLoading(true);
       try {
-        const page = await getOrdersPage(statusFilter || undefined, PAGE_SIZE, null);
+        const page = await getOrdersPage(statusFilter || undefined, PAGE_SIZE, null, {
+          from: fromDate ? new Date(`${fromDate}T00:00:00`).getTime() : undefined,
+          to: toDate ? new Date(`${toDate}T23:59:59`).getTime() : undefined,
+        });
         if (cancelled) return;
         setOrders(page.orders);
         setCursor(page.lastCursor);
@@ -56,12 +69,12 @@ export function AdminOrdersTable() {
     return () => {
       cancelled = true;
     };
-  }, [statusFilter]);
+  }, [statusFilter, fromDate, toDate]);
 
   const loadMore = async () => {
     setIsLoading(true);
     try {
-      const page = await getOrdersPage(statusFilter || undefined, PAGE_SIZE, cursor);
+      const page = await getOrdersPage(statusFilter || undefined, PAGE_SIZE, cursor, dateRange);
       setOrders((prev) => [...prev, ...page.orders]);
       setCursor(page.lastCursor);
       setHasMore(page.hasMore);
@@ -69,6 +82,17 @@ export function AdminOrdersTable() {
       setIsLoading(false);
     }
   };
+
+  // Ism/telefon/ID qidiruvi - yuklangan sahifalar ustidan client tomonda.
+  const search = searchTerm.trim().toLowerCase();
+  const visibleOrders = search
+    ? orders.filter(
+        (o) =>
+          o.customerName.toLowerCase().includes(search) ||
+          o.phoneNumber.toLowerCase().includes(search) ||
+          o.id.toLowerCase().startsWith(search)
+      )
+    : orders;
 
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
     setUpdatingOrderId(orderId);
@@ -87,7 +111,7 @@ export function AdminOrdersTable() {
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <FormControl size="small" className="min-w-48">
           <InputLabel id="status-filter">Status bo&apos;yicha filtr</InputLabel>
           <Select
@@ -102,10 +126,35 @@ export function AdminOrdersTable() {
             ))}
           </Select>
         </FormControl>
+
+        <TextField
+          size="small"
+          type="date"
+          label="Dan"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+        <TextField
+          size="small"
+          type="date"
+          label="Gacha"
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+
+        <TextField
+          size="small"
+          placeholder="Ism / telefon / ID qidirish"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="min-w-56 flex-1"
+        />
       </div>
 
       <div className="flex flex-col gap-3">
-        {orders.map((order) => (
+        {visibleOrders.map((order) => (
           <div key={order.id} className="rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-700">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div>
@@ -146,7 +195,7 @@ export function AdminOrdersTable() {
         </div>
       )}
 
-      {!isLoading && orders.length === 0 && (
+      {!isLoading && visibleOrders.length === 0 && (
         <p className="py-8 text-center text-sm text-navy-300">Buyurtmalar topilmadi.</p>
       )}
 

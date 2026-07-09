@@ -36,6 +36,15 @@ export interface Order {
   telegramMessageId: number | null;
   /** Buyurtma Telegram botdan berilgan bo'lsa - mijozning shaxsiy chat ID'si (status o'zgarishini DM qilish uchun) */
   customerChatId: number | null;
+  // ---- Payme Merchant API tranzaksiya holati (webhook yozadi) ----
+  paymeTransactionId?: string | null;
+  /** 1=yaratilgan, 2=bajarilgan, -1/-2=bekor qilingan */
+  paymeState?: number;
+  paymeCreateTime?: number;
+  paymePerformTime?: number;
+  paymeCancelTime?: number;
+  // ---- Click SHOP API ----
+  clickTransId?: string;
   createdAt: number;
   updatedAt: number;
 }

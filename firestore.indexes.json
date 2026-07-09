@@ -108,6 +108,14 @@
         { "fieldPath": "customerChatId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "nameTokens", "arrayConfig": "CONTAINS" }
+      ]
     }
   ],
   "fieldOverrides": []

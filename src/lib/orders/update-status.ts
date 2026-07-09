@@ -4,7 +4,9 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { editTopicMessageText, sendChatMessage } from "@/lib/telegram/bot";
 import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
 import { formatOrderMessage } from "@/lib/telegram/templates";
+import { sendOrderStatusEmail } from "@/lib/email/mailer";
 import type { Order, OrderStatus } from "@/types/order";
+import type { AppUser } from "@/types/user";
 
 const STATUS_DM_TEXT: Record<OrderStatus, string> = {
   pending: "🕓 kutilmoqda",
@@ -84,6 +86,18 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
       );
     } catch (error) {
       console.error("Mijozga DM yuborishda xato:", error);
+    }
+  }
+
+  // Sayt orqali berilgan buyurtmada mijoz emailiga xabarnoma (best-effort;
+  // SMTP sozlanmagan bo'lsa mailer o'zi jim o'tadi).
+  if (updatedOrder.userId) {
+    try {
+      const userSnap = await getAdminDb().collection("users").doc(updatedOrder.userId).get();
+      const email = (userSnap.data() as AppUser | undefined)?.email;
+      if (email) await sendOrderStatusEmail(email, updatedOrder, status);
+    } catch (error) {
+      console.error("Email xabarnoma xatosi:", error);
     }
   }
 

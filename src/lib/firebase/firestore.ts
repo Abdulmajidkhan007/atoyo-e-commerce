@@ -96,8 +96,31 @@ export async function searchProductsByPrefix(term: string, pageSize = 24): Promi
     limit(pageSize)
   );
 
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Product);
+  // Prefiks (nom boshidan) va token (nomning istalgan so'zi) qidiruvlari
+  // parallel yuboriladi, natijalar birlashtiriladi. Token so'rovi
+  // kompozit indeks (isActive + nameTokens) talab qiladi - indeks hali
+  // yaratilmagan bo'lsa jim o'tkazib yuboriladi (prefiks baribir ishlaydi).
+  const firstWord = normalized.split(/\s+/)[0] ?? normalized;
+  const tokenQuery = query(
+    collection(getFirebaseDb(), PRODUCTS_COLLECTION),
+    where("isActive", "==", true),
+    where("nameTokens", "array-contains", firstWord),
+    limit(pageSize)
+  );
+
+  const [prefixSnap, tokenSnap] = await Promise.all([
+    getDocs(q),
+    getDocs(tokenQuery).catch(() => null),
+  ]);
+
+  const seen = new Set<string>();
+  const results: Product[] = [];
+  for (const d of [...prefixSnap.docs, ...(tokenSnap?.docs ?? [])]) {
+    if (seen.has(d.id)) continue;
+    seen.add(d.id);
+    results.push({ id: d.id, ...d.data() } as Product);
+  }
+  return results.slice(0, pageSize);
 }
 
 /** Mijoz o'z buyurtmasi statusini real-vaqtda kuzatishi uchun. */
@@ -148,10 +171,15 @@ export interface OrdersPage {
 export async function getOrdersPage(
   status: OrderStatus | undefined,
   pageSize = 20,
-  cursor: QueryDocumentSnapshot<DocumentData> | null = null
+  cursor: QueryDocumentSnapshot<DocumentData> | null = null,
+  dateRange?: { from?: number; to?: number }
 ): Promise<OrdersPage> {
   const constraints: QueryConstraint[] = [];
   if (status) constraints.push(where("status", "==", status));
+  // Sana oralig'i createdAt bo'yicha range - mavjud (status+createdAt)
+  // kompozit indeks bilan ishlaydi, yangi indeks talab qilmaydi.
+  if (dateRange?.from) constraints.push(where("createdAt", ">=", dateRange.from));
+  if (dateRange?.to) constraints.push(where("createdAt", "<=", dateRange.to));
   constraints.push(orderBy("createdAt", "desc"));
   constraints.push(limit(pageSize));
   if (cursor) constraints.push(startAfter(cursor));

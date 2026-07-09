@@ -442,6 +442,19 @@ async function finishOrder(
   });
 
   await saveSession(chatId, { state: "idle", cart: [], lang: session.lang, updatedAt: Date.now() });
+
+  // Onlayn to'lov tanlanganda saytdagi to'lov sahifasiga tugma beramiz
+  // (Payme/Click kalitlar ulangach o'sha yerda to'laydi).
+  const keyboard =
+    paymentMethod === "online"
+      ? {
+          inline_keyboard: [
+            [{ text: t.payOnline, url: `${SITE_URL}/tolov/${order.id}` }],
+            ...mainMenuKeyboard(t).inline_keyboard,
+          ],
+        }
+      : mainMenuKeyboard(t);
+
   await sendChatMessage(
     chatId,
     [
@@ -451,7 +464,7 @@ async function finishOrder(
       ``,
       t.orderFollowUp,
     ].join("\n"),
-    { replyMarkup: mainMenuKeyboard(t) }
+    { replyMarkup: keyboard }
   );
 }
 
@@ -461,17 +474,35 @@ async function finishOrder(
 
 async function runSearch(chatId: number, term: string, t: BotDict): Promise<void> {
   const q = term.trim().toLowerCase();
-  const snapshot = await getAdminDb()
-    .collection("products")
-    .orderBy("nameSearchIndex")
-    .startAt(q)
-    .endAt(q + "")
-    .limit(8)
-    .get();
+  const firstWord = q.split(/\s+/)[0] ?? q;
 
-  const products = snapshot.docs
-    .map((d) => ({ id: d.id, ...d.data() }) as Product)
-    .filter((p) => p.isActive);
+  // Prefiks + token qidiruvlari birga (saytdagi kabi). Token so'rovi
+  // indeks bo'lmasa jim o'tkaziladi.
+  const [prefixSnap, tokenSnap] = await Promise.all([
+    getAdminDb()
+      .collection("products")
+      .orderBy("nameSearchIndex")
+      .startAt(q)
+      .endAt(q + "")
+      .limit(8)
+      .get(),
+    getAdminDb()
+      .collection("products")
+      .where("isActive", "==", true)
+      .where("nameTokens", "array-contains", firstWord)
+      .limit(8)
+      .get()
+      .catch(() => null),
+  ]);
+
+  const seen = new Set<string>();
+  const products: Product[] = [];
+  for (const d of [...prefixSnap.docs, ...(tokenSnap?.docs ?? [])]) {
+    if (seen.has(d.id)) continue;
+    seen.add(d.id);
+    const p = { id: d.id, ...d.data() } as Product;
+    if (p.isActive) products.push(p);
+  }
 
   if (products.length === 0) {
     await sendChatMessage(chatId, t.searchNoResults, {

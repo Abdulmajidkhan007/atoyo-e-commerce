@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requireAdminUser } from "@/lib/firebase/session";
+import { buildNameTokens } from "@/lib/search/tokens";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
     slug: `${slugify(d.name)}-${ref.id.slice(0, 6)}`,
     name: d.name.trim(),
     nameSearchIndex: d.name.trim().toLowerCase(),
+    nameTokens: buildNameTokens(d.name, d.brand),
     description: d.description.trim(),
     category: d.category,
     brand: d.brand.trim(),

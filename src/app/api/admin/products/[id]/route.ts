@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requireAdminUser } from "@/lib/firebase/session";
+import { buildNameTokens } from "@/lib/search/tokens";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -50,6 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.name !== undefined) {
     updates.name = d.name.trim();
     updates.nameSearchIndex = d.name.trim().toLowerCase();
+    updates.nameTokens = buildNameTokens(d.name, d.brand);
   }
   if (d.description !== undefined) updates.description = d.description.trim();
   if (d.category !== undefined) updates.category = d.category;

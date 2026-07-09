@@ -29,6 +29,8 @@ export interface Product {
   name: string;
   /** Kichik harflarga o'girilgan, diakritiksiz qidiruv indeksi (fuzzy search uchun) */
   nameSearchIndex: string;
+  /** Nom/brend so'zlari (array-contains qidiruvi - so'z nomning istalgan joyida bo'lsa topadi) */
+  nameTokens?: string[];
   description: string;
   category: ProductCategory;
   brand: string;

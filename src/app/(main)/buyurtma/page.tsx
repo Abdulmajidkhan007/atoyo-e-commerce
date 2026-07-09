@@ -74,9 +74,11 @@ export default function CheckoutPage() {
       });
 
       if (!response.ok) throw new Error("Buyurtma yuborilmadi.");
+      const { orderId } = await response.json();
 
       dispatch(clearCart());
-      router.push("/profil");
+      // Onlayn to'lovda mijoz Payme/Click tanlash sahifasiga yo'naltiriladi.
+      router.push(paymentMethod === "online" && orderId ? `/tolov/${orderId}` : "/profil");
     } catch {
       setSubmitError(dict.checkout.submitError);
     } finally {

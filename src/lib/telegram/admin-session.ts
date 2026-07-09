@@ -1,6 +1,7 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage, answerCallbackQuery } from "./bot";
+import { buildNameTokens } from "@/lib/search/tokens";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
 /**
@@ -181,6 +182,7 @@ async function finalizeNewProduct(userId: number, session: AdminSession): Promis
     slug: `${name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-")}-${ref.id.slice(0, 6)}`,
     name,
     nameSearchIndex: name.toLowerCase(),
+    nameTokens: buildNameTokens(name, d.brand),
     description: d.description ?? "",
     category: (d.category as ProductCategory) ?? "sanitary-ware",
     brand: d.brand ?? "",
@@ -406,6 +408,7 @@ async function applyEditValue(userId: number, session: AdminSession, field: stri
     }
     updates.name = value;
     updates.nameSearchIndex = value.toLowerCase();
+    updates.nameTokens = buildNameTokens(value);
   } else if (field === "price" || field === "stock" || field === "discount") {
     const n = parseNumber(value);
     if (Number.isNaN(n) || n < 0) {
