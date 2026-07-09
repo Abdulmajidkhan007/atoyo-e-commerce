@@ -127,7 +127,7 @@ export async function editTopicMessageText(
 export async function sendChatMessageWithReplyKeyboard(
   chatId: number | string,
   text: string,
-  keyboard: { text: string; request_contact?: boolean }[][]
+  keyboard: { text: string; request_contact?: boolean; request_location?: boolean }[][]
 ): Promise<SentMessage> {
   return callTelegramApi<SentMessage>("sendMessage", {
     chat_id: chatId,

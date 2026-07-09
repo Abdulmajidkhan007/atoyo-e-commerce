@@ -5,6 +5,7 @@ import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { CircularProgress } from "@mui/material";
 import { getProductsPage, searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { createFuzzySearcher } from "@/lib/search/fuzzy";
+import { useI18n } from "@/lib/i18n/LocaleContext";
 import { ProductCard } from "./ProductCard";
 import type { Product, ProductFilterParams } from "@/types/product";
 
@@ -17,6 +18,7 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
+  const { dict } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
   const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -55,7 +57,7 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
           setHasMore(page.hasMore);
         }
       } catch {
-        if (!cancelled) setError("Mahsulotlarni yuklashda xatolik yuz berdi.");
+        if (!cancelled) setError(dict.product.loadError);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -77,11 +79,11 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
       setCursor(page.lastCursor);
       setHasMore(page.hasMore);
     } catch {
-      setError("Ko'proq mahsulot yuklashda xatolik yuz berdi.");
+      setError(dict.product.loadError);
     } finally {
       setIsLoading(false);
     }
-  }, [filters, cursor, hasMore, isLoading, trimmedSearch]);
+  }, [filters, cursor, hasMore, isLoading, trimmedSearch, dict]);
 
   // 10,000+ mahsulot bo'lsa ham bir vaqtning o'zida faqat bitta sahifa
   // (limit: 24) xotirada bo'ladi - IntersectionObserver "sentinel" elementi
@@ -105,7 +107,7 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
   }
 
   if (!isLoading && products.length === 0) {
-    return <p className="py-12 text-center text-sm text-navy-300">Hech qanday mahsulot topilmadi.</p>;
+    return <p className="py-12 text-center text-sm text-navy-300">{dict.product.empty}</p>;
   }
 
   return (

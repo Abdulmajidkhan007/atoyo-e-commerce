@@ -5,7 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TextField, Button, Alert, CircularProgress, Avatar } from "@mui/material";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
-import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+  verifyBeforeUpdateEmail,
+} from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
@@ -27,6 +32,12 @@ export default function ProfileSettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordResult, setPasswordResult] = useState<"success" | "wrong" | "error" | null>(null);
+
+  // Email o'zgartirish bo'limi (tasdiqlash havolasi bilan)
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [emailResult, setEmailResult] = useState<"sent" | "wrong" | "error" | null>(null);
 
   useEffect(() => {
     function hydrateFromProfile() {
@@ -91,6 +102,31 @@ export default function ProfileSettingsPage() {
     }
   };
 
+  const handleEmailChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailResult(null);
+    setIsChangingEmail(true);
+    try {
+      const authUser = getFirebaseAuth().currentUser;
+      if (!authUser?.email) throw new Error("no-auth");
+      const credential = EmailAuthProvider.credential(authUser.email, emailPassword);
+      await reauthenticateWithCredential(authUser, credential);
+      // Yangi manzilga tasdiqlash havolasi yuboriladi; foydalanuvchi
+      // havolani bosgach Firebase email'ni o'zi almashtiradi.
+      await verifyBeforeUpdateEmail(authUser, newEmail.trim());
+      setEmailResult("sent");
+      setNewEmail("");
+      setEmailPassword("");
+    } catch (error) {
+      const code = (error as { code?: string }).code ?? "";
+      setEmailResult(
+        code === "auth/wrong-password" || code === "auth/invalid-credential" ? "wrong" : "error"
+      );
+    } finally {
+      setIsChangingEmail(false);
+    }
+  };
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordResult(null);
@@ -141,7 +177,7 @@ export default function ProfileSettingsPage() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <TextField label={dict.checkout.fullName} value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-        <TextField label="Email" value={profile?.email ?? ""} disabled helperText={dict.profile.emailLocked} />
+        <TextField label="Email" value={profile?.email ?? ""} disabled />
         <TextField label={dict.checkout.phone} placeholder="+998901234567" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
         <TextField
           label={dict.profile.homeAddress}
@@ -160,6 +196,35 @@ export default function ProfileSettingsPage() {
             {isSaving ? <CircularProgress size={20} color="inherit" /> : dict.common.save}
           </Button>
           <Button component={Link} href="/profil" variant="text">{dict.common.cancel}</Button>
+        </div>
+      </form>
+
+      {/* Emailni o'zgartirish (tasdiqlash havolasi bilan) */}
+      <form onSubmit={handleEmailChange} className="mt-10 flex flex-col gap-4 border-t border-navy-100 pt-6 dark:border-navy-500">
+        <h2 className="text-lg font-semibold text-navy-900 dark:text-white">{dict.profile.emailTitle}</h2>
+        <TextField
+          label={dict.profile.newEmail}
+          type="email"
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          required
+        />
+        <TextField
+          label={dict.profile.currentPassword}
+          type="password"
+          value={emailPassword}
+          onChange={(e) => setEmailPassword(e.target.value)}
+          required
+        />
+
+        {emailResult === "sent" && <Alert severity="success">{dict.profile.emailVerifySent}</Alert>}
+        {emailResult === "wrong" && <Alert severity="error">{dict.profile.wrongPassword}</Alert>}
+        {emailResult === "error" && <Alert severity="error">{dict.common.errorRetry}</Alert>}
+
+        <div>
+          <Button type="submit" variant="outlined" disabled={isChangingEmail || !newEmail || !emailPassword}>
+            {isChangingEmail ? <CircularProgress size={20} color="inherit" /> : dict.profile.changeEmail}
+          </Button>
         </div>
       </form>
 

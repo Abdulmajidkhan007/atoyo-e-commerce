@@ -3,6 +3,7 @@
 import { InputBase, IconButton } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
+import { useI18n } from "@/lib/i18n/LocaleContext";
 
 interface SearchBarProps {
   value: string;
@@ -13,6 +14,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ value, onChange, onSubmit, placeholder, className }: SearchBarProps) {
+  const { dict } = useI18n();
   return (
     <form
       role="search"
@@ -26,7 +28,7 @@ export function SearchBar({ value, onChange, onSubmit, placeholder, className }:
       <InputBase
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? "Mahsulot qidirish (masalan: kran, quvur...)"}
+        placeholder={placeholder ?? dict.product.searchPlaceholder}
         className="flex-1 text-sm"
         inputProps={{ "aria-label": "Mahsulot qidirish" }}
         fullWidth

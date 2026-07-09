@@ -117,6 +117,58 @@ export interface Dictionary {
     changePassword: string;
     passwordChanged: string;
     wrongPassword: string;
+    emailTitle: string;
+    newEmail: string;
+    changeEmail: string;
+    emailVerifySent: string;
+  };
+  auth: {
+    loginTitle: string;
+    registerTitle: string;
+    google: string;
+    or: string;
+    password: string;
+    register: string;
+    noAccount: string;
+    haveAccount: string;
+    error: string;
+  };
+  product: {
+    inStock: string;
+    unit: string;
+    diameter: string;
+    length: string;
+    weight: string;
+    addToCart: string;
+    outOfStock: string;
+    products: string;
+    total: string;
+    order: string;
+    loadError: string;
+    empty: string;
+    searchPlaceholder: string;
+  };
+  filters: {
+    title: string;
+    clear: string;
+    all: string;
+    material: string;
+    brand: string;
+    country: string;
+    priceRange: string;
+    from: string;
+    to: string;
+    sort: string;
+    newest: string;
+    priceAsc: string;
+    priceDesc: string;
+  };
+  newsletter: {
+    title: string;
+    placeholder: string;
+    button: string;
+    success: string;
+    error: string;
   };
 }
 
@@ -232,6 +284,58 @@ const uz: Dictionary = {
     changePassword: "Parolni yangilash",
     passwordChanged: "Parol yangilandi!",
     wrongPassword: "Joriy parol noto'g'ri.",
+    emailTitle: "Emailni o'zgartirish",
+    newEmail: "Yangi email",
+    changeEmail: "Tasdiqlash xatini yuborish",
+    emailVerifySent: "Yangi emailga tasdiqlash havolasi yuborildi. Havolani bosganingizdan keyin email yangilanadi.",
+  },
+  auth: {
+    loginTitle: "Hisobga kirish",
+    registerTitle: "Ro'yxatdan o'tish",
+    google: "Google orqali kirish",
+    or: "yoki",
+    password: "Parol",
+    register: "Ro'yxatdan o'tish",
+    noAccount: "Hisobingiz yo'qmi? Ro'yxatdan o'ting",
+    haveAccount: "Hisobingiz bormi? Kiring",
+    error: "Kirishda xatolik yuz berdi. Ma'lumotlaringizni tekshirib qayta urinib ko'ring.",
+  },
+  product: {
+    inStock: "Zaxirada",
+    unit: "dona",
+    diameter: "Diametri",
+    length: "Uzunligi",
+    weight: "Vazni",
+    addToCart: "Savatga qo'shish",
+    outOfStock: "Mahsulot tugagan",
+    products: "Mahsulotlar",
+    total: "Jami",
+    order: "Buyurtma berish",
+    loadError: "Mahsulotlarni yuklashda xatolik yuz berdi.",
+    empty: "Hech qanday mahsulot topilmadi.",
+    searchPlaceholder: "Mahsulot qidirish...",
+  },
+  filters: {
+    title: "Filtrlar",
+    clear: "Tozalash",
+    all: "Barchasi",
+    material: "Material",
+    brand: "Brend",
+    country: "Ishlab chiqaruvchi davlat",
+    priceRange: "Narx oralig'i (so'm)",
+    from: "Dan",
+    to: "Gacha",
+    sort: "Saralash",
+    newest: "Eng yangi",
+    priceAsc: "Narx: arzondan qimmatga",
+    priceDesc: "Narx: qimmatdan arzonga",
+  },
+  newsletter: {
+    title: "Yangiliklarga obuna bo'ling",
+    placeholder: "Email manzilingiz",
+    button: "Obuna",
+    success: "Obuna bo'ldingiz, rahmat!",
+    error: "Xatolik yuz berdi, qayta urining.",
   },
 };
 
@@ -347,6 +451,58 @@ const en: Dictionary = {
     changePassword: "Update password",
     passwordChanged: "Password updated!",
     wrongPassword: "Current password is incorrect.",
+    emailTitle: "Change email",
+    newEmail: "New email",
+    changeEmail: "Send verification email",
+    emailVerifySent: "A verification link was sent to the new email. Your email will update after you click it.",
+  },
+  auth: {
+    loginTitle: "Sign in",
+    registerTitle: "Create account",
+    google: "Continue with Google",
+    or: "or",
+    password: "Password",
+    register: "Create account",
+    noAccount: "No account? Sign up",
+    haveAccount: "Already have an account? Sign in",
+    error: "Sign-in failed. Check your details and try again.",
+  },
+  product: {
+    inStock: "In stock",
+    unit: "pcs",
+    diameter: "Diameter",
+    length: "Length",
+    weight: "Weight",
+    addToCart: "Add to cart",
+    outOfStock: "Out of stock",
+    products: "Products",
+    total: "Total",
+    order: "Place order",
+    loadError: "Failed to load products.",
+    empty: "No products found.",
+    searchPlaceholder: "Search products...",
+  },
+  filters: {
+    title: "Filters",
+    clear: "Clear",
+    all: "All",
+    material: "Material",
+    brand: "Brand",
+    country: "Country of origin",
+    priceRange: "Price range (UZS)",
+    from: "From",
+    to: "To",
+    sort: "Sort by",
+    newest: "Newest",
+    priceAsc: "Price: low to high",
+    priceDesc: "Price: high to low",
+  },
+  newsletter: {
+    title: "Subscribe to our newsletter",
+    placeholder: "Your email",
+    button: "Subscribe",
+    success: "Subscribed, thank you!",
+    error: "Something went wrong, try again.",
   },
 };
 
@@ -462,6 +618,58 @@ const ru: Dictionary = {
     changePassword: "Обновить пароль",
     passwordChanged: "Пароль обновлён!",
     wrongPassword: "Текущий пароль неверен.",
+    emailTitle: "Смена email",
+    newEmail: "Новый email",
+    changeEmail: "Отправить письмо-подтверждение",
+    emailVerifySent: "Ссылка для подтверждения отправлена на новый email. Email обновится после перехода по ней.",
+  },
+  auth: {
+    loginTitle: "Вход в аккаунт",
+    registerTitle: "Регистрация",
+    google: "Войти через Google",
+    or: "или",
+    password: "Пароль",
+    register: "Зарегистрироваться",
+    noAccount: "Нет аккаунта? Зарегистрируйтесь",
+    haveAccount: "Уже есть аккаунт? Войдите",
+    error: "Не удалось войти. Проверьте данные и попробуйте снова.",
+  },
+  product: {
+    inStock: "В наличии",
+    unit: "шт",
+    diameter: "Диаметр",
+    length: "Длина",
+    weight: "Вес",
+    addToCart: "В корзину",
+    outOfStock: "Нет в наличии",
+    products: "Товары",
+    total: "Итого",
+    order: "Оформить заказ",
+    loadError: "Не удалось загрузить товары.",
+    empty: "Товары не найдены.",
+    searchPlaceholder: "Поиск товаров...",
+  },
+  filters: {
+    title: "Фильтры",
+    clear: "Сбросить",
+    all: "Все",
+    material: "Материал",
+    brand: "Бренд",
+    country: "Страна производителя",
+    priceRange: "Диапазон цен (сум)",
+    from: "От",
+    to: "До",
+    sort: "Сортировка",
+    newest: "Сначала новые",
+    priceAsc: "Цена: по возрастанию",
+    priceDesc: "Цена: по убыванию",
+  },
+  newsletter: {
+    title: "Подпишитесь на новости",
+    placeholder: "Ваш email",
+    button: "Подписаться",
+    success: "Вы подписаны, спасибо!",
+    error: "Произошла ошибка, попробуйте снова.",
   },
 };
 

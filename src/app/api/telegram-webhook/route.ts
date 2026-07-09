@@ -24,6 +24,7 @@ interface TelegramMessage {
   from?: { id: number };
   text?: string;
   contact?: TelegramContact;
+  location?: { latitude: number; longitude: number };
 }
 
 interface TelegramCallbackQuery {
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
 
     // ============ 2) Xabarlar (matn yoki telefon kontakti) ============
     const message = update?.message;
-    if (message && (message.text || message.contact)) {
+    if (message && (message.text || message.contact || message.location)) {
       if (isAdminGroupChat(message.chat)) {
         const adminUserId = message.from?.id;
         if (message.text?.trim().startsWith("/")) {
@@ -134,6 +135,7 @@ export async function POST(request: Request) {
           userId: message.from.id,
           text: message.text,
           contact: message.contact,
+          location: message.location,
         });
       }
       // Boshqa guruhlar/kanallar e'tiborsiz qoldiriladi.

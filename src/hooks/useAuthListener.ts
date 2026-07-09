@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase/client";
 import { subscribeToAuthChanges } from "@/lib/firebase/auth";
 import { useAppDispatch } from "@/redux/hooks";
@@ -37,7 +37,14 @@ export function useAuthListener() {
           return;
         }
         const data = snapshot.data() as Omit<AppUser, "uid">;
-        dispatch(setProfile({ uid: user.uid, ...data }));
+
+        // Email tasdiqlash orqali almashtirilgan bo'lsa, Firestore'dagi
+        // nusxasini Auth'dagi haqiqiy qiymatga moslaymiz (best-effort).
+        if (user.email && data.email !== user.email) {
+          updateDoc(snapshot.ref, { email: user.email }).catch(() => {});
+        }
+
+        dispatch(setProfile({ uid: user.uid, ...data, email: user.email ?? data.email }));
       });
     });
 

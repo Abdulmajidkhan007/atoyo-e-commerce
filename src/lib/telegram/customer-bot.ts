@@ -9,8 +9,9 @@ import {
 } from "./bot";
 import { getRequiredChannels } from "./required-channels";
 import { createOrder } from "@/lib/orders/create-order";
+import { botDict, isBotLang, BOT_LANGS, BOT_LANG_LABELS, type BotLang, type BotDict } from "./bot-i18n";
 import type { Product, ProductCategory } from "@/types/product";
-import type { OrderItem } from "@/types/order";
+import type { Order, OrderItem } from "@/types/order";
 
 /**
  * MIJOZ-BOT - FAQAT shaxsiy (private) chatlarda ishlaydi. Webhook bu
@@ -24,25 +25,27 @@ import type { OrderItem } from "@/types/order";
  * Ikkalasi bajarilmaguncha katalog ochilmaydi.
  *
  * Holat mashinasi Firestore `botSessions/{chatId}` hujjatida saqlanadi.
+ * Til (uz/en/ru) ham shu hujjatda - /til yoki 🌐 tugmasi bilan tanlanadi.
  */
 
 const PAGE_SIZE = 6;
 
-const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  pipes: "🔧 Quvurlar",
-  fittings: "🔩 Muftalar",
-  faucets: "🚰 Kranlar",
-  "shower-systems": "🚿 Dush tizimlari",
-  boilers: "🔥 Isitish qozonlari",
-  radiators: "🌡 Radiatorlar",
-  pumps: "⚙️ Nasoslar",
-  "sanitary-ware": "🚽 Santexnika buyumlari",
-};
+type SessionState =
+  | "idle"
+  | "awaiting_checkout_name"
+  | "awaiting_checkout_address"
+  | "awaiting_payment"
+  | "awaiting_search"
+  | "awaiting_profile_name"
+  | "awaiting_profile_address";
 
 interface BotSession {
-  state: "idle" | "awaiting_checkout_name" | "awaiting_phone";
+  state: SessionState;
   cart: OrderItem[];
   customerName?: string;
+  deliveryAddress?: string | null;
+  location?: { latitude: number; longitude: number } | null;
+  lang?: BotLang;
   updatedAt: number;
 }
 
@@ -70,6 +73,7 @@ interface BotUser {
   userId: number;
   phoneNumber: string;
   name: string;
+  address?: string;
   registeredAt: number;
 }
 
@@ -78,20 +82,31 @@ async function getBotUser(userId: number): Promise<BotUser | null> {
   return doc.exists ? (doc.data() as BotUser) : null;
 }
 
+async function getSession(chatId: number): Promise<BotSession> {
+  const doc = await getAdminDb().collection("botSessions").doc(String(chatId)).get();
+  const data = doc.data() as BotSession | undefined;
+  return data ?? { state: "idle", cart: [], updatedAt: Date.now() };
+}
+
+async function saveSession(chatId: number, session: BotSession): Promise<void> {
+  await getAdminDb()
+    .collection("botSessions")
+    .doc(String(chatId))
+    .set({ ...session, updatedAt: Date.now() });
+}
+
 /**
  * KIRISH DARVOZASI: mijoz ro'yxatdan o'tganmi va majburiy kanallarga
  * obuna bo'lganmi. Bajarilmagan bo'lsa - tegishli so'rovni yuboradi va
  * `false` qaytaradi (chaqiruvchi to'xtaydi).
  */
 async function ensureAccess(chatId: number, userId: number): Promise<boolean> {
-  // 1-shart: ro'yxatdan o'tish (telefon)
   const user = await getBotUser(userId);
   if (!user) {
     await promptRegistration(chatId);
     return false;
   }
 
-  // 2-shart: majburiy kanallarga obuna
   const channels = await getRequiredChannels();
   if (channels.length > 0) {
     const notJoined: typeof channels = [];
@@ -159,88 +174,91 @@ async function registerWithContact(params: {
     registeredAt: Date.now(),
   };
   await getAdminDb().collection("botUsers").doc(String(userId)).set(botUser);
-  await removeReplyKeyboard(chatId, "✅ Ro'yxatdan o'tdingiz!");
-  // Ro'yxatdan keyin darvozani qayta ishga solamiz (kanallar tekshiriladi).
+  const session = await getSession(chatId);
+  await removeReplyKeyboard(chatId, botDict(session.lang).registered);
   if (await ensureAccess(chatId, userId)) {
-    await sendGreeting(chatId);
+    await sendGreeting(chatId, botDict(session.lang));
   }
 }
 
-async function getSession(chatId: number): Promise<BotSession> {
-  const doc = await getAdminDb().collection("botSessions").doc(String(chatId)).get();
-  const data = doc.data() as BotSession | undefined;
-  return data ?? { state: "idle", cart: [], updatedAt: Date.now() };
-}
-
-async function saveSession(chatId: number, session: BotSession): Promise<void> {
-  await getAdminDb()
-    .collection("botSessions")
-    .doc(String(chatId))
-    .set({ ...session, updatedAt: Date.now() });
-}
-
-function mainMenuKeyboard(): { inline_keyboard: InlineButton[][] } {
+function mainMenuKeyboard(t: BotDict): { inline_keyboard: InlineButton[][] } {
   return {
     inline_keyboard: [
-      [{ text: "🛍 Katalog", callback_data: "m|cat" }],
-      [
-        { text: "🛒 Savat", callback_data: "crt" },
-        { text: "👤 Profil", callback_data: "prof" },
-      ],
+      [{ text: t.catalog, callback_data: "m|cat" }, { text: t.search, callback_data: "srch" }],
+      [{ text: t.cart, callback_data: "crt" }, { text: t.myOrders, callback_data: "ords" }],
+      [{ text: t.profile, callback_data: "prof" }, { text: t.language, callback_data: "lng" }],
     ],
   };
 }
 
 /** Salomlashuv: generatsiya qilingan banner rasm + asosiy menyu (/start). */
-async function sendGreeting(chatId: number): Promise<void> {
-  await sendChatMessage(
-    chatId,
-    "🏪 <b>Atoyo Santexnika</b> botiga xush kelibsiz!\n\nKatalogdan mahsulot tanlab, shu yerning o'zida buyurtma bering.",
-    { replyMarkup: mainMenuKeyboard(), photoUrl: WELCOME_IMAGE_URL }
-  );
+async function sendGreeting(chatId: number, t: BotDict): Promise<void> {
+  await sendChatMessage(chatId, t.welcome, {
+    replyMarkup: mainMenuKeyboard(t),
+    photoUrl: WELCOME_IMAGE_URL,
+  });
 }
 
-async function showMainMenu(chatId: number): Promise<void> {
-  await sendChatMessage(
-    chatId,
-    "🏪 <b>Bosh menyu</b>\n\nKatalogdan mahsulot tanlab, shu yerning o'zida buyurtma bering.",
-    { replyMarkup: mainMenuKeyboard() }
-  );
+async function showMainMenu(chatId: number, t: BotDict): Promise<void> {
+  await sendChatMessage(chatId, t.mainMenu, { replyMarkup: mainMenuKeyboard(t) });
 }
 
-/** Mijoz profili: generatsiya qilingan profil kartasi rasmi + ma'lumot. */
-async function showProfile(chatId: number, userId: number): Promise<void> {
+async function showLanguageMenu(chatId: number, t: BotDict): Promise<void> {
+  await sendChatMessage(chatId, t.chooseLanguage, {
+    replyMarkup: {
+      inline_keyboard: BOT_LANGS.map((l) => [{ text: BOT_LANG_LABELS[l], callback_data: `lng|${l}` }]),
+    },
+  });
+}
+
+/** Mijoz profili: generatsiya qilingan profil kartasi rasmi + tahrirlash tugmalari. */
+async function showProfile(chatId: number, userId: number, t: BotDict): Promise<void> {
   const user = await getBotUser(userId);
   if (!user) {
     await promptRegistration(chatId);
     return;
   }
   const registered = new Date(user.registeredAt).toLocaleDateString("uz-UZ");
-  await sendChatMessage(
-    chatId,
-    [
-      `👤 <b>${user.name}</b>`,
-      `📞 ${user.phoneNumber}`,
-      `🗓 Ro'yxatdan o'tgan: ${registered}`,
-      ``,
-      `Sozlamalarni saytdan o'zgartirishingiz mumkin: ${SITE_URL}/profil`,
-    ].join("\n"),
-    {
-      photoUrl: profileImageUrl(user.name, user.phoneNumber),
-      replyMarkup: { inline_keyboard: [[{ text: "🛍 Katalog", callback_data: "m|cat" }, { text: "⬅️ Bosh menyu", callback_data: "m|home" }]] },
-    }
-  );
+  const lines = [
+    `👤 <b>${user.name}</b>`,
+    `📞 ${user.phoneNumber}`,
+    user.address ? `🏠 ${t.addressLabel}: ${user.address}` : "",
+    `🗓 ${t.registeredAt}: ${registered}`,
+    ``,
+    `${t.profileSiteHint}: ${SITE_URL}/profil`,
+  ].filter(Boolean);
+
+  await sendChatMessage(chatId, lines.join("\n"), {
+    photoUrl: profileImageUrl(user.name, user.phoneNumber),
+    replyMarkup: {
+      inline_keyboard: [
+        [
+          { text: t.editName, callback_data: "pe|name" },
+          { text: t.editAddress, callback_data: "pe|addr" },
+        ],
+        [
+          { text: t.catalog, callback_data: "m|cat" },
+          { text: t.backToMenu, callback_data: "m|home" },
+        ],
+      ],
+    },
+  });
 }
 
-async function showCategories(chatId: number): Promise<void> {
-  const rows = (Object.entries(CATEGORY_LABELS) as [ProductCategory, string][]).map(([value, label]) => [
-    { text: label, callback_data: `c|${value}|0` },
+async function showCategories(chatId: number, t: BotDict): Promise<void> {
+  const rows = (Object.keys(t.categories) as ProductCategory[]).map((value) => [
+    { text: t.categories[value], callback_data: `c|${value}|0` },
   ]);
-  rows.push([{ text: "⬅️ Bosh menyu", callback_data: "m|home" }]);
-  await sendChatMessage(chatId, "Kategoriyani tanlang:", { replyMarkup: { inline_keyboard: rows } });
+  rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);
+  await sendChatMessage(chatId, t.chooseCategory, { replyMarkup: { inline_keyboard: rows } });
 }
 
-async function showCategoryPage(chatId: number, category: ProductCategory, page: number): Promise<void> {
+async function showCategoryPage(
+  chatId: number,
+  category: ProductCategory,
+  page: number,
+  t: BotDict
+): Promise<void> {
   const snapshot = await getAdminDb()
     .collection("products")
     .where("isActive", "==", true)
@@ -251,8 +269,8 @@ async function showCategoryPage(chatId: number, category: ProductCategory, page:
     .get();
 
   if (snapshot.empty && page === 0) {
-    await sendChatMessage(chatId, "Bu kategoriyada hozircha mahsulot yo'q.", {
-      replyMarkup: { inline_keyboard: [[{ text: "⬅️ Kategoriyalar", callback_data: "m|cat" }]] },
+    await sendChatMessage(chatId, t.emptyCategory, {
+      replyMarkup: { inline_keyboard: [[{ text: t.backToCategories, callback_data: "m|cat" }]] },
     });
     return;
   }
@@ -266,19 +284,19 @@ async function showCategoryPage(chatId: number, category: ProductCategory, page:
 
   const nav: InlineButton[] = [];
   if (page > 0) nav.push({ text: "⬅️", callback_data: `c|${category}|${page - 1}` });
-  nav.push({ text: "📂 Kategoriyalar", callback_data: "m|cat" });
+  nav.push({ text: t.backToCategories, callback_data: "m|cat" });
   if (hasMore) nav.push({ text: "➡️", callback_data: `c|${category}|${page + 1}` });
   rows.push(nav);
 
-  await sendChatMessage(chatId, `<b>${CATEGORY_LABELS[category]}</b> — ${page + 1}-sahifa:`, {
+  await sendChatMessage(chatId, `<b>${t.categories[category]}</b> — ${page + 1}-${t.page}:`, {
     replyMarkup: { inline_keyboard: rows },
   });
 }
 
-async function showProduct(chatId: number, productId: string): Promise<void> {
+async function showProduct(chatId: number, productId: string, t: BotDict): Promise<void> {
   const doc = await getAdminDb().collection("products").doc(productId).get();
   if (!doc.exists) {
-    await sendChatMessage(chatId, "Mahsulot topilmadi.");
+    await sendChatMessage(chatId, t.notFound);
     return;
   }
   const product = { id: doc.id, ...doc.data() } as Product;
@@ -286,17 +304,17 @@ async function showProduct(chatId: number, productId: string): Promise<void> {
 
   const lines = [
     `<b>${product.name}</b>`,
-    product.brand ? `Brend: ${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
-    `Narx: <b>${formatSom(price)}</b>${product.discountPrice ? ` <s>${formatSom(product.price)}</s>` : ""}`,
-    product.stock > 0 ? `Zaxirada: ${product.stock} dona` : "❌ Hozircha tugagan",
+    product.brand ? `${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
+    `💰 <b>${formatSom(price)}</b>${product.discountPrice ? ` <s>${formatSom(product.price)}</s>` : ""}`,
+    product.stock > 0 ? `${t.inStock}: ${product.stock} ${t.unit}` : `❌ ${t.outOfStock}`,
     product.description ? `\n${product.description}` : "",
   ].filter(Boolean);
 
   const rows: InlineButton[][] = [];
-  if (product.stock > 0) rows.push([{ text: "🛒 Savatga qo'shish", callback_data: `a|${product.id}` }]);
+  if (product.stock > 0) rows.push([{ text: t.addToCart, callback_data: `a|${product.id}` }]);
   rows.push([
-    { text: "⬅️ Orqaga", callback_data: `c|${product.category}|0` },
-    { text: "🛒 Savat", callback_data: "crt" },
+    { text: t.back, callback_data: `c|${product.category}|0` },
+    { text: t.cart, callback_data: "crt" },
   ]);
 
   await sendChatMessage(chatId, lines.join("\n"), {
@@ -305,16 +323,16 @@ async function showProduct(chatId: number, productId: string): Promise<void> {
   });
 }
 
-async function addToCart(chatId: number, productId: string): Promise<string> {
+async function addToCart(chatId: number, productId: string, t: BotDict): Promise<string> {
   const doc = await getAdminDb().collection("products").doc(productId).get();
-  if (!doc.exists) return "Mahsulot topilmadi.";
+  if (!doc.exists) return t.notFound;
   const product = { id: doc.id, ...doc.data() } as Product;
-  if (product.stock <= 0) return "Bu mahsulot tugagan.";
+  if (product.stock <= 0) return t.outOfStock;
 
   const session = await getSession(chatId);
   const existing = session.cart.find((i) => i.productId === productId);
   if (existing) {
-    if (existing.quantity >= product.stock) return "Zaxiradan ortiq qo'shib bo'lmaydi.";
+    if (existing.quantity >= product.stock) return t.stockLimit;
     existing.quantity += 1;
   } else {
     session.cart.push({
@@ -326,89 +344,200 @@ async function addToCart(chatId: number, productId: string): Promise<string> {
     });
   }
   await saveSession(chatId, session);
-  return `✅ Savatga qo'shildi (${session.cart.reduce((s, i) => s + i.quantity, 0)} dona).`;
+  return `${t.added} (${session.cart.reduce((s, i) => s + i.quantity, 0)})`;
 }
 
-async function showCart(chatId: number): Promise<void> {
+async function showCart(chatId: number, t: BotDict): Promise<void> {
   const session = await getSession(chatId);
   if (session.cart.length === 0) {
-    await sendChatMessage(chatId, "🛒 Savatingiz bo'sh.", {
-      replyMarkup: { inline_keyboard: [[{ text: "🛍 Katalogga o'tish", callback_data: "m|cat" }]] },
+    await sendChatMessage(chatId, t.cartEmpty, {
+      replyMarkup: { inline_keyboard: [[{ text: t.goCatalog, callback_data: "m|cat" }]] },
     });
     return;
   }
 
   const total = session.cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const lines = session.cart.map((i) => `• ${i.name} — ${i.quantity} x ${formatSom(i.price)}`);
-  lines.push(`\n<b>Jami: ${formatSom(total)}</b>`);
+  lines.push(`\n<b>${t.total}: ${formatSom(total)}</b>`);
 
-  await sendChatMessage(chatId, `🛒 <b>Savatingiz</b>\n\n${lines.join("\n")}`, {
+  await sendChatMessage(chatId, `${t.cartTitle}\n\n${lines.join("\n")}`, {
     replyMarkup: {
       inline_keyboard: [
-        [{ text: "✅ Buyurtma berish", callback_data: "chk" }],
+        [{ text: t.checkout, callback_data: "chk" }],
         [
-          { text: "🗑 Tozalash", callback_data: "clr" },
-          { text: "🛍 Davom etish", callback_data: "m|cat" },
+          { text: t.clearCart, callback_data: "clr" },
+          { text: t.continueShopping, callback_data: "m|cat" },
         ],
       ],
     },
   });
 }
 
-async function finishOrder(chatId: number, userId: number, customerName: string): Promise<void> {
+// ---------------------------------------------------------------------------
+// CHECKOUT: ism → manzil (matn yoki lokatsiya) → to'lov usuli → buyurtma
+// ---------------------------------------------------------------------------
+
+async function startCheckout(chatId: number, userId: number, t: BotDict): Promise<void> {
   const session = await getSession(chatId);
   if (session.cart.length === 0) {
-    await showCart(chatId);
+    await showCart(chatId, t);
     return;
   }
   const botUser = await getBotUser(userId);
-  const order = await createOrder({
-    customerName,
-    phoneNumber: botUser?.phoneNumber ?? "",
-    items: session.cart,
-    customerChatId: chatId,
-  });
-
-  await saveSession(chatId, { state: "idle", cart: [], updatedAt: Date.now() });
-  await sendChatMessage(
-    chatId,
-    [
-      `🎉 Buyurtmangiz qabul qilindi!`,
-      `Raqami: <b>#${order.id.slice(0, 8)}</b>`,
-      `Jami: <b>${formatSom(order.totalAmount)}</b>`,
-      ``,
-      `Holati o'zgarishi bilan shu chatda xabar beramiz. Rahmat! 🙌`,
-    ].join("\n"),
-    { replyMarkup: mainMenuKeyboard() }
-  );
-}
-
-async function startCheckout(chatId: number, userId: number): Promise<void> {
-  const session = await getSession(chatId);
-  if (session.cart.length === 0) {
-    await showCart(chatId);
-    return;
-  }
-  const botUser = await getBotUser(userId);
-  // Ro'yxatdan o'tishda ism olingan - tasdiqlash yoki o'zgartirish taklif qilinadi.
   session.state = "awaiting_checkout_name";
   session.customerName = botUser?.name;
   await saveSession(chatId, session);
   await sendChatMessage(
     chatId,
-    `👤 Buyurtma uchun ism-familiyangizni tasdiqlang yoki qaytadan yozing:\n\nJoriy: <b>${botUser?.name ?? "—"}</b>`,
-    { replyMarkup: { inline_keyboard: [[{ text: `✅ ${botUser?.name ?? "Tasdiqlash"}`, callback_data: "cfm_name" }]] } }
+    `${t.confirmName}\n\n${t.current}: <b>${botUser?.name ?? "—"}</b>`,
+    { replyMarkup: { inline_keyboard: [[{ text: `✅ ${botUser?.name ?? t.fullNameShort}`, callback_data: "cfm_name" }]] } }
   );
 }
 
-/** Shaxsiy chatdagi matnli/kontaktli xabarlar. */
+/** Ism qabul qilingach - manzil so'raymiz (matn / lokatsiya / o'tkazish). */
+async function askAddress(chatId: number, session: BotSession, t: BotDict): Promise<void> {
+  session.state = "awaiting_checkout_address";
+  await saveSession(chatId, session);
+  await sendChatMessageWithReplyKeyboard(chatId, t.askAddress, [
+    [{ text: t.sendLocationBtn, request_location: true }],
+    [{ text: t.skipBtn }],
+  ]);
+}
+
+/** Manzil bosqichidan keyin to'lov usuli tanlanadi. */
+async function askPayment(chatId: number, session: BotSession, t: BotDict): Promise<void> {
+  session.state = "awaiting_payment";
+  await saveSession(chatId, session);
+  await removeReplyKeyboard(chatId, t.askPayment);
+  await sendChatMessage(chatId, "👇", {
+    replyMarkup: {
+      inline_keyboard: [
+        [{ text: t.payCash, callback_data: "pay|cash" }],
+        [{ text: t.payOnline, callback_data: "pay|online" }],
+      ],
+    },
+  });
+}
+
+async function finishOrder(
+  chatId: number,
+  userId: number,
+  paymentMethod: "cash" | "online",
+  t: BotDict
+): Promise<void> {
+  const session = await getSession(chatId);
+  if (session.cart.length === 0) {
+    await showCart(chatId, t);
+    return;
+  }
+  const botUser = await getBotUser(userId);
+  const order = await createOrder({
+    customerName: session.customerName ?? botUser?.name ?? "Mijoz",
+    phoneNumber: botUser?.phoneNumber ?? "",
+    items: session.cart,
+    location: session.location ?? null,
+    deliveryAddress: session.deliveryAddress ?? botUser?.address ?? null,
+    paymentMethod,
+    customerChatId: chatId,
+  });
+
+  await saveSession(chatId, { state: "idle", cart: [], lang: session.lang, updatedAt: Date.now() });
+  await sendChatMessage(
+    chatId,
+    [
+      t.orderAccepted,
+      `${t.orderNumber}: <b>#${order.id.slice(0, 8)}</b>`,
+      `${t.orderTotal}: <b>${formatSom(order.totalAmount)}</b>`,
+      ``,
+      t.orderFollowUp,
+    ].join("\n"),
+    { replyMarkup: mainMenuKeyboard(t) }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// QIDIRUV va BUYURTMALAR TARIXI
+// ---------------------------------------------------------------------------
+
+async function runSearch(chatId: number, term: string, t: BotDict): Promise<void> {
+  const q = term.trim().toLowerCase();
+  const snapshot = await getAdminDb()
+    .collection("products")
+    .orderBy("nameSearchIndex")
+    .startAt(q)
+    .endAt(q + "")
+    .limit(8)
+    .get();
+
+  const products = snapshot.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as Product)
+    .filter((p) => p.isActive);
+
+  if (products.length === 0) {
+    await sendChatMessage(chatId, t.searchNoResults, {
+      replyMarkup: { inline_keyboard: [[{ text: t.search, callback_data: "srch" }, { text: t.backToMenu, callback_data: "m|home" }]] },
+    });
+    return;
+  }
+
+  const rows: InlineButton[][] = products.map((p) => [
+    { text: `${p.name} — ${formatSom(p.discountPrice ?? p.price)}`, callback_data: `p|${p.id}` },
+  ]);
+  rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);
+  await sendChatMessage(chatId, `🔍 "${term}":`, { replyMarkup: { inline_keyboard: rows } });
+}
+
+async function showMyOrders(chatId: number, t: BotDict): Promise<void> {
+  let orders: Order[] = [];
+  try {
+    const snap = await getAdminDb()
+      .collection("orders")
+      .where("customerChatId", "==", chatId)
+      .orderBy("createdAt", "desc")
+      .limit(5)
+      .get();
+    orders = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Order);
+  } catch {
+    // Kompozit indeks hali yaratilmagan bo'lsa - saralashsiz olib,
+    // xotirada tartiblaymiz.
+    const snap = await getAdminDb().collection("orders").where("customerChatId", "==", chatId).limit(20).get();
+    orders = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Order)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 5);
+  }
+
+  if (orders.length === 0) {
+    await sendChatMessage(chatId, t.noOrders, {
+      replyMarkup: { inline_keyboard: [[{ text: t.goCatalog, callback_data: "m|cat" }]] },
+    });
+    return;
+  }
+
+  const lines = orders.map((o) => {
+    const date = new Date(o.createdAt).toLocaleDateString("uz-UZ");
+    const items = o.items.map((i) => `  • ${i.name} × ${i.quantity}`).join("\n");
+    return `#${o.id.slice(0, 8)} — ${date}\n${items}\n  ${t.total}: <b>${formatSom(o.totalAmount)}</b> | ${t.statusLabels[o.status]}`;
+  });
+
+  await sendChatMessage(chatId, `${t.ordersTitle}\n\n${lines.join("\n\n")}`, {
+    replyMarkup: { inline_keyboard: [[{ text: t.backToMenu, callback_data: "m|home" }]] },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// KIRISH NUQTALARI (webhook chaqiradi)
+// ---------------------------------------------------------------------------
+
+/** Shaxsiy chatdagi matnli/kontaktli/lokatsiyali xabarlar. */
 export async function handleCustomerMessage(params: {
   chatId: number;
   userId: number;
   text?: string;
   contact?: { phone_number: string; first_name?: string; last_name?: string };
+  location?: { latitude: number; longitude: number };
 }): Promise<void> {
-  const { chatId, userId, text, contact } = params;
+  const { chatId, userId, text, contact, location } = params;
 
   // Telefon kontakti kelsa - ro'yxatdan o'tkazamiz.
   if (contact?.phone_number) {
@@ -421,34 +550,91 @@ export async function handleCustomerMessage(params: {
   if (!(await ensureAccess(chatId, userId))) return;
 
   const session = await getSession(chatId);
+  const t = botDict(session.lang);
 
-  // Checkout: ism qadamida yozilgan matn yangi ism sifatida qabul qilinadi.
-  if (session.state === "awaiting_checkout_name" && text) {
-    const name = text.trim();
-    if (name.startsWith("/")) {
-      await showMainMenu(chatId);
+  // ---- Checkout: manzil bosqichida lokatsiya kelishi mumkin ----
+  if (session.state === "awaiting_checkout_address" && location) {
+    session.location = location;
+    session.deliveryAddress = null;
+    await askPayment(chatId, session, t);
+    return;
+  }
+
+  if (text) {
+    const command = text.trim().toLowerCase();
+
+    // Holat mashinasidagi matn bosqichlari
+    if (session.state === "awaiting_checkout_name" && !command.startsWith("/")) {
+      const name = text.trim();
+      if (name.length < 2) {
+        await sendChatMessage(chatId, t.confirmName);
+        return;
+      }
+      session.customerName = name;
+      await askAddress(chatId, session, t);
       return;
     }
-    if (name.length < 2) {
-      await sendChatMessage(chatId, "Iltimos, to'liq ism-familiyangizni yozing:");
+
+    if (session.state === "awaiting_checkout_address" && !command.startsWith("/")) {
+      // "O'tkazish" tugmasi ham oddiy matn sifatida keladi.
+      if (text.trim() === t.skipBtn) {
+        session.deliveryAddress = null;
+      } else {
+        session.deliveryAddress = text.trim();
+        session.location = null;
+      }
+      await askPayment(chatId, session, t);
       return;
     }
-    await finishOrder(chatId, userId, name);
-    return;
+
+    if (session.state === "awaiting_search" && !command.startsWith("/")) {
+      session.state = "idle";
+      await saveSession(chatId, session);
+      await runSearch(chatId, text, t);
+      return;
+    }
+
+    if (session.state === "awaiting_profile_name" && !command.startsWith("/")) {
+      const name = text.trim();
+      if (name.length >= 2) {
+        await getAdminDb().collection("botUsers").doc(String(userId)).update({ name });
+      }
+      session.state = "idle";
+      await saveSession(chatId, session);
+      await sendChatMessage(chatId, t.savedOk);
+      await showProfile(chatId, userId, t);
+      return;
+    }
+
+    if (session.state === "awaiting_profile_address" && !command.startsWith("/")) {
+      await getAdminDb().collection("botUsers").doc(String(userId)).update({ address: text.trim() });
+      session.state = "idle";
+      await saveSession(chatId, session);
+      await sendChatMessage(chatId, t.savedOk);
+      await showProfile(chatId, userId, t);
+      return;
+    }
+
+    // Buyruqlar
+    if (command === "/profil" || command === "/profile") {
+      await showProfile(chatId, userId, t);
+      return;
+    }
+    if (command === "/buyurtmalarim" || command === "/orders") {
+      await showMyOrders(chatId, t);
+      return;
+    }
+    if (command === "/til" || command === "/lang") {
+      await showLanguageMenu(chatId, t);
+      return;
+    }
+    if (command === "/start") {
+      await sendGreeting(chatId, t);
+      return;
+    }
   }
 
-  // Buyruqlar
-  const command = text?.trim().toLowerCase();
-  if (command === "/profil") {
-    await showProfile(chatId, userId);
-    return;
-  }
-  if (command === "/start") {
-    await sendGreeting(chatId);
-    return;
-  }
-
-  await showMainMenu(chatId);
+  await showMainMenu(chatId, t);
 }
 
 /** Shaxsiy chatdagi inline tugma bosishlari. */
@@ -461,10 +647,28 @@ export async function handleCustomerCallback(params: {
   const { chatId, userId, callbackQueryId, data } = params;
   const [action, arg1, arg2] = data.split("|");
 
+  // Til tanlash - ro'yxatdan o'tishdan oldin ham ishlashi kerak.
+  if (action === "lng") {
+    await answerCallbackQuery(callbackQueryId);
+    const session = await getSession(chatId);
+    if (arg1 && isBotLang(arg1)) {
+      session.lang = arg1;
+      await saveSession(chatId, session);
+      const t = botDict(arg1);
+      await sendChatMessage(chatId, t.languageSet, { replyMarkup: mainMenuKeyboard(t) });
+    } else {
+      await showLanguageMenu(chatId, botDict(session.lang));
+    }
+    return;
+  }
+
   // "Tekshirish" tugmasi - obuna qayta tekshiriladi.
   if (action === "chk_sub") {
     await answerCallbackQuery(callbackQueryId);
-    if (await ensureAccess(chatId, userId)) await showMainMenu(chatId);
+    if (await ensureAccess(chatId, userId)) {
+      const session = await getSession(chatId);
+      await showMainMenu(chatId, botDict(session.lang));
+    }
     return;
   }
 
@@ -474,53 +678,81 @@ export async function handleCustomerCallback(params: {
     return;
   }
 
+  const session = await getSession(chatId);
+  const t = botDict(session.lang);
+
   switch (action) {
     case "m": {
       await answerCallbackQuery(callbackQueryId);
-      if (arg1 === "cat") await showCategories(chatId);
-      else await showMainMenu(chatId);
+      if (arg1 === "cat") await showCategories(chatId, t);
+      else await showMainMenu(chatId, t);
       return;
     }
     case "c": {
       await answerCallbackQuery(callbackQueryId);
-      await showCategoryPage(chatId, arg1 as ProductCategory, Number(arg2 ?? 0));
+      await showCategoryPage(chatId, arg1 as ProductCategory, Number(arg2 ?? 0), t);
       return;
     }
     case "p": {
       await answerCallbackQuery(callbackQueryId);
-      await showProduct(chatId, arg1 ?? "");
+      await showProduct(chatId, arg1 ?? "", t);
       return;
     }
     case "a": {
-      const result = await addToCart(chatId, arg1 ?? "");
+      const result = await addToCart(chatId, arg1 ?? "", t);
       await answerCallbackQuery(callbackQueryId, result);
       return;
     }
     case "crt": {
       await answerCallbackQuery(callbackQueryId);
-      await showCart(chatId);
-      return;
-    }
-    case "prof": {
-      await answerCallbackQuery(callbackQueryId);
-      await showProfile(chatId, userId);
+      await showCart(chatId, t);
       return;
     }
     case "clr": {
-      await saveSession(chatId, { state: "idle", cart: [], updatedAt: Date.now() });
-      await answerCallbackQuery(callbackQueryId, "Savat tozalandi.");
-      await showCart(chatId);
+      await saveSession(chatId, { state: "idle", cart: [], lang: session.lang, updatedAt: Date.now() });
+      await answerCallbackQuery(callbackQueryId, t.cartCleared);
+      await showCart(chatId, t);
       return;
     }
     case "chk": {
       await answerCallbackQuery(callbackQueryId);
-      await startCheckout(chatId, userId);
+      await startCheckout(chatId, userId, t);
       return;
     }
     case "cfm_name": {
       await answerCallbackQuery(callbackQueryId);
-      const session = await getSession(chatId);
-      await finishOrder(chatId, userId, session.customerName ?? "Mijoz");
+      await askAddress(chatId, session, t);
+      return;
+    }
+    case "pay": {
+      await answerCallbackQuery(callbackQueryId);
+      if (session.state === "awaiting_payment") {
+        await finishOrder(chatId, userId, arg1 === "online" ? "online" : "cash", t);
+      }
+      return;
+    }
+    case "srch": {
+      await answerCallbackQuery(callbackQueryId);
+      session.state = "awaiting_search";
+      await saveSession(chatId, session);
+      await sendChatMessage(chatId, t.searchPrompt);
+      return;
+    }
+    case "ords": {
+      await answerCallbackQuery(callbackQueryId);
+      await showMyOrders(chatId, t);
+      return;
+    }
+    case "prof": {
+      await answerCallbackQuery(callbackQueryId);
+      await showProfile(chatId, userId, t);
+      return;
+    }
+    case "pe": {
+      await answerCallbackQuery(callbackQueryId);
+      session.state = arg1 === "name" ? "awaiting_profile_name" : "awaiting_profile_address";
+      await saveSession(chatId, session);
+      await sendChatMessage(chatId, arg1 === "name" ? t.askNewName : t.askNewAddress);
       return;
     }
     default:
