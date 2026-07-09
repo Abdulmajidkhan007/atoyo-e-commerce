@@ -24,6 +24,24 @@ export function ProductTable() {
   const [editingProduct, setEditingProduct] = useState<Product | null | undefined>(undefined);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
   const [savingFieldKey, setSavingFieldKey] = useState<string | null>(null);
+  const [reindexResult, setReindexResult] = useState<string | null>(null);
+  const [isReindexing, setIsReindexing] = useState(false);
+
+  // Bir martalik: eski mahsulotlarga qidiruv tokenlarini yozadi (yangi
+  // "so'z nomning istalgan joyida" qidiruvi ular uchun ham ishlashi uchun).
+  const handleReindex = async () => {
+    setIsReindexing(true);
+    setReindexResult(null);
+    try {
+      const res = await fetch("/api/admin/products/reindex", { method: "POST" });
+      const data = await res.json();
+      setReindexResult(res.ok ? `✅ ${data.updated} ta mahsulot indekslandi` : "Xatolik yuz berdi");
+    } catch {
+      setReindexResult("Xatolik yuz berdi");
+    } finally {
+      setIsReindexing(false);
+    }
+  };
 
   const trimmedSearch = searchTerm.trim();
 
@@ -97,6 +115,10 @@ export function ProductTable() {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Mahsulot nomi bo'yicha qidirish..." className="max-w-sm" />
         <Button variant="outlined" onClick={() => setIsBulkDialogOpen(true)}>Bulk narx yangilash</Button>
+        <Button variant="outlined" onClick={handleReindex} disabled={isReindexing}>
+          {isReindexing ? <CircularProgress size={18} /> : "Qidiruv indeksini yangilash"}
+        </Button>
+        {reindexResult && <span className="text-sm text-navy-300">{reindexResult}</span>}
         <Button variant="contained" startIcon={<AddIcon />} className="!ml-auto" onClick={() => setEditingProduct(null)}>
           Yangi mahsulot
         </Button>
