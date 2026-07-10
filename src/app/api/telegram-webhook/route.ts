@@ -25,6 +25,8 @@ interface TelegramMessage {
   text?: string;
   contact?: TelegramContact;
   location?: { latitude: number; longitude: number };
+  /** Rasm o'lchamlari ro'yxati - oxirgisi eng katta. */
+  photo?: { file_id: string }[];
 }
 
 interface TelegramCallbackQuery {
@@ -108,7 +110,7 @@ export async function POST(request: Request) {
 
     // ============ 2) Xabarlar (matn yoki telefon kontakti) ============
     const message = update?.message;
-    if (message && (message.text || message.contact || message.location)) {
+    if (message && (message.text || message.contact || message.location || message.photo)) {
       if (isAdminGroupChat(message.chat)) {
         const adminUserId = message.from?.id;
         if (message.text?.trim().startsWith("/")) {
@@ -119,14 +121,16 @@ export async function POST(request: Request) {
             text: message.text,
             userId: adminUserId,
           });
-        } else if (adminUserId && message.text) {
-          // Buyruq bo'lmagan matn - faol interaktiv sessiya bosqichi bo'lishi
-          // mumkin (nom/narx/zaxira kiritish). Sessiya bo'lmasa e'tiborsiz.
+        } else if (adminUserId && (message.text || message.photo)) {
+          // Buyruq bo'lmagan matn/rasm - faol interaktiv sessiya bosqichi
+          // bo'lishi mumkin (nom/narx kiritish yoki mahsulot rasmi).
+          // Sessiya bo'lmasa e'tiborsiz.
           await handleAdminSessionMessage({
             chatId: message.chat.id,
             userId: adminUserId,
             threadId: message.message_thread_id,
-            text: message.text,
+            text: message.text ?? "",
+            photoFileId: message.photo?.at(-1)?.file_id,
           });
         }
       } else if (message.chat.type === "private" && message.from?.id) {

@@ -163,6 +163,29 @@ export async function isChatMember(channelId: string, userId: number): Promise<b
   }
 }
 
+/**
+ * Telegram'ga yuborilgan faylni (masalan, admin yuborgan mahsulot rasmini)
+ * yuklab oladi - keyin Admin SDK orqali Storage'ga o'tkaziladi. Bot API
+ * cheklovi: 20 MB gacha (rasm uchun bemalol yetadi).
+ */
+export async function downloadTelegramFile(
+  fileId: string
+): Promise<{ buffer: Buffer; contentType: string; fileName: string }> {
+  const info = await callTelegramApi<{ file_path?: string }>("getFile", { file_id: fileId });
+  const filePath = info.file_path ?? "";
+  if (!filePath) throw new Error("Telegram fayl yo'li topilmadi.");
+
+  const response = await fetch(`${TELEGRAM_API_BASE}/file/bot${getBotToken()}/${filePath}`, {
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`Telegram faylini yuklab bo'lmadi (HTTP ${response.status}).`);
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? "jpg";
+  const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+  return { buffer, contentType, fileName: `telegram-${Date.now()}.${ext}` };
+}
+
 export async function answerCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
   await callTelegramApi("answerCallbackQuery", {
     callback_query_id: callbackQueryId,

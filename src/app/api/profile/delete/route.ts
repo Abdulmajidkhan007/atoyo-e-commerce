@@ -32,6 +32,19 @@ export async function POST() {
     await getAdminDb().collection("users").doc(user.uid).delete();
     await getAdminAuth().deleteUser(user.uid);
 
+    // Buyurtmalar biznes-yozuv sifatida qoladi, lekin egasidan uziladi -
+    // shu email bilan qayta ro'yxatdan o'tilsa eski tarix ko'rinmasligi uchun.
+    try {
+      const ordersSnap = await getAdminDb().collection("orders").where("userId", "==", user.uid).limit(300).get();
+      if (!ordersSnap.empty) {
+        const batch = getAdminDb().batch();
+        ordersSnap.docs.forEach((d) => batch.update(d.ref, { userId: null }));
+        await batch.commit();
+      }
+    } catch (error) {
+      console.error("Buyurtmalarni uzishda xato:", error);
+    }
+
     const response = NextResponse.json({ ok: true });
     response.cookies.delete(SESSION_COOKIE_NAME);
     return response;

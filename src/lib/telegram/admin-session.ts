@@ -1,6 +1,7 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { sendChatMessage, answerCallbackQuery } from "./bot";
+import { sendChatMessage, answerCallbackQuery, downloadTelegramFile } from "./bot";
+import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
@@ -40,8 +41,27 @@ const MATERIAL_LABELS: Record<ProductMaterial, string> = {
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
 
 // Yangi mahsulot oqimi bosqichlari tartibi.
-const NEW_STEPS = ["name", "category", "price", "stock", "brand", "country", "material", "description"] as const;
+const NEW_STEPS = ["name", "category", "price", "stock", "brand", "country", "material", "description", "photo"] as const;
 type NewStep = (typeof NEW_STEPS)[number];
+
+/** Telegram'dan kelgan rasmni Storage'ga o'tkazib, mahsulotga bog'laydi. */
+async function attachTelegramPhoto(productId: string, photoFileId: string): Promise<string> {
+  const file = await downloadTelegramFile(photoFileId);
+  const url = await uploadImageAdmin(`products/${productId}`, {
+    buffer: file.buffer,
+    contentType: file.contentType,
+    originalName: file.fileName,
+  });
+  const ref = getAdminDb().collection("products").doc(productId);
+  const snap = await ref.get();
+  const existing = (snap.data() as Product | undefined)?.images ?? [];
+  await ref.update({
+    thumbnailUrl: url,
+    images: [url, ...existing.filter((i) => i !== url)].slice(0, 10),
+    updatedAt: Date.now(),
+  });
+  return url;
+}
 
 interface InlineButton {
   text: string;
@@ -169,10 +189,16 @@ async function sendNewStepPrompt(session: AdminSession): Promise<void> {
         ...opts,
       });
       return;
+    case "photo":
+      await sendChatMessage(session.chatId, `${head}\n\n🖼 Mahsulot <b>rasmini</b> yuboring (yoki o'tkazing):`, {
+        replyMarkup: { inline_keyboard: [[skipButton], [cancelButton]] },
+        ...opts,
+      });
+      return;
   }
 }
 
-async function finalizeNewProduct(userId: number, session: AdminSession): Promise<void> {
+async function finalizeNewProduct(userId: number, session: AdminSession, photoFileId?: string): Promise<void> {
   const d = session.draft;
   const now = Date.now();
   const ref = getAdminDb().collection("products").doc();
@@ -202,6 +228,19 @@ async function finalizeNewProduct(userId: number, session: AdminSession): Promis
   };
   await ref.set(product);
   await clearSession(userId);
+
+  // Telegram'dan rasm yuborilgan bo'lsa - Storage'ga o'tkazib bog'laymiz.
+  let photoNote = `🖼 Rasm yuklash: ${SITE_URL}/admin/katalog yoki /tahrir ${ref.id}`;
+  if (photoFileId) {
+    try {
+      await attachTelegramPhoto(ref.id, photoFileId);
+      photoNote = "🖼 Rasm qo'shildi ✅";
+    } catch (error) {
+      console.error("Telegram rasmni yuklashda xato:", error);
+      photoNote = `⚠️ Rasm yuklanmadi. Keyinroq: /tahrir ${ref.id}`;
+    }
+  }
+
   await sendChatMessage(
     session.chatId,
     [
@@ -211,7 +250,7 @@ async function finalizeNewProduct(userId: number, session: AdminSession): Promis
       `Narx: ${formatSom(product.price)} | Zaxira: ${product.stock} dona`,
       product.brand ? `Brend: ${product.brand}` : "",
       "",
-      `🖼 Rasm yuklash uchun: ${SITE_URL}/admin/katalog`,
+      photoNote,
     ]
       .filter(Boolean)
       .join("\n"),
@@ -233,6 +272,7 @@ const EDIT_FIELDS: { field: string; label: string }[] = [
   { field: "country", label: "🌍 Davlat" },
   { field: "discount", label: "🔻 Chegirma" },
   { field: "description", label: "📝 Tavsif" },
+  { field: "photo", label: "🖼 Rasm" },
 ];
 
 async function sendEditMenu(session: AdminSession, product: Product): Promise<void> {
@@ -266,6 +306,7 @@ const EDIT_VALUE_PROMPTS: Record<string, string> = {
   country: "Yangi <b>davlat</b>ni yuboring:",
   discount: "Yangi <b>chegirma narx</b>ini yuboring (o'chirish uchun 0):",
   description: "Yangi <b>tavsif</b>ni yuboring:",
+  photo: "🖼 Yangi <b>rasm</b>ni yuboring (oddiy rasm sifatida):",
 };
 
 // ---------------------------------------------------------------------------
@@ -324,15 +365,37 @@ export async function handleAdminSessionMessage(params: {
   userId: number;
   threadId?: number;
   text: string;
+  /** Admin rasm yuborgan bo'lsa - eng katta o'lchamdagi file_id. */
+  photoFileId?: string;
 }): Promise<boolean> {
-  const { chatId, userId, text } = params;
+  const { chatId, userId, text, photoFileId } = params;
   const session = await getSession(userId);
   if (!session) return false;
   session.threadId = session.threadId ?? params.threadId;
   const value = text.trim();
 
   if (session.flow === "new_product") {
-    await handleNewProductText(userId, session, value);
+    await handleNewProductText(userId, session, value, photoFileId);
+    return true;
+  }
+
+  if (session.flow === "edit_product" && session.step === "edit_value" && session.editField === "photo") {
+    if (!photoFileId) {
+      await sendChatMessage(chatId, "Iltimos, rasmni oddiy rasm (photo) sifatida yuboring.", {
+        threadId: session.threadId,
+      });
+      return true;
+    }
+    if (session.productId) {
+      try {
+        await attachTelegramPhoto(session.productId, photoFileId);
+        await sendChatMessage(chatId, "🖼 Rasm yangilandi ✅", { threadId: session.threadId });
+      } catch (error) {
+        console.error("Rasm yangilashda xato:", error);
+        await sendChatMessage(chatId, "⚠️ Rasm yuklanmadi. Qayta urinib ko'ring.", { threadId: session.threadId });
+      }
+    }
+    await reloadEditMenu(userId, session);
     return true;
   }
 
@@ -351,8 +414,25 @@ export async function handleAdminSessionMessage(params: {
   return false;
 }
 
-async function handleNewProductText(userId: number, session: AdminSession, value: string): Promise<void> {
+async function handleNewProductText(
+  userId: number,
+  session: AdminSession,
+  value: string,
+  photoFileId?: string
+): Promise<void> {
   const step = session.step as NewStep;
+
+  // Rasm bosqichi: photo kutiladi (yoki ⏭ O'tkazish tugmasi).
+  if (step === "photo") {
+    if (photoFileId) {
+      await finalizeNewProduct(userId, session, photoFileId);
+    } else {
+      await sendChatMessage(session.chatId, "Iltimos, rasmni oddiy rasm (photo) sifatida yuboring yoki ⏭ O'tkazish tugmasini bosing.", {
+        threadId: session.threadId,
+      });
+    }
+    return;
+  }
 
   if (step === "category" || step === "material") {
     // Bu bosqichlarda tugma tanlanishi kerak.

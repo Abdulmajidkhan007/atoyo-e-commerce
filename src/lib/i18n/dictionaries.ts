@@ -139,6 +139,11 @@ export interface Dictionary {
     forgot: string;
     resetSent: string;
     enterEmailFirst: string;
+    actionResetTitle: string;
+    actionResetDone: string;
+    actionVerified: string;
+    actionInvalid: string;
+    goLogin: string;
   };
   product: {
     inStock: string;
@@ -314,6 +319,11 @@ const uz: Dictionary = {
     forgot: "Parolni unutdingizmi?",
     resetSent: "Parolni tiklash havolasi emailingizga yuborildi. Pochtangizni tekshiring.",
     enterEmailFirst: "Avval yuqoriga email manzilingizni kiriting.",
+    actionResetTitle: "Yangi parol o'rnatish",
+    actionResetDone: "Parol muvaffaqiyatli yangilandi! Endi yangi parol bilan kiring.",
+    actionVerified: "Email muvaffaqiyatli tasdiqlandi!",
+    actionInvalid: "Havola eskirgan yoki allaqachon ishlatilgan. Qaytadan so'rov yuboring.",
+    goLogin: "Kirish sahifasiga o'tish",
   },
   product: {
     inStock: "Zaxirada",
@@ -488,6 +498,11 @@ const en: Dictionary = {
     forgot: "Forgot password?",
     resetSent: "A password reset link was sent to your email. Check your inbox.",
     enterEmailFirst: "Enter your email address above first.",
+    actionResetTitle: "Set a new password",
+    actionResetDone: "Password updated successfully! Sign in with your new password.",
+    actionVerified: "Email verified successfully!",
+    actionInvalid: "This link is expired or already used. Request a new one.",
+    goLogin: "Go to sign-in page",
   },
   product: {
     inStock: "In stock",
@@ -662,6 +677,11 @@ const ru: Dictionary = {
     forgot: "Забыли пароль?",
     resetSent: "Ссылка для сброса пароля отправлена на ваш email. Проверьте почту.",
     enterEmailFirst: "Сначала введите email выше.",
+    actionResetTitle: "Установка нового пароля",
+    actionResetDone: "Пароль успешно обновлён! Войдите с новым паролем.",
+    actionVerified: "Email успешно подтверждён!",
+    actionInvalid: "Ссылка устарела или уже использована. Запросите новую.",
+    goLogin: "Перейти ко входу",
   },
   product: {
     inStock: "В наличии",

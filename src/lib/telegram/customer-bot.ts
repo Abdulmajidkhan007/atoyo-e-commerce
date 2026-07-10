@@ -793,6 +793,22 @@ export async function handleCustomerCallback(params: {
         // Hisobni butunlay o'chirish: ro'yxat yozuvi + sessiya (savat, til).
         await getAdminDb().collection("botUsers").doc(String(userId)).delete().catch(() => {});
         await getAdminDb().collection("botSessions").doc(String(chatId)).delete().catch(() => {});
+        // Buyurtmalar biznes-yozuv sifatida qoladi, lekin egasidan uziladi -
+        // aks holda qayta ro'yxatdan o'tganda eski tarix qaytib ko'rinardi.
+        try {
+          const ordersSnap = await getAdminDb()
+            .collection("orders")
+            .where("customerChatId", "==", chatId)
+            .limit(300)
+            .get();
+          if (!ordersSnap.empty) {
+            const batch = getAdminDb().batch();
+            ordersSnap.docs.forEach((d) => batch.update(d.ref, { customerChatId: null }));
+            await batch.commit();
+          }
+        } catch (error) {
+          console.error("Buyurtmalarni uzishda xato:", error);
+        }
         await sendChatMessage(chatId, t.deleteDone);
         return;
       }
