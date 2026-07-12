@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import NextLink from "next/link";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { Button, IconButton, TextField, CircularProgress } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -119,8 +120,8 @@ export function ProductTable() {
           {isReindexing ? <CircularProgress size={18} /> : "Qidiruv indeksini yangilash"}
         </Button>
         {reindexResult && <span className="text-sm text-navy-300">{reindexResult}</span>}
-        <Button variant="contained" startIcon={<AddIcon />} className="!ml-auto" onClick={() => setEditingProduct(null)}>
-          Yangi mahsulot
+        <Button variant="contained" startIcon={<AddIcon />} className="!ml-auto" component={NextLink} href="/admin/katalog/kirim">
+          Mahsulot kirimi
         </Button>
       </div>
 

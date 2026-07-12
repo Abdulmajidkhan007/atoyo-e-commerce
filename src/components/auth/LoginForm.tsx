@@ -10,20 +10,28 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 export function LoginForm() {
   const router = useRouter();
   const { dict } = useI18n();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "reset">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  const handleForgotPassword = async () => {
+  const switchMode = (next: "login" | "register" | "reset") => {
+    setMode(next);
+    setError(null);
+    setInfo(null);
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
     setInfo(null);
     if (!email.trim()) {
       setError(dict.auth.enterEmailFirst);
       return;
     }
+    setIsSubmitting(true);
     try {
       await resetPassword(email.trim());
       setInfo(dict.auth.resetSent);
@@ -31,8 +39,45 @@ export function LoginForm() {
       // Mavjud bo'lmagan email uchun ham xuddi shu xabar - hisob bor-yo'qligini
       // tashqariga oshkor qilmaslik uchun.
       setInfo(dict.auth.resetSent);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  // ---- Alohida "Parolni tiklash" bo'limi ----
+  if (mode === "reset") {
+    return (
+      <div className="flex flex-col gap-4 rounded-xl2 border border-navy-100 bg-white p-6 dark:border-navy-500 dark:bg-navy-700">
+        <h1 className="text-xl font-bold text-navy-900 dark:text-white">{dict.auth.resetTitle}</h1>
+
+        <form onSubmit={handleResetSubmit} className="flex flex-col gap-3">
+          <TextField
+            label="Email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoFocus
+          />
+
+          {error && <Alert severity="error">{error}</Alert>}
+          {info && <Alert severity="success">{info}</Alert>}
+
+          <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
+            {isSubmitting ? <CircularProgress size={22} color="inherit" /> : dict.auth.sendReset}
+          </Button>
+        </form>
+
+        <button
+          type="button"
+          onClick={() => switchMode("login")}
+          className="text-sm text-aqua-600 hover:underline dark:text-aqua-300"
+        >
+          {dict.auth.backToLogin}
+        </button>
+      </div>
+    );
+  }
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -112,7 +157,7 @@ export function LoginForm() {
       {mode === "login" && (
         <button
           type="button"
-          onClick={handleForgotPassword}
+          onClick={() => switchMode("reset")}
           className="text-sm text-navy-300 hover:underline"
         >
           {dict.auth.forgot}
@@ -121,7 +166,7 @@ export function LoginForm() {
 
       <button
         type="button"
-        onClick={() => setMode(mode === "login" ? "register" : "login")}
+        onClick={() => switchMode(mode === "login" ? "register" : "login")}
         className="text-sm text-aqua-600 hover:underline dark:text-aqua-300"
       >
         {mode === "login" ? dict.auth.noAccount : dict.auth.haveAccount}

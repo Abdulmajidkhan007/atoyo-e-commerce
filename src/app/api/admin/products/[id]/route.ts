@@ -16,6 +16,7 @@ const updateSchema = z.object({
   material: z.enum(["polypropylene", "metal-plastic", "steel", "copper", "brass", "cast-iron", "pvc"]).optional(),
   brand: z.string().max(120).optional(),
   manufacturerCountry: z.string().max(120).optional(),
+  supplier: z.string().max(120).optional(),
   price: z.number().nonnegative().optional(),
   discountPrice: z.number().nonnegative().nullable().optional(),
   stock: z.number().int().nonnegative().optional(),
@@ -58,6 +59,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.material !== undefined) updates.material = d.material;
   if (d.brand !== undefined) updates.brand = d.brand.trim();
   if (d.manufacturerCountry !== undefined) updates.manufacturerCountry = d.manufacturerCountry.trim();
+  if (d.supplier !== undefined) updates.supplier = d.supplier.trim();
   if (d.price !== undefined) updates.price = d.price;
   if (d.discountPrice !== undefined) updates.discountPrice = d.discountPrice;
   if (d.stock !== undefined) updates.stock = d.stock;

@@ -23,6 +23,7 @@ const productSchema = z.object({
   material: z.enum(["polypropylene", "metal-plastic", "steel", "copper", "brass", "cast-iron", "pvc"]),
   brand: z.string().max(120).default(""),
   manufacturerCountry: z.string().max(120).default(""),
+  supplier: z.string().max(120).default(""),
   price: z.number().nonnegative(),
   discountPrice: z.number().nonnegative().nullable().default(null),
   stock: z.number().int().nonnegative(),
@@ -68,6 +69,7 @@ export async function POST(request: Request) {
     category: d.category,
     brand: d.brand.trim(),
     manufacturerCountry: d.manufacturerCountry.trim(),
+    supplier: d.supplier.trim(),
     material: d.material,
     dimensions: {
       ...(d.diameterMm !== undefined ? { diameterMm: d.diameterMm } : {}),

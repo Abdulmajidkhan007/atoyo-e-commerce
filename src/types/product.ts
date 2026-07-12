@@ -35,6 +35,8 @@ export interface Product {
   category: ProductCategory;
   brand: string;
   manufacturerCountry: string;
+  /** Mahsulot kimdan kelgan (yetkazib beruvchi) - kirim hujjati uchun. */
+  supplier?: string;
   material: ProductMaterial;
   dimensions: ProductDimensions;
   price: number;

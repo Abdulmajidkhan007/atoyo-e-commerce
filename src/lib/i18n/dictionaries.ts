@@ -139,6 +139,9 @@ export interface Dictionary {
     forgot: string;
     resetSent: string;
     enterEmailFirst: string;
+    resetTitle: string;
+    sendReset: string;
+    backToLogin: string;
     actionResetTitle: string;
     actionResetDone: string;
     actionVerified: string;
@@ -319,6 +322,9 @@ const uz: Dictionary = {
     forgot: "Parolni unutdingizmi?",
     resetSent: "Parolni tiklash havolasi emailingizga yuborildi. Pochtangizni tekshiring.",
     enterEmailFirst: "Avval yuqoriga email manzilingizni kiriting.",
+    resetTitle: "Parolni tiklash",
+    sendReset: "Tiklash havolasini yuborish",
+    backToLogin: "⬅️ Kirishga qaytish",
     actionResetTitle: "Yangi parol o'rnatish",
     actionResetDone: "Parol muvaffaqiyatli yangilandi! Endi yangi parol bilan kiring.",
     actionVerified: "Email muvaffaqiyatli tasdiqlandi!",
@@ -498,6 +504,9 @@ const en: Dictionary = {
     forgot: "Forgot password?",
     resetSent: "A password reset link was sent to your email. Check your inbox.",
     enterEmailFirst: "Enter your email address above first.",
+    resetTitle: "Reset password",
+    sendReset: "Send reset link",
+    backToLogin: "⬅️ Back to sign in",
     actionResetTitle: "Set a new password",
     actionResetDone: "Password updated successfully! Sign in with your new password.",
     actionVerified: "Email verified successfully!",
@@ -677,6 +686,9 @@ const ru: Dictionary = {
     forgot: "Забыли пароль?",
     resetSent: "Ссылка для сброса пароля отправлена на ваш email. Проверьте почту.",
     enterEmailFirst: "Сначала введите email выше.",
+    resetTitle: "Сброс пароля",
+    sendReset: "Отправить ссылку для сброса",
+    backToLogin: "⬅️ Назад ко входу",
     actionResetTitle: "Установка нового пароля",
     actionResetDone: "Пароль успешно обновлён! Войдите с новым паролем.",
     actionVerified: "Email успешно подтверждён!",
