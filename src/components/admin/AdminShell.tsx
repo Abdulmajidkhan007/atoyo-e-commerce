@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { IconButton } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
@@ -14,6 +14,10 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import { signOutUser } from "@/lib/firebase/auth";
+import { useAppDispatch } from "@/redux/hooks";
+import { signOut as signOutAction } from "@/redux/slices/userSlice";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", Icon: DashboardOutlinedIcon },
@@ -24,7 +28,7 @@ const NAV_ITEMS = [
   { href: "/admin/sozlamalar", label: "Sozlamalar", Icon: SettingsOutlinedIcon },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({ onNavigate, onLogout }: { onNavigate?: () => void; onLogout: () => void }) {
   const pathname = usePathname();
   return (
     <>
@@ -54,12 +58,34 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
         <HomeOutlinedIcon fontSize="small" />
         Saytga qaytish
       </Link>
+
+      {/* Tizimdan chiqish */}
+      <button
+        type="button"
+        onClick={() => {
+          onNavigate?.();
+          onLogout();
+        }}
+        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-red-300 transition hover:bg-navy-700"
+      >
+        <LogoutOutlinedIcon fontSize="small" />
+        Chiqish
+      </button>
     </>
   );
 }
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Chiqish: client auth + server session cookie tozalanadi, bosh sahifaga.
+  const handleLogout = async () => {
+    await signOutUser().catch(() => {});
+    dispatch(signOutAction());
+    router.push("/");
+  };
 
   return (
     <div className="flex min-h-screen bg-navy-50 dark:bg-navy-950">
@@ -69,7 +95,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <StorefrontOutlinedIcon className="text-aqua-400" />
           Atoyo Admin
         </Link>
-        <NavLinks />
+        <NavLinks onLogout={handleLogout} />
       </aside>
 
       {/* Mobil/planshet uchun ochiladigan drawer */}
@@ -90,7 +116,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <CloseIcon className="text-white" fontSize="small" />
               </IconButton>
             </div>
-            <NavLinks onNavigate={() => setDrawerOpen(false)} />
+            <NavLinks onNavigate={() => setDrawerOpen(false)} onLogout={handleLogout} />
           </aside>
         </div>
       )}
