@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { getCurrentAppUser, SESSION_COOKIE_NAME } from "@/lib/firebase/session";
+import { logAction } from "@/lib/telegram/action-log";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,8 @@ export async function POST() {
     } catch (error) {
       console.error("Buyurtmalarni uzishda xato:", error);
     }
+
+    await logAction(`🗑 Sayt hisobi o'chirildi: ${user.email ?? user.uid}`);
 
     const response = NextResponse.json({ ok: true });
     response.cookies.delete(SESSION_COOKIE_NAME);

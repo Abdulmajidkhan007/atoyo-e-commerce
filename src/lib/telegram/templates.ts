@@ -40,6 +40,10 @@ export function formatOrderMessage(order: Order): string {
     `📞 <b>Telefon:</b> ${escapeHtml(order.phoneNumber)}`,
   ];
 
+  if (order.customerEmail) {
+    lines.push(`📧 <b>Email:</b> ${escapeHtml(order.customerEmail)}`);
+  }
+
   // Manzil: lokatsiya bo'lsa xarita havolasi, bo'lmasa qo'lda yozilgan manzil.
   if (order.location) {
     lines.push(

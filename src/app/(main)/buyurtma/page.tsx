@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   TextField,
@@ -26,11 +27,24 @@ export default function CheckoutPage() {
   const { dict } = useI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
+  const { profile, status } = useAppSelector((s) => s.user);
   const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+
+  // Profil ma'lumotlaridan avtoto'ldirish - admin buyurtma kimdan
+  // kelganini aniq bilishi uchun (foydalanuvchi o'zgartira oladi).
+  useEffect(() => {
+    function prefillFromProfile() {
+      if (!profile) return;
+      setCustomerName((prev) => prev || profile.displayName || "");
+      setPhoneNumber((prev) => prev || profile.phoneNumber || "");
+      setDeliveryAddress((prev) => prev || profile.homeAddress || "");
+    }
+    prefillFromProfile();
+  }, [profile]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash");
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -89,6 +103,18 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Buyurtma faqat tizimga kirgan foydalanuvchilar uchun.
+  if (status === "unauthenticated") {
+    return (
+      <section className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="mb-4 text-navy-300">{dict.checkout.loginRequired}</p>
+        <Button component={Link} href="/kirish" variant="contained" size="large">
+          {dict.nav.login}
+        </Button>
+      </section>
+    );
+  }
 
   if (items.length === 0) {
     return (

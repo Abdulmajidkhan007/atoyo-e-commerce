@@ -34,6 +34,30 @@ function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
+/** Umumiy email (e'lon/xabarnoma). Sozlanmagan bo'lsa false qaytaradi. */
+export async function sendGenericEmail(to: string, subject: string, bodyHtml: string): Promise<boolean> {
+  if (!isEmailConfigured() || !to) return false;
+  try {
+    await getTransport().sendMail({
+      from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
+      to,
+      subject,
+      html: `
+        <div style="font-family:sans-serif;max-width:520px">
+          <h2 style="color:#0B1220">Atoyo Santexnika</h2>
+          ${bodyHtml}
+          <hr style="border:none;border-top:1px solid #eee" />
+          <p style="color:#888;font-size:12px">Bu avtomatik xabar — javob yozish shart emas.</p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("Email yuborishda xato:", error);
+    return false;
+  }
+}
+
 /** Buyurtma holati o'zgarganda mijozga email (sozlanmagan bo'lsa jim o'tadi). */
 export async function sendOrderStatusEmail(to: string, order: Order, status: OrderStatus): Promise<void> {
   if (!isEmailConfigured() || !to) return;

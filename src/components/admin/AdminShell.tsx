@@ -13,6 +13,7 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
+import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { signOutUser } from "@/lib/firebase/auth";
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { href: "/admin/buyurtmalar", label: "Buyurtmalar", Icon: ReceiptLongOutlinedIcon },
   { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar", Icon: GroupOutlinedIcon },
   { href: "/admin/blog", label: "Blog", Icon: ArticleOutlinedIcon },
+  { href: "/admin/xabar", label: "Xabar yuborish", Icon: CampaignOutlinedIcon },
   { href: "/admin/sozlamalar", label: "Sozlamalar", Icon: SettingsOutlinedIcon },
 ];
 

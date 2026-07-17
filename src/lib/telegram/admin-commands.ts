@@ -2,6 +2,8 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage } from "./bot";
 import { startNewProductFlow, startEditProductFlow, cancelAdminSession } from "./admin-session";
+import { sendBroadcast } from "@/lib/broadcast";
+import { logAction } from "./action-log";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 import type { Order } from "@/types/order";
 
@@ -49,6 +51,7 @@ const HELP_TEXT = [
   "<code>/tikla ID</code> — qaytarish",
   "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
   "<code>/stat</code> — umumiy statistika",
+  "<code>/elon Matn...</code> — barcha foydalanuvchilarga e'lon (Telegram + Email)",
 ].join("\n");
 
 function formatSom(amount: number): string {
@@ -153,6 +156,18 @@ export async function handleAdminCommand(params: {
         const field = command === "/narx" ? "price" : "stock";
         await getAdminDb().collection("products").doc(id).update({ [field]: value, updatedAt: Date.now() });
         await reply(`✅ <b>${product.name}</b>\n${command === "/narx" ? `Yangi narx: ${formatSom(value)}` : `Yangi zaxira: ${value} dona`}`);
+        return;
+      }
+
+      case "/elon": {
+        if (!argsText) {
+          await reply("Foydalanish: <code>/elon Yangi aksiya boshlandi! ...</code>");
+          return;
+        }
+        await reply("📤 E'lon yuborilmoqda, kuting...");
+        const result = await sendBroadcast({ title: "Atoyo Santexnika", body: argsText });
+        await reply(`✅ E'lon yuborildi — Telegram: ${result.telegramSent} ta, Email: ${result.emailSent} ta.`);
+        await logAction(`📢 E'lon yuborildi (guruhdan): Telegram ${result.telegramSent}, Email ${result.emailSent}`);
         return;
       }
 

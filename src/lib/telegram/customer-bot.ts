@@ -10,6 +10,7 @@ import {
 import { getRequiredChannels } from "./required-channels";
 import { createOrder } from "@/lib/orders/create-order";
 import { botDict, isBotLang, BOT_LANGS, BOT_LANG_LABELS, type BotLang, type BotDict } from "./bot-i18n";
+import { logAction } from "./action-log";
 import type { Product, ProductCategory } from "@/types/product";
 import type { Order, OrderItem } from "@/types/order";
 
@@ -174,6 +175,7 @@ async function registerWithContact(params: {
     registeredAt: Date.now(),
   };
   await getAdminDb().collection("botUsers").doc(String(userId)).set(botUser);
+  await logAction(`🆕 Botda yangi mijoz: ${botUser.name}, ${botUser.phoneNumber}`);
   const session = await getSession(chatId);
   await removeReplyKeyboard(chatId, botDict(session.lang).registered);
   if (await ensureAccess(chatId, userId)) {
@@ -791,6 +793,7 @@ export async function handleCustomerCallback(params: {
       await answerCallbackQuery(callbackQueryId);
       if (arg1 === "yes") {
         // Hisobni butunlay o'chirish: ro'yxat yozuvi + sessiya (savat, til).
+        const deletedUser = await getBotUser(userId);
         await getAdminDb().collection("botUsers").doc(String(userId)).delete().catch(() => {});
         await getAdminDb().collection("botSessions").doc(String(chatId)).delete().catch(() => {});
         // Buyurtmalar biznes-yozuv sifatida qoladi, lekin egasidan uziladi -
@@ -810,6 +813,7 @@ export async function handleCustomerCallback(params: {
           console.error("Buyurtmalarni uzishda xato:", error);
         }
         await sendChatMessage(chatId, t.deleteDone);
+        await logAction(`🗑 Bot hisobi o'chirildi: ${deletedUser?.name ?? userId}${deletedUser?.phoneNumber ? `, ${deletedUser.phoneNumber}` : ""}`);
         return;
       }
       if (arg1 === "no") {

@@ -62,6 +62,7 @@ export interface Dictionary {
   checkout: {
     title: string;
     addFirst: string;
+    loginRequired: string;
     fullName: string;
     phone: string;
     detectLocation: string;
@@ -243,6 +244,7 @@ const uz: Dictionary = {
   checkout: {
     title: "Buyurtmani rasmiylashtirish",
     addFirst: "Buyurtma berish uchun avval savatga mahsulot qo'shing.",
+    loginRequired: "Buyurtma berish uchun avval tizimga kiring yoki ro'yxatdan o'ting.",
     fullName: "Ism-familiya",
     phone: "Telefon raqami",
     detectLocation: "Joylashuvni aniqlash (GPS)",
@@ -426,6 +428,7 @@ const en: Dictionary = {
   checkout: {
     title: "Checkout",
     addFirst: "Add products to your cart before placing an order.",
+    loginRequired: "Please sign in or create an account to place an order.",
     fullName: "Full name",
     phone: "Phone number",
     detectLocation: "Detect location (GPS)",
@@ -608,6 +611,7 @@ const ru: Dictionary = {
   checkout: {
     title: "Оформление заказа",
     addFirst: "Сначала добавьте товары в корзину.",
+    loginRequired: "Чтобы оформить заказ, войдите или зарегистрируйтесь.",
     fullName: "Имя и фамилия",
     phone: "Номер телефона",
     detectLocation: "Определить локацию (GPS)",

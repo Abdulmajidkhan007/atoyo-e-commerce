@@ -3,6 +3,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requireAdminUser } from "@/lib/firebase/session";
+import { logAction } from "@/lib/telegram/action-log";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
 
   try {
     await batch.commit();
+    await logAction(`📥 Kirim (${admin.email ?? "admin"}): ${parsed.data.items.length} ta mahsulot zaxirasi yangilandi`);
     return NextResponse.json({ ok: true, updated: parsed.data.items.length });
   } catch (error) {
     console.error("Kirimni saqlashda xato:", error);

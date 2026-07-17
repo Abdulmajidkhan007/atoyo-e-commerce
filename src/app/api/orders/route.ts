@@ -37,7 +37,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Buyurtma faqat tizimga kirgan foydalanuvchidan qabul qilinadi -
+    // admin kimdan buyurtma kelganini aniq bilishi kerak.
     const currentUser = await getCurrentAppUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Buyurtma berish uchun tizimga kiring." }, { status: 401 });
+    }
     const order = await createOrder({
       customerName: parsed.data.customerName,
       phoneNumber: parsed.data.phoneNumber,
@@ -45,7 +50,8 @@ export async function POST(request: Request) {
       location: parsed.data.location ?? null,
       deliveryAddress: parsed.data.deliveryAddress ?? null,
       paymentMethod: parsed.data.paymentMethod,
-      userId: currentUser?.uid ?? null,
+      userId: currentUser.uid,
+      customerEmail: currentUser.email ?? null,
     });
 
     return NextResponse.json({ orderId: order.id }, { status: 201 });

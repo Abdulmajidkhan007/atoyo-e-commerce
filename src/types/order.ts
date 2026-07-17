@@ -17,6 +17,8 @@ export interface OrderLocation {
 export interface Order {
   id: string;
   userId: string | null;
+  /** Buyurtma bergan foydalanuvchi emaili (saytdan kelgan buyurtmalarda). */
+  customerEmail?: string | null;
   customerName: string;
   phoneNumber: string;
   items: OrderItem[];

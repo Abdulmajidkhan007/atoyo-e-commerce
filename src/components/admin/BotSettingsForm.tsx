@@ -18,6 +18,7 @@ export function BotSettingsForm({ initialConfig, initialChannels }: BotSettingsF
   const [orders, setOrders] = useState(String(initialConfig.orders));
   const [contact, setContact] = useState(String(initialConfig.contact));
   const [subscribers, setSubscribers] = useState(String(initialConfig.subscribers));
+  const [actions, setActions] = useState(String(initialConfig.actions));
   const [channels, setChannels] = useState<RequiredChannel[]>(initialChannels);
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
@@ -41,6 +42,7 @@ export function BotSettingsForm({ initialConfig, initialChannels }: BotSettingsF
           orders: Number(orders),
           contact: Number(contact),
           subscribers: Number(subscribers),
+          actions: Number(actions),
           requiredChannels: cleanChannels,
         },
         { merge: true }
@@ -61,6 +63,7 @@ export function BotSettingsForm({ initialConfig, initialChannels }: BotSettingsF
         <TextField label="#Buyurtmalar - Thread ID" type="number" value={orders} onChange={(e) => setOrders(e.target.value)} />
         <TextField label="#Kontakt - Thread ID" type="number" value={contact} onChange={(e) => setContact(e.target.value)} />
         <TextField label="#Obunachilar - Thread ID" type="number" value={subscribers} onChange={(e) => setSubscribers(e.target.value)} />
+        <TextField label="#Actions (hodisalar) - Thread ID" type="number" value={actions} onChange={(e) => setActions(e.target.value)} />
       </div>
 
       {/* Majburiy kanallar */}

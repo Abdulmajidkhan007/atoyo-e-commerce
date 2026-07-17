@@ -14,6 +14,7 @@ export interface NewOrderInput {
   deliveryAddress?: string | null;
   paymentMethod?: "cash" | "online";
   userId?: string | null;
+  customerEmail?: string | null;
   /** Buyurtma Telegram botdan kelgan bo'lsa - mijozning chat ID'si. */
   customerChatId?: number | null;
 }
@@ -36,6 +37,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
   const order: Order = {
     id: orderRef.id,
     userId: input.userId ?? null,
+    customerEmail: input.customerEmail ?? null,
     customerName: input.customerName,
     phoneNumber: input.phoneNumber,
     items: input.items,

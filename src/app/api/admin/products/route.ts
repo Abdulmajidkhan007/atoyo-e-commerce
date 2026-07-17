@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requireAdminUser } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
+import { logAction } from "@/lib/telegram/action-log";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -89,5 +90,6 @@ export async function POST(request: Request) {
   };
 
   await ref.set(product);
+  await logAction(`📦 Yangi mahsulot (${admin.email ?? "admin"}): ${product.name} — ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`);
   return NextResponse.json({ product }, { status: 201 });
 }
