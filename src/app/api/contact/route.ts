@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { normalizePhone, isValidName } from "@/lib/validation";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendTopicMessage } from "@/lib/telegram/bot";
 import { formatContactMessage } from "@/lib/telegram/templates";
 
 const contactSchema = z.object({
-  name: z.string().min(2).max(120),
-  phone: z.string().min(7).max(20),
+  name: z
+    .string()
+    .min(2)
+    .max(120)
+    .refine(isValidName, { message: "Ism noto'g'ri" }),
+  phone: z
+    .string()
+    .transform((v) => normalizePhone(v))
+    .refine((v): v is string => v !== null, { message: "Telefon raqam noto'g'ri" }),
   question: z.string().min(3).max(2000),
 });
 

@@ -63,6 +63,8 @@ export interface Dictionary {
     title: string;
     addFirst: string;
     loginRequired: string;
+    invalidName: string;
+    invalidPhone: string;
     fullName: string;
     phone: string;
     detectLocation: string;
@@ -245,6 +247,8 @@ const uz: Dictionary = {
     title: "Buyurtmani rasmiylashtirish",
     addFirst: "Buyurtma berish uchun avval savatga mahsulot qo'shing.",
     loginRequired: "Buyurtma berish uchun avval tizimga kiring yoki ro'yxatdan o'ting.",
+    invalidName: "To'liq ism-familiyangizni kiriting (kamida 2 ta harf).",
+    invalidPhone: "Telefon raqamni to'g'ri kiriting. Masalan: +998 90 123 45 67",
     fullName: "Ism-familiya",
     phone: "Telefon raqami",
     detectLocation: "Joylashuvni aniqlash (GPS)",
@@ -429,6 +433,8 @@ const en: Dictionary = {
     title: "Checkout",
     addFirst: "Add products to your cart before placing an order.",
     loginRequired: "Please sign in or create an account to place an order.",
+    invalidName: "Enter your full name (at least 2 letters).",
+    invalidPhone: "Enter a valid phone number, e.g. +998 90 123 45 67",
     fullName: "Full name",
     phone: "Phone number",
     detectLocation: "Detect location (GPS)",
@@ -612,6 +618,8 @@ const ru: Dictionary = {
     title: "Оформление заказа",
     addFirst: "Сначала добавьте товары в корзину.",
     loginRequired: "Чтобы оформить заказ, войдите или зарегистрируйтесь.",
+    invalidName: "Введите имя и фамилию (не менее 2 букв).",
+    invalidPhone: "Введите корректный номер, например +998 90 123 45 67",
     fullName: "Имя и фамилия",
     phone: "Номер телефона",
     detectLocation: "Определить локацию (GPS)",

@@ -24,6 +24,7 @@ import {
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { ensureSessionCookie, resetPassword, signOutUser } from "@/lib/firebase/auth";
+import { normalizePhone, isValidName } from "@/lib/validation";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
@@ -40,6 +41,7 @@ export default function ProfileSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
+  const [validationMsg, setValidationMsg] = useState<string | null>(null);
 
   // Parol o'zgartirish bo'limi
   const [currentPassword, setCurrentPassword] = useState("");
@@ -134,8 +136,24 @@ export default function ProfileSettingsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
     setResult(null);
+
+    // Client validatsiya: ism va (kiritilgan bo'lsa) telefon.
+    if (!isValidName(displayName)) {
+      setValidationMsg(dict.checkout.invalidName);
+      return;
+    }
+    let normalizedPhone: string | null = null;
+    if (phoneNumber.trim()) {
+      normalizedPhone = normalizePhone(phoneNumber);
+      if (!normalizedPhone) {
+        setValidationMsg(dict.checkout.invalidPhone);
+        return;
+      }
+    }
+    setValidationMsg(null);
+
+    setIsSaving(true);
     try {
       // Session cookie eskirgan bo'lsa yangilaymiz - aks holda server 401 qaytaradi.
       await ensureSessionCookie();
@@ -144,7 +162,7 @@ export default function ProfileSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           displayName: displayName.trim(),
-          phoneNumber: phoneNumber.trim() || null,
+          phoneNumber: normalizedPhone,
           homeAddress: homeAddress.trim() || null,
         }),
       });
@@ -244,6 +262,7 @@ export default function ProfileSettingsPage() {
           minRows={2}
         />
 
+        {validationMsg && <Alert severity="warning">{validationMsg}</Alert>}
         {result === "success" && <Alert severity="success">{dict.profile.saved}</Alert>}
         {result === "error" && <Alert severity="error">{dict.common.errorRetry}</Alert>}
 

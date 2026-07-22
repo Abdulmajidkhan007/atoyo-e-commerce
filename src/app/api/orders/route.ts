@@ -2,10 +2,18 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { createOrder } from "@/lib/orders/create-order";
+import { normalizePhone, isValidName } from "@/lib/validation";
 
 const orderSchema = z.object({
-  customerName: z.string().min(2).max(120),
-  phoneNumber: z.string().min(7).max(20),
+  customerName: z
+    .string()
+    .min(2)
+    .max(120)
+    .refine(isValidName, { message: "Ism noto'g'ri" }),
+  phoneNumber: z
+    .string()
+    .transform((v) => normalizePhone(v))
+    .refine((v): v is string => v !== null, { message: "Telefon raqam noto'g'ri" }),
   items: z
     .array(
       z.object({

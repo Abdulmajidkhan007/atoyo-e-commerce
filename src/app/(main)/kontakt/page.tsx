@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TextField, Button, Alert, CircularProgress } from "@mui/material";
+import { normalizePhone, isValidName } from "@/lib/validation";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 export default function ContactPage() {
@@ -11,17 +12,29 @@ export default function ContactPage() {
   const [question, setQuestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
+  const [validationMsg, setValidationMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setResult(null);
+    setValidationMsg(null);
 
+    if (!isValidName(name)) {
+      setValidationMsg(dict.checkout.invalidName);
+      return;
+    }
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) {
+      setValidationMsg(dict.checkout.invalidPhone);
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, question }),
+        body: JSON.stringify({ name: name.trim(), phone: normalizedPhone, question }),
       });
       if (!response.ok) throw new Error("failed");
 
@@ -59,6 +72,7 @@ export default function ContactPage() {
           onChange={(e) => setQuestion(e.target.value)}
         />
 
+        {validationMsg && <Alert severity="warning">{validationMsg}</Alert>}
         {result === "success" && <Alert severity="success">{dict.contact.success}</Alert>}
         {result === "error" && <Alert severity="error">{dict.common.errorRetry}</Alert>}
 

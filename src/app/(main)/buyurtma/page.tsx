@@ -16,6 +16,7 @@ import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { clearCart } from "@/redux/slices/cartSlice";
 import { ensureSessionCookie } from "@/lib/firebase/auth";
+import { normalizePhone, isValidName } from "@/lib/validation";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 function formatSom(amount: number): string {
@@ -66,6 +67,18 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+
+    // Client validatsiya: ism va telefon haqiqiy bo'lishi shart.
+    if (!isValidName(customerName)) {
+      setSubmitError(dict.checkout.invalidName);
+      return;
+    }
+    const normalizedPhone = normalizePhone(phoneNumber);
+    if (!normalizedPhone) {
+      setSubmitError(dict.checkout.invalidPhone);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -76,8 +89,8 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerName,
-          phoneNumber,
+          customerName: customerName.trim(),
+          phoneNumber: normalizedPhone,
           items: items.map((item) => ({
             productId: item.productId,
             name: item.name,

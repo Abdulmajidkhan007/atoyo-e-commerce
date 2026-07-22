@@ -2,12 +2,23 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { getCurrentAppUser } from "@/lib/firebase/session";
+import { normalizePhone, isValidName } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
 const profileSchema = z.object({
-  displayName: z.string().min(1).max(120).optional(),
-  phoneNumber: z.string().min(7).max(20).nullable().optional(),
+  displayName: z
+    .string()
+    .min(1)
+    .max(120)
+    .refine(isValidName, { message: "Ism noto'g'ri" })
+    .optional(),
+  phoneNumber: z
+    .string()
+    .transform((v) => normalizePhone(v))
+    .refine((v): v is string => v !== null, { message: "Telefon raqam noto'g'ri" })
+    .nullable()
+    .optional(),
   homeAddress: z.string().max(500).nullable().optional(),
 });
 
