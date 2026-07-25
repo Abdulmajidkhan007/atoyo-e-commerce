@@ -108,6 +108,7 @@ export interface Dictionary {
     addressLabel: string;
     viewOnMap: string;
     cancelOrder: string;
+    receipt: string;
     cancelConfirm: string;
     cancelled: string;
     status: {
@@ -318,6 +319,7 @@ const uz: Dictionary = {
     addressLabel: "Manzil",
     viewOnMap: "📍 Xaritada ko'rish",
     cancelOrder: "Buyurtmani bekor qilish",
+    receipt: "Chek",
     cancelConfirm: "Buyurtmani bekor qilishni tasdiqlaysizmi?",
     cancelled: "Buyurtma bekor qilindi.",
     status: {
@@ -529,6 +531,7 @@ const en: Dictionary = {
     addressLabel: "Address",
     viewOnMap: "📍 View on map",
     cancelOrder: "Cancel order",
+    receipt: "Receipt",
     cancelConfirm: "Cancel this order?",
     cancelled: "Order cancelled.",
     status: {
@@ -739,6 +742,7 @@ const ru: Dictionary = {
     addressLabel: "Адрес",
     viewOnMap: "📍 Посмотреть на карте",
     cancelOrder: "Отменить заказ",
+    receipt: "Чек",
     cancelConfirm: "Отменить этот заказ?",
     cancelled: "Заказ отменён.",
     status: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import {
   Button,
@@ -184,6 +185,11 @@ export function AdminOrdersTable() {
                   {opt.label}
                 </Button>
               ))}
+
+              {/* Chek: chop etish yoki PDF sifatida saqlash */}
+              <Button size="small" variant="text" component={Link} href={`/chek/${order.id}`} target="_blank">
+                Chek
+              </Button>
             </div>
           </div>
         ))}

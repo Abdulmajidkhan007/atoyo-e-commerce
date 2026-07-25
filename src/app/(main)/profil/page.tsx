@@ -145,8 +145,12 @@ export default function ProfilePage() {
                       )}
                     </div>
 
-                    {(order.status === "pending" || order.status === "approved") && (
-                      <div className="mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button size="small" variant="outlined" component={Link} href={`/chek/${order.id}`}>
+                        {dict.profile.receipt}
+                      </Button>
+
+                      {(order.status === "pending" || order.status === "approved") && (
                         <Button
                           size="small"
                           color="error"
@@ -156,8 +160,8 @@ export default function ProfilePage() {
                         >
                           {dict.profile.cancelOrder}
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

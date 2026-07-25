@@ -21,3 +21,18 @@ body {
   color: var(--color-fg);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* CHEK CHOP ETISH: sahifa chop etilganda faqat chek qismi qolsin -
+   header, footer, mobil pastki menyu va tugmalar chiqmasin. */
+@media print {
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}

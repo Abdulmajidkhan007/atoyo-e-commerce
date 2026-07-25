@@ -86,6 +86,36 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Mahsulot sharhlari - hamma o'qiy oladi; yozish faqat server orqali
+    // (/api/products/[id]/reviews) - u yerda "bitta mijoz - bitta sharh"
+    // va reyting hisobi tranzaksiyada bajariladi.
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Promokodlar - kodni tekshirish ham, tahrirlash ham faqat server
+    // orqali (kodlar ro'yxati clientga ochilmasligi kerak).
+    match /promoCodes/{code} {
+      allow read, write: if false;
+    }
+
+    // Mahsulot kirimi tarixi - faqat server (Admin SDK) yozadi va o'qiydi.
+    match /stockIntakes/{intakeId} {
+      allow read, write: if false;
+    }
+
+    // Filtr ro'yxatlari (brend/davlat) - hamma o'qiy oladi, server yozadi.
+    match /metadata/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Rate limit hisoblagichlari - faqat server.
+    match /rateLimits/{limitId} {
+      allow read, write: if false;
+    }
+
     // Dashboard tahlillari (umumiy buyurtmalar/tushum) - faqat server
     // (Admin SDK, /api/orders) yozadi; admin panel ham server
     // komponentda Admin SDK orqali o'qiydi, shuning uchun clientga

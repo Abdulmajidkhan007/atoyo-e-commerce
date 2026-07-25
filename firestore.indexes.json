@@ -116,6 +116,14 @@
         { "fieldPath": "isActive", "order": "ASCENDING" },
         { "fieldPath": "nameTokens", "arrayConfig": "CONTAINS" }
       ]
+    },
+    {
+      "collectionGroup": "reviews",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "productId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

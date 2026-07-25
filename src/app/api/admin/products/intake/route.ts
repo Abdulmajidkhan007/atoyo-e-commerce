@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
+import type { StockIntake } from "@/types/intake";
 
 export const runtime = "nodejs";
 
@@ -39,16 +40,43 @@ export async function POST(request: Request) {
   const batch = db.batch();
   const now = Date.now();
 
-  for (const item of parsed.data.items) {
-    const ref = db.collection("products").doc(item.productId);
+  const refs = parsed.data.items.map((item) => db.collection("products").doc(item.productId));
+  // Kirim tarixida mahsulot nomi ham saqlanadi - keyinchalik mahsulot
+  // o'chirilsa ham hujjat o'qilishi mumkin bo'lsin.
+  const snaps = await db.getAll(...refs);
+
+  for (let i = 0; i < parsed.data.items.length; i += 1) {
+    const item = parsed.data.items[i]!;
     const updates: Record<string, unknown> = {
       stock: FieldValue.increment(item.qty),
       updatedAt: now,
     };
     if (item.price !== undefined) updates.price = item.price;
     if (item.supplier !== undefined && item.supplier.trim()) updates.supplier = item.supplier.trim();
-    batch.update(ref, updates);
+    batch.update(refs[i]!, updates);
   }
+
+  // KIRIM TARIXI: kim, qachon, nimadan qancha kiritgani yozib boriladi.
+  const intakeRef = db.collection("stockIntakes").doc();
+  const intake: StockIntake = {
+    id: intakeRef.id,
+    adminUid: admin.uid,
+    adminEmail: admin.email ?? null,
+    items: parsed.data.items.map((item, i) => {
+      const data = snaps[i]?.data() as { name?: string; stock?: number } | undefined;
+      return {
+        productId: item.productId,
+        name: data?.name ?? item.productId,
+        qty: item.qty,
+        stockBefore: data?.stock ?? 0,
+        price: item.price ?? null,
+        supplier: item.supplier?.trim() || null,
+      };
+    }),
+    totalQty: parsed.data.items.reduce((sum, item) => sum + item.qty, 0),
+    createdAt: now,
+  };
+  batch.set(intakeRef, intake);
 
   try {
     await batch.commit();

@@ -105,7 +105,12 @@ function IntakeContent() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">Mahsulot kirimi</h1>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold text-navy-900 dark:text-white">Mahsulot kirimi</h1>
+        <Link href="/admin/katalog/kirim/tarix" className="text-sm text-aqua-600 hover:underline">
+          Kirim tarixi →
+        </Link>
+      </div>
       <p className="mb-6 text-sm text-navy-300">
         Avval mahsulotni qidiring — topilsa ro&apos;yxatga qo&apos;shib zaxirani ko&apos;paytiring.
         Topilmasa yangi mahsulot yarating.
