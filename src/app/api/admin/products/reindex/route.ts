@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import type { Product } from "@/types/product";
 
@@ -13,7 +13,7 @@ export const runtime = "nodejs";
  * to'ldiradi. Faqat admin.
  */
 export async function POST() {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("products");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const snapshot = await getAdminDb().collection("products").limit(500).get();

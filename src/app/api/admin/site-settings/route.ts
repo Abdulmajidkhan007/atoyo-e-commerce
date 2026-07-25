@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 
 export const runtime = "nodejs";
 
@@ -28,7 +28,7 @@ const settingsSchema = z.object({
 
 /** Sayt sozlamalari (kontakt, ijtimoiy tarmoqlar, about) - faqat admin. */
 export async function PATCH(request: Request) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("settings");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = settingsSchema.safeParse(await request.json().catch(() => null));

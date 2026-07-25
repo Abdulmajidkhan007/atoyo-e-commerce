@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 
 const BATCH_SIZE = 400; // Firestore batch limiti 500 - xavfsiz margin bilan.
 // Bitta HTTP so'rovda qayta ishlanadigan maksimal hujjatlar soni. 10,000+
@@ -18,7 +18,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("products");
   if (!admin) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
   }

@@ -11,10 +11,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Admin yoki owner (loyiha egasi) - ikkalasi ham xodim hisoblanadi.
     function isAdmin() {
       return isSignedIn() &&
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'owner'];
     }
 
     // Mahsulotlar - hamma o'qiy oladi, faqat admin yoza oladi.
@@ -36,8 +37,12 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && request.resource.data.role == 'user';
-      allow update: if isAdmin() ||
-        (isOwner(userId) && request.resource.data.role == resource.data.role);
+      // Rol/huquq o'zgartirish FAQAT server (Admin SDK, /api/admin/users)
+      // orqali - owner tekshiruvi o'sha yerda. Client faqat o'z profilini
+      // (rolini o'zgartirmasdan) tahrirlashi mumkin.
+      allow update: if isOwner(userId) &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.get('permissions', {}) == resource.data.get('permissions', {});
     }
 
     // Buyurtmalar - foydalanuvchi faqat o'z buyurtmasini yaratishi va

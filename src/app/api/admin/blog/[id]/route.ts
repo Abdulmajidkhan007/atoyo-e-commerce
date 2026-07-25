@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import type { BlogPost } from "@/types/content";
 
 export const runtime = "nodejs";
@@ -15,7 +15,7 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("blog");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
@@ -39,7 +39,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("blog");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const { id } = await params;

@@ -19,22 +19,32 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { signOutUser } from "@/lib/firebase/auth";
 import { useAppDispatch } from "@/redux/hooks";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
+import { DEFAULT_ADMIN_PERMISSIONS, type AdminPermissions, type PermissionKey } from "@/lib/permissions";
 
-const NAV_ITEMS = [
+// `perm` - bo'limni ko'rish uchun kerakli huquq (yo'q bo'lsa hammaga ochiq).
+const NAV_ITEMS: { href: string; label: string; Icon: typeof DashboardOutlinedIcon; perm?: PermissionKey }[] = [
   { href: "/admin", label: "Dashboard", Icon: DashboardOutlinedIcon },
-  { href: "/admin/katalog", label: "Katalog", Icon: Inventory2OutlinedIcon },
-  { href: "/admin/buyurtmalar", label: "Buyurtmalar", Icon: ReceiptLongOutlinedIcon },
-  { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar", Icon: GroupOutlinedIcon },
-  { href: "/admin/blog", label: "Blog", Icon: ArticleOutlinedIcon },
-  { href: "/admin/xabar", label: "Xabar yuborish", Icon: CampaignOutlinedIcon },
-  { href: "/admin/sozlamalar", label: "Sozlamalar", Icon: SettingsOutlinedIcon },
+  { href: "/admin/katalog", label: "Katalog", Icon: Inventory2OutlinedIcon, perm: "products" },
+  { href: "/admin/buyurtmalar", label: "Buyurtmalar", Icon: ReceiptLongOutlinedIcon, perm: "orders" },
+  { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar", Icon: GroupOutlinedIcon, perm: "users" },
+  { href: "/admin/blog", label: "Blog", Icon: ArticleOutlinedIcon, perm: "blog" },
+  { href: "/admin/xabar", label: "Xabar yuborish", Icon: CampaignOutlinedIcon, perm: "broadcast" },
+  { href: "/admin/sozlamalar", label: "Sozlamalar", Icon: SettingsOutlinedIcon, perm: "settings" },
 ];
 
-function NavLinks({ onNavigate, onLogout }: { onNavigate?: () => void; onLogout: () => void }) {
+function NavLinks({
+  onNavigate,
+  onLogout,
+  canSee,
+}: {
+  onNavigate?: () => void;
+  onLogout: () => void;
+  canSee: (perm?: PermissionKey) => boolean;
+}) {
   const pathname = usePathname();
   return (
     <>
-      {NAV_ITEMS.map(({ href, label, Icon }) => {
+      {NAV_ITEMS.filter((item) => canSee(item.perm)).map(({ href, label, Icon }) => {
         const isActive = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
         return (
           <Link
@@ -77,7 +87,21 @@ function NavLinks({ onNavigate, onLogout }: { onNavigate?: () => void; onLogout:
   );
 }
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  children,
+  permissions,
+  isOwner = false,
+}: {
+  children: React.ReactNode;
+  permissions?: AdminPermissions;
+  isOwner?: boolean;
+}) {
+  // Owner hamma bo'limni ko'radi; admin faqat ruxsat berilganlarini.
+  const canSee = (perm?: PermissionKey) => {
+    if (!perm || isOwner) return true;
+    return (permissions ?? DEFAULT_ADMIN_PERMISSIONS)[perm] === true;
+  };
+
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -97,7 +121,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <StorefrontOutlinedIcon className="text-aqua-400" />
           Atoyo Admin
         </Link>
-        <NavLinks onLogout={handleLogout} />
+        <NavLinks onLogout={handleLogout} canSee={canSee} />
       </aside>
 
       {/* Mobil/planshet uchun ochiladigan drawer */}
@@ -118,7 +142,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <CloseIcon className="text-white" fontSize="small" />
               </IconButton>
             </div>
-            <NavLinks onNavigate={() => setDrawerOpen(false)} onLogout={handleLogout} />
+            <NavLinks onNavigate={() => setDrawerOpen(false)} onLogout={handleLogout} canSee={canSee} />
           </aside>
         </div>
       )}

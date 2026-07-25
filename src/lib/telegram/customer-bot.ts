@@ -8,7 +8,7 @@ import {
   isChatMember,
 } from "./bot";
 import { getRequiredChannels } from "./required-channels";
-import { createOrder } from "@/lib/orders/create-order";
+import { createOrder, OrderValidationError } from "@/lib/orders/create-order";
 import { botDict, isBotLang, BOT_LANGS, BOT_LANG_LABELS, type BotLang, type BotDict } from "./bot-i18n";
 import { logAction } from "./action-log";
 import type { Product, ProductCategory } from "@/types/product";
@@ -434,15 +434,28 @@ async function finishOrder(
     return;
   }
   const botUser = await getBotUser(userId);
-  const order = await createOrder({
-    customerName: session.customerName ?? botUser?.name ?? "Mijoz",
-    phoneNumber: botUser?.phoneNumber ?? "",
-    items: session.cart,
-    location: session.location ?? null,
-    deliveryAddress: session.deliveryAddress ?? botUser?.address ?? null,
-    paymentMethod,
-    customerChatId: chatId,
-  });
+  let order;
+  try {
+    order = await createOrder({
+      customerName: session.customerName ?? botUser?.name ?? "Mijoz",
+      phoneNumber: botUser?.phoneNumber ?? "",
+      items: session.cart,
+      location: session.location ?? null,
+      deliveryAddress: session.deliveryAddress ?? botUser?.address ?? null,
+      paymentMethod,
+      customerChatId: chatId,
+    });
+  } catch (error) {
+    // Zaxira yetmasa yoki mahsulot sotuvdan olingan bo'lsa - savat saqlanadi,
+    // mijozga aniq sabab aytiladi.
+    if (error instanceof OrderValidationError) {
+      session.state = "idle";
+      await saveSession(chatId, session);
+      await sendChatMessage(chatId, `⚠️ ${error.message}`, { replyMarkup: mainMenuKeyboard(t) });
+      return;
+    }
+    throw error;
+  }
 
   await saveSession(chatId, { state: "idle", cart: [], lang: session.lang, updatedAt: Date.now() });
 

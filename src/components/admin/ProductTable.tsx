@@ -9,7 +9,6 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import { getProductsPage, searchProductsByPrefix } from "@/lib/firebase/firestore";
-import { ProductFormDialog } from "./ProductFormDialog";
 import { BulkPriceDialog } from "./BulkPriceDialog";
 import { SearchBar } from "@/components/product/SearchBar";
 import type { Product } from "@/types/product";
@@ -22,7 +21,6 @@ export function ProductTable() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingProduct, setEditingProduct] = useState<Product | null | undefined>(undefined);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
   const [savingFieldKey, setSavingFieldKey] = useState<string | null>(null);
   const [reindexResult, setReindexResult] = useState<string | null>(null);
@@ -173,7 +171,7 @@ export function ProductTable() {
                   {savingFieldKey === `${product.id}-stock` && <CircularProgress size={14} className="ml-2" />}
                 </td>
                 <td className="px-4 py-2">
-                  <IconButton size="small" aria-label="Tahrirlash" onClick={() => setEditingProduct(product)}>
+                  <IconButton size="small" aria-label="Tahrirlash" component={NextLink} href={`/admin/katalog/${product.id}/tahrir`}>
                     <EditOutlinedIcon fontSize="small" />
                   </IconButton>
                   <IconButton size="small" aria-label="O'chirish" onClick={() => handleDelete(product.id)}>
@@ -197,18 +195,6 @@ export function ProductTable() {
           <Button onClick={loadMore}>Ko&apos;proq yuklash</Button>
         </div>
       )}
-
-      <ProductFormDialog
-        open={editingProduct !== undefined}
-        product={editingProduct}
-        onClose={() => setEditingProduct(undefined)}
-        onSaved={(saved) => {
-          setProducts((prev) => {
-            const exists = prev.some((p) => p.id === saved.id);
-            return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...prev];
-          });
-        }}
-      />
 
       <BulkPriceDialog open={isBulkDialogOpen} onClose={() => setIsBulkDialogOpen(false)} />
     </div>

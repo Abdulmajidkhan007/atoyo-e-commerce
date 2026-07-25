@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentAppUser } from "@/lib/firebase/session";
-import { createOrder } from "@/lib/orders/create-order";
+import { createOrder, OrderValidationError } from "@/lib/orders/create-order";
 import { normalizePhone, isValidName } from "@/lib/validation";
 
 const orderSchema = z.object({
@@ -64,7 +64,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ orderId: order.id }, { status: 201 });
   } catch (error) {
-    // Aniq sabab server loglarida ko'rinadi - mijozga umumiy xabar qaytariladi.
+    // Zaxira yetmasligi / mahsulot yo'qligi - mijozga aniq sabab aytiladi.
+    if (error instanceof OrderValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    // Boshqa xatolarning sababi server loglarida - mijozga umumiy xabar.
     console.error("Buyurtmani saqlashda xato:", error);
     return NextResponse.json({ error: "Buyurtmani saqlashda xatolik yuz berdi." }, { status: 500 });
   }

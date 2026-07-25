@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { logAction } from "@/lib/telegram/action-log";
 import type { Product } from "@/types/product";
@@ -46,7 +46,7 @@ function slugify(name: string): string {
 
 /** Yangi mahsulot yaratish (faqat admin). */
 export async function POST(request: Request) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("products");
   if (!admin) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
   }

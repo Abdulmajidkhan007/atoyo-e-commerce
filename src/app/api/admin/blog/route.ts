@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import type { BlogPost } from "@/types/content";
 
 export const runtime = "nodejs";
@@ -26,7 +26,7 @@ function slugify(title: string): string {
 
 /** Yangi blog post yaratish (faqat admin). */
 export async function POST(request: Request) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("blog");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = postSchema.safeParse(await request.json().catch(() => null));

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import type { Product } from "@/types/product";
 
@@ -29,7 +29,7 @@ const updateSchema = z.object({
 
 /** Mahsulotni tahrirlash (faqat admin). Faqat berilgan maydonlar yangilanadi. */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("products");
   if (!admin) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
   }
@@ -87,7 +87,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 /** Mahsulotni butunlay o'chirish (faqat admin). */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("products");
   if (!admin) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
   }

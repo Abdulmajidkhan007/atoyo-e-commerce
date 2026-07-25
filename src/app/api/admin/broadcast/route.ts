@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import { sendBroadcast } from "@/lib/broadcast";
 import { logAction } from "@/lib/telegram/action-log";
 
@@ -17,7 +17,7 @@ const broadcastSchema = z.object({
 
 /** Admin paneldan barcha foydalanuvchilarga e'lon yuborish. */
 export async function POST(request: Request) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("broadcast");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = broadcastSchema.safeParse(await request.json().catch(() => null));

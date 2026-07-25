@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 
 const bodySchema = z.object({
@@ -8,7 +8,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("orders");
   if (!admin) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
   }

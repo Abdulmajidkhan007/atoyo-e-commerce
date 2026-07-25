@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { requireAdminUser } from "@/lib/firebase/session";
+import { requirePermission } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
 
 export const runtime = "nodejs";
@@ -29,7 +29,7 @@ const intakeSchema = z.object({
  * ham yangilanadi. Bir so'rovda butun kirim ro'yxati qabul qilinadi.
  */
 export async function POST(request: Request) {
-  const admin = await requireAdminUser();
+  const admin = await requirePermission("products");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = intakeSchema.safeParse(await request.json().catch(() => null));

@@ -41,6 +41,8 @@ export interface Product {
   dimensions: ProductDimensions;
   price: number;
   discountPrice?: number | null;
+  /** Chegirma amal qilish muddati (epoch millis). Bo'sh - muddatsiz. */
+  discountUntil?: number | null;
   currency: "UZS";
   stock: number;
   images: string[];

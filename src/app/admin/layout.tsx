@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentAppUser } from "@/lib/firebase/session";
+import { isStaff } from "@/lib/permissions";
 import { AdminShell } from "@/components/admin/AdminShell";
 
 // /admin/* har doim so'rov vaqtida, joriy foydalanuvchi sessiyasiga
@@ -12,13 +13,14 @@ export const dynamic = "force-dynamic";
 
 // Proxy (src/proxy.ts) allaqachon /admin/* ni himoyalaydi, lekin
 // defense-in-depth prinsipiga ko'ra rolni bu yerda server komponentda
-// ham mustaqil qayta tekshiramiz.
+// ham mustaqil qayta tekshiramiz. Owner ham, admin ham kira oladi;
+// har bir bo'lim ichida aniq huquq (permissions) tekshiriladi.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentAppUser();
 
-  if (!user || user.role !== "admin") {
+  if (!isStaff(user)) {
     redirect("/");
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminShell permissions={user?.permissions} isOwner={user?.role === "owner"}>{children}</AdminShell>;
 }

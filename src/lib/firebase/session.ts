@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { getAdminAuth, getAdminDb } from "./admin";
+import { isOwner, isStaff, hasPermission, type PermissionKey } from "@/lib/permissions";
 import type { AppUser } from "@/types/user";
 
 export const SESSION_COOKIE_NAME = "__session";
@@ -43,7 +44,18 @@ export async function getCurrentAppUser(): Promise<AppUser | null> {
     if (!userDoc.exists) return null;
 
     const data = userDoc.data() as Omit<AppUser, "uid">;
-    return { uid: decoded.uid, ...data };
+    const user: AppUser = { uid: decoded.uid, ...data };
+
+    // Loyiha egasining emaili bilan kirilgan bo'lsa - rol doim "owner".
+    // Firestore'dagi yozuv boshqa bo'lsa (masalan admin qo'lda
+    // o'zgartirgan bo'lsa) ham egalik huquqi yo'qolmaydi; hujjat esa
+    // fon rejimida to'g'rilanadi.
+    if (isOwner(user) && user.role !== "owner") {
+      userDoc.ref.update({ role: "owner" }).catch(() => {});
+      return { ...user, role: "owner" };
+    }
+
+    return user;
   } catch {
     // Yaroqsiz, muddati o'tgan yoki bekor qilingan cookie - tinch fail bo'ladi.
     return null;
@@ -51,12 +63,27 @@ export async function getCurrentAppUser(): Promise<AppUser | null> {
 }
 
 /**
- * Admin-only Route Handler'lar (masalan bulk narx yangilash, buyurtma
- * statusini qo'lda o'zgartirish) uchun umumiy tekshiruv. Har bir shunday
- * route'da alohida-alohida yozilmasligi uchun bu yerda markazlashtirilgan -
- * Firestore rolini bir joydan tekshiradi.
+ * Admin panelga kirish huquqi (owner yoki admin). Har bir route'da
+ * alohida yozilmasligi uchun markazlashtirilgan - Firestore rolini
+ * bir joydan tekshiradi.
  */
 export async function requireAdminUser(): Promise<AppUser | null> {
   const user = await getCurrentAppUser();
-  return user?.role === "admin" ? user : null;
+  return isStaff(user) ? user : null;
+}
+
+/**
+ * ANIQ HUQUQ talab qiladigan route'lar uchun (masalan mahsulot yozish
+ * "products", e'lon yuborish "broadcast"). Owner har doim o'tadi; admin
+ * faqat owner bergan ruxsat bo'lsa. Ruxsat bo'lmasa null qaytadi.
+ */
+export async function requirePermission(key: PermissionKey): Promise<AppUser | null> {
+  const user = await getCurrentAppUser();
+  return hasPermission(user, key) ? user : null;
+}
+
+/** Faqat loyiha egasi bajara oladigan amallar (rol/huquq boshqaruvi). */
+export async function requireOwner(): Promise<AppUser | null> {
+  const user = await getCurrentAppUser();
+  return isOwner(user) ? user : null;
 }
