@@ -2,27 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Badge } from "@mui/material";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { dict } = useI18n();
-  const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
 
+  // Savat yuqori panelda (Header) turadi - pastki menyuda uning o'rniga
+  // Kontakt bo'limi, aks holda kontaktga faqat footer orqali o'tilardi.
   const tabs = [
     { href: "/", label: dict.nav.homeShort, icon: HomeOutlinedIcon },
     { href: "/katalog", label: dict.nav.catalog, icon: CategoryOutlinedIcon },
     { href: "/blog", label: dict.nav.blog, icon: ArticleOutlinedIcon },
     { href: "/about", label: dict.nav.aboutShort, icon: InfoOutlinedIcon },
-    { href: "/savat", label: dict.nav.cart, icon: ShoppingCartOutlinedIcon },
+    { href: "/kontakt", label: dict.nav.contact, icon: SupportAgentOutlinedIcon },
     { href: "/profil", label: dict.nav.profile, icon: PersonOutlineIcon },
   ];
 
@@ -38,13 +37,7 @@ export function MobileBottomNav() {
               isActive ? "text-aqua-600 dark:text-aqua-300" : "text-navy-300"
             }`}
           >
-            {href === "/savat" ? (
-              <Badge badgeContent={cartCount} color="primary" max={99}>
-                <Icon fontSize="small" />
-              </Badge>
-            ) : (
-              <Icon fontSize="small" />
-            )}
+            <Icon fontSize="small" />
             <span className="w-full truncate text-center">{label}</span>
           </Link>
         );
