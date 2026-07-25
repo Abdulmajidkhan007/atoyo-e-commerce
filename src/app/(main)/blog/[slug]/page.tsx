@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getPostBySlug } from "@/lib/firebase/admin-content";
+import { BlogContent } from "@/components/blog/BlogContent";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,9 @@ export default async function BlogPostPage({ params }: BlogPostPageParams) {
         </div>
       )}
 
-      <div className="mt-6 whitespace-pre-line text-navy-500 dark:text-navy-100">{post.content}</div>
+      <div className="mt-6">
+        <BlogContent content={post.content} />
+      </div>
     </article>
   );
 }

@@ -51,7 +51,10 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
     }
     batch.set(
       getAdminDb().collection("stats").doc("summary"),
-      { totalRevenue: FieldValue.increment(-current.totalAmount) },
+      {
+        totalOrders: FieldValue.increment(-1),
+        totalRevenue: FieldValue.increment(-current.totalAmount),
+      },
       { merge: true }
     );
     batch.update(orderRef, { status, updatedAt: updatedOrder.updatedAt, stockReturned: true });

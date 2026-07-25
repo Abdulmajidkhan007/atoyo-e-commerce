@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { logAction } from "@/lib/telegram/action-log";
+import { registerFacets } from "@/lib/products/facets";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -27,6 +28,7 @@ const productSchema = z.object({
   supplier: z.string().max(120).default(""),
   price: z.number().nonnegative(),
   discountPrice: z.number().nonnegative().nullable().default(null),
+  discountUntil: z.number().int().nullable().default(null),
   stock: z.number().int().nonnegative(),
   diameterMm: z.number().nonnegative().optional(),
   lengthMm: z.number().nonnegative().optional(),
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
     },
     price: d.price,
     discountPrice: d.discountPrice,
+    discountUntil: d.discountUntil,
     currency: "UZS",
     stock: d.stock,
     images: d.images,
@@ -90,6 +93,7 @@ export async function POST(request: Request) {
   };
 
   await ref.set(product);
+  await registerFacets({ brand: product.brand, country: product.manufacturerCountry });
   await logAction(`📦 Yangi mahsulot (${admin.email ?? "admin"}): ${product.name} — ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`);
   return NextResponse.json({ product }, { status: 201 });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MenuItem, Select, TextField, Button, InputLabel, FormControl } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { setFilters, resetFilters } from "@/redux/slices/filterSlice";
@@ -28,13 +28,12 @@ const MATERIAL_OPTIONS: { value: ProductMaterial; label: string }[] = [
   { value: "pvc", label: "PVX" },
 ];
 
-// TODO (masshtablash): brend va ishlab chiqaruvchi davlat ro'yxati 10,000+
-// mahsulot orasida dinamik bo'lishi kerak - production'da bu ro'yxat
-// Cloud Function orqali alohida `metadata/facets` hujjatida saqlanadi va
-// har mahsulot qo'shilganda/o'chirilganda yangilanadi (butun katalogni
-// skanerlashdan qochish uchun). Hozircha eng ko'p uchraydigan qiymatlar bilan.
-const BRAND_OPTIONS = ["Kalde", "Valtec", "STOUT", "Icma", "Ferro", "Rehau"];
-const COUNTRY_OPTIONS = ["O'zbekiston", "Turkiya", "Germaniya", "Italiya", "Xitoy", "Rossiya"];
+// Brend/davlat ro'yxati DINAMIK: mahsulot qo'shilganda `metadata/facets`
+// hujjatiga yig'iladi (lib/products/facets.ts) va shu yerda /api/facets
+// orqali o'qiladi - butun katalogni skanerlash shart emas. Ro'yxat hali
+// bo'sh bo'lsa (eski mahsulotlar) quyidagi standart qiymatlar ko'rinadi.
+const FALLBACK_BRANDS = ["Kalde", "Valtec", "STOUT", "Icma", "Ferro", "Rehau"];
+const FALLBACK_COUNTRIES = ["O'zbekiston", "Turkiya", "Germaniya", "Italiya", "Xitoy", "Rossiya"];
 
 export function FilterPanel() {
   const dispatch = useAppDispatch();
@@ -42,6 +41,28 @@ export function FilterPanel() {
   const filters = useAppSelector((s) => s.filters);
   const [minPrice, setMinPrice] = useState(filters.minPrice?.toString() ?? "");
   const [maxPrice, setMaxPrice] = useState(filters.maxPrice?.toString() ?? "");
+  const [brandOptions, setBrandOptions] = useState<string[]>(FALLBACK_BRANDS);
+  const [countryOptions, setCountryOptions] = useState<string[]>(FALLBACK_COUNTRIES);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFacets() {
+      try {
+        const res = await fetch("/api/facets");
+        if (!res.ok) return;
+        const data = (await res.json()) as { brands?: string[]; countries?: string[] };
+        if (cancelled) return;
+        if (data.brands?.length) setBrandOptions(data.brands);
+        if (data.countries?.length) setCountryOptions(data.countries);
+      } catch {
+        // Facet o'qilmasa standart ro'yxat qoladi.
+      }
+    }
+    loadFacets();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const applyPriceRange = () => {
     dispatch(
@@ -100,7 +121,7 @@ export function FilterPanel() {
           onChange={(e) => dispatch(setFilters({ brand: e.target.value || undefined }))}
         >
           <MenuItem value="">{dict.filters.all}</MenuItem>
-          {BRAND_OPTIONS.map((brand) => (
+          {brandOptions.map((brand) => (
             <MenuItem key={brand} value={brand}>{brand}</MenuItem>
           ))}
         </Select>
@@ -115,7 +136,7 @@ export function FilterPanel() {
           onChange={(e) => dispatch(setFilters({ manufacturerCountry: e.target.value || undefined }))}
         >
           <MenuItem value="">{dict.filters.all}</MenuItem>
-          {COUNTRY_OPTIONS.map((country) => (
+          {countryOptions.map((country) => (
             <MenuItem key={country} value={country}>{country}</MenuItem>
           ))}
         </Select>

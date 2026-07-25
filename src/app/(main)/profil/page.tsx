@@ -30,6 +30,24 @@ export default function ProfilePage() {
   const { profile, status } = useAppSelector((s) => s.user);
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  // Mijoz o'z buyurtmasini bekor qiladi (faqat yetkazish boshlanmagan bo'lsa).
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm(dict.profile.cancelConfirm)) return;
+    setCancellingId(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/cancel`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? dict.common.errorRetry);
+        return;
+      }
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: "cancelled" } : o)));
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   // Admin uchun profil sahifasi emas - to'g'ridan-to'g'ri boshqaruv paneli.
   const isAdmin = profile?.role === "admin";
@@ -126,6 +144,20 @@ export default function ProfilePage() {
                         </a>
                       )}
                     </div>
+
+                    {(order.status === "pending" || order.status === "approved") && (
+                      <div className="mt-3">
+                        <Button
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          disabled={cancellingId === order.id}
+                          onClick={() => handleCancelOrder(order.id)}
+                        >
+                          {dict.profile.cancelOrder}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

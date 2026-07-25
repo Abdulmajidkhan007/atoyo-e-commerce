@@ -99,6 +99,9 @@ export interface Dictionary {
     online: string;
     addressLabel: string;
     viewOnMap: string;
+    cancelOrder: string;
+    cancelConfirm: string;
+    cancelled: string;
     status: {
       pending: string;
       approved: string;
@@ -284,6 +287,9 @@ const uz: Dictionary = {
     online: "💳 Onlayn",
     addressLabel: "Manzil",
     viewOnMap: "📍 Xaritada ko'rish",
+    cancelOrder: "Buyurtmani bekor qilish",
+    cancelConfirm: "Buyurtmani bekor qilishni tasdiqlaysizmi?",
+    cancelled: "Buyurtma bekor qilindi.",
     status: {
       pending: "Kutilmoqda",
       approved: "Qabul qilindi",
@@ -470,6 +476,9 @@ const en: Dictionary = {
     online: "💳 Online",
     addressLabel: "Address",
     viewOnMap: "📍 View on map",
+    cancelOrder: "Cancel order",
+    cancelConfirm: "Cancel this order?",
+    cancelled: "Order cancelled.",
     status: {
       pending: "Pending",
       approved: "Approved",
@@ -655,6 +664,9 @@ const ru: Dictionary = {
     online: "💳 Онлайн",
     addressLabel: "Адрес",
     viewOnMap: "📍 Посмотреть на карте",
+    cancelOrder: "Отменить заказ",
+    cancelConfirm: "Отменить этот заказ?",
+    cancelled: "Заказ отменён.",
     status: {
       pending: "В ожидании",
       approved: "Принят",

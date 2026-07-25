@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Chip } from "@mui/material";
 import { getProductById } from "@/lib/firebase/admin-products";
 import { getDictionary } from "@/lib/i18n/server";
+import { isDiscountActive } from "@/lib/products/pricing";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ProductGallery } from "@/components/product/ProductGallery";
 
@@ -26,7 +27,8 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
   if (!product) notFound();
 
-  const hasDiscount = !!product.discountPrice && product.discountPrice < product.price;
+  // Chegirma muddati o'tgan bo'lsa - oddiy narx ko'rsatiladi.
+  const hasDiscount = isDiscountActive(product);
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">

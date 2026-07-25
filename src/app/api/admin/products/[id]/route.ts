@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
+import { registerFacets } from "@/lib/products/facets";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -19,6 +20,7 @@ const updateSchema = z.object({
   supplier: z.string().max(120).optional(),
   price: z.number().nonnegative().optional(),
   discountPrice: z.number().nonnegative().nullable().optional(),
+  discountUntil: z.number().int().nullable().optional(),
   stock: z.number().int().nonnegative().optional(),
   diameterMm: z.number().nonnegative().nullable().optional(),
   lengthMm: z.number().nonnegative().nullable().optional(),
@@ -62,6 +64,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.supplier !== undefined) updates.supplier = d.supplier.trim();
   if (d.price !== undefined) updates.price = d.price;
   if (d.discountPrice !== undefined) updates.discountPrice = d.discountPrice;
+  if (d.discountUntil !== undefined) updates.discountUntil = d.discountUntil;
   if (d.stock !== undefined) updates.stock = d.stock;
   if (d.isActive !== undefined) updates.isActive = d.isActive;
   if (d.images !== undefined) {
@@ -81,6 +84,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   await ref.update(updates);
+  await registerFacets({ brand: d.brand, country: d.manufacturerCountry });
   const updated = { ...existing, ...updates, id } as Product;
   return NextResponse.json({ product: updated });
 }

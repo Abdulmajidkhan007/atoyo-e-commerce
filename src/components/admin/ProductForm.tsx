@@ -49,6 +49,7 @@ const EMPTY_FORM = {
   supplier: "",
   price: "",
   discountPrice: "",
+  discountUntil: "",
   stock: "",
   diameterMm: "",
   lengthMm: "",
@@ -96,6 +97,9 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
               supplier: product.supplier ?? "",
               price: String(product.price),
               discountPrice: product.discountPrice ? String(product.discountPrice) : "",
+              discountUntil: product.discountUntil
+                ? new Date(product.discountUntil).toISOString().slice(0, 10)
+                : "",
               stock: String(product.stock),
               diameterMm: product.dimensions.diameterMm?.toString() ?? "",
               lengthMm: product.dimensions.lengthMm?.toString() ?? "",
@@ -154,6 +158,8 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
         supplier: form.supplier.trim(),
         price: Number(form.price),
         discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
+        // Chegirma muddati kun oxirigacha amal qiladi.
+        discountUntil: form.discountUntil ? new Date(`${form.discountUntil}T23:59:59`).getTime() : null,
         stock: Number(form.stock),
         diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
         lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
@@ -252,6 +258,17 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
         <TextField size="small" type="number" label="Chegirma narxi" value={form.discountPrice} onChange={(e) => setForm({ ...form, discountPrice: e.target.value })} />
         <TextField size="small" type="number" label="Zaxira (dona)" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
       </div>
+
+      <TextField
+        size="small"
+        type="date"
+        label="Chegirma tugash sanasi (ixtiyoriy)"
+        value={form.discountUntil}
+        onChange={(e) => setForm({ ...form, discountUntil: e.target.value })}
+        InputLabelProps={{ shrink: true }}
+        helperText="Bo'sh qoldirilsa chegirma muddatsiz amal qiladi"
+        fullWidth
+      />
 
       <div className="grid grid-cols-3 gap-3">
         <TextField size="small" type="number" label="Diametri (mm)" value={form.diameterMm} onChange={(e) => setForm({ ...form, diameterMm: e.target.value })} />

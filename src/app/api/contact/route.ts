@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePhone, isValidName } from "@/lib/validation";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendTopicMessage } from "@/lib/telegram/bot";
@@ -19,6 +20,19 @@ const contactSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Spamdan himoya: bir IP dan soatiga 5 ta so'rov.
+  const { allowed } = await checkRateLimit({
+    key: `contact:${getClientIp(request)}`,
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Juda ko'p so'rov yuborildi. Bir oz kutib qayta urinib ko'ring." },
+      { status: 429 }
+    );
+  }
+
   const parsed = contactSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {

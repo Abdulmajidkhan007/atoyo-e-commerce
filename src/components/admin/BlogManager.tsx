@@ -17,6 +17,7 @@ import {
   Chip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import type { BlogPost } from "@/types/content";
@@ -30,6 +31,28 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInserting, setIsInserting] = useState(false);
+
+  // Matn ichiga rasm qo'yish: fayl Storage'ga yuklanadi va matn oxiriga
+  // [rasm:URL] belgisi qo'shiladi - public sahifa uni <img> qilib chizadi.
+  const handleInsertImage = async (file: File | null) => {
+    if (!file) return;
+    setIsInserting(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("folder", "blog");
+      fd.append("files", file);
+      const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!up.ok) throw new Error((await up.json().catch(() => ({}))).error ?? "Rasm yuklanmadi.");
+      const url = (await up.json()).urls?.[0];
+      if (url) setForm((prev) => ({ ...prev, content: `${prev.content}\n\n[rasm:${url}]\n\n` }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Rasm yuklashda xatolik.");
+    } finally {
+      setIsInserting(false);
+    }
+  };
 
   const openNew = () => {
     setForm(EMPTY);
@@ -139,7 +162,14 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
         <DialogContent className="flex flex-col gap-4 pt-2">
           <TextField label="Sarlavha" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} fullWidth />
           <TextField label="Qisqa tavsif" value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} multiline minRows={2} fullWidth />
-          <TextField label="Matn" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} multiline minRows={5} fullWidth />
+          <TextField label="Matn" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} multiline minRows={8} fullWidth />
+          <div className="flex items-center gap-2">
+            <Button component="label" size="small" variant="outlined" startIcon={<AddPhotoAlternateOutlinedIcon />} disabled={isInserting}>
+              {isInserting ? <CircularProgress size={16} /> : "Matnga rasm qo'shish"}
+              <input type="file" hidden accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => handleInsertImage(e.target.files?.[0] ?? null)} />
+            </Button>
+            <span className="text-xs text-navy-300">Bo&apos;sh qator - yangi paragraf</span>
+          </div>
 
           <div className="flex items-center gap-3">
             <div className="relative h-16 w-24 overflow-hidden rounded-md bg-navy-50 dark:bg-navy-900">
