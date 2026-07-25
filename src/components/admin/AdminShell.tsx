@@ -14,6 +14,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { signOutUser } from "@/lib/firebase/auth";
@@ -29,6 +30,7 @@ const NAV_ITEMS: { href: string; label: string; Icon: typeof DashboardOutlinedIc
   { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar", Icon: GroupOutlinedIcon, perm: "users" },
   { href: "/admin/blog", label: "Blog", Icon: ArticleOutlinedIcon, perm: "blog" },
   { href: "/admin/xabar", label: "Xabar yuborish", Icon: CampaignOutlinedIcon, perm: "broadcast" },
+  { href: "/admin/promokod", label: "Promokod", Icon: LocalOfferOutlinedIcon, perm: "settings" },
   { href: "/admin/sozlamalar", label: "Sozlamalar", Icon: SettingsOutlinedIcon, perm: "settings" },
 ];
 

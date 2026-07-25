@@ -3,9 +3,12 @@ import type { Metadata } from "next";
 import { Chip } from "@mui/material";
 import { getProductById } from "@/lib/firebase/admin-products";
 import { getDictionary } from "@/lib/i18n/server";
-import { isDiscountActive } from "@/lib/products/pricing";
+import { isDiscountActive, effectivePrice } from "@/lib/products/pricing";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
+import { FavoriteButton } from "@/components/product/FavoriteButton";
 import { ProductGallery } from "@/components/product/ProductGallery";
+import { ProductReviews } from "@/components/product/ProductReviews";
+import { StarRating } from "@/components/product/StarRating";
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
@@ -15,10 +18,32 @@ interface ProductPageParams {
   params: Promise<{ id: string }>;
 }
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
+
 export async function generateMetadata({ params }: ProductPageParams): Promise<Metadata> {
   const { id } = await params;
   const product = await getProductById(id);
-  return { title: product ? `${product.name} | Atoyo Santexnika` : "Mahsulot topilmadi" };
+  if (!product) return { title: "Mahsulot topilmadi" };
+
+  const title = `${product.name} | Atoyo Santexnika`;
+  const description =
+    product.description?.slice(0, 160) ||
+    `${product.name} — ${effectivePrice(product).toLocaleString("uz-UZ")} so'm. Atoyo Santexnika do'konida.`;
+  // Ijtimoiy tarmoqda ulashilganda mahsulot nomi/narxi bilan karta ko'rinadi.
+  const ogImage = `${SITE_URL}/api/og/product/${id}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}/mahsulot/${id}`,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+      type: "website",
+    },
+    twitter: { card: "summary_large_image", title, description, images: [ogImage] },
+  };
 }
 
 export default async function ProductPage({ params }: ProductPageParams) {
@@ -41,8 +66,18 @@ export default async function ProductPage({ params }: ProductPageParams) {
         <div className="flex flex-col gap-3">
           <Chip label={dict.categories[product.category] ?? product.category} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
 
-          <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{product.name}</h1>
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{product.name}</h1>
+            <FavoriteButton product={product} />
+          </div>
           <p className="text-sm text-navy-300">{product.brand} • {product.manufacturerCountry}</p>
+
+          {(product.ratingCount ?? 0) > 0 && (
+            <p className="flex items-center gap-2 text-sm text-navy-300">
+              <StarRating value={product.ratingAvg ?? 0} />
+              {product.ratingAvg?.toFixed(1)} ({product.ratingCount})
+            </p>
+          )}
 
           <div className="flex items-baseline gap-2">
             {hasDiscount && <span className="text-navy-300 line-through">{formatSom(product.price)}</span>}
@@ -81,6 +116,8 @@ export default async function ProductPage({ params }: ProductPageParams) {
           <AddToCartButton product={product} />
         </div>
       </div>
+
+      <ProductReviews productId={product.id} />
     </section>
   );
 }

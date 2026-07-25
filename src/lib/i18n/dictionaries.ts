@@ -77,6 +77,14 @@ export interface Dictionary {
     payCash: string;
     payOnline: string;
     onlineNote: string;
+    promoCode: string;
+    promoApply: string;
+    promoRemove: string;
+    promoApplied: string;
+    subtotal: string;
+    discount: string;
+    delivery: string;
+    deliveryFree: string;
     total: string;
     confirm: string;
     submitError: string;
@@ -184,6 +192,20 @@ export interface Dictionary {
     priceAsc: string;
     priceDesc: string;
   };
+  favorites: {
+    title: string;
+    empty: string;
+  };
+  reviews: {
+    title: string;
+    none: string;
+    write: string;
+    yourRating: string;
+    comment: string;
+    submit: string;
+    thanks: string;
+    loginToReview: string;
+  };
   newsletter: {
     title: string;
     placeholder: string;
@@ -265,6 +287,14 @@ const uz: Dictionary = {
     payOnline: "💳 Onlayn — karta orqali (Humo/Uzcard/Visa)",
     onlineNote:
       "Onlayn to'lov to'lov tizimi ulangandan so'ng faollashadi. Hozircha buyurtma qabul qilinadi va operator siz bilan bog'lanadi.",
+    promoCode: "Promokod",
+    promoApply: "Qo'llash",
+    promoRemove: "Bekor qilish",
+    promoApplied: "Promokod qo'llandi",
+    subtotal: "Mahsulotlar",
+    discount: "Chegirma",
+    delivery: "Yetkazib berish",
+    deliveryFree: "Bepul",
     total: "Jami to'lov",
     confirm: "Buyurtmani tasdiqlash",
     submitError: "Buyurtmani yuborishda xatolik yuz berdi. Qayta urinib ko'ring.",
@@ -373,6 +403,20 @@ const uz: Dictionary = {
     priceAsc: "Narx: arzondan qimmatga",
     priceDesc: "Narx: qimmatdan arzonga",
   },
+  favorites: {
+    title: "Sevimlilar",
+    empty: "Sevimlilar ro'yxati bo'sh. Mahsulot yonidagi ❤️ tugmasini bosing.",
+  },
+  reviews: {
+    title: "Sharhlar",
+    none: "Hozircha sharhlar yo'q. Birinchi bo'lib fikr bildiring!",
+    write: "Sharh yozish",
+    yourRating: "Bahoyingiz",
+    comment: "Fikringiz",
+    submit: "Yuborish",
+    thanks: "Sharhingiz uchun rahmat!",
+    loginToReview: "Sharh qoldirish uchun tizimga kiring.",
+  },
   newsletter: {
     title: "Yangiliklarga obuna bo'ling",
     placeholder: "Email manzilingiz",
@@ -454,6 +498,14 @@ const en: Dictionary = {
     payOnline: "💳 Online — by card (Humo/Uzcard/Visa)",
     onlineNote:
       "Online payment will be enabled once the payment system is connected. For now your order is accepted and an operator will contact you.",
+    promoCode: "Promo code",
+    promoApply: "Apply",
+    promoRemove: "Remove",
+    promoApplied: "Promo code applied",
+    subtotal: "Items",
+    discount: "Discount",
+    delivery: "Delivery",
+    deliveryFree: "Free",
     total: "Total",
     confirm: "Confirm order",
     submitError: "Failed to submit the order. Please try again.",
@@ -561,6 +613,20 @@ const en: Dictionary = {
     priceAsc: "Price: low to high",
     priceDesc: "Price: high to low",
   },
+  favorites: {
+    title: "Favorites",
+    empty: "Your favorites list is empty. Tap the ❤️ on any product.",
+  },
+  reviews: {
+    title: "Reviews",
+    none: "No reviews yet. Be the first to share your opinion!",
+    write: "Write a review",
+    yourRating: "Your rating",
+    comment: "Your comment",
+    submit: "Submit",
+    thanks: "Thank you for your review!",
+    loginToReview: "Sign in to leave a review.",
+  },
   newsletter: {
     title: "Subscribe to our newsletter",
     placeholder: "Your email",
@@ -642,6 +708,14 @@ const ru: Dictionary = {
     payOnline: "💳 Онлайн — картой (Humo/Uzcard/Visa)",
     onlineNote:
       "Онлайн-оплата станет доступна после подключения платёжной системы. Пока заказ принимается, и оператор свяжется с вами.",
+    promoCode: "Промокод",
+    promoApply: "Применить",
+    promoRemove: "Отменить",
+    promoApplied: "Промокод применён",
+    subtotal: "Товары",
+    discount: "Скидка",
+    delivery: "Доставка",
+    deliveryFree: "Бесплатно",
     total: "Итого",
     confirm: "Подтвердить заказ",
     submitError: "Не удалось отправить заказ. Попробуйте ещё раз.",
@@ -748,6 +822,20 @@ const ru: Dictionary = {
     newest: "Сначала новые",
     priceAsc: "Цена: по возрастанию",
     priceDesc: "Цена: по убыванию",
+  },
+  favorites: {
+    title: "Избранное",
+    empty: "Список избранного пуст. Нажмите ❤️ у любого товара.",
+  },
+  reviews: {
+    title: "Отзывы",
+    none: "Отзывов пока нет. Будьте первым!",
+    write: "Написать отзыв",
+    yourRating: "Ваша оценка",
+    comment: "Ваш комментарий",
+    submit: "Отправить",
+    thanks: "Спасибо за отзыв!",
+    loginToReview: "Войдите, чтобы оставить отзыв.",
   },
   newsletter: {
     title: "Подпишитесь на новости",

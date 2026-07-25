@@ -35,6 +35,7 @@ const orderSchema = z.object({
     .optional(),
   deliveryAddress: z.string().max(500).nullable().optional(),
   paymentMethod: z.enum(["cash", "online"]).default("cash"),
+  promoCode: z.string().max(40).nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
       location: parsed.data.location ?? null,
       deliveryAddress: parsed.data.deliveryAddress ?? null,
       paymentMethod: parsed.data.paymentMethod,
+      promoCode: parsed.data.promoCode ?? null,
       userId: currentUser.uid,
       customerEmail: currentUser.email ?? null,
     });

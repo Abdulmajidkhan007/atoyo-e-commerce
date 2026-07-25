@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge, IconButton, Avatar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import PlumbingOutlinedIcon from "@mui/icons-material/PlumbingOutlined";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
@@ -17,6 +18,7 @@ export function Header() {
   const { dict } = useI18n();
   const [searchTerm, setSearchTerm] = useState("");
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
+  const favoritesCount = useAppSelector((s) => s.favorites.items.length);
   const userProfile = useAppSelector((s) => s.user.profile);
 
   const navLinks = [
@@ -59,6 +61,12 @@ export function Header() {
         <div className="ml-auto flex items-center gap-1">
           <LanguageSwitcher />
           <ThemeToggle />
+
+          <IconButton component={Link} href="/sevimlilar" aria-label={dict.favorites.title}>
+            <Badge badgeContent={favoritesCount} color="error" max={99}>
+              <FavoriteBorderIcon />
+            </Badge>
+          </IconButton>
 
           <IconButton component={Link} href="/savat" aria-label={dict.nav.cart}>
             <Badge badgeContent={cartCount} color="primary" max={99}>

@@ -6,6 +6,9 @@ import { Chip, Button } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
+import { isDiscountActive } from "@/lib/products/pricing";
+import { FavoriteButton } from "./FavoriteButton";
+import { StarRating } from "./StarRating";
 import type { Product } from "@/types/product";
 
 const CATEGORY_LABELS: Record<Product["category"], string> = {
@@ -25,11 +28,12 @@ function formatSom(amount: number): string {
 
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();
-  const hasDiscount = !!product.discountPrice && product.discountPrice < product.price;
+  // Chegirma muddati o'tgan bo'lsa - to'liq narx ko'rsatiladi.
+  const hasDiscount = isDiscountActive(product);
   const outOfStock = product.stock <= 0;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-xl2 border border-navy-100 bg-white transition hover:shadow-lg dark:border-navy-500 dark:bg-navy-700">
+    <div className="group relative flex flex-col overflow-hidden rounded-xl2 border border-navy-100 bg-white transition hover:shadow-lg dark:border-navy-500 dark:bg-navy-700">
       <Link href={`/mahsulot/${product.id}`} className="relative block aspect-square bg-navy-50 dark:bg-navy-900">
         {product.thumbnailUrl ? (
           <Image
@@ -49,6 +53,10 @@ export function ProductCard({ product }: { product: Product }) {
         )}
       </Link>
 
+      <div className="absolute right-1 top-1">
+        <FavoriteButton product={product} className="!bg-white/80 dark:!bg-navy-900/70" />
+      </div>
+
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Chip label={CATEGORY_LABELS[product.category]} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
 
@@ -57,6 +65,13 @@ export function ProductCard({ product }: { product: Product }) {
         </Link>
 
         <p className="text-xs text-navy-300">{product.brand} • {product.manufacturerCountry}</p>
+
+        {(product.ratingCount ?? 0) > 0 && (
+          <p className="flex items-center gap-1 text-xs text-navy-300">
+            <StarRating value={product.ratingAvg ?? 0} />
+            {product.ratingAvg?.toFixed(1)}
+          </p>
+        )}
 
         <div className="mt-auto flex items-center justify-between pt-2">
           <div className="flex flex-col">

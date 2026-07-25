@@ -57,11 +57,22 @@ export function formatOrderMessage(order: Order): string {
     lines.push(`📍 Manzil ko'rsatilmagan`);
   }
 
+  lines.push(``, `📦 <b>Mahsulotlar:</b>`, itemsList, ``);
+
+  // Chegirma/yetkazish bo'lsa - hisob-kitob ochiq ko'rsatiladi.
+  if (order.discountAmount || order.deliveryFee) {
+    lines.push(`🧾 <b>Mahsulotlar summasi:</b> ${(order.subtotal ?? order.totalAmount).toLocaleString("uz-UZ")} so'm`);
+    if (order.discountAmount) {
+      lines.push(
+        `🏷 <b>Chegirma${order.promoCode ? ` (${escapeHtml(order.promoCode)})` : ""}:</b> −${order.discountAmount.toLocaleString("uz-UZ")} so'm`
+      );
+    }
+    if (order.deliveryFee) {
+      lines.push(`🚚 <b>Yetkazib berish:</b> ${order.deliveryFee.toLocaleString("uz-UZ")} so'm`);
+    }
+  }
+
   lines.push(
-    ``,
-    `📦 <b>Mahsulotlar:</b>`,
-    itemsList,
-    ``,
     `💰 <b>Jami:</b> ${order.totalAmount.toLocaleString("uz-UZ")} so'm`,
     `💳 <b>To'lov:</b> ${PAYMENT_LABELS[order.paymentMethod]}${PAYMENT_STATUS_LABELS[order.paymentStatus]}`,
     ``,

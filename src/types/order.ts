@@ -22,6 +22,14 @@ export interface Order {
   customerName: string;
   phoneNumber: string;
   items: OrderItem[];
+  /** Mahsulotlar summasi (chegirma va yetkazishsiz). */
+  subtotal?: number;
+  /** Qo'llangan promokod (KATTA harflarda) va u bergan chegirma. */
+  promoCode?: string | null;
+  discountAmount?: number;
+  /** Yetkazib berish narxi (0 - bepul yoki o'chirilgan). */
+  deliveryFee?: number;
+  /** Mijoz to'laydigan yakuniy summa: subtotal - discountAmount + deliveryFee. */
   totalAmount: number;
   currency: "UZS";
   location: OrderLocation | null;

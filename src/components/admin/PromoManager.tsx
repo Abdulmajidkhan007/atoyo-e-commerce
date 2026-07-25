@@ -1,0 +1,265 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Alert,
+  Button,
+  FormControlLabel,
+  IconButton,
+  MenuItem,
+  Switch,
+  TextField,
+} from "@mui/material";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import type { DeliverySettings, PromoCode } from "@/types/promo";
+
+function formatSom(amount: number): string {
+  return `${amount.toLocaleString("uz-UZ")} so'm`;
+}
+
+function toDateInput(ms: number | null): string {
+  return ms ? new Date(ms).toISOString().slice(0, 10) : "";
+}
+
+/** Promokodlar CRUD + yetkazib berish narxi. Barcha yozuvlar server API orqali. */
+export function PromoManager({
+  initialPromos,
+  initialDelivery,
+}: {
+  initialPromos: PromoCode[];
+  initialDelivery: DeliverySettings;
+}) {
+  const [promos, setPromos] = useState(initialPromos);
+  const [delivery, setDelivery] = useState(initialDelivery);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState({
+    code: "",
+    type: "percent" as PromoCode["type"],
+    value: "10",
+    minOrderAmount: "0",
+    maxUses: "",
+    expiresAt: "",
+  });
+
+  async function createPromo(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: form.code.trim(),
+          type: form.type,
+          value: Number(form.value),
+          minOrderAmount: Number(form.minOrderAmount || 0),
+          maxUses: form.maxUses ? Number(form.maxUses) : null,
+          expiresAt: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59`).getTime() : null,
+          isActive: true,
+        }),
+      });
+      const data = (await res.json()) as { promo?: PromoCode; error?: string };
+      if (!res.ok || !data.promo) throw new Error(data.error ?? "Saqlanmadi");
+
+      setPromos((prev) => [data.promo!, ...prev]);
+      setForm({ code: "", type: "percent", value: "10", minOrderAmount: "0", maxUses: "", expiresAt: "" });
+      setMessage({ type: "success", text: "Promokod yaratildi." });
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Xatolik" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleActive(promo: PromoCode) {
+    const next = !promo.isActive;
+    setPromos((prev) => prev.map((p) => (p.code === promo.code ? { ...p, isActive: next } : p)));
+    const res = await fetch(`/api/admin/promo/${promo.code}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: next }),
+    });
+    if (!res.ok) {
+      setPromos((prev) => prev.map((p) => (p.code === promo.code ? { ...p, isActive: !next } : p)));
+      setMessage({ type: "error", text: "Holatni o'zgartirib bo'lmadi." });
+    }
+  }
+
+  async function deletePromo(code: string) {
+    if (!confirm(`"${code}" promokodi o'chirilsinmi?`)) return;
+    const res = await fetch(`/api/admin/promo/${code}`, { method: "DELETE" });
+    if (res.ok) setPromos((prev) => prev.filter((p) => p.code !== code));
+    else setMessage({ type: "error", text: "O'chirib bo'lmadi." });
+  }
+
+  async function saveDelivery(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/delivery", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(delivery),
+      });
+      if (!res.ok) throw new Error("Saqlanmadi");
+      setMessage({ type: "success", text: "Yetkazib berish sozlamalari saqlandi." });
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Xatolik" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      {message && <Alert severity={message.type}>{message.text}</Alert>}
+
+      {/* ---- Yetkazib berish narxi ---- */}
+      <section className="rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-800">
+        <h2 className="mb-3 font-semibold text-navy-900 dark:text-white">Yetkazib berish narxi</h2>
+        <form onSubmit={saveDelivery} className="flex flex-wrap items-center gap-4">
+          <FormControlLabel
+            control={
+              <Switch
+                checked={delivery.enabled}
+                onChange={(e) => setDelivery({ ...delivery, enabled: e.target.checked })}
+              />
+            }
+            label="Yoqilgan"
+          />
+          <TextField
+            label="Narx (so'm)"
+            type="number"
+            size="small"
+            value={delivery.fee}
+            onChange={(e) => setDelivery({ ...delivery, fee: Number(e.target.value) || 0 })}
+          />
+          <TextField
+            label="Shu summadan bepul"
+            type="number"
+            size="small"
+            helperText="0 - bepul emas"
+            value={delivery.freeFrom}
+            onChange={(e) => setDelivery({ ...delivery, freeFrom: Number(e.target.value) || 0 })}
+          />
+          <Button type="submit" variant="contained" disabled={saving}>
+            Saqlash
+          </Button>
+        </form>
+      </section>
+
+      {/* ---- Yangi promokod ---- */}
+      <section className="rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-800">
+        <h2 className="mb-3 font-semibold text-navy-900 dark:text-white">Yangi promokod</h2>
+        <form onSubmit={createPromo} className="flex flex-wrap items-start gap-3">
+          <TextField
+            label="Kod"
+            size="small"
+            required
+            value={form.code}
+            onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+            placeholder="ATOYO10"
+          />
+          <TextField
+            select
+            label="Turi"
+            size="small"
+            value={form.type}
+            onChange={(e) => setForm({ ...form, type: e.target.value as PromoCode["type"] })}
+            className="!min-w-32"
+          >
+            <MenuItem value="percent">Foiz (%)</MenuItem>
+            <MenuItem value="fixed">So&apos;mda</MenuItem>
+          </TextField>
+          <TextField
+            label={form.type === "percent" ? "Foiz" : "Summa"}
+            type="number"
+            size="small"
+            required
+            value={form.value}
+            onChange={(e) => setForm({ ...form, value: e.target.value })}
+          />
+          <TextField
+            label="Minimal buyurtma"
+            type="number"
+            size="small"
+            value={form.minOrderAmount}
+            onChange={(e) => setForm({ ...form, minOrderAmount: e.target.value })}
+          />
+          <TextField
+            label="Limit (marta)"
+            type="number"
+            size="small"
+            helperText="Bo'sh - cheksiz"
+            value={form.maxUses}
+            onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
+          />
+          <TextField
+            label="Amal qilish muddati"
+            type="date"
+            size="small"
+            slotProps={{ inputLabel: { shrink: true } }}
+            value={form.expiresAt}
+            onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
+          />
+          <Button type="submit" variant="contained" disabled={saving}>
+            Qo&apos;shish
+          </Button>
+        </form>
+      </section>
+
+      {/* ---- Ro'yxat ---- */}
+      <section className="overflow-x-auto rounded-xl2 border border-navy-100 bg-white dark:border-navy-500 dark:bg-navy-800">
+        <table className="w-full min-w-[720px] text-sm">
+          <thead className="bg-navy-50 text-left text-navy-500 dark:bg-navy-900 dark:text-navy-100">
+            <tr>
+              <th className="p-3">Kod</th>
+              <th className="p-3">Chegirma</th>
+              <th className="p-3">Minimal</th>
+              <th className="p-3">Ishlatilgan</th>
+              <th className="p-3">Muddat</th>
+              <th className="p-3">Faol</th>
+              <th className="p-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {promos.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-navy-300">
+                  Promokodlar yo&apos;q
+                </td>
+              </tr>
+            ) : (
+              promos.map((promo) => (
+                <tr key={promo.code} className="border-t border-navy-100 dark:border-navy-500">
+                  <td className="p-3 font-mono font-medium text-navy-900 dark:text-white">{promo.code}</td>
+                  <td className="p-3">
+                    {promo.type === "percent" ? `${promo.value}%` : formatSom(promo.value)}
+                  </td>
+                  <td className="p-3">{promo.minOrderAmount > 0 ? formatSom(promo.minOrderAmount) : "—"}</td>
+                  <td className="p-3">
+                    {promo.usedCount}
+                    {promo.maxUses !== null ? ` / ${promo.maxUses}` : ""}
+                  </td>
+                  <td className="p-3">{toDateInput(promo.expiresAt) || "—"}</td>
+                  <td className="p-3">
+                    <Switch size="small" checked={promo.isActive} onChange={() => toggleActive(promo)} />
+                  </td>
+                  <td className="p-3 text-right">
+                    <IconButton size="small" aria-label="O'chirish" onClick={() => deletePromo(promo.code)}>
+                      <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+                    </IconButton>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  );
+}

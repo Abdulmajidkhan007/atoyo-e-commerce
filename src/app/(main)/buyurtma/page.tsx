@@ -17,6 +17,8 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { clearCart } from "@/redux/slices/cartSlice";
 import { ensureSessionCookie } from "@/lib/firebase/auth";
 import { normalizePhone, isValidName } from "@/lib/validation";
+import { deliveryFeeFor } from "@/lib/orders/promo";
+import { DEFAULT_DELIVERY_SETTINGS, type DeliverySettings } from "@/types/promo";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 function formatSom(amount: number): string {
@@ -29,7 +31,47 @@ export default function CheckoutPage() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
   const { profile, status } = useAppSelector((s) => s.user);
-  const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // Promokod serverda tekshiriladi (yakuniy hisob ham serverda qayta chiqariladi).
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discount: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
+  const [delivery, setDelivery] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+
+  useEffect(() => {
+    fetch("/api/delivery")
+      .then((res) => res.json())
+      .then((data: { delivery?: DeliverySettings }) => data.delivery && setDelivery(data.delivery))
+      .catch(() => {});
+  }, []);
+
+  const discountAmount = promo?.discount ?? 0;
+  const deliveryFee = deliveryFeeFor(delivery, subtotal - discountAmount);
+  const totalAmount = subtotal - discountAmount + deliveryFee;
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoChecking(true);
+    setPromoError(null);
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const data = (await res.json()) as { code?: string; discount?: number; error?: string };
+      if (!res.ok || data.discount === undefined) throw new Error(data.error ?? "Promokod qo'llanmadi.");
+      setPromo({ code: data.code ?? code.toUpperCase(), discount: data.discount });
+    } catch (error) {
+      setPromo(null);
+      setPromoError(error instanceof Error ? error.message : "Promokod qo'llanmadi.");
+    } finally {
+      setPromoChecking(false);
+    }
+  };
 
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -101,6 +143,7 @@ export default function CheckoutPage() {
           location,
           deliveryAddress: deliveryAddress.trim() || null,
           paymentMethod,
+          promoCode: promo?.code ?? null,
         }),
       });
 
@@ -183,8 +226,57 @@ export default function CheckoutPage() {
           )}
         </div>
 
+        {/* Promokod */}
         <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
-          <div className="flex justify-between text-lg font-bold text-navy-900 dark:text-white">
+          <div className="flex items-start gap-2">
+            <TextField
+              label={dict.checkout.promoCode}
+              size="small"
+              fullWidth
+              value={promoInput}
+              onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+              disabled={!!promo}
+            />
+            {promo ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setPromo(null);
+                  setPromoInput("");
+                  setPromoError(null);
+                }}
+                color="inherit"
+              >
+                {dict.checkout.promoRemove}
+              </Button>
+            ) : (
+              <Button type="button" onClick={handleApplyPromo} disabled={promoChecking} variant="outlined">
+                {promoChecking ? <CircularProgress size={18} color="inherit" /> : dict.checkout.promoApply}
+              </Button>
+            )}
+          </div>
+          {promo && <p className="mt-1 text-xs text-green-600">{dict.checkout.promoApplied}: {promo.code}</p>}
+          {promoError && <p className="mt-1 text-xs text-red-500">{promoError}</p>}
+        </div>
+
+        <div className="flex flex-col gap-1 rounded-xl2 border border-navy-100 p-4 text-sm dark:border-navy-500">
+          <div className="flex justify-between text-navy-500 dark:text-navy-100">
+            <span>{dict.checkout.subtotal}</span>
+            <span>{formatSom(subtotal)}</span>
+          </div>
+          {discountAmount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>{dict.checkout.discount}</span>
+              <span>−{formatSom(discountAmount)}</span>
+            </div>
+          )}
+          {delivery.enabled && delivery.fee > 0 && (
+            <div className="flex justify-between text-navy-500 dark:text-navy-100">
+              <span>{dict.checkout.delivery}</span>
+              <span>{deliveryFee > 0 ? formatSom(deliveryFee) : dict.checkout.deliveryFree}</span>
+            </div>
+          )}
+          <div className="mt-2 flex justify-between border-t border-navy-100 pt-2 text-lg font-bold text-navy-900 dark:border-navy-500 dark:text-white">
             <span>{dict.checkout.total}</span>
             <span>{formatSom(totalAmount)}</span>
           </div>

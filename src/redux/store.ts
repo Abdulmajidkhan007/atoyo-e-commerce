@@ -11,23 +11,25 @@ import {
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import cartReducer from "./slices/cartSlice";
+import favoritesReducer from "./slices/favoritesSlice";
 import userReducer from "./slices/userSlice";
 import filterReducer from "./slices/filterSlice";
 import uiReducer from "./slices/uiSlice";
 
 const rootReducer = combineReducers({
   cart: cartReducer,
+  favorites: favoritesReducer,
   user: userReducer,
   filters: filterReducer,
   ui: uiReducer,
 });
 
-// Faqat savat (cart) va UI (tema) localStorage'da saqlanadi.
+// Savat, sevimlilar va UI (tema) localStorage'da saqlanadi.
 // Foydalanuvchi/filtr holati har safar server bilan qayta sinxronlanadi.
 const persistConfig = {
   key: "atoyo-root",
   storage,
-  whitelist: ["cart", "ui"],
+  whitelist: ["cart", "ui", "favorites"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

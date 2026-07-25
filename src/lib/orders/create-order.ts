@@ -5,8 +5,16 @@ import { sendTopicMessage } from "@/lib/telegram/bot";
 import { formatOrderMessage } from "@/lib/telegram/templates";
 import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
 import { isDiscountActive } from "@/lib/products/pricing";
+import {
+  PROMO_ERROR_MESSAGES,
+  deliveryFeeFor,
+  normalizePromoCode,
+  validatePromo,
+} from "@/lib/orders/promo";
+import { getDeliverySettings } from "@/lib/orders/pricing";
 import type { Product } from "@/types/product";
 import type { Order, OrderItem, OrderLocation } from "@/types/order";
+import type { PromoCode } from "@/types/promo";
 
 /** Buyurtmani qabul qilib bo'lmasa (zaxira yetmasa, mahsulot yo'q) - mijozga
  *  tushunarli sabab qaytarish uchun alohida xato turi. */
@@ -26,6 +34,8 @@ export interface NewOrderInput {
   paymentMethod?: "cash" | "online";
   userId?: string | null;
   customerEmail?: string | null;
+  /** Mijoz kiritgan promokod (ixtiyoriy) - serverda qayta tekshiriladi. */
+  promoCode?: string | null;
   /** Buyurtma Telegram botdan kelgan bo'lsa - mijozning chat ID'si. */
   customerChatId?: number | null;
 }
@@ -50,9 +60,15 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
   // o'qiladi, hozirgi haqiqiy narx olinadi va zaxira yetarliligi
   // tekshiriladi. Hammasi bitta tranzaksiyada - ikki mijoz oxirgi donani
   // bir vaqtda olib ketolmaydi.
-  const { items, totalAmount } = await db.runTransaction(async (tx) => {
+  const deliverySettings = await getDeliverySettings();
+  const promoRef = input.promoCode
+    ? db.doc(`promoCodes/${normalizePromoCode(input.promoCode)}`)
+    : null;
+
+  const totals = await db.runTransaction(async (tx) => {
     const refs = input.items.map((i) => db.collection("products").doc(i.productId));
     const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
+    const promoSnap = promoRef ? await tx.get(promoRef) : null;
 
     const verifiedItems: OrderItem[] = [];
     for (let i = 0; i < input.items.length; i += 1) {
@@ -80,7 +96,24 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
       });
     }
 
-    const total = verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const itemsTotal = verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // ---- Promokod ham SERVERDA tekshiriladi ----
+    // Kod mavjudligi, muddati, limiti va minimal summa shu tranzaksiyada
+    // qayta o'qiladi: limitdan oshib ketish imkoni qolmaydi.
+    let discount = 0;
+    let appliedPromo: string | null = null;
+    if (promoSnap) {
+      const promo = promoSnap.exists ? ({ ...promoSnap.data(), code: promoSnap.id } as PromoCode) : null;
+      const result = validatePromo(promo, itemsTotal, now);
+      if (!result.ok) throw new OrderValidationError(PROMO_ERROR_MESSAGES[result.error]);
+      discount = result.discount;
+      appliedPromo = promoSnap.id;
+    }
+
+    const payable = itemsTotal - discount;
+    const delivery = deliveryFeeFor(deliverySettings, payable);
+    const total = payable + delivery;
 
     // Zaxira/salesCount va statistika - shu tranzaksiyada.
     for (let i = 0; i < verifiedItems.length; i += 1) {
@@ -89,14 +122,26 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
         salesCount: FieldValue.increment(verifiedItems[i]!.quantity),
       });
     }
+    if (promoRef && appliedPromo) {
+      tx.update(promoRef, { usedCount: FieldValue.increment(1), updatedAt: now });
+    }
     tx.set(
       db.collection("stats").doc("summary"),
       { totalOrders: FieldValue.increment(1), totalRevenue: FieldValue.increment(total) },
       { merge: true }
     );
 
-    return { items: verifiedItems, totalAmount: total };
+    return {
+      items: verifiedItems,
+      subtotal: itemsTotal,
+      discountAmount: discount,
+      deliveryFee: delivery,
+      totalAmount: total,
+      promoCode: appliedPromo,
+    };
   });
+
+  const { items, subtotal, discountAmount, deliveryFee, totalAmount, promoCode } = totals;
 
   const order: Order = {
     id: orderRef.id,
@@ -105,6 +150,10 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     customerName: input.customerName,
     phoneNumber: input.phoneNumber,
     items,
+    subtotal,
+    promoCode,
+    discountAmount,
+    deliveryFee,
     totalAmount,
     currency: "UZS",
     location: input.location ?? null,

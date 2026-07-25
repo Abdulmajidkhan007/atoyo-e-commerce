@@ -50,6 +50,10 @@ export interface Product {
   isActive: boolean;
   /** Necha marta buyurtma qilingani - admin tahlillarida "eng ko'p sotilgan" saralash uchun. */
   salesCount: number;
+  /** Sharhlar reytingi (POST /api/products/[id]/reviews avtomatik yangilaydi). */
+  ratingSum?: number;
+  ratingCount?: number;
+  ratingAvg?: number;
   createdAt: number; // epoch millis
   updatedAt: number;
 }
