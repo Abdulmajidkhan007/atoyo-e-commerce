@@ -5,7 +5,8 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 const eslintConfig = [
   // scripts/ - Admin SDK bilan ishlaydigan bir martalik CommonJS util
   // skriptlar (seed, make-admin); Next.js/TS lint qoidalari ularga tegishli emas.
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "scripts/**"] },
+  // mobile/ - alohida React Native loyihasi, o'z eslint sozlamasi bor.
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "scripts/**", "mobile/**"] },
   ...nextCoreWebVitals,
 ];
 

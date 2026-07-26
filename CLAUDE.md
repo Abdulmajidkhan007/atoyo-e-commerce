@@ -85,6 +85,22 @@ foydalanuvchi so'raganda.
 - Env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (xodimlar guruhi),
   `TELEGRAM_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL` (OG rasm URL'lari uchun).
 
+## Mobil ilova (`mobile/`)
+
+React Native CLI (bare, RN 0.76) — **faqat mijozlar uchun**. Sayt bilan
+bir xil Firebase loyihasi va bir xil API'dan foydalanadi:
+katalog/qidiruvni to'g'ridan-to'g'ri Firestore'dan o'qiydi, buyurtma va
+sharhni esa saytning API'si orqali yuboradi (`Authorization: Bearer
+<Firebase ID token>` — server tomonda `getAppUserFromRequest`).
+
+- `mobile/` root tooling'dan chiqarilgan: `tsconfig.json` exclude va
+  `eslint.config.mjs` ignores ichida. Tekshiruv alohida:
+  `cd mobile && npx tsc --noEmit` va `npx eslint 'src/**/*.tsx' --no-ignore`.
+- APK/IPA bu sandbox'da yig'ilmaydi (Android SDK/Xcode yo'q) — kod
+  tayyor, yig'ish lokal kompyuterda. Tartib `mobile/README.md` da.
+- `google-services.json` / `GoogleService-Info.plist` repoda YO'Q —
+  ularni Firebase konsolidan olib qo'yish kerak.
+
 ## Qolgan/kutilayotgan ishlar
 
 - Ko'p tillik uz/en/ru (boshlanmagan).

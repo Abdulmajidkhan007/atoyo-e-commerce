@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentAppUser } from "@/lib/firebase/session";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { listReviews, saveReview, ReviewError } from "@/lib/reviews/save-review";
 
@@ -23,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
  * (lib/reviews/save-review), shunda reyting hisobi bir joyda turadi.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentAppUser();
+  const user = await getAppUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Sharh qoldirish uchun tizimga kiring." }, { status: 401 });
 
   const { allowed } = await checkRateLimit({

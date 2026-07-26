@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentAppUser } from "@/lib/firebase/session";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { createOrder, OrderValidationError } from "@/lib/orders/create-order";
 import { normalizePhone, isValidName } from "@/lib/validation";
 
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
   try {
     // Buyurtma faqat tizimga kirgan foydalanuvchidan qabul qilinadi -
     // admin kimdan buyurtma kelganini aniq bilishi kerak.
-    const currentUser = await getCurrentAppUser();
+    const currentUser = await getAppUserFromRequest(request);
     if (!currentUser) {
       return NextResponse.json({ error: "Buyurtma berish uchun tizimga kiring." }, { status: 401 });
     }

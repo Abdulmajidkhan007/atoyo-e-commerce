@@ -63,6 +63,36 @@ export async function getCurrentAppUser(): Promise<AppUser | null> {
 }
 
 /**
+ * MOBIL ILOVA UCHUN: avval session cookie, bo'lmasa `Authorization:
+ * Bearer <idToken>` sarlavhasi tekshiriladi.
+ *
+ * Saytda httpOnly cookie ishlatiladi, lekin React Native ilovasida
+ * cookie yo'q - u Firebase Auth ID tokenini sarlavhada yuboradi.
+ * Ikkalasi ham bir xil `AppUser` qaytaradi, shuning uchun route'lar
+ * mijoz turini bilishi shart emas.
+ */
+export async function getAppUserFromRequest(request: Request): Promise<AppUser | null> {
+  const fromCookie = await getCurrentAppUser();
+  if (fromCookie) return fromCookie;
+
+  const header = request.headers.get("authorization") ?? "";
+  const idToken = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
+  if (!idToken) return null;
+
+  try {
+    const decoded = await getAdminAuth().verifyIdToken(idToken, true /* checkRevoked */);
+    const userDoc = await getAdminDb().collection("users").doc(decoded.uid).get();
+    if (!userDoc.exists) return null;
+
+    const user: AppUser = { uid: decoded.uid, ...(userDoc.data() as Omit<AppUser, "uid">) };
+    if (isOwner(user) && user.role !== "owner") return { ...user, role: "owner" };
+    return user;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Admin panelga kirish huquqi (owner yoki admin). Har bir route'da
  * alohida yozilmasligi uchun markazlashtirilgan - Firestore rolini
  * bir joydan tekshiradi.

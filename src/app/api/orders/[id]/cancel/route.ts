@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { getCurrentAppUser } from "@/lib/firebase/session";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 import { logAction } from "@/lib/telegram/action-log";
 import type { Order } from "@/types/order";
@@ -16,8 +16,8 @@ const CANCELLABLE = ["pending", "approved"];
  * yangilash va xabarnomalar - hammasi applyOrderStatusUpdate ichida
  * (admin bekor qilgani bilan bir xil yo'l).
  */
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentAppUser();
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getAppUserFromRequest(request);
   if (!user) return NextResponse.json({ error: "Tizimga kiring." }, { status: 401 });
 
   const { id } = await params;
