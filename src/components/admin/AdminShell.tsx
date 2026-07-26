@@ -17,6 +17,8 @@ import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { signOutUser } from "@/lib/firebase/auth";
 import { useAppDispatch } from "@/redux/hooks";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
@@ -72,6 +74,12 @@ function NavLinks({
         <HomeOutlinedIcon fontSize="small" />
         Saytga qaytish
       </Link>
+
+      {/* Tema va til - admin panelning to'q fonida oq rangda */}
+      <div className="flex items-center gap-1 px-1 py-1">
+        <ThemeToggle className="!text-white" />
+        <LanguageSwitcher className="!text-white" />
+      </div>
 
       {/* Tizimdan chiqish */}
       <button
@@ -160,15 +168,13 @@ export function AdminShell({
             <Image src="/logo.jpg" alt="" width={26} height={26} className="h-[26px] w-[26px] rounded-md object-cover" />
             Atoyo Admin
           </Link>
-          <IconButton
-            component={Link}
-            href="/"
-            size="small"
-            aria-label="Saytga qaytish"
-            className="!ml-auto"
-          >
-            <HomeOutlinedIcon className="text-white" fontSize="small" />
-          </IconButton>
+          <div className="ml-auto flex items-center gap-0">
+            <ThemeToggle className="!text-white" />
+            <LanguageSwitcher className="!text-white" />
+            <IconButton component={Link} href="/" size="small" aria-label="Saytga qaytish">
+              <HomeOutlinedIcon className="text-white" fontSize="small" />
+            </IconButton>
+          </div>
         </header>
 
         <main className="min-w-0 flex-1 p-4 sm:p-6">{children}</main>

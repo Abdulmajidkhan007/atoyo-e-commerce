@@ -13,7 +13,7 @@ const LOCALE_LABELS: Record<Locale, string> = {
   ru: "Русский",
 };
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ className }: { className?: string } = {}) {
   const router = useRouter();
   const { locale, setLocale } = useI18n();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -31,7 +31,7 @@ export function LanguageSwitcher() {
       <IconButton
         aria-label="Tilni almashtirish"
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        className="!p-1.5 !text-navy-500 sm:!p-2 dark:!text-navy-100"
+        className={`!p-1.5 sm:!p-2 ${className ?? "!text-navy-500 dark:!text-navy-100"}`}
       >
         <span className="flex items-center gap-1">
           <LanguageOutlinedIcon fontSize="small" />
