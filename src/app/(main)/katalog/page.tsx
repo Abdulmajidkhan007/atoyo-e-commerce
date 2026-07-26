@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
-import { FilterPanel } from "@/components/product/FilterPanel";
+import { FilterDialog } from "@/components/product/FilterDialog";
 import { SearchBar } from "@/components/product/SearchBar";
 import { ProductGrid } from "@/components/product/ProductGrid";
 
@@ -18,21 +18,14 @@ function CatalogContent() {
     <section className="mx-auto max-w-7xl px-4 py-6">
       <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">{dict.nav.catalog}</h1>
 
-      <div className="mb-4 lg:hidden">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} />
+      {/* Qidiruv + filtr tugmasi. Filtrlar sahifada doim turmaydi -
+          tugma bosilganda modal ochiladi. */}
+      <div className="mb-4 flex items-center gap-2">
+        <SearchBar value={searchTerm} onChange={setSearchTerm} className="flex-1 lg:max-w-md" />
+        <FilterDialog />
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <FilterPanel />
-
-        <div className="flex-1">
-          <div className="mb-4 hidden lg:block">
-            <SearchBar value={searchTerm} onChange={setSearchTerm} className="max-w-md" />
-          </div>
-
-          <ProductGrid filters={filters} searchTerm={searchTerm} />
-        </div>
-      </div>
+      <ProductGrid filters={filters} searchTerm={searchTerm} />
     </section>
   );
 }

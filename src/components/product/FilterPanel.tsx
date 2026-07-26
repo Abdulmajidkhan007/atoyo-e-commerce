@@ -35,7 +35,11 @@ const MATERIAL_OPTIONS: { value: ProductMaterial; label: string }[] = [
 const FALLBACK_BRANDS = ["Kalde", "Valtec", "STOUT", "Icma", "Ferro", "Rehau"];
 const FALLBACK_COUNTRIES = ["O'zbekiston", "Turkiya", "Germaniya", "Italiya", "Xitoy", "Rossiya"];
 
-export function FilterPanel() {
+/**
+ * Filtrlar. `variant="plain"` - o'rab turuvchi ramkasiz (modal ichida
+ * ishlatiladi), standart `"sidebar"` - o'z kartochkasi bilan.
+ */
+export function FilterPanel({ variant = "sidebar" }: { variant?: "sidebar" | "plain" }) {
   const dispatch = useAppDispatch();
   const { dict } = useI18n();
   const filters = useAppSelector((s) => s.filters);
@@ -73,11 +77,25 @@ export function FilterPanel() {
     );
   };
 
+  const Wrapper = variant === "plain" ? "div" : "aside";
+
   return (
-    <aside className="flex w-full flex-col gap-4 rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-700 lg:w-64 lg:shrink-0">
+    <Wrapper
+      className={
+        variant === "plain"
+          ? "flex w-full flex-col gap-4"
+          : "flex w-full flex-col gap-4 rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-700 lg:w-64 lg:shrink-0"
+      }
+    >
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-navy-900 dark:text-white">{dict.filters.title}</h2>
-        <Button size="small" onClick={() => { dispatch(resetFilters()); setMinPrice(""); setMaxPrice(""); }}>
+        {variant === "sidebar" && (
+          <h2 className="font-semibold text-navy-900 dark:text-white">{dict.filters.title}</h2>
+        )}
+        <Button
+          size="small"
+          className={variant === "plain" ? "!ml-auto" : undefined}
+          onClick={() => { dispatch(resetFilters()); setMinPrice(""); setMaxPrice(""); }}
+        >
           {dict.filters.clear}
         </Button>
       </div>
@@ -163,6 +181,6 @@ export function FilterPanel() {
           <MenuItem value="price-desc">{dict.filters.priceDesc}</MenuItem>
         </Select>
       </FormControl>
-    </aside>
+    </Wrapper>
   );
 }

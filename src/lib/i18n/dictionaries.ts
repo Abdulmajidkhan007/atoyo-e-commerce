@@ -181,6 +181,7 @@ export interface Dictionary {
   filters: {
     title: string;
     clear: string;
+    apply: string;
     all: string;
     material: string;
     brand: string;
@@ -393,6 +394,7 @@ const uz: Dictionary = {
   filters: {
     title: "Filtrlar",
     clear: "Tozalash",
+    apply: "Ko'rsatish",
     all: "Barchasi",
     material: "Material",
     brand: "Brend",
@@ -604,6 +606,7 @@ const en: Dictionary = {
   filters: {
     title: "Filters",
     clear: "Clear",
+    apply: "Show results",
     all: "All",
     material: "Material",
     brand: "Brand",
@@ -815,6 +818,7 @@ const ru: Dictionary = {
   filters: {
     title: "Фильтры",
     clear: "Сбросить",
+    apply: "Показать",
     all: "Все",
     material: "Материал",
     brand: "Бренд",

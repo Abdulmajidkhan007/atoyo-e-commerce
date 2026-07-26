@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Badge, IconButton, Avatar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -15,6 +15,7 @@ import { SearchBar } from "@/components/product/SearchBar";
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const { dict } = useI18n();
   const [searchTerm, setSearchTerm] = useState("");
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
@@ -99,9 +100,13 @@ export function Header() {
         </div>
       </div>
 
-      <div className="border-t border-navy-100 px-4 py-2 md:hidden dark:border-navy-500">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} onSubmit={handleSearchSubmit} />
-      </div>
+      {/* Katalog sahifasining o'z (jonli) qidiruvi bor - u yerda bu
+          qatorni ko'rsatmaymiz, aks holda ikkita bir xil maydon chiqadi. */}
+      {!pathname.startsWith("/katalog") && (
+        <div className="border-t border-navy-100 px-4 py-2 md:hidden dark:border-navy-500">
+          <SearchBar value={searchTerm} onChange={setSearchTerm} onSubmit={handleSearchSubmit} />
+        </div>
+      )}
     </header>
   );
 }
