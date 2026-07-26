@@ -33,7 +33,16 @@ export function LoginForm() {
     }
     setIsSubmitting(true);
     try {
-      await resetPassword(email.trim());
+      // Avval o'z serverimiz orqali (o'z domenimizdagi havola + o'z
+      // pochtamiz). SMTP sozlanmagan bo'lsa - Firebase'ning o'z xatiga
+      // qaytamiz, shunda oqim baribir ishlaydi.
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { fallback?: boolean };
+      if (!res.ok || data.fallback) await resetPassword(email.trim());
       setInfo(dict.auth.resetSent);
     } catch {
       // Mavjud bo'lmagan email uchun ham xuddi shu xabar - hisob bor-yo'qligini

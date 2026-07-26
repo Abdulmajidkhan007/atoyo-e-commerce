@@ -11,9 +11,13 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 /**
  * Firebase auth-amallari sahifasi: parolni tiklash va email tasdiqlash
  * havolalari SHU sahifaga keladi (Firebase'ning standart, xunuk sahifasi
- * o'rniga). Ishlashi uchun Firebase konsolда action URL o'zgartiriladi:
- * Authentication → Templates → istalgan shablonni tahrirlash →
- * "Customize action URL" → https://atoyo-uz.netlify.app/auth/action
+ * o'rniga).
+ *
+ * Parol tiklash xatini /api/auth/reset-password o'zi yuboradi: Admin SDK
+ * havola yaratadi, undan `oobCode` olinib shu sahifaga havola tuziladi.
+ * Firebase konsolidagi "Customize action URL" bizga to'g'ri kelmaydi -
+ * u faqat Firebase Hosting domenlarini qabul qiladi (netlify.app uchun
+ * EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED xatosi chiqadi).
  */
 function AuthActionContent() {
   const { dict } = useI18n();
