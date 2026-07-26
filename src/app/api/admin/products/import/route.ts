@@ -74,6 +74,7 @@ export async function POST(request: Request) {
   const errors: string[] = [];
   const brands = new Set<string>();
   const countries = new Set<string>();
+  const suppliers = new Set<string>();
   let created = 0;
   let updated = 0;
 
@@ -109,6 +110,8 @@ export async function POST(request: Request) {
     const country = (row.manufacturerCountry ?? "").trim();
     if (brand) brands.add(brand);
     if (country) countries.add(country);
+    const supplier = (row.supplier ?? "").trim();
+    if (supplier) suppliers.add(supplier);
 
     const images = (row.images ?? "")
       .split(/[|\n]/)
@@ -133,7 +136,7 @@ export async function POST(request: Request) {
       material,
       brand,
       manufacturerCountry: country,
-      supplier: (row.supplier ?? "").trim(),
+      supplier,
       price,
       discountPrice: toNumber(row.discountPrice) ?? null,
       stock: Math.max(0, Math.round(toNumber(row.stock) ?? 0)),
@@ -183,6 +186,7 @@ export async function POST(request: Request) {
 
   for (const brand of brands) await registerFacets({ brand });
   for (const country of countries) await registerFacets({ country });
+  for (const supplier of suppliers) await registerFacets({ supplier });
 
   if (created + updated > 0) {
     await logAction(

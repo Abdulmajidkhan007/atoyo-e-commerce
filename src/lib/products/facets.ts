@@ -15,15 +15,22 @@ const FACETS_DOC = ["metadata", "facets"] as const;
 export interface ProductFacets {
   brands: string[];
   countries: string[];
+  /** Yetkazib beruvchilar ("kimdan kelgan") - bulk narx yangilash uchun. */
+  suppliers: string[];
 }
 
-const EMPTY_FACETS: ProductFacets = { brands: [], countries: [] };
+const EMPTY_FACETS: ProductFacets = { brands: [], countries: [], suppliers: [] };
 
 /** Mahsulot qo'shilganda/tahrirlanganda yangi qiymatlarni ro'yxatga qo'shadi. */
-export async function registerFacets(params: { brand?: string; country?: string }): Promise<void> {
+export async function registerFacets(params: {
+  brand?: string;
+  country?: string;
+  supplier?: string;
+}): Promise<void> {
   const updates: Record<string, unknown> = {};
   if (params.brand?.trim()) updates.brands = FieldValue.arrayUnion(params.brand.trim());
   if (params.country?.trim()) updates.countries = FieldValue.arrayUnion(params.country.trim());
+  if (params.supplier?.trim()) updates.suppliers = FieldValue.arrayUnion(params.supplier.trim());
   if (Object.keys(updates).length === 0) return;
 
   try {
@@ -43,6 +50,7 @@ export async function getFacets(): Promise<ProductFacets> {
     return {
       brands: (data.brands ?? []).filter(Boolean).sort((a, b) => a.localeCompare(b)),
       countries: (data.countries ?? []).filter(Boolean).sort((a, b) => a.localeCompare(b)),
+      suppliers: (data.suppliers ?? []).filter(Boolean).sort((a, b) => a.localeCompare(b)),
     };
   } catch {
     return EMPTY_FACETS;

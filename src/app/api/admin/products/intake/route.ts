@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
+import { registerFacets } from "@/lib/products/facets";
 import type { StockIntake } from "@/types/intake";
 
 export const runtime = "nodejs";
@@ -52,7 +53,11 @@ export async function POST(request: Request) {
       updatedAt: now,
     };
     if (item.price !== undefined) updates.price = item.price;
-    if (item.supplier !== undefined && item.supplier.trim()) updates.supplier = item.supplier.trim();
+    if (item.supplier !== undefined && item.supplier.trim()) {
+      updates.supplier = item.supplier.trim();
+      // Yetkazib beruvchi ro'yxati (bulk narx filtri uchun) to'ldirib boriladi.
+      void registerFacets({ supplier: item.supplier.trim() });
+    }
     batch.update(refs[i]!, updates);
   }
 

@@ -85,7 +85,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   await ref.update(updates);
-  await registerFacets({ brand: d.brand, country: d.manufacturerCountry });
+  await registerFacets({ brand: d.brand, country: d.manufacturerCountry, supplier: d.supplier });
   const updated = { ...existing, ...updates, id } as Product;
   // Tahrirlangan mahsulot ham kanalga yangi holati bilan chiqadi.
   await announceProduct(updated, "updated");

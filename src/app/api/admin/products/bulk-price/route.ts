@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
+import { logAction } from "@/lib/telegram/action-log";
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const BATCH_SIZE = 400; // Firestore batch limiti 500 - xavfsiz margin bilan.
 // Bitta HTTP so'rovda qayta ishlanadigan maksimal hujjatlar soni. 10,000+
@@ -13,9 +17,19 @@ const BATCH_SIZE = 400; // Firestore batch limiti 500 - xavfsiz margin bilan.
 const MAX_DOCS_PER_REQUEST = 4000;
 
 const bodySchema = z.object({
-  category: z.string().optional(),
+  /**
+   * Qaysi belgi bo'yicha tanlanadi: kategoriya, brend yoki yetkazib
+   * beruvchi ("kimdan kelgan"). Bittasi tanlanadi - shunda Firestore'ga
+   * qo'shimcha kompozit indeks kerak bo'lmaydi.
+   */
+  filterBy: z.enum(["all", "category", "brand", "supplier"]).default("all"),
+  filterValue: z.string().max(120).optional(),
   percentageChange: z.number().min(-90).max(500),
+  /** true bo'lsa - hech narsa yozilmaydi, faqat nechta mahsulot tegishi qaytadi. */
+  dryRun: z.boolean().default(false),
 });
+
+const FIELD_BY_FILTER = { category: "category", brand: "brand", supplier: "supplier" } as const;
 
 export async function POST(request: Request) {
   const admin = await requirePermission("products");
@@ -28,16 +42,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "So'rov ma'lumotlari noto'g'ri." }, { status: 400 });
   }
 
-  const { category, percentageChange } = parsed.data;
-  const multiplier = 1 + percentageChange / 100;
+  const { filterBy, filterValue, percentageChange, dryRun } = parsed.data;
+  if (filterBy !== "all" && !filterValue?.trim()) {
+    return NextResponse.json({ error: "Filtr qiymati tanlanmagan." }, { status: 400 });
+  }
 
-  let query = getAdminDb().collection("products").orderBy("__name__").limit(BATCH_SIZE) as FirebaseFirestore.Query;
-  if (category) {
-    query = getAdminDb()
-      .collection("products")
-      .where("category", "==", category)
-      .orderBy("__name__")
-      .limit(BATCH_SIZE);
+  const multiplier = 1 + percentageChange / 100;
+  const db = getAdminDb();
+
+  let baseQuery: FirebaseFirestore.Query = db.collection("products");
+  if (filterBy !== "all") {
+    baseQuery = baseQuery.where(FIELD_BY_FILTER[filterBy], "==", filterValue!.trim());
+  }
+  const query = baseQuery.orderBy("__name__").limit(BATCH_SIZE);
+
+  // Oldindan ko'rish: faqat nechta mahsulotga tegishini sanaymiz.
+  if (dryRun) {
+    const count = await baseQuery.count().get();
+    return NextResponse.json({ matchedCount: count.data().count });
   }
 
   let updatedCount = 0;
@@ -48,7 +70,7 @@ export async function POST(request: Request) {
     const snapshot: FirebaseFirestore.QuerySnapshot = await pagedQuery.get();
     if (snapshot.empty) break;
 
-    const batch = getAdminDb().batch();
+    const batch = db.batch();
     for (const docSnapshot of snapshot.docs) {
       const currentPrice = docSnapshot.data().price as number;
       const newPrice = Math.max(0, Math.round(currentPrice * multiplier));
@@ -60,6 +82,13 @@ export async function POST(request: Request) {
     lastDoc = snapshot.docs.at(-1) ?? null;
 
     if (snapshot.docs.length < BATCH_SIZE) break;
+  }
+
+  if (updatedCount > 0) {
+    const scope = filterBy === "all" ? "butun katalog" : `${filterBy}=${filterValue}`;
+    await logAction(
+      `💲 Bulk narx (${admin.email ?? "admin"}): ${scope} → ${percentageChange > 0 ? "+" : ""}${percentageChange}%, ${updatedCount} ta mahsulot`
+    );
   }
 
   return NextResponse.json({ updatedCount });
