@@ -79,6 +79,64 @@ export interface BotDict {
   deleteYes: string;
   deleteNo: string;
   deleteDone: string;
+  // ---- Savat boshqaruvi ----
+  qtyPlus: string;
+  qtyMinus: string;
+  removeItem: string;
+  itemRemoved: string;
+  // ---- Promokod va hisob ----
+  promoBtn: string;
+  promoPrompt: string;
+  promoApplied: string;
+  promoInvalid: string;
+  promoRemoveBtn: string;
+  promoRemoved: string;
+  subtotalLabel: string;
+  discountLabel: string;
+  deliveryLabel: string;
+  // ---- Sevimlilar ----
+  favorites: string;
+  favAdd: string;
+  favRemove: string;
+  favAdded: string;
+  favRemoved: string;
+  favEmpty: string;
+  favTitle: string;
+  // ---- Sharhlar ----
+  reviewsBtn: string;
+  reviewsTitle: string;
+  noReviews: string;
+  writeReview: string;
+  ratePrompt: string;
+  reviewPrompt: string;
+  reviewSaved: string;
+  ratingLabel: string;
+  // ---- Blog / kontakt / haqida ----
+  blog: string;
+  blogEmpty: string;
+  readOnSite: string;
+  contact: string;
+  contactTitle: string;
+  about: string;
+  // ---- Buyurtmani bekor qilish ----
+  cancelOrder: string;
+  cancelConfirmQ: string;
+  cancelYes: string;
+  cancelNo: string;
+  cancelDone: string;
+  cancelNotAllowed: string;
+  // ---- Filtr ----
+  filter: string;
+  filterTitle: string;
+  filterBrand: string;
+  filterMaterial: string;
+  filterSort: string;
+  filterClear: string;
+  filterAll: string;
+  sortNewest: string;
+  sortPriceAsc: string;
+  sortPriceDesc: string;
+  filterApplied: string;
   categories: Record<ProductCategory, string>;
 }
 
@@ -153,6 +211,57 @@ const uz: BotDict = {
   deleteYes: "🗑 Ha, o'chirilsin",
   deleteNo: "⬅️ Yo'q, bekor qilish",
   deleteDone: "Hisobingiz o'chirildi. Qayta ro'yxatdan o'tish uchun /start yuboring.",
+  qtyPlus: "➕",
+  qtyMinus: "➖",
+  removeItem: "🗑",
+  itemRemoved: "Savatdan olib tashlandi",
+  promoBtn: "🏷 Promokod",
+  promoPrompt: "Promokodni yuboring:",
+  promoApplied: "✅ Promokod qo'llandi",
+  promoInvalid: "❌ Promokod ishlamadi",
+  promoRemoveBtn: "❌ Promokodni olib tashlash",
+  promoRemoved: "Promokod bekor qilindi",
+  subtotalLabel: "Mahsulotlar",
+  discountLabel: "Chegirma",
+  deliveryLabel: "Yetkazib berish",
+  favorites: "❤️ Sevimlilar",
+  favAdd: "🤍 Sevimlilarga",
+  favRemove: "❤️ Sevimlilardan olish",
+  favAdded: "❤️ Sevimlilarga qo'shildi",
+  favRemoved: "Sevimlilardan olib tashlandi",
+  favEmpty: "Sevimlilar ro'yxati bo'sh.",
+  favTitle: "❤️ <b>Sevimlilar</b>",
+  reviewsBtn: "⭐️ Sharhlar",
+  reviewsTitle: "⭐️ <b>Sharhlar</b>",
+  noReviews: "Hozircha sharhlar yo'q. Birinchi bo'lib fikr bildiring!",
+  writeReview: "✍️ Sharh yozish",
+  ratePrompt: "Nechta yulduz berasiz?",
+  reviewPrompt: "Fikringizni yozing:",
+  reviewSaved: "✅ Sharhingiz uchun rahmat!",
+  ratingLabel: "Reyting",
+  blog: "📰 Blog",
+  blogEmpty: "Hozircha maqolalar yo'q.",
+  readOnSite: "📖 To'liq o'qish",
+  contact: "📞 Bog'lanish",
+  contactTitle: "📞 <b>Biz bilan bog'laning</b>",
+  about: "ℹ️ Biz haqimizda",
+  cancelOrder: "❌ Buyurtmani bekor qilish",
+  cancelConfirmQ: "Buyurtmani bekor qilasizmi?",
+  cancelYes: "✅ Ha, bekor qilinsin",
+  cancelNo: "⬅️ Yo'q",
+  cancelDone: "Buyurtma bekor qilindi.",
+  cancelNotAllowed: "Bu buyurtmani endi bekor qilib bo'lmaydi.",
+  filter: "⚙️ Filtr",
+  filterTitle: "⚙️ <b>Filtr</b>",
+  filterBrand: "™️ Brend",
+  filterMaterial: "🧱 Material",
+  filterSort: "↕️ Saralash",
+  filterClear: "🧹 Tozalash",
+  filterAll: "Barchasi",
+  sortNewest: "Eng yangi",
+  sortPriceAsc: "Narx ↑",
+  sortPriceDesc: "Narx ↓",
+  filterApplied: "Filtr qo'llandi",
   categories: {
     pipes: "🔧 Quvurlar",
     fittings: "🔩 Muftalar",
@@ -236,6 +345,57 @@ const en: BotDict = {
   deleteYes: "🗑 Yes, delete",
   deleteNo: "⬅️ No, cancel",
   deleteDone: "Your account has been deleted. Send /start to register again.",
+  qtyPlus: "➕",
+  qtyMinus: "➖",
+  removeItem: "🗑",
+  itemRemoved: "Removed from cart",
+  promoBtn: "🏷 Promo code",
+  promoPrompt: "Send your promo code:",
+  promoApplied: "✅ Promo code applied",
+  promoInvalid: "❌ Promo code did not work",
+  promoRemoveBtn: "❌ Remove promo code",
+  promoRemoved: "Promo code removed",
+  subtotalLabel: "Items",
+  discountLabel: "Discount",
+  deliveryLabel: "Delivery",
+  favorites: "❤️ Favorites",
+  favAdd: "🤍 Add to favorites",
+  favRemove: "❤️ Remove from favorites",
+  favAdded: "❤️ Added to favorites",
+  favRemoved: "Removed from favorites",
+  favEmpty: "Your favorites list is empty.",
+  favTitle: "❤️ <b>Favorites</b>",
+  reviewsBtn: "⭐️ Reviews",
+  reviewsTitle: "⭐️ <b>Reviews</b>",
+  noReviews: "No reviews yet. Be the first to share your opinion!",
+  writeReview: "✍️ Write a review",
+  ratePrompt: "How many stars?",
+  reviewPrompt: "Write your comment:",
+  reviewSaved: "✅ Thank you for your review!",
+  ratingLabel: "Rating",
+  blog: "📰 Blog",
+  blogEmpty: "No articles yet.",
+  readOnSite: "📖 Read more",
+  contact: "📞 Contact",
+  contactTitle: "📞 <b>Get in touch</b>",
+  about: "ℹ️ About us",
+  cancelOrder: "❌ Cancel order",
+  cancelConfirmQ: "Cancel this order?",
+  cancelYes: "✅ Yes, cancel it",
+  cancelNo: "⬅️ No",
+  cancelDone: "Order cancelled.",
+  cancelNotAllowed: "This order can no longer be cancelled.",
+  filter: "⚙️ Filter",
+  filterTitle: "⚙️ <b>Filter</b>",
+  filterBrand: "™️ Brand",
+  filterMaterial: "🧱 Material",
+  filterSort: "↕️ Sort",
+  filterClear: "🧹 Clear",
+  filterAll: "All",
+  sortNewest: "Newest",
+  sortPriceAsc: "Price ↑",
+  sortPriceDesc: "Price ↓",
+  filterApplied: "Filter applied",
   categories: {
     pipes: "🔧 Pipes",
     fittings: "🔩 Fittings",
@@ -319,6 +479,57 @@ const ru: BotDict = {
   deleteYes: "🗑 Да, удалить",
   deleteNo: "⬅️ Нет, отмена",
   deleteDone: "Ваш аккаунт удалён. Отправьте /start, чтобы зарегистрироваться заново.",
+  qtyPlus: "➕",
+  qtyMinus: "➖",
+  removeItem: "🗑",
+  itemRemoved: "Удалено из корзины",
+  promoBtn: "🏷 Промокод",
+  promoPrompt: "Отправьте промокод:",
+  promoApplied: "✅ Промокод применён",
+  promoInvalid: "❌ Промокод не сработал",
+  promoRemoveBtn: "❌ Убрать промокод",
+  promoRemoved: "Промокод отменён",
+  subtotalLabel: "Товары",
+  discountLabel: "Скидка",
+  deliveryLabel: "Доставка",
+  favorites: "❤️ Избранное",
+  favAdd: "🤍 В избранное",
+  favRemove: "❤️ Убрать из избранного",
+  favAdded: "❤️ Добавлено в избранное",
+  favRemoved: "Убрано из избранного",
+  favEmpty: "Список избранного пуст.",
+  favTitle: "❤️ <b>Избранное</b>",
+  reviewsBtn: "⭐️ Отзывы",
+  reviewsTitle: "⭐️ <b>Отзывы</b>",
+  noReviews: "Отзывов пока нет. Будьте первым!",
+  writeReview: "✍️ Написать отзыв",
+  ratePrompt: "Сколько звёзд поставите?",
+  reviewPrompt: "Напишите ваш отзыв:",
+  reviewSaved: "✅ Спасибо за отзыв!",
+  ratingLabel: "Рейтинг",
+  blog: "📰 Блог",
+  blogEmpty: "Статей пока нет.",
+  readOnSite: "📖 Читать полностью",
+  contact: "📞 Связаться",
+  contactTitle: "📞 <b>Свяжитесь с нами</b>",
+  about: "ℹ️ О нас",
+  cancelOrder: "❌ Отменить заказ",
+  cancelConfirmQ: "Отменить заказ?",
+  cancelYes: "✅ Да, отменить",
+  cancelNo: "⬅️ Нет",
+  cancelDone: "Заказ отменён.",
+  cancelNotAllowed: "Этот заказ уже нельзя отменить.",
+  filter: "⚙️ Фильтр",
+  filterTitle: "⚙️ <b>Фильтр</b>",
+  filterBrand: "™️ Бренд",
+  filterMaterial: "🧱 Материал",
+  filterSort: "↕️ Сортировка",
+  filterClear: "🧹 Сбросить",
+  filterAll: "Все",
+  sortNewest: "Новые",
+  sortPriceAsc: "Цена ↑",
+  sortPriceDesc: "Цена ↓",
+  filterApplied: "Фильтр применён",
   categories: {
     pipes: "🔧 Трубы",
     fittings: "🔩 Фитинги",
