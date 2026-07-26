@@ -60,7 +60,7 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
       ListHeaderComponent={
         <View>
           <View style={styles.hero}>
-            <Image source={require('../../assets/logo.png')} style={styles.logo} alt="Atoyo Santexnika" />
+            <Image source={require('../../assets/logo.jpg')} style={styles.logo} alt="Atoyo Santexnika" />
             <Text style={styles.heroTitle}>Santexnika va Otopleniye uchun ishonchli manzil</Text>
             <Text style={styles.heroText}>
               Quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari — barchasi bir joyda.
