@@ -41,7 +41,7 @@ cd ios && pod install && cd ..
 Firebase konsolida `atoyo-uz` loyihasiga ilova qo'shing:
 
 **Android:** Project settings → Add app → Android
-- Package name: `com.atoyoapp`
+- Package name: `com.atoyo`
 - `google-services.json` ni yuklab olib **`android/app/`** ichiga qo'ying
 
 **iOS:** Add app → iOS
@@ -103,9 +103,9 @@ Repoda `.github/workflows/ci.yml` bor: har push'da avval tekshiruv
 Ishlashi uchun bitta secret kerak:
 
 1. Firebase konsolida Android ilova qo'shing — **package name ANIQ
-   `com.atoyoapp`** bo'lishi shart (bu ilovaning `applicationId` si).
+   `com.atoyo`** bo'lishi shart (bu ilovaning `applicationId` si).
    Boshqa nom bilan ro'yxatdan o'tkazilsa Gradle
-   `No matching client found for package name 'com.atoyoapp'` xatosini
+   `No matching client found for package name 'com.atoyo'` xatosini
    beradi. Bitta Firebase loyihasida bir nechta Android ilova bo'lishi
    mumkin, shuning uchun mavjudini o'chirish shart emas — yangisini
    qo'shsangiz bo'ladi. Keyin `google-services.json` ni yuklab oling

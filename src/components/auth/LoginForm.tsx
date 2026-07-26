@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button, TextField, Divider, Alert, CircularProgress } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import { signInWithGoogle, signInWithEmail, registerWithEmail, resetPassword } from "@/lib/firebase/auth";
+import { TelegramLoginButton } from "./TelegramLoginButton";
+import { useTelegramLogin } from "./useTelegramLogin";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 export function LoginForm() {
@@ -14,6 +16,7 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { tgBusy, tgError } = useTelegramLogin();
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -125,16 +128,31 @@ export function LoginForm() {
         {mode === "login" ? dict.auth.loginTitle : dict.auth.registerTitle}
       </h1>
 
-      <Button
-        onClick={handleGoogleSignIn}
-        variant="outlined"
-        size="large"
-        startIcon={<GoogleIcon />}
-        disabled={isSubmitting}
-        fullWidth
-      >
-        {dict.auth.google}
-      </Button>
+      {/* Ijtimoiy kirish: Google va Telegram yonma-yon. Telegram tugmasi
+          Telegram'ning o'z widget'i (iframe) - o'lchamini faqat `data-size`
+          belgilaydi, shuning uchun Google tugmasi ham shunga yaqin
+          o'lchamda va to'liq kenglikda emas. */}
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Button
+          onClick={handleGoogleSignIn}
+          variant="outlined"
+          size="medium"
+          startIcon={<GoogleIcon />}
+          disabled={isSubmitting}
+          className="!normal-case"
+        >
+          Google
+        </Button>
+
+        <TelegramLoginButton />
+      </div>
+
+      {tgError && <Alert severity="error">{dict.auth.telegramError}</Alert>}
+      {tgBusy && (
+        <div className="flex justify-center">
+          <CircularProgress size={22} />
+        </div>
+      )}
 
       <Divider>{dict.auth.or}</Divider>
 

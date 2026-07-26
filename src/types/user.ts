@@ -13,5 +13,8 @@ export interface AppUser {
   phoneNumber?: string | null;
   /** Uy/yetkazish manzili (profil sozlamalaridan). */
   homeAddress?: string | null;
+  /** Telegram orqali kirgan bo'lsa - Telegram foydalanuvchi ID va useri. */
+  telegramId?: number;
+  telegramUsername?: string;
   createdAt: number;
 }

@@ -162,6 +162,8 @@ export interface Dictionary {
     actionVerified: string;
     actionInvalid: string;
     goLogin: string;
+    telegram: string;
+    telegramError: string;
   };
   product: {
     inStock: string;
@@ -375,6 +377,8 @@ const uz: Dictionary = {
     actionVerified: "Email muvaffaqiyatli tasdiqlandi!",
     actionInvalid: "Havola eskirgan yoki allaqachon ishlatilgan. Qaytadan so'rov yuboring.",
     goLogin: "Kirish sahifasiga o'tish",
+    telegram: "Telegram orqali kirish",
+    telegramError: "Telegram orqali kirib bo'lmadi. Qaytadan urinib ko'ring.",
   },
   product: {
     inStock: "Zaxirada",
@@ -587,6 +591,8 @@ const en: Dictionary = {
     actionVerified: "Email verified successfully!",
     actionInvalid: "This link is expired or already used. Request a new one.",
     goLogin: "Go to sign-in page",
+    telegram: "Sign in with Telegram",
+    telegramError: "Could not sign in with Telegram. Please try again.",
   },
   product: {
     inStock: "In stock",
@@ -799,6 +805,8 @@ const ru: Dictionary = {
     actionVerified: "Email успешно подтверждён!",
     actionInvalid: "Ссылка устарела или уже использована. Запросите новую.",
     goLogin: "Перейти ко входу",
+    telegram: "Войти через Telegram",
+    telegramError: "Не удалось войти через Telegram. Попробуйте снова.",
   },
   product: {
     inStock: "В наличии",

@@ -111,6 +111,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Telegram orqali kirish uchun bir martalik kodlar - faqat server.
+    match /tgLogins/{code} {
+      allow read, write: if false;
+    }
+
     // Rate limit hisoblagichlari - faqat server.
     match /rateLimits/{limitId} {
       allow read, write: if false;

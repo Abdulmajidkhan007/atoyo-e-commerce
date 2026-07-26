@@ -100,7 +100,7 @@ jobs:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           if [ -z "$GOOGLE_SERVICES_JSON" ]; then
-            echo "::error::GOOGLE_SERVICES_JSON secret'i yo'q. Firebase konsolida Android ilova qo'shing (package: com.atoyoapp) va google-services.json mazmunini shu secret'ga yopishtiring."
+            echo "::error::GOOGLE_SERVICES_JSON secret'i yo'q. Firebase konsolida Android ilova qo'shing (package: com.atoyo) va google-services.json mazmunini shu secret'ga yopishtiring."
             exit 1
           fi
           TARGET=mobile/android/app/google-services.json
@@ -117,8 +117,8 @@ jobs:
             console.log('Fayldagi paket nomlari:', names.join(', ') || '(yo\'q)');
             // Gradle applicationId bilan mos kelmasa, :app:processReleaseGoogleServices
             // 3 daqiqadan keyin yiqiladi - shu sababdan hozir tekshiramiz.
-            if (!names.includes('com.atoyoapp')) {
-              console.error('::error::google-services.json da com.atoyoapp yo\'q. Firebase konsolida Add app -> Android qilib package nomini ANIQ com.atoyoapp deb kiriting, yangi faylni yuklab olib GOOGLE_SERVICES_JSON secret\'iga qayta yopishtiring.');
+            if (!names.includes('com.atoyo')) {
+              console.error('::error::google-services.json da com.atoyo yo\'q. Firebase konsolida Add app -> Android qilib package nomini ANIQ com.atoyo deb kiriting, yangi faylni yuklab olib GOOGLE_SERVICES_JSON secret\'iga qayta yopishtiring.');
               process.exit(1);
             }
             console.log('google-services.json OK');

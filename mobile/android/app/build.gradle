@@ -79,7 +79,8 @@ android {
 
     namespace "com.atoyoapp"
     defaultConfig {
-        applicationId "com.atoyoapp"
+        // Firebase konsolidagi Android ilova nomi bilan bir xil bo'lishi shart.
+        applicationId "com.atoyo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

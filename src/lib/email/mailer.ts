@@ -12,6 +12,32 @@ export function isEmailConfigured(): boolean {
   return !!process.env.SMTP_HOST && !!process.env.SMTP_USER && !!process.env.SMTP_PASS;
 }
 
+/**
+ * Xat yuboriladigan "From" manzili.
+ *
+ * Gmail SMTP faqat O'ZI tegishli manzil nomidan yuborishga ruxsat beradi.
+ * `SMTP_FROM` da boshqa domen ko'rsatilgan bo'lsa (masalan
+ * no-reply@boshqa-domen.uz), Gmail xatni qabul qilib, keyin
+ * "Message not delivered ... 535 5.7.8 Username and Password not accepted"
+ * bilan qaytaradi. Shu sababdan ko'rinadigan NOMni SMTP_FROM dan olamiz,
+ * MANZILni esa majburan SMTP_USER ga tenglashtiramiz.
+ */
+function resolveFrom(): string {
+  const user = process.env.SMTP_USER ?? "";
+  const configured = process.env.SMTP_FROM?.trim();
+  if (!configured) return user;
+
+  const match = configured.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  const displayName = match?.[1]?.replace(/^"|"$/g, "") ?? "";
+  const address = (match?.[2] ?? configured).trim();
+
+  const isGmail = (process.env.SMTP_HOST ?? "").includes("gmail");
+  if (isGmail && user && address.toLowerCase() !== user.toLowerCase()) {
+    return displayName ? `"${displayName}" <${user}>` : user;
+  }
+  return configured;
+}
+
 function getTransport() {
   const port = Number(process.env.SMTP_PORT ?? 587);
   return nodemailer.createTransport({
@@ -39,7 +65,7 @@ export async function sendGenericEmail(to: string, subject: string, bodyHtml: st
   if (!isEmailConfigured() || !to) return false;
   try {
     await getTransport().sendMail({
-      from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
+      from: resolveFrom(),
       to,
       subject,
       html: `
@@ -68,7 +94,7 @@ export async function sendOrderStatusEmail(to: string, order: Order, status: Ord
 
   try {
     await getTransport().sendMail({
-      from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
+      from: resolveFrom(),
       to,
       subject: `Buyurtma #${order.id.slice(0, 8)} — ${STATUS_LABELS[status]}`,
       html: `
