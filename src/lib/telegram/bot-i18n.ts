@@ -79,6 +79,8 @@ export interface BotDict {
   deleteYes: string;
   deleteNo: string;
   deleteDone: string;
+  loginApproved: string;
+  loginExpired: string;
   // ---- Savat boshqaruvi ----
   qtyPlus: string;
   qtyMinus: string;
@@ -211,6 +213,10 @@ const uz: BotDict = {
   deleteYes: "🗑 Ha, o'chirilsin",
   deleteNo: "⬅️ Yo'q, bekor qilish",
   deleteDone: "Hisobingiz o'chirildi. Qayta ro'yxatdan o'tish uchun /start yuboring.",
+  loginApproved:
+    "✅ Kirish tasdiqlandi! Saytga (yoki ilovaga) qaytishingiz mumkin - u sizni avtomatik taniydi.",
+  loginExpired:
+    "⏳ Kirish havolasining muddati tugagan. Saytda \"Telegram orqali kirish\" tugmasini qaytadan bosing.",
   qtyPlus: "➕",
   qtyMinus: "➖",
   removeItem: "🗑",
@@ -345,6 +351,9 @@ const en: BotDict = {
   deleteYes: "🗑 Yes, delete",
   deleteNo: "⬅️ No, cancel",
   deleteDone: "Your account has been deleted. Send /start to register again.",
+  loginApproved:
+    "✅ Sign-in approved! You can go back to the website (or the app) - it will recognise you automatically.",
+  loginExpired: "⏳ This sign-in link has expired. Press \"Sign in with Telegram\" again.",
   qtyPlus: "➕",
   qtyMinus: "➖",
   removeItem: "🗑",
@@ -479,6 +488,9 @@ const ru: BotDict = {
   deleteYes: "🗑 Да, удалить",
   deleteNo: "⬅️ Нет, отмена",
   deleteDone: "Ваш аккаунт удалён. Отправьте /start, чтобы зарегистрироваться заново.",
+  loginApproved:
+    "✅ Вход подтверждён! Можете вернуться на сайт (или в приложение) - он узнает вас автоматически.",
+  loginExpired: "⏳ Срок ссылки для входа истёк. Нажмите \"Войти через Telegram\" ещё раз.",
   qtyPlus: "➕",
   qtyMinus: "➖",
   removeItem: "🗑",

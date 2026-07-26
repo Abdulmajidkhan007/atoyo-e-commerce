@@ -16,7 +16,7 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { tgBusy, tgError } = useTelegramLogin();
+  const { tgBusy, tgError, tgWaiting, startTelegramLogin } = useTelegramLogin();
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -128,26 +128,30 @@ export function LoginForm() {
         {mode === "login" ? dict.auth.loginTitle : dict.auth.registerTitle}
       </h1>
 
-      {/* Ijtimoiy kirish: Google va Telegram yonma-yon. Telegram tugmasi
-          Telegram'ning o'z widget'i (iframe) - o'lchamini faqat `data-size`
-          belgilaydi, shuning uchun Google tugmasi ham shunga yaqin
-          o'lchamda va to'liq kenglikda emas. */}
+      {/* Ijtimoiy kirish: Google va Telegram yonma-yon, bir xil o'lchamda
+          (to'liq kenglikda emas). Telegram oqimi bot orqali - domen
+          sozlashga bog'liq emas. */}
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
           onClick={handleGoogleSignIn}
           variant="outlined"
           size="medium"
           startIcon={<GoogleIcon />}
-          disabled={isSubmitting}
+          disabled={isSubmitting || tgBusy}
           className="!normal-case"
         >
           Google
         </Button>
 
-        <TelegramLoginButton />
+        <TelegramLoginButton
+          onClick={startTelegramLogin}
+          disabled={isSubmitting || tgBusy}
+          label={dict.auth.telegram}
+        />
       </div>
 
       {tgError && <Alert severity="error">{dict.auth.telegramError}</Alert>}
+      {tgWaiting && <Alert severity="info">{dict.auth.telegramWaiting}</Alert>}
       {tgBusy && (
         <div className="flex justify-center">
           <CircularProgress size={22} />

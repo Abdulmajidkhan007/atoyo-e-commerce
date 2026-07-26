@@ -13,6 +13,7 @@ import { getDeliverySettings, getPromoCode } from "@/lib/orders/pricing";
 import { deliveryFeeFor, validatePromo, normalizePromoCode } from "@/lib/orders/promo";
 import { botDict, isBotLang, BOT_LANGS, BOT_LANG_LABELS, type BotLang, type BotDict } from "./bot-i18n";
 import { logAction } from "./action-log";
+import { attachLoginCode } from "./telegram-auth";
 import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 import { getFacets } from "@/lib/products/facets";
 import { getPublishedPosts, getSiteSettings } from "@/lib/firebase/admin-content";
@@ -997,6 +998,10 @@ export async function handleCustomerMessage(params: {
   chatId: number;
   userId: number;
   text?: string;
+  /** Telegram profilidan (saytga kirishda ism/rasm uchun ishlatiladi). */
+  firstName?: string;
+  lastName?: string;
+  username?: string;
   contact?: { phone_number: string; first_name?: string; last_name?: string };
   location?: { latitude: number; longitude: number };
 }): Promise<void> {
@@ -1133,7 +1138,26 @@ export async function handleCustomerMessage(params: {
       await showLanguageMenu(chatId, t);
       return;
     }
-    if (command === "/start") {
+    // SAYT/ILOVAGA KIRISH: t.me/<bot>?start=login_<kod> havolasi bosilganda
+    // Telegram "/start login_<kod>" yuboradi. Kodni shu mijozga bog'laymiz -
+    // saytdagi (yoki ilovadagi) oyna shundan keyin kirgan bo'ladi.
+    const loginMatch = text.trim().match(/^\/start\s+login_([a-f0-9]{20,})$/i);
+    if (loginMatch) {
+      const attached = await attachLoginCode(loginMatch[1]!, {
+        id: userId,
+        firstName: params.firstName,
+        lastName: params.lastName,
+        username: params.username,
+      });
+      await sendChatMessage(
+        chatId,
+        attached ? t.loginApproved : t.loginExpired,
+        { replyMarkup: mainMenuKeyboard(t) }
+      );
+      return;
+    }
+
+    if (command === "/start" || command.startsWith("/start ")) {
       await sendGreeting(chatId, t);
       return;
     }

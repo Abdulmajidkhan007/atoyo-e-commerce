@@ -21,7 +21,7 @@ interface TelegramMessage {
   message_id: number;
   message_thread_id?: number;
   chat: TelegramChat;
-  from?: { id: number };
+  from?: { id: number; first_name?: string; last_name?: string; username?: string };
   text?: string;
   contact?: TelegramContact;
   location?: { latitude: number; longitude: number };
@@ -138,6 +138,9 @@ export async function POST(request: Request) {
           chatId: message.chat.id,
           userId: message.from.id,
           text: message.text,
+          firstName: message.from.first_name,
+          lastName: message.from.last_name,
+          username: message.from.username,
           contact: message.contact,
           location: message.location,
         });

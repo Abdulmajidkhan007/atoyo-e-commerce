@@ -164,6 +164,7 @@ export interface Dictionary {
     goLogin: string;
     telegram: string;
     telegramError: string;
+    telegramWaiting: string;
   };
   product: {
     inStock: string;
@@ -379,6 +380,7 @@ const uz: Dictionary = {
     goLogin: "Kirish sahifasiga o'tish",
     telegram: "Telegram orqali kirish",
     telegramError: "Telegram orqali kirib bo'lmadi. Qaytadan urinib ko'ring.",
+    telegramWaiting: "Telegram ochildi. Botda \"Start\" tugmasini bosing - keyin shu sahifa o'zi davom etadi.",
   },
   product: {
     inStock: "Zaxirada",
@@ -593,6 +595,7 @@ const en: Dictionary = {
     goLogin: "Go to sign-in page",
     telegram: "Sign in with Telegram",
     telegramError: "Could not sign in with Telegram. Please try again.",
+    telegramWaiting: "Telegram is open. Press \"Start\" in the bot - this page will continue by itself.",
   },
   product: {
     inStock: "In stock",
@@ -807,6 +810,7 @@ const ru: Dictionary = {
     goLogin: "Перейти ко входу",
     telegram: "Войти через Telegram",
     telegramError: "Не удалось войти через Telegram. Попробуйте снова.",
+    telegramWaiting: "Telegram открыт. Нажмите \"Start\" в боте - страница продолжит сама.",
   },
   product: {
     inStock: "В наличии",

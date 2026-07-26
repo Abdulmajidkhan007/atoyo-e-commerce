@@ -1,39 +1,42 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "Atoyo_uz_bot";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
+import { Button } from "@mui/material";
 
 /**
- * TELEGRAM LOGIN WIDGET. Telegram'ning o'z skripti <script> sifatida
- * qo'shiladi va o'zi tugma (iframe) chizadi - uni CSS bilan
- * o'zgartirib bo'lmaydi, faqat `data-size` va `data-radius` bilan.
- *
- * Tugma bosilganda Telegram foydalanuvchini `data-auth-url` ga
- * yo'naltiradi: /api/auth/telegram (u yerda hash tekshiriladi).
- *
- * MUHIM: ishlashi uchun BotFather'da `/setdomain` bilan sayt domeni
- * botga bog'langan bo'lishi shart.
+ * TELEGRAM ORQALI KIRISH tugmasi. Telegram'ning o'z widget'i (iframe)
+ * emas - oddiy tugma, shuning uchun Google tugmasi bilan bir xil
+ * ko'rinishda bo'ladi va `/setdomain` talab qilinmaydi.
+ * Oqim `useTelegramLogin` ichida (deep link + kod almashish).
  */
-export function TelegramLoginButton() {
-  const containerRef = useRef<HTMLDivElement>(null);
+export function TelegramLoginButton({
+  onClick,
+  disabled,
+  label,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  label: string;
+}) {
+  return (
+    <Button
+      onClick={onClick}
+      variant="outlined"
+      size="medium"
+      disabled={disabled}
+      title={label}
+      startIcon={<TelegramGlyph />}
+      className="!normal-case"
+    >
+      Telegram
+    </Button>
+  );
+}
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || container.childElementCount > 0) return;
-
-    const script = document.createElement("script");
-    script.src = "https://telegram.org/js/telegram-widget.js?24";
-    script.async = true;
-    script.setAttribute("data-telegram-login", BOT_USERNAME);
-    script.setAttribute("data-size", "medium");
-    script.setAttribute("data-radius", "12");
-    script.setAttribute("data-userpic", "false");
-    script.setAttribute("data-auth-url", `${SITE_URL}/api/auth/telegram`);
-    script.setAttribute("data-request-access", "write");
-    container.appendChild(script);
-  }, []);
-
-  return <div ref={containerRef} className="flex min-h-10 items-center justify-center" />;
+/** Telegram logotipi (inline SVG - tashqi so'rov yo'q). */
+function TelegramGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M21.94 4.3 18.9 19.1c-.23 1.03-.85 1.28-1.72.8l-4.75-3.5-2.29 2.2c-.25.25-.47.47-.95.47l.34-4.83 8.8-7.95c.38-.34-.08-.53-.6-.19L6.9 13.02 2.2 11.55c-1.02-.32-1.04-1.02.21-1.5l18.15-7c.85-.31 1.6.2 1.38 1.25Z" />
+    </svg>
+  );
 }
