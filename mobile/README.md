@@ -104,14 +104,14 @@ Ishlashi uchun bitta secret kerak:
 
 1. Firebase konsolida Android ilova qo'shing (package: `com.atoyoapp`),
    `google-services.json` ni yuklab oling
-2. Uni base64 ga o'giring:
-   ```bash
-   base64 -w0 google-services.json    # macOS: base64 -i google-services.json
-   ```
+2. Faylni ochib **butun mazmunini nusxalang** (base64 qilish shart emas)
 3. GitHub → repo → **Settings → Secrets and variables → Actions →
    New repository secret**
    - Name: `GOOGLE_SERVICES_JSON`
-   - Secret: yuqoridagi uzun matn
+   - Secret: nusxalangan JSON matni (base64 ko'rinishi ham qabul qilinadi)
+
+> Fayl repoda saqlanmaydi — repo ochiq bo'lgani uchun uni secret'da
+> ushlab turish to'g'ri bo'ladi.
 
 Keyingi push'da APK tayyor bo'ladi: **Actions → oxirgi run → Artifacts →
 atoyo-apk**. Uni telefonga o'rnatib sinab ko'rsangiz bo'ladi

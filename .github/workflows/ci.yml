@@ -86,19 +86,25 @@ jobs:
         working-directory: mobile
         run: npm ci
 
-      # google-services.json maxfiy emas (faqat public client konfiguratsiya),
-      # lekin har kimning loyihasi boshqacha - shuning uchun secret'dan olinadi.
-      # Qo'shish: Settings → Secrets → Actions → GOOGLE_SERVICES_JSON
-      # (fayl mazmuni base64 ko'rinishida: base64 -w0 google-services.json)
+      # google-services.json repoda saqlanmaydi (repo ochiq) - u
+      # GOOGLE_SERVICES_JSON secret'idan olinadi. Faylning O'ZINI (JSON
+      # matnini) yopishtirish yetarli; base64 ko'rinishi ham qabul qilinadi.
+      # Qo'shish: Settings -> Secrets and variables -> Actions -> New secret.
       - name: Firebase konfiguratsiyasi
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           if [ -z "$GOOGLE_SERVICES_JSON" ]; then
-            echo "::error::GOOGLE_SERVICES_JSON secret'i yo'q. Firebase konsolidan Android ilova qo'shib (package: com.atoyoapp), google-services.json ni base64 qilib secret sifatida qo'shing."
+            echo "::error::GOOGLE_SERVICES_JSON secret'i yo'q. Firebase konsolida Android ilova qo'shing (package: com.atoyoapp) va google-services.json mazmunini shu secret'ga yopishtiring."
             exit 1
           fi
-          echo "$GOOGLE_SERVICES_JSON" | base64 -d > mobile/android/app/google-services.json
+          TARGET=mobile/android/app/google-services.json
+          # Oddiy JSON bo'lsa - shundayligicha; base64 bo'lsa - ochiladi.
+          if printf '%s' "$GOOGLE_SERVICES_JSON" | grep -q '{'; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > "$TARGET"
+          else
+            printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > "$TARGET"
+          fi
           node -e "JSON.parse(require('fs').readFileSync('mobile/android/app/google-services.json','utf8')); console.log('google-services.json OK')"
 
       - name: Release APK yig'ish
