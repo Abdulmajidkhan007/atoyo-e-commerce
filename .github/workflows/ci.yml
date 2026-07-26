@@ -51,6 +51,13 @@ jobs:
         working-directory: mobile
         run: npx eslint 'src/**/*.ts' 'src/**/*.tsx' --no-ignore
 
+      # Native kutubxona versiyasi RN codegen'i bilan mos kelmasa, Gradle
+      # build 3 daqiqadan keyin yiqiladi. Bu qadam o'sha xatoni bir necha
+      # soniyada, Android SDK'siz topadi.
+      - name: Ilova - codegen tekshiruvi
+        working-directory: mobile
+        run: npm run check-codegen
+
   # ---------------------------------------------------------------------
   # 2) ANDROID APK (~13-15 daq). Bu RELEASE build: JS bundle APK ichiga
   #    joylanadi, shuning uchun Metro'siz, mustaqil ishlaydi.
@@ -79,8 +86,6 @@ jobs:
 
       - name: Gradle keshi
         uses: gradle/actions/setup-gradle@v4
-        with:
-          build-root-directory: mobile/android
 
       - name: Ilova paketlari
         working-directory: mobile

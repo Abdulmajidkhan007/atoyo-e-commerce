@@ -120,3 +120,24 @@ atoyo-apk**. Uni telefonga o'rnatib sinab ko'rsangiz bo'ladi
 > Bu APK **debug kaliti** bilan imzolanadi — sinash uchun yetarli, lekin
 > Play Store'ga yaramaydi. Play uchun o'z keystore'ingiz va `bundleRelease`
 > (AAB) kerak; kalitni bergach CI'ga qo'shib beraman.
+
+## Nega native paketlar aniq versiyada qotirilgan
+
+`react-native-screens`, `react-native-safe-area-context`,
+`@react-native-firebase/*` va `async-storage` `package.json` da **`^` siz**
+yozilgan. Sababi: bu paketlarning yangi versiyalari React Native'ning
+codegen'idan ilgarilab ketadi. Masalan `react-native-screens@4.20+` da
+propType `CT.WithDefault<...>` ko'rinishida yozilgan va RN 0.76 codegen'i
+uni tushunmaydi:
+
+```
+Error: Unknown prop type for "accessibilityContainerViewIsModal": "undefined"
+> Task :react-native-screens:generateCodegenSchemaFromJavaScript FAILED
+```
+
+Shuning uchun versiyalar sinovdan o'tgan holatda qotirilgan va CI'da
+`npm run check-codegen` qadami bor — u Android SDK'siz, bir necha
+soniyada shu turdagi nomuvofiqlikni topadi.
+
+React Native'ni yangilaganda: `npm run check-codegen` ni ishga tushirib,
+keyin native paketlarni bittalab yangilash mumkin.
