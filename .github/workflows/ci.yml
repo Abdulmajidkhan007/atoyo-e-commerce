@@ -1,0 +1,114 @@
+name: CI
+
+# Har qanday branch'ga push bo'lganda ishlaydi. Avval tez tekshiruv
+# (quality), u o'tsagina APK yig'iladi - buzuq koddan APK chiqmaydi.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1) TEKSHIRUV (~1-3 daq): sayt va ilova uchun typecheck + lint.
+  #    Loyihada test framework yo'q - tekshiruv = typecheck + lint + build.
+  # ---------------------------------------------------------------------
+  quality:
+    name: Tekshiruv (typecheck + lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Sayt paketlari
+        run: npm ci
+
+      - name: Sayt - typecheck
+        run: npx tsc --noEmit
+
+      - name: Sayt - lint
+        run: npx eslint .
+
+      - name: Sayt - build
+        run: npm run build
+
+      - name: Ilova paketlari
+        working-directory: mobile
+        run: npm ci
+
+      - name: Ilova - typecheck
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      - name: Ilova - lint
+        working-directory: mobile
+        run: npx eslint 'src/**/*.ts' 'src/**/*.tsx' --no-ignore
+
+  # ---------------------------------------------------------------------
+  # 2) ANDROID APK (~13-15 daq). Bu RELEASE build: JS bundle APK ichiga
+  #    joylanadi, shuning uchun Metro'siz, mustaqil ishlaydi.
+  #
+  #    Imzo: hozircha debug kaliti bilan (test uchun o'rnatsa bo'ladi).
+  #    Play Store uchun o'z keystore'ingiz va `bundleRelease` (AAB) kerak -
+  #    ATOYO_KEYSTORE_* secretlari qo'shilgach shu yerga qo'shiladi.
+  # ---------------------------------------------------------------------
+  android-apk:
+    name: Android APK
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle keshi
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: mobile/android
+
+      - name: Ilova paketlari
+        working-directory: mobile
+        run: npm ci
+
+      # google-services.json maxfiy emas (faqat public client konfiguratsiya),
+      # lekin har kimning loyihasi boshqacha - shuning uchun secret'dan olinadi.
+      # Qo'shish: Settings → Secrets → Actions → GOOGLE_SERVICES_JSON
+      # (fayl mazmuni base64 ko'rinishida: base64 -w0 google-services.json)
+      - name: Firebase konfiguratsiyasi
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON secret'i yo'q. Firebase konsolidan Android ilova qo'shib (package: com.atoyoapp), google-services.json ni base64 qilib secret sifatida qo'shing."
+            exit 1
+          fi
+          echo "$GOOGLE_SERVICES_JSON" | base64 -d > mobile/android/app/google-services.json
+          node -e "JSON.parse(require('fs').readFileSync('mobile/android/app/google-services.json','utf8')); console.log('google-services.json OK')"
+
+      - name: Release APK yig'ish
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: APK'ni yuklash
+        uses: actions/upload-artifact@v4
+        with:
+          name: atoyo-apk
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 14
+          if-no-files-found: error

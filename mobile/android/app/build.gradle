@@ -117,3 +117,8 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// Firebase konfiguratsiyasi (android/app/google-services.json).
+// Fayl repoda yo'q - uni Firebase konsolidan olib qo'yasiz yoki CI
+// GOOGLE_SERVICES_JSON secret'idan yozadi (.github/workflows/ci.yml).
+apply plugin: "com.google.gms.google-services"
