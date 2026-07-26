@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {FlatList, View} from 'react-native';
-import {spacing} from '../theme';
+import {makeStyles, spacing} from '../theme';
+import {useI18n} from '../i18n';
 import {useAppSelector} from '../store';
 import {fetchProductsByIds} from '../firebase';
 import type {Product} from '../types';
@@ -10,6 +11,8 @@ import type {TabScreenProps} from '../navigation/types';
 
 /** Sevimlilar - ID lar telefonda saqlanadi, ma'lumot Firestore'dan olinadi. */
 export function FavoritesScreen({navigation}: TabScreenProps<'Sevimlilar'>) {
+  const styles = useStyles();
+  const {t} = useI18n();
   const ids = useAppSelector(s => s.favorites.ids);
   const [products, setProducts] = useState<Product[] | null>(null);
 
@@ -27,10 +30,10 @@ export function FavoritesScreen({navigation}: TabScreenProps<'Sevimlilar'>) {
 
   if (ids.length === 0) {
     return (
-      <View style={{flex: 1}}>
-        <EmptyState text="Sevimlilar ro'yxati bo'sh. Mahsulot yonidagi ❤️ tugmasini bosing." />
+      <View style={styles.screen}>
+        <EmptyState text={t.favoritesEmpty} />
         <View style={{padding: spacing.lg}}>
-          <Button title="Katalogga o'tish" onPress={() => navigation.navigate('Katalog', {})} />
+          <Button title={t.goToCatalog} onPress={() => navigation.navigate('Katalog', {})} />
         </View>
       </View>
     );
@@ -40,6 +43,7 @@ export function FavoritesScreen({navigation}: TabScreenProps<'Sevimlilar'>) {
 
   return (
     <FlatList
+      style={styles.screen}
       data={products}
       keyExtractor={item => item.id}
       numColumns={2}
@@ -53,3 +57,7 @@ export function FavoritesScreen({navigation}: TabScreenProps<'Sevimlilar'>) {
     />
   );
 }
+
+const useStyles = makeStyles(c => ({
+  screen: {flex: 1, backgroundColor: c.bg},
+}));

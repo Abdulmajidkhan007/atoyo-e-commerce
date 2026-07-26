@@ -1,13 +1,16 @@
 import React from 'react';
-import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
-import {colors, formatSom, radius, spacing} from '../theme';
+import {Image, Pressable, Text, View} from 'react-native';
+import {makeStyles, radius, spacing} from '../theme';
+import {useI18n} from '../i18n';
 import {effectivePrice, type Product} from '../types';
 import {useAppDispatch, useAppSelector} from '../store';
 import {toggleFavorite} from '../store/favoritesSlice';
 import {Stars} from './ui';
 
-/** Katalog va bosh sahifadagi mahsulot kartochkasi. */
+/** Katalog va bosh sahifadagi mahsulot kartochkasi (sayt bilan bir xil). */
 export function ProductCard({product, onPress}: {product: Product; onPress: () => void}) {
+  const styles = useStyles();
+  const {t, money} = useI18n();
   const dispatch = useAppDispatch();
   const isFavorite = useAppSelector(s => s.favorites.ids.includes(product.id));
   const price = effectivePrice(product);
@@ -32,7 +35,7 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
         </Pressable>
         {product.stock <= 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Tugagan</Text>
+            <Text style={styles.badgeText}>{t.outOfStock}</Text>
           </View>
         )}
       </View>
@@ -46,25 +49,25 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
         </Text>
         {(product.ratingCount ?? 0) > 0 && <Stars value={product.ratingAvg ?? 0} />}
         <View style={styles.priceRow}>
-          {hasDiscount && <Text style={styles.oldPrice}>{formatSom(product.price)}</Text>}
-          <Text style={styles.price}>{formatSom(price)}</Text>
+          {hasDiscount && <Text style={styles.oldPrice}>{money(product.price)}</Text>}
+          <Text style={styles.price}>{money(price)}</Text>
         </View>
       </View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(c => ({
   card: {
     flex: 1,
     margin: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: colors.white,
+    backgroundColor: c.surface,
   },
-  imageBox: {height: 130, backgroundColor: colors.bgAlt},
+  imageBox: {height: 130, backgroundColor: c.surfaceAlt},
   image: {width: '100%', height: '100%'},
   heart: {
     position: 'absolute',
@@ -78,15 +81,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 6,
     top: 6,
-    backgroundColor: colors.navy,
+    backgroundColor: c.brand,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
-  badgeText: {color: colors.white, fontSize: 11},
-  name: {color: colors.navy, fontWeight: '600', fontSize: 14},
-  brand: {color: colors.muted, fontSize: 12},
+  badgeText: {color: c.onBrand, fontSize: 11},
+  name: {color: c.text, fontWeight: '600', fontSize: 14},
+  brand: {color: c.muted, fontSize: 12},
   priceRow: {flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2},
-  oldPrice: {color: colors.muted, fontSize: 12, textDecorationLine: 'line-through'},
-  price: {color: colors.navy, fontWeight: '700', fontSize: 15},
-});
+  oldPrice: {color: c.muted, fontSize: 12, textDecorationLine: 'line-through'},
+  price: {color: c.text, fontWeight: '700', fontSize: 15},
+}));

@@ -1,10 +1,17 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, ScrollView, StyleSheet, Text, View, Pressable} from 'react-native';
-import {colors, formatSom, radius, spacing} from '../theme';
+import {Alert, ScrollView, Text, View, Pressable} from 'react-native';
+import {makeStyles, radius, spacing} from '../theme';
+import {useI18n} from '../i18n';
 import {useAppDispatch, useAppSelector} from '../store';
 import {clearCart} from '../store/cartSlice';
 import {Button, Field} from '../components/ui';
-import {createOrder, deliveryFeeFor, fetchDeliverySettings, validatePromo, type DeliverySettings} from '../api';
+import {
+  createOrder,
+  deliveryFeeFor,
+  fetchDeliverySettings,
+  validatePromo,
+  type DeliverySettings,
+} from '../api';
 import {useAuth} from '../auth';
 import type {StackScreenProps} from '../navigation/types';
 
@@ -13,6 +20,8 @@ import type {StackScreenProps} from '../navigation/types';
  * summani server (createOrder) o'zi qayta chiqaradi.
  */
 export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
+  const styles = useStyles();
+  const {t, money} = useI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector(s => s.cart.items);
   const {user} = useAuth();
@@ -27,7 +36,9 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetchDeliverySettings().then(setDelivery).catch(() => {});
+    fetchDeliverySettings()
+      .then(setDelivery)
+      .catch(() => {});
   }, []);
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -43,22 +54,22 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
       setPromo({code: result.code, discount: result.discount});
     } catch (error) {
       setPromo(null);
-      Alert.alert('Promokod', error instanceof Error ? error.message : 'Promokod ishlamadi.');
+      Alert.alert(t.promo, error instanceof Error ? error.message : t.error);
     }
   };
 
   const submit = async () => {
     if (!user) {
-      Alert.alert('Buyurtma', 'Buyurtma berish uchun avval tizimga kiring.');
+      Alert.alert(t.titleCheckout, t.loginToOrder);
       navigation.navigate('Tabs', {screen: 'Profil'});
       return;
     }
     if (name.trim().length < 2) {
-      Alert.alert('Ism', "To'liq ism-familiyangizni kiriting.");
+      Alert.alert(t.fullName, t.nameTooShort);
       return;
     }
     if (phone.replace(/\D/g, '').length < 9) {
-      Alert.alert('Telefon', 'Telefon raqamni to‘g‘ri kiriting.');
+      Alert.alert(t.phone, t.phoneInvalid);
       return;
     }
 
@@ -74,97 +85,108 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
         promoCode: promo?.code ?? null,
       });
       dispatch(clearCart());
-      Alert.alert('Qabul qilindi', `Buyurtma raqami: #${orderId.slice(0, 8)}`);
+      Alert.alert(t.orderAccepted, t.orderNumber(orderId.slice(0, 8)));
       navigation.navigate('Buyurtmalarim');
     } catch (error) {
-      Alert.alert('Xatolik', error instanceof Error ? error.message : 'Buyurtma yuborilmadi.');
+      Alert.alert(t.error, error instanceof Error ? error.message : t.orderFailed);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={{padding: spacing.lg, gap: spacing.md}}>
-      <Field label="Ism-familiya" value={name} onChangeText={setName} />
-      <Field label="Telefon raqami" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="+998901234567" />
-      <Field label="Yetkazish manzili" value={address} onChangeText={setAddress} multiline />
+    <ScrollView style={styles.screen} contentContainerStyle={{padding: spacing.lg, gap: spacing.md}}>
+      <Field label={t.fullName} value={name} onChangeText={setName} />
+      <Field
+        label={t.phone}
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+        placeholder="+998901234567"
+      />
+      <Field label={t.deliveryAddress} value={address} onChangeText={setAddress} multiline />
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>To&apos;lov usuli</Text>
+        <Text style={styles.cardTitle}>{t.paymentMethod}</Text>
         {(['cash', 'online'] as const).map(method => (
-          <Pressable
-            key={method}
-            onPress={() => setPaymentMethod(method)}
-            style={styles.radioRow}>
+          <Pressable key={method} onPress={() => setPaymentMethod(method)} style={styles.radioRow}>
             <View style={[styles.radio, paymentMethod === method && styles.radioActive]} />
-            <Text style={{color: colors.navy}}>
-              {method === 'cash' ? 'Naqd — yetkazilganda' : 'Onlayn — karta orqali'}
+            <Text style={{color: styles.c.text}}>
+              {method === 'cash' ? t.payCash : t.payOnline}
             </Text>
           </Pressable>
         ))}
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Promokod</Text>
+        <Text style={styles.cardTitle}>{t.promo}</Text>
         {promo ? (
           <View style={{gap: spacing.sm}}>
-            <Text style={{color: colors.success}}>✅ {promo.code} qo&apos;llandi</Text>
-            <Button title="Bekor qilish" variant="outline" onPress={() => setPromo(null)} />
+            <Text style={{color: styles.c.success}}>{t.promoApplied(promo.code)}</Text>
+            <Button title={t.cancel} variant="outline" onPress={() => setPromo(null)} />
           </View>
         ) : (
           <View style={{gap: spacing.sm}}>
-            <Field label="Kod" value={promoInput} onChangeText={t => setPromoInput(t.toUpperCase())} autoCapitalize="characters" />
-            <Button title="Qo'llash" variant="outline" onPress={applyPromo} />
+            <Field
+              label={t.promoCode}
+              value={promoInput}
+              onChangeText={text => setPromoInput(text.toUpperCase())}
+              autoCapitalize="characters"
+            />
+            <Button title={t.apply} variant="outline" onPress={applyPromo} />
           </View>
         )}
       </View>
 
       <View style={styles.card}>
-        <Row label="Mahsulotlar" value={formatSom(subtotal)} />
-        {discount > 0 && <Row label="Chegirma" value={`−${formatSom(discount)}`} />}
+        <Row label={t.itemsTotal} value={money(subtotal)} />
+        {discount > 0 && <Row label={t.discount} value={`−${money(discount)}`} />}
         {delivery.enabled && delivery.fee > 0 && (
-          <Row label="Yetkazib berish" value={deliveryFee > 0 ? formatSom(deliveryFee) : 'Bepul'} />
+          <Row label={t.deliveryFee} value={deliveryFee > 0 ? money(deliveryFee) : t.free} />
         )}
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Jami</Text>
-          <Text style={styles.total}>{formatSom(total)}</Text>
+          <Text style={styles.totalLabel}>{t.total}</Text>
+          <Text style={styles.total}>{money(total)}</Text>
         </View>
       </View>
 
-      <Button title="Buyurtmani tasdiqlash" onPress={submit} loading={busy} />
+      <Button title={t.confirmOrder} onPress={submit} loading={busy} />
     </ScrollView>
   );
 }
 
 function Row({label, value}: {label: string; value: string}) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
-      <Text style={{color: colors.muted}}>{label}</Text>
-      <Text style={{color: colors.navy}}>{value}</Text>
+      <Text style={{color: styles.c.muted}}>{label}</Text>
+      <Text style={{color: styles.c.text}}>{value}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(c => ({
+  screen: {flex: 1, backgroundColor: c.bg},
   card: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: radius.md,
     padding: spacing.md,
     gap: spacing.sm,
+    backgroundColor: c.surface,
   },
-  cardTitle: {fontWeight: '700', color: colors.navy},
+  cardTitle: {fontWeight: '700', color: c.text},
   row: {flexDirection: 'row', justifyContent: 'space-between'},
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: c.border,
     paddingTop: spacing.sm,
   },
-  totalLabel: {fontWeight: '700', color: colors.navy},
-  total: {fontWeight: '800', fontSize: 18, color: colors.navy},
+  totalLabel: {fontWeight: '700', color: c.text},
+  total: {fontWeight: '800', fontSize: 18, color: c.text},
   radioRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 6},
-  radio: {width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border},
-  radioActive: {borderColor: colors.gold, backgroundColor: colors.gold},
-});
+  radio: {width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: c.border},
+  radioActive: {borderColor: c.accent, backgroundColor: c.accent},
+}));

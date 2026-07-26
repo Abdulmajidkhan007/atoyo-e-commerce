@@ -1,6 +1,7 @@
 import React from 'react';
-import {FlatList, Image, Pressable, StyleSheet, Text, View} from 'react-native';
-import {colors, formatSom, radius, spacing} from '../theme';
+import {FlatList, Image, Pressable, Text, View} from 'react-native';
+import {makeStyles, radius, spacing} from '../theme';
+import {useI18n} from '../i18n';
 import {useAppDispatch, useAppSelector} from '../store';
 import {clearCart, removeItem, setQuantity} from '../store/cartSlice';
 import {Button, EmptyState} from '../components/ui';
@@ -8,23 +9,25 @@ import type {TabScreenProps} from '../navigation/types';
 
 /** Savat: soni +/−, o'chirish va rasmiylashtirishga o'tish. */
 export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
+  const styles = useStyles();
+  const {t, money} = useI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector(s => s.cart.items);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   if (items.length === 0) {
     return (
-      <View style={{flex: 1}}>
-        <EmptyState text="Savatingiz hozircha bo'sh." />
+      <View style={styles.screen}>
+        <EmptyState text={t.cartEmpty} />
         <View style={{padding: spacing.lg}}>
-          <Button title="Katalogga o'tish" onPress={() => navigation.navigate('Katalog', {})} />
+          <Button title={t.goToCatalog} onPress={() => navigation.navigate('Katalog', {})} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={{flex: 1}}>
+    <View style={styles.screen}>
       <FlatList
         data={items}
         keyExtractor={item => item.productId}
@@ -43,7 +46,7 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
               <Text numberOfLines={2} style={styles.name}>
                 {item.name}
               </Text>
-              <Text style={styles.price}>{formatSom(item.price * item.quantity)}</Text>
+              <Text style={styles.price}>{money(item.price * item.quantity)}</Text>
 
               <View style={styles.qtyRow}>
                 <Pressable
@@ -75,48 +78,50 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
 
       <View style={styles.footer}>
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Jami</Text>
-          <Text style={styles.total}>{formatSom(subtotal)}</Text>
+          <Text style={styles.totalLabel}>{t.total}</Text>
+          <Text style={styles.total}>{money(subtotal)}</Text>
         </View>
-        <Button title="Rasmiylashtirish" onPress={() => navigation.navigate('Buyurtma')} />
-        <Button title="Savatni tozalash" variant="outline" onPress={() => dispatch(clearCart())} />
+        <Button title={t.checkout} onPress={() => navigation.navigate('Buyurtma')} />
+        <Button title={t.clearCart} variant="outline" onPress={() => dispatch(clearCart())} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(c => ({
+  screen: {flex: 1, backgroundColor: c.bg},
   row: {
     flexDirection: 'row',
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: radius.md,
     padding: spacing.sm,
+    backgroundColor: c.surface,
   },
-  thumb: {width: 72, height: 72, borderRadius: radius.sm, backgroundColor: colors.bgAlt},
-  name: {color: colors.navy, fontWeight: '600'},
-  price: {color: colors.navy, fontWeight: '700'},
+  thumb: {width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.surfaceAlt},
+  name: {color: c.text, fontWeight: '600'},
+  price: {color: c.text, fontWeight: '700'},
   qtyRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
   qtyBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  qtyBtnText: {fontSize: 18, color: colors.navy},
-  qty: {minWidth: 24, textAlign: 'center', color: colors.navy, fontWeight: '600'},
+  qtyBtnText: {fontSize: 18, color: c.text},
+  qty: {minWidth: 24, textAlign: 'center', color: c.text, fontWeight: '600'},
   footer: {
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: c.border,
     padding: spacing.lg,
     gap: spacing.sm,
-    backgroundColor: colors.white,
+    backgroundColor: c.chrome,
   },
   totalRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
-  totalLabel: {color: colors.muted},
-  total: {fontSize: 20, fontWeight: '800', color: colors.navy},
-});
+  totalLabel: {color: c.muted},
+  total: {fontSize: 20, fontWeight: '800', color: c.text},
+}));

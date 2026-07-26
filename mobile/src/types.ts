@@ -70,24 +70,32 @@ export interface Review {
   createdAt: number;
 }
 
-export const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  pipes: 'Quvurlar',
-  fittings: 'Muftalar',
-  faucets: 'Kranlar',
-  'shower-systems': 'Dush tizimlari',
-  boilers: 'Isitish qozonlari',
-  radiators: 'Radiatorlar',
-  pumps: 'Nasoslar',
-  'sanitary-ware': 'Santexnika buyumlari',
-};
+/** Blog maqolasi - saytdagi `BlogPost` bilan bir xil shakl. */
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  coverImageUrl: string;
+  isPublished: boolean;
+  createdAt: number;
+}
 
-export const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: 'Kutilmoqda',
-  approved: 'Qabul qilindi',
-  delivering: 'Yetkazilmoqda',
-  completed: 'Yakunlandi',
-  cancelled: 'Bekor qilindi',
-};
+/**
+ * Kategoriyalar tartibi (nomlari tarjimada - `src/i18n.tsx`).
+ * Sayt bilan bir xil ketma-ketlik.
+ */
+export const CATEGORY_KEYS: ProductCategory[] = [
+  'pipes',
+  'fittings',
+  'faucets',
+  'shower-systems',
+  'boilers',
+  'radiators',
+  'pumps',
+  'sanitary-ware',
+];
 
 /** Chegirma muddati o'tgan bo'lsa - to'liq narx (sayt bilan bir xil qoida). */
 export function effectivePrice(product: Product): number {

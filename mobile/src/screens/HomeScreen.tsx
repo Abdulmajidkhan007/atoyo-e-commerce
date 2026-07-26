@@ -1,7 +1,8 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View} from 'react-native';
-import {colors, radius, spacing} from '../theme';
-import {CATEGORY_LABELS, type Product, type ProductCategory} from '../types';
+import {FlatList, Image, Pressable, RefreshControl, Text, TextInput, View} from 'react-native';
+import {makeStyles, radius, spacing} from '../theme';
+import {useI18n} from '../i18n';
+import {CATEGORY_KEYS, type Product, type ProductCategory} from '../types';
 import {fetchNewProducts} from '../firebase';
 import {ProductCard} from '../components/ProductCard';
 import {Loading} from '../components/ui';
@@ -18,15 +19,18 @@ const CATEGORY_ICONS: Record<ProductCategory, string> = {
   'sanitary-ware': '🧼',
 };
 
-/** Bosh sahifa: brend banneri, kategoriyalar va yangi mahsulotlar. */
+/**
+ * Bosh sahifa: qidiruv, brend banneri, kategoriyalar, yangi mahsulotlar
+ * va sayt menyusidagi qolgan bo'limlarga havolalar.
+ */
 export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
+  const styles = useStyles();
+  const {t} = useI18n();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [term, setTerm] = useState('');
 
-  const load = useCallback(
-    () => fetchNewProducts(10).catch((): Product[] => []),
-    [],
-  );
+  const load = useCallback(() => fetchNewProducts(10).catch((): Product[] => []), []);
 
   useEffect(() => {
     let active = true;
@@ -45,6 +49,7 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
       data={products}
       keyExtractor={item => item.id}
       numColumns={2}
+      style={styles.screen}
       contentContainerStyle={{padding: spacing.sm, paddingBottom: spacing.xl}}
       refreshControl={
         <RefreshControl
@@ -54,33 +59,60 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
             setProducts(await load());
             setRefreshing(false);
           }}
-          tintColor={colors.gold}
+          tintColor={styles.c.accent}
         />
       }
       ListHeaderComponent={
         <View>
+          <TextInput
+            value={term}
+            onChangeText={setTerm}
+            placeholder={t.searchPlaceholder}
+            placeholderTextColor={styles.c.muted}
+            returnKeyType="search"
+            onSubmitEditing={() => navigation.navigate('Katalog', {q: term.trim()})}
+            style={styles.search}
+          />
+
           <View style={styles.hero}>
-            <Image source={require('../../assets/logo.jpg')} style={styles.logo} alt="Atoyo Santexnika" />
-            <Text style={styles.heroTitle}>Santexnika va Otopleniye uchun ishonchli manzil</Text>
-            <Text style={styles.heroText}>
-              Quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari — barchasi bir joyda.
-            </Text>
+            <Image source={require('../../assets/logo.jpg')} style={styles.logo} alt="Atoyo" />
+            <Text style={styles.heroTitle}>{t.heroTitle}</Text>
+            <Text style={styles.heroText}>{t.heroText}</Text>
           </View>
 
-          <Text style={styles.section}>Kategoriyalar</Text>
+          <View style={styles.quickRow}>
+            <QuickLink label={t.titleBlog} icon="📰" onPress={() => navigation.navigate('Blog')} />
+            <QuickLink
+              label={t.titleContact}
+              icon="📞"
+              onPress={() => navigation.navigate('Kontakt')}
+            />
+            <QuickLink
+              label={t.titleOrders}
+              icon="📦"
+              onPress={() => navigation.navigate('Buyurtmalarim')}
+            />
+            <QuickLink
+              label={t.titleSettings}
+              icon="⚙️"
+              onPress={() => navigation.navigate('Sozlamalar')}
+            />
+          </View>
+
+          <Text style={styles.section}>{t.categories}</Text>
           <View style={styles.categories}>
-            {(Object.keys(CATEGORY_LABELS) as ProductCategory[]).map(key => (
+            {CATEGORY_KEYS.map(key => (
               <Pressable
                 key={key}
                 onPress={() => navigation.navigate('Katalog', {category: key})}
                 style={({pressed}) => [styles.category, pressed && {opacity: 0.85}]}>
                 <Text style={{fontSize: 22}}>{CATEGORY_ICONS[key]}</Text>
-                <Text style={styles.categoryText}>{CATEGORY_LABELS[key]}</Text>
+                <Text style={styles.categoryText}>{t.categoryLabels[key]}</Text>
               </Pressable>
             ))}
           </View>
 
-          <Text style={styles.section}>Yangi mahsulotlar</Text>
+          <Text style={styles.section}>{t.newProducts}</Text>
         </View>
       }
       renderItem={({item}) => (
@@ -93,19 +125,62 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
   );
 }
 
-const styles = StyleSheet.create({
+function QuickLink({
+  label,
+  icon,
+  onPress,
+}: {
+  label: string;
+  icon: string;
+  onPress: () => void;
+}) {
+  const styles = useStyles();
+  return (
+    <Pressable onPress={onPress} style={({pressed}) => [styles.quick, pressed && {opacity: 0.85}]}>
+      <Text style={{fontSize: 18}}>{icon}</Text>
+      <Text numberOfLines={1} style={styles.quickText}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+const useStyles = makeStyles(c => ({
+  screen: {backgroundColor: c.bg},
+  search: {
+    margin: spacing.xs,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 24,
+    paddingHorizontal: spacing.lg,
+    height: 44,
+    color: c.text,
+    backgroundColor: c.surface,
+  },
   hero: {
-    backgroundColor: colors.navy,
+    backgroundColor: c.brand,
     borderRadius: radius.lg,
     padding: spacing.lg,
     margin: spacing.xs,
     gap: spacing.sm,
   },
   logo: {width: 48, height: 48, borderRadius: radius.md},
-  heroTitle: {color: colors.white, fontSize: 20, fontWeight: '800'},
-  heroText: {color: '#9FC0D2', fontSize: 13, lineHeight: 19},
+  heroTitle: {color: c.onBrand, fontSize: 20, fontWeight: '800'},
+  heroText: {color: c.onBrandMuted, fontSize: 13, lineHeight: 19},
+  quickRow: {flexDirection: 'row', gap: spacing.xs, marginHorizontal: spacing.xs, marginTop: spacing.sm},
+  quick: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: radius.md,
+    backgroundColor: c.surface,
+  },
+  quickText: {color: c.text, fontSize: 11},
   section: {
-    color: colors.navy,
+    color: c.text,
     fontSize: 18,
     fontWeight: '700',
     marginTop: spacing.lg,
@@ -120,8 +195,9 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: radius.md,
+    backgroundColor: c.surface,
   },
-  categoryText: {color: colors.navy, fontSize: 13},
-});
+  categoryText: {color: c.text, fontSize: 13},
+}));

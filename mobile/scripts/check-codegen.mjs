@@ -20,6 +20,7 @@ const LIBS = [
   '@react-native-firebase/app',
   '@react-native-firebase/auth',
   '@react-native-firebase/firestore',
+  '@react-native-google-signin/google-signin',
 ];
 
 const cli = 'node_modules/@react-native/codegen/lib/cli/combine/combine-js-to-schema-cli.js';

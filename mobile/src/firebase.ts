@@ -1,6 +1,6 @@
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import type {Order, Product, ProductCategory} from './types';
+import type {BlogPost, Order, Product, ProductCategory} from './types';
 
 /**
  * Firebase - @react-native-firebase orqali. Sozlash fayllari:
@@ -109,6 +109,31 @@ export function subscribeToMyOrders(uid: string, onData: (orders: Order[]) => vo
       },
       () => onData([]),
     );
+}
+
+/**
+ * Blog maqolalari. Indeks bo'lmasa saralashsiz o'qib, xotirada
+ * tartiblaymiz (katalogdagi bilan bir xil ehtiyot chorasi).
+ */
+export async function fetchBlogPosts(limit = 20): Promise<BlogPost[]> {
+  const base = firestore().collection('blogPosts').where('isPublished', '==', true);
+  const toPosts = (docs: {id: string; data: () => unknown}[]) =>
+    docs.map(d => ({id: d.id, ...(d.data() as object)}) as BlogPost);
+
+  try {
+    const snap = await base.orderBy('createdAt', 'desc').limit(limit).get();
+    return toPosts(snap.docs);
+  } catch {
+    const snap = await base.limit(50).get();
+    return toPosts(snap.docs)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit);
+  }
+}
+
+export async function fetchBlogPost(id: string): Promise<BlogPost | null> {
+  const doc = await firestore().collection('blogPosts').doc(id).get();
+  return doc.exists ? ({id: doc.id, ...doc.data()} as BlogPost) : null;
 }
 
 export function currentUser() {

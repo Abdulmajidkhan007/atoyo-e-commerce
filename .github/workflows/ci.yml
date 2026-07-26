@@ -124,6 +124,30 @@ jobs:
             console.log('google-services.json OK');
           "
 
+      # "Google orqali kirish" uchun web client ID (client_type: 3) -
+      # maxfiy emas, lekin har loyihada boshqacha. Uni shu yerda
+      # google-services.json dan chiqarib, ilova kodiga yozib qo'yamiz.
+      # Topilmasa - tugma ilovada ko'rinmaydi, build esa davom etadi.
+      - name: Google kirish sozlamasi
+        run: |
+          node -e "
+            const fs = require('fs');
+            const json = JSON.parse(fs.readFileSync('mobile/android/app/google-services.json', 'utf8'));
+            const ids = (json.client || [])
+              .flatMap(c => c.oauth_client || [])
+              .filter(o => o.client_type === 3)
+              .map(o => o.client_id);
+            const id = ids[0] ?? '';
+            if (!id) {
+              console.log('::warning::google-services.json da web client (client_type: 3) yo\'q - Google orqali kirish tugmasi ko\'rinmaydi. Firebase konsolida Authentication -> Sign-in method -> Google ni yoqing va faylni qayta yuklab oling.');
+            } else {
+              console.log('Web client ID topildi.');
+            }
+            const file = 'mobile/src/google-config.ts';
+            const source = fs.readFileSync(file, 'utf8');
+            fs.writeFileSync(file, source.replace(/export const GOOGLE_WEB_CLIENT_ID = '.*';/, \"export const GOOGLE_WEB_CLIENT_ID = '\" + id + \"';\"));
+          "
+
       - name: Release APK yig'ish
         working-directory: mobile/android
         run: ./gradlew assembleRelease --no-daemon --stacktrace

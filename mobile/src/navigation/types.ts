@@ -6,18 +6,22 @@ import type {ProductCategory} from '../types';
 /** Pastki menyudagi ekranlar. */
 export type TabParamList = {
   Home: undefined;
-  Katalog: {category?: ProductCategory} | undefined;
+  Katalog: {category?: ProductCategory; q?: string} | undefined;
   Savat: undefined;
   Sevimlilar: undefined;
   Profil: undefined;
 };
 
-/** Tab ustidagi stack (mahsulot, checkout, buyurtmalar). */
+/** Tab ustidagi stack (mahsulot, checkout, blog, kontakt, sozlamalar). */
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   Mahsulot: {productId: string};
   Buyurtma: undefined;
   Buyurtmalarim: undefined;
+  Blog: undefined;
+  Maqola: {postId: string};
+  Kontakt: undefined;
+  Sozlamalar: undefined;
 };
 
 /** Tab ekranlari stack'ga ham o'ta oladi - shuning uchun composite. */

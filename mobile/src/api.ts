@@ -84,3 +84,43 @@ export async function submitReview(productId: string, rating: number, comment: s
 export async function fetchFacets(): Promise<{brands: string[]; countries: string[]}> {
   return request<{brands: string[]; countries: string[]}>('/api/facets');
 }
+
+/** Kontakt formasi - saytdagi bilan bir xil route (xodimlar guruhiga tushadi). */
+export async function sendContactRequest(input: {name: string; phone: string; question: string}) {
+  return request<{ok: true}>('/api/contact', {method: 'POST', body: JSON.stringify(input)});
+}
+
+/** Yangiliklarga obuna. */
+export async function subscribeToNewsletter(email: string) {
+  return request<{ok: true}>('/api/subscribe', {method: 'POST', body: JSON.stringify({email})});
+}
+
+/** Chek sahifasi - brauzerda ochiladi (PDF/chop etish saytda). */
+export function receiptUrl(orderId: string): string {
+  return `${SITE_URL}/chek/${orderId}`;
+}
+
+/**
+ * TELEGRAM ORQALI KIRISH (deep link). Bu ikki route auth talab
+ * qilmaydi - shuning uchun `request` emas, to'g'ridan-to'g'ri fetch.
+ */
+export async function startTelegramLogin(): Promise<{code: string; url: string}> {
+  const response = await fetch(`${SITE_URL}/api/auth/telegram/start`, {method: 'POST'});
+  const data = (await response.json().catch(() => ({}))) as {code?: string; url?: string};
+  if (!response.ok || !data.code || !data.url) throw new Error('Telegram kirishni boshlab bo‘lmadi.');
+  return {code: data.code, url: data.url};
+}
+
+export type TelegramExchange = {state: 'pending'} | {state: 'ready'; token: string};
+
+export async function exchangeTelegramCode(code: string): Promise<TelegramExchange> {
+  const response = await fetch(`${SITE_URL}/api/auth/telegram/exchange`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({code}),
+  });
+  if (response.status === 202) return {state: 'pending'};
+  const data = (await response.json().catch(() => ({}))) as {token?: string};
+  if (!response.ok || !data.token) throw new Error('Telegram kodi eskirgan.');
+  return {state: 'ready', token: data.token};
+}

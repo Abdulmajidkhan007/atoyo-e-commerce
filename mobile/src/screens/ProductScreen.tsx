@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Alert, Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
-import {colors, formatSom, radius, spacing} from '../theme';
+import {Alert, Image, Pressable, ScrollView, Text, View} from 'react-native';
+import {makeStyles, radius, spacing} from '../theme';
+import {useI18n} from '../i18n';
 import {effectivePrice, type Product, type Review} from '../types';
 import {fetchProduct} from '../firebase';
 import {fetchReviews, submitReview} from '../api';
@@ -14,6 +15,8 @@ import type {StackScreenProps} from '../navigation/types';
 /** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
 export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>) {
   const {productId} = route.params;
+  const styles = useStyles();
+  const {t, money} = useI18n();
   const dispatch = useAppDispatch();
   const {user} = useAuth();
   const isFavorite = useAppSelector(s => s.favorites.ids.includes(productId));
@@ -48,7 +51,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   if (product === null) {
     return (
       <View style={styles.center}>
-        <Text style={{color: colors.muted}}>Mahsulot topilmadi.</Text>
+        <Text style={styles.muted}>{t.productNotFound}</Text>
       </View>
     );
   }
@@ -65,12 +68,12 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         thumbnailUrl: product.thumbnailUrl,
       }),
     );
-    Alert.alert('Savat', 'Mahsulot savatga qo‘shildi.');
+    Alert.alert(t.tabCart, t.addedToCart);
   };
 
   const handleReview = async () => {
     if (!user) {
-      Alert.alert('Sharh', 'Sharh qoldirish uchun tizimga kiring.');
+      Alert.alert(t.reviews, t.loginToReview);
       navigation.navigate('Tabs', {screen: 'Profil'});
       return;
     }
@@ -81,16 +84,16 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
       await submitReview(product.id, rating, comment.trim());
       setComment('');
       setReviews(await loadReviews());
-      Alert.alert('Rahmat!', 'Sharhingiz saqlandi.');
+      Alert.alert(t.reviewThanks, t.reviewSaved);
     } catch (error) {
-      Alert.alert('Xatolik', error instanceof Error ? error.message : 'Sharh saqlanmadi.');
+      Alert.alert(t.error, error instanceof Error ? error.message : t.error);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={{paddingBottom: spacing.xl}}>
+    <ScrollView style={styles.screen} contentContainerStyle={{paddingBottom: spacing.xl}}>
       {product.thumbnailUrl ? (
         <Image
           source={{uri: product.thumbnailUrl}}
@@ -122,26 +125,28 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         )}
 
         <View style={{flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm}}>
-          {price < product.price && <Text style={styles.oldPrice}>{formatSom(product.price)}</Text>}
-          <Text style={styles.price}>{formatSom(price)}</Text>
+          {price < product.price && <Text style={styles.oldPrice}>{money(product.price)}</Text>}
+          <Text style={styles.price}>{money(price)}</Text>
         </View>
 
         <Text style={styles.muted}>
-          {product.stock > 0 ? `Zaxirada: ${product.stock} dona` : 'Hozircha mavjud emas'}
+          {product.stock > 0 ? t.inStockCount(product.stock) : t.notAvailable}
         </Text>
 
         {!!product.description && <Text style={styles.description}>{product.description}</Text>}
 
         <Button
-          title={product.stock > 0 ? 'Savatga qo‘shish' : 'Tugagan'}
+          title={product.stock > 0 ? t.addToCart : t.outOfStock}
           onPress={handleAddToCart}
           disabled={product.stock <= 0}
         />
 
         {/* ---- Sharhlar ---- */}
-        <Text style={styles.section}>Sharhlar {reviews.length > 0 ? `(${reviews.length})` : ''}</Text>
+        <Text style={styles.section}>
+          {t.reviews} {reviews.length > 0 ? `(${reviews.length})` : ''}
+        </Text>
         {reviews.length === 0 ? (
-          <Text style={styles.muted}>Hozircha sharhlar yo&apos;q. Birinchi bo&apos;lib fikr bildiring!</Text>
+          <Text style={styles.muted}>{t.noReviews}</Text>
         ) : (
           reviews.map(review => (
             <View key={review.id} style={styles.review}>
@@ -153,41 +158,51 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         )}
 
         <View style={{gap: spacing.sm, marginTop: spacing.md}}>
-          <Text style={styles.muted}>Bahoyingiz</Text>
+          <Text style={styles.muted}>{t.yourRating}</Text>
           <View style={{flexDirection: 'row', gap: spacing.xs}}>
             {[1, 2, 3, 4, 5].map(star => (
               <Pressable key={star} onPress={() => setRating(star)}>
-                <Text style={{fontSize: 26, color: star <= rating ? colors.gold : colors.border}}>★</Text>
+                <Text
+                  style={{fontSize: 26, color: star <= rating ? styles.c.accent : styles.c.border}}>
+                  ★
+                </Text>
               </Pressable>
             ))}
           </View>
-          <Field label="Fikringiz" value={comment} onChangeText={setComment} multiline />
-          <Button title="Yuborish" onPress={handleReview} loading={saving} />
+          <Field label={t.yourComment} value={comment} onChangeText={setComment} multiline />
+          <Button title={t.send} onPress={handleReview} loading={saving} />
         </View>
       </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  image: {width: '100%', height: 280, backgroundColor: colors.bgAlt},
-  titleRow: {flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm},
-  title: {flex: 1, fontSize: 20, fontWeight: '800', color: colors.navy},
-  brand: {color: colors.muted, fontSize: 13},
-  price: {fontSize: 24, fontWeight: '800', color: colors.navy},
-  oldPrice: {color: colors.muted, textDecorationLine: 'line-through'},
-  muted: {color: colors.muted, fontSize: 13},
-  description: {color: colors.navy, fontSize: 14, lineHeight: 21},
-  section: {fontSize: 17, fontWeight: '700', color: colors.navy, marginTop: spacing.lg},
+const useStyles = makeStyles(c => ({
+  screen: {flex: 1, backgroundColor: c.bg},
+  center: {flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg},
+  image: {width: '100%', height: 280, backgroundColor: c.surfaceAlt},
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  title: {flex: 1, fontSize: 20, fontWeight: '800', color: c.text},
+  brand: {color: c.muted, fontSize: 13},
+  price: {fontSize: 24, fontWeight: '800', color: c.text},
+  oldPrice: {color: c.muted, textDecorationLine: 'line-through'},
+  muted: {color: c.muted, fontSize: 13},
+  description: {color: c.text, fontSize: 14, lineHeight: 21},
+  section: {fontSize: 17, fontWeight: '700', color: c.text, marginTop: spacing.lg},
   review: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: radius.md,
     padding: spacing.md,
     marginTop: spacing.sm,
     gap: 2,
+    backgroundColor: c.surface,
   },
-  reviewAuthor: {fontWeight: '600', color: colors.navy},
-  reviewText: {color: colors.navy, fontSize: 13},
-});
+  reviewAuthor: {fontWeight: '600', color: c.text},
+  reviewText: {color: c.text, fontSize: 13},
+}));

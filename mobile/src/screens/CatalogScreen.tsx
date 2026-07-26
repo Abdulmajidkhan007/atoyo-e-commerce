@@ -1,11 +1,12 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
-import {colors, radius, spacing} from '../theme';
-import {CATEGORY_LABELS, type Product, type ProductCategory} from '../types';
+import {FlatList, Modal, Pressable, ScrollView, Text, TextInput, View} from 'react-native';
+import {makeStyles, radius, spacing} from '../theme';
+import {useI18n} from '../i18n';
+import {CATEGORY_KEYS, type Product, type ProductCategory} from '../types';
 import {fetchCatalog, searchProducts} from '../firebase';
 import {fetchFacets} from '../api';
 import {ProductCard} from '../components/ProductCard';
-import {Button, EmptyState, Loading} from '../components/ui';
+import {Button, Chip, EmptyState, Loading} from '../components/ui';
 import type {TabScreenProps} from '../navigation/types';
 
 type Sort = 'newest' | 'price-asc' | 'price-desc';
@@ -15,13 +16,23 @@ type Sort = 'newest' | 'price-asc' | 'price-desc';
  * ichida, sahifada doim turmaydi).
  */
 export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
-  const [term, setTerm] = useState('');
+  const styles = useStyles();
+  const {t} = useI18n();
+  const [term, setTerm] = useState(route.params?.q ?? '');
   const [category, setCategory] = useState<ProductCategory | undefined>(route.params?.category);
   const [brand, setBrand] = useState<string | undefined>();
   const [sort, setSort] = useState<Sort>('newest');
   const [brands, setBrands] = useState<string[]>([]);
   const [products, setProducts] = useState<Product[] | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  // Bosh sahifadan kategoriya/qidiruv bilan kelinganda holatni yangilaymiz.
+  const [lastParams, setLastParams] = useState(route.params);
+  if (route.params !== lastParams) {
+    setLastParams(route.params);
+    if (route.params?.category !== undefined) setCategory(route.params.category);
+    if (route.params?.q !== undefined) setTerm(route.params.q);
+  }
 
   useEffect(() => {
     fetchFacets()
@@ -49,13 +60,13 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
   const activeCount = [category, brand].filter(Boolean).length;
 
   return (
-    <View style={{flex: 1}}>
+    <View style={styles.screen}>
       <View style={styles.searchRow}>
         <TextInput
           value={term}
           onChangeText={setTerm}
-          placeholder="Mahsulot qidirish..."
-          placeholderTextColor={colors.muted}
+          placeholder={t.searchPlaceholder}
+          placeholderTextColor={styles.c.muted}
           style={styles.search}
         />
         <Pressable onPress={() => setFilterOpen(true)} style={styles.filterBtn}>
@@ -71,7 +82,7 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
       {!products ? (
         <Loading />
       ) : products.length === 0 ? (
-        <EmptyState text="Hech qanday mahsulot topilmadi." />
+        <EmptyState text={t.nothingFound} />
       ) : (
         <FlatList
           data={products}
@@ -87,18 +98,22 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
         />
       )}
 
-      <Modal visible={filterOpen} animationType="slide" transparent onRequestClose={() => setFilterOpen(false)}>
+      <Modal
+        visible={filterOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setFilterOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Filtr</Text>
+            <Text style={styles.modalTitle}>{t.filter}</Text>
             <ScrollView style={{maxHeight: 380}}>
-              <Text style={styles.groupLabel}>Kategoriya</Text>
+              <Text style={styles.groupLabel}>{t.category}</Text>
               <View style={styles.chips}>
-                <Chip label="Barchasi" active={!category} onPress={() => setCategory(undefined)} />
-                {(Object.keys(CATEGORY_LABELS) as ProductCategory[]).map(key => (
+                <Chip label={t.all} active={!category} onPress={() => setCategory(undefined)} />
+                {CATEGORY_KEYS.map(key => (
                   <Chip
                     key={key}
-                    label={CATEGORY_LABELS[key]}
+                    label={t.categoryLabels[key]}
                     active={category === key}
                     onPress={() => setCategory(category === key ? undefined : key)}
                   />
@@ -107,9 +122,9 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
 
               {brands.length > 0 && (
                 <>
-                  <Text style={styles.groupLabel}>Brend</Text>
+                  <Text style={styles.groupLabel}>{t.brand}</Text>
                   <View style={styles.chips}>
-                    <Chip label="Barchasi" active={!brand} onPress={() => setBrand(undefined)} />
+                    <Chip label={t.all} active={!brand} onPress={() => setBrand(undefined)} />
                     {brands.map(b => (
                       <Chip
                         key={b}
@@ -122,18 +137,30 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
                 </>
               )}
 
-              <Text style={styles.groupLabel}>Saralash</Text>
+              <Text style={styles.groupLabel}>{t.sort}</Text>
               <View style={styles.chips}>
-                <Chip label="Eng yangi" active={sort === 'newest'} onPress={() => setSort('newest')} />
-                <Chip label="Narx ↑" active={sort === 'price-asc'} onPress={() => setSort('price-asc')} />
-                <Chip label="Narx ↓" active={sort === 'price-desc'} onPress={() => setSort('price-desc')} />
+                <Chip
+                  label={t.sortNewest}
+                  active={sort === 'newest'}
+                  onPress={() => setSort('newest')}
+                />
+                <Chip
+                  label={t.sortPriceAsc}
+                  active={sort === 'price-asc'}
+                  onPress={() => setSort('price-asc')}
+                />
+                <Chip
+                  label={t.sortPriceDesc}
+                  active={sort === 'price-desc'}
+                  onPress={() => setSort('price-desc')}
+                />
               </View>
             </ScrollView>
 
             <View style={{gap: spacing.sm, marginTop: spacing.md}}>
-              <Button title="Ko'rsatish" onPress={() => setFilterOpen(false)} />
+              <Button title={t.show} onPress={() => setFilterOpen(false)} />
               <Button
-                title="Tozalash"
+                title={t.clear}
                 variant="outline"
                 onPress={() => {
                   setCategory(undefined);
@@ -149,63 +176,49 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
   );
 }
 
-function Chip({label, active, onPress}: {label: string; active: boolean; onPress: () => void}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.chip, active && {backgroundColor: colors.goldTint, borderColor: colors.gold}]}>
-      <Text style={{color: colors.navy, fontSize: 13}}>{label}</Text>
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = makeStyles(c => ({
+  screen: {flex: 1, backgroundColor: c.bg},
   searchRow: {flexDirection: 'row', gap: spacing.sm, padding: spacing.sm, alignItems: 'center'},
   search: {
     flex: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 24,
     paddingHorizontal: spacing.lg,
     height: 44,
-    color: colors.navy,
+    color: c.text,
+    backgroundColor: c.surface,
   },
   filterBtn: {
     width: 44,
     height: 44,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: c.surface,
   },
   filterBadge: {
     position: 'absolute',
     right: -4,
     top: -4,
-    backgroundColor: colors.gold,
+    backgroundColor: c.accent,
     borderRadius: 9,
     minWidth: 18,
     height: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBadgeText: {fontSize: 11, color: colors.navy, fontWeight: '700'},
+  filterBadgeText: {fontSize: 11, color: c.onAccent, fontWeight: '700'},
   modalBackdrop: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   modalCard: {
-    backgroundColor: colors.white,
+    backgroundColor: c.surface,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.lg,
   },
-  modalTitle: {fontSize: 18, fontWeight: '700', color: colors.navy, marginBottom: spacing.md},
-  groupLabel: {color: colors.muted, marginTop: spacing.md, marginBottom: spacing.xs},
+  modalTitle: {fontSize: 18, fontWeight: '700', color: c.text, marginBottom: spacing.md},
+  groupLabel: {color: c.muted, marginTop: spacing.md, marginBottom: spacing.xs},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs},
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-  },
-});
+}));

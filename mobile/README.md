@@ -16,7 +16,13 @@ bazada.
 | Rasmiylashtirish | ism/telefon/manzil, to'lov usuli, **promokod**, yetkazish narxi |
 | Buyurtmalarim | real-vaqt status, buyurtmani bekor qilish |
 | Sevimlilar | telefon xotirasida saqlanadi |
-| Profil | kirish/ro'yxatdan o'tish, parolni tiklash, ma'lumotlarni tahrirlash |
+| Profil | Google/Telegram/email bilan kirish, parolni tiklash, ma'lumotlarni tahrirlash |
+| Blog | maqolalar ro'yxati va to'liq matn |
+| Bog'lanish | ariza formasi (xodimlar guruhiga tushadi) |
+| Sozlamalar | **dark/light/tizim** temasi, **til uz/en/ru**, yangiliklarga obuna |
+
+Tema va til tanlovi telefon xotirasida saqlanadi; header'da (saytdagi kabi)
+til va tema tugmalari, savat/sevimlilar belgilari turadi.
 
 Narx, zaxira va promokod tekshiruvi **serverda** (`/api/orders`) — ilova
 faqat ko'rsatadi. Ilova Firebase ID tokenini `Authorization: Bearer`
@@ -74,11 +80,14 @@ hujjatlaridagi "Generating signed APK" bo'limiga qarang.
 ```
 src/
   App.tsx            — provayderlar (redux, auth, navigatsiya)
-  theme.ts           — brend ranglari (sayt bilan bir xil)
+  theme.tsx          — palitra (light/dark) + ThemeProvider
+  i18n.tsx           — uz/en/ru lug'at + LocaleProvider
   types.ts           — Product/Order/Review turlari (sayt bilan bir xil)
   firebase.ts        — Firestore o'qishlari (katalog, qidiruv, buyurtmalar)
   api.ts             — saytning API'si (buyurtma, promokod, sharh)
   auth.tsx           — Firebase Auth + users hujjati
+  social-auth.ts     — Google va Telegram orqali kirish
+  google-config.ts   — Google web client ID (CI to'ldiradi)
   store/             — redux (savat, sevimlilar) + AsyncStorage
   navigation/        — tab va stack
   screens/           — ekranlar
@@ -89,8 +98,26 @@ src/
 
 - **Push-bildirishnoma** hozircha yo'q. Qo'shish uchun
   `@react-native-firebase/messaging` va serverda FCM token saqlash kerak.
-- **Google bilan kirish** ham yo'q (native sozlash talab qiladi) —
-  hozircha email/parol.
+- **Google bilan kirish** ishlashi uchun Firebase konsolida ikki narsa
+  kerak:
+  1. Authentication → Sign-in method → **Google** yoqilgan bo'lishi
+     (shunda `google-services.json` ichida `client_type: 3` yozuvi paydo
+     bo'ladi — ilova web client ID'ni shu yerdan oladi, CI avtomatik
+     qo'yadi);
+  2. Android ilova sozlamalarida **SHA-1** barmoq izi qo'shilgan bo'lishi.
+     CI debug kaliti bilan imzolaydi, uning SHA-1 i:
+     `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`
+     (Project settings → Android app → Add fingerprint). O'z keystore'ingiz
+     bilan yig'ilganda uning SHA-1 i ham qo'shilishi kerak:
+     `keytool -list -v -keystore <fayl> -alias <alias>`.
+
+  Bu sozlanmagan bo'lsa tugma ilovada ko'rinmaydi — qolgan kirish
+  usullari ishlashda davom etadi.
+- **Telegram bilan kirish** uchun qo'shimcha token/sozlash KERAK EMAS.
+  Ilova saytning `/api/auth/telegram/start` route'idan bir martalik kod
+  oladi, `t.me/<bot>?start=login_<kod>` ni ochadi va foydalanuvchi botda
+  "Start" bosgach Firebase custom token'iga almashtiradi. Widget ham,
+  BotFather'dagi `/setdomain` ham ishtirok etmaydi.
 - Onlayn to'lov saytdagi `/tolov/<id>` sahifasiga yo'naltiradi (Payme/Click
   kalitlari ulangach ishlaydi).
 

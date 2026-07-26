@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
 import auth, {type FirebaseAuthTypes} from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import {signOutGoogle} from './social-auth';
 
 export interface AppUserProfile {
   uid: string;
@@ -92,6 +93,9 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
         );
       },
       signOut: async () => {
+        // Google sessiyasi ham yopiladi, aks holda keyingi kirishda
+        // hisob tanlash oynasi chiqmaydi.
+        await signOutGoogle();
         await auth().signOut();
       },
       resetPassword: async email => {
