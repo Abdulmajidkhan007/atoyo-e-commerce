@@ -110,7 +110,19 @@ jobs:
           else
             printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > "$TARGET"
           fi
-          node -e "JSON.parse(require('fs').readFileSync('mobile/android/app/google-services.json','utf8')); console.log('google-services.json OK')"
+          node -e "
+            const file = 'mobile/android/app/google-services.json';
+            const json = JSON.parse(require('fs').readFileSync(file, 'utf8'));
+            const names = (json.client || []).map(c => c.client_info.android_client_info.package_name);
+            console.log('Fayldagi paket nomlari:', names.join(', ') || '(yo\'q)');
+            // Gradle applicationId bilan mos kelmasa, :app:processReleaseGoogleServices
+            // 3 daqiqadan keyin yiqiladi - shu sababdan hozir tekshiramiz.
+            if (!names.includes('com.atoyoapp')) {
+              console.error('::error::google-services.json da com.atoyoapp yo\'q. Firebase konsolida Add app -> Android qilib package nomini ANIQ com.atoyoapp deb kiriting, yangi faylni yuklab olib GOOGLE_SERVICES_JSON secret\'iga qayta yopishtiring.');
+              process.exit(1);
+            }
+            console.log('google-services.json OK');
+          "
 
       - name: Release APK yig'ish
         working-directory: mobile/android
