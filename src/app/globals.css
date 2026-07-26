@@ -22,17 +22,37 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* CHEK CHOP ETISH: sahifa chop etilganda faqat chek qismi qolsin -
-   header, footer, mobil pastki menyu va tugmalar chiqmasin. */
+/* CHEK CHOP ETISH: sahifa chop etilganda faqat chek qismi qolsin.
+   Element nomlari (header/footer/nav) bo'yicha yashirish MUMKIN EMAS -
+   chekning o'z sarlavhasi ham <header>, u ham yo'qolib qolardi. Shuning
+   uchun sayt karkasiga `no-print` klassi qo'yilgan. */
 @media print {
-  header,
-  footer,
-  nav {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #072d40 !important;
+  }
+
+  .no-print {
     display: none !important;
   }
 
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
+  /* Brend ranglari qog'ozda ham saqlansin (brauzer standart holatda
+     fon ranglarini chop etmaydi). */
+  .print-exact,
+  .print-exact * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Chek ikkiga bo'linib, ortiqcha bo'sh sahifa chiqmasin. */
+  .print-exact {
+    break-inside: avoid;
+    box-shadow: none !important;
   }
 }

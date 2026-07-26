@@ -36,7 +36,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-navy-100 bg-white/95 backdrop-blur dark:border-navy-500 dark:bg-navy-900/95">
+    <header className="no-print sticky top-0 z-30 border-b border-navy-100 bg-white/95 backdrop-blur dark:border-navy-500 dark:bg-navy-900/95">
       <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
         {/* Brend bloki qisqara oladi (min-w-0), tugmalar esa qisqarmaydi -
             shunda tor telefonda nom kesiladi, tugmalar chiqib ketmaydi. */}
