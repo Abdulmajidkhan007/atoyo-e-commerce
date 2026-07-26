@@ -49,17 +49,9 @@ Firebase konsolida `atoyo-uz` loyihasiga ilova qo'shing:
   o'zgartiring — Xcode'da ham yangilang)
 - `GoogleService-Info.plist` ni **`ios/AtoyoApp/`** ichiga qo'ying
 
-Keyin Android uchun gradle plaginini yoqing:
-
-`android/build.gradle` → `dependencies` ichiga:
-```gradle
-classpath 'com.google.gms:google-services:4.4.2'
-```
-
-`android/app/build.gradle` → fayl oxiriga:
-```gradle
-apply plugin: 'com.google.gms.google-services'
-```
+Gradle plagini allaqachon yoqilgan (`android/build.gradle` va
+`android/app/build.gradle`) — sizga faqat `google-services.json` ni
+qo'yish qoladi.
 
 ### 4. Ishga tushirish
 ```bash
@@ -101,3 +93,30 @@ src/
   hozircha email/parol.
 - Onlayn to'lov saytdagi `/tolov/<id>` sahifasiga yo'naltiradi (Payme/Click
   kalitlari ulangach ishlaydi).
+
+## APK'ni GitHub'da yig'ish (kompyuterda Android Studio kerak emas)
+
+Repoda `.github/workflows/ci.yml` bor: har push'da avval tekshiruv
+(typecheck + lint + sayt build), keyin **release APK** yig'iladi va
+`atoyo-apk` artifakti sifatida 14 kun saqlanadi.
+
+Ishlashi uchun bitta secret kerak:
+
+1. Firebase konsolida Android ilova qo'shing (package: `com.atoyoapp`),
+   `google-services.json` ni yuklab oling
+2. Uni base64 ga o'giring:
+   ```bash
+   base64 -w0 google-services.json    # macOS: base64 -i google-services.json
+   ```
+3. GitHub → repo → **Settings → Secrets and variables → Actions →
+   New repository secret**
+   - Name: `GOOGLE_SERVICES_JSON`
+   - Secret: yuqoridagi uzun matn
+
+Keyingi push'da APK tayyor bo'ladi: **Actions → oxirgi run → Artifacts →
+atoyo-apk**. Uni telefonga o'rnatib sinab ko'rsangiz bo'ladi
+("Noma'lum manbalardan o'rnatish" ruxsati kerak).
+
+> Bu APK **debug kaliti** bilan imzolanadi — sinash uchun yetarli, lekin
+> Play Store'ga yaramaydi. Play uchun o'z keystore'ingiz va `bundleRelease`
+> (AAB) kerak; kalitni bergach CI'ga qo'shib beraman.
