@@ -19,10 +19,21 @@ konsolida yoki `gcloud` CLI orqali bajariladi — sayt kodiga tegmaydi.
 Firestore'ning o'z "Scheduled backups" imkoniyati bor (Blaze rejasi kerak).
 
 **Firebase konsolida:**
-1. Firestore Database → **Backups** bo'limi
-2. **Create backup schedule**
+1. Firestore Database → yuqoridagi **Disaster Recovery** tabi
+   (ba'zi loyihalarda bu bo'lim "Backups" deb nomlanadi)
+2. **Backup schedules → Create / Configure**
 3. Chastota: `Daily`, saqlash muddati: `7 kun` (yoki `14`)
 4. Saqlash
+
+**Yoki Cloud Shell'da bitta buyruq bilan:**
+
+```bash
+gcloud firestore backups schedules create \
+  --database='(default)' --recurrence=daily --retention=7d \
+  --project=<PROJECT_ID>
+```
+
+Mavjud jadvalni ko'rish: `gcloud firestore backups schedules list --database='(default)'`
 
 Bu bilan har kuni avtomatik nusxa olinadi va konsoldan bir tugma bilan
 tiklash mumkin.
