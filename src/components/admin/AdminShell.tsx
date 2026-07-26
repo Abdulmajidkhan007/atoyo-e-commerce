@@ -18,7 +18,6 @@ import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { signOutUser } from "@/lib/firebase/auth";
 import { useAppDispatch } from "@/redux/hooks";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
@@ -75,10 +74,10 @@ function NavLinks({
         Saytga qaytish
       </Link>
 
-      {/* Tema va til - admin panelning to'q fonida oq rangda */}
-      <div className="flex items-center gap-1 px-1 py-1">
+      {/* Tema almashtirish - admin panelning to'q fonida oq rangda.
+          Til tugmasi bu yerda yo'q: admin panel matnlari faqat o'zbekcha. */}
+      <div className="flex items-center px-1 py-1">
         <ThemeToggle className="!text-white" />
-        <LanguageSwitcher className="!text-white" />
       </div>
 
       {/* Tizimdan chiqish */}
@@ -170,7 +169,6 @@ export function AdminShell({
           </Link>
           <div className="ml-auto flex items-center gap-0">
             <ThemeToggle className="!text-white" />
-            <LanguageSwitcher className="!text-white" />
             <IconButton component={Link} href="/" size="small" aria-label="Saytga qaytish">
               <HomeOutlinedIcon className="text-white" fontSize="small" />
             </IconButton>
