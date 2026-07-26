@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { IconButton } from "@mui/material";
@@ -11,7 +12,6 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
@@ -120,7 +120,7 @@ export function AdminShell({
       {/* Doimiy yon panel - faqat katta ekranlarda (lg+) */}
       <aside className="hidden w-64 shrink-0 flex-col gap-1 border-r border-navy-500/40 bg-navy-900 p-4 text-white lg:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 text-lg font-bold">
-          <StorefrontOutlinedIcon className="text-aqua-400" />
+          <Image src="/logo.jpg" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover" />
           Atoyo Admin
         </Link>
         <NavLinks onLogout={handleLogout} canSee={canSee} />
@@ -137,7 +137,7 @@ export function AdminShell({
           <aside className="absolute left-0 top-0 flex h-full w-64 flex-col gap-1 bg-navy-900 p-4 text-white shadow-xl">
             <div className="mb-6 flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2 text-lg font-bold" onClick={() => setDrawerOpen(false)}>
-                <StorefrontOutlinedIcon className="text-aqua-400" />
+                <Image src="/logo.jpg" alt="" width={28} height={28} className="h-7 w-7 rounded-lg object-cover" />
                 Atoyo Admin
               </Link>
               <IconButton size="small" onClick={() => setDrawerOpen(false)} aria-label="Yopish">
@@ -157,7 +157,7 @@ export function AdminShell({
           </IconButton>
           {/* Logoni bosish - saytning bosh sahifasiga qaytaradi */}
           <Link href="/" className="flex items-center gap-2 font-bold">
-            <StorefrontOutlinedIcon className="text-aqua-400" fontSize="small" />
+            <Image src="/logo.jpg" alt="" width={26} height={26} className="h-[26px] w-[26px] rounded-md object-cover" />
             Atoyo Admin
           </Link>
           <IconButton

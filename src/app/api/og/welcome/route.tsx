@@ -18,7 +18,7 @@ export async function GET() {
           justifyContent: "center",
           width: "100%",
           height: "100%",
-          background: "linear-gradient(135deg, #0B1220 0%, #12203A 55%, #0E7C74 100%)",
+          background: "linear-gradient(135deg, #04202F 0%, #0B3B54 55%, #175071 100%)",
           color: "white",
           fontFamily: "sans-serif",
           padding: "60px",
@@ -32,7 +32,7 @@ export async function GET() {
             width: "150px",
             height: "150px",
             borderRadius: "40px",
-            background: "linear-gradient(135deg, #00D2C4 0%, #0E7C74 100%)",
+            background: "linear-gradient(135deg, #C49A6C 0%, #8A6640 100%)",
             fontSize: "90px",
             fontWeight: 800,
             color: "#06121F",
@@ -43,7 +43,7 @@ export async function GET() {
         <div style={{ display: "flex", marginTop: "36px", fontSize: "68px", fontWeight: 800 }}>
           Atoyo Santexnika
         </div>
-        <div style={{ display: "flex", marginTop: "8px", fontSize: "38px", color: "#00D2C4", fontWeight: 700 }}>
+        <div style={{ display: "flex", marginTop: "8px", fontSize: "38px", color: "#C49A6C", fontWeight: 700 }}>
           &amp; Otopleniye
         </div>
         <div

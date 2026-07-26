@@ -5,15 +5,15 @@ export const getMuiTheme = (mode: PaletteMode) =>
     palette: {
       mode,
       primary: {
-        main: "#00D2C4", // Aqua/Teal - asosiy urg'u
-        contrastText: "#0B1E33",
+        main: "#C49A6C", // Brend oltini (logotipdagi to'lqinlar)
+        contrastText: "#072D40",
       },
       secondary: {
-        main: "#0B1E33", // Deep Navy
+        main: "#072D40", // Brend ko'ki (logotip foni)
       },
       background: {
-        default: mode === "dark" ? "#0B1E33" : "#FFFFFF",
-        paper: mode === "dark" ? "#122844" : "#F4F7FA",
+        default: mode === "dark" ? "#072D40" : "#FFFFFF",
+        paper: mode === "dark" ? "#0B3B54" : "#F3F7FA",
       },
     },
     shape: {

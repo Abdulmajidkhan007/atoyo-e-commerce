@@ -12,7 +12,7 @@ export function ThemeToggle() {
 
   return (
     <Tooltip title={themeMode === "dark" ? "Yorug' rejim" : "Tungi rejim"}>
-      <IconButton onClick={() => dispatch(toggleTheme())} aria-label="Temani almashtirish">
+      <IconButton onClick={() => dispatch(toggleTheme())} aria-label="Temani almashtirish" className="!p-1.5 sm:!p-2">
         {themeMode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
       </IconButton>
     </Tooltip>

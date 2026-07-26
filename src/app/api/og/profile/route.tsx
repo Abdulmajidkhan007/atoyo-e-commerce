@@ -23,13 +23,13 @@ export async function GET(request: Request) {
           justifyContent: "center",
           width: "100%",
           height: "100%",
-          background: "linear-gradient(135deg, #0B1220 0%, #12203A 100%)",
+          background: "linear-gradient(135deg, #04202F 0%, #0B3B54 100%)",
           color: "white",
           fontFamily: "sans-serif",
           padding: "60px",
         }}
       >
-        <div style={{ display: "flex", fontSize: "30px", color: "#00D2C4", fontWeight: 700, marginBottom: "40px" }}>
+        <div style={{ display: "flex", fontSize: "30px", color: "#C49A6C", fontWeight: 700, marginBottom: "40px" }}>
           Atoyo Santexnika
         </div>
 
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
             width: "200px",
             height: "200px",
             borderRadius: "100px",
-            background: "linear-gradient(135deg, #00D2C4 0%, #0E7C74 100%)",
+            background: "linear-gradient(135deg, #C49A6C 0%, #8A6640 100%)",
             fontSize: "110px",
             fontWeight: 800,
             color: "#06121F",

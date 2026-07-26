@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge, IconButton, Avatar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import PlumbingOutlinedIcon from "@mui/icons-material/PlumbingOutlined";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { ThemeToggle } from "./ThemeToggle";
@@ -36,10 +36,21 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-navy-100 bg-white/95 backdrop-blur dark:border-navy-500 dark:bg-navy-900/95">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 text-navy-900 dark:text-white">
-          <PlumbingOutlinedIcon className="text-aqua-500" />
-          <span className="text-lg font-bold whitespace-nowrap">Atoyo Santexnika</span>
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
+        {/* Brend bloki qisqara oladi (min-w-0), tugmalar esa qisqarmaydi -
+            shunda tor telefonda nom kesiladi, tugmalar chiqib ketmaydi. */}
+        <Link href="/" className="flex min-w-0 items-center gap-2 text-navy-900 dark:text-white">
+          <Image
+            src="/logo.jpg"
+            alt="Atoyo Santexnika"
+            width={32}
+            height={32}
+            priority
+            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+          />
+          {/* Tor ekranda nom kesilib qolmasligi uchun qisqa variant. */}
+          <span className="text-base font-bold whitespace-nowrap sm:hidden">Atoyo</span>
+          <span className="hidden text-lg font-bold whitespace-nowrap sm:inline">Atoyo Santexnika</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
@@ -58,30 +69,30 @@ export function Header() {
           <SearchBar value={searchTerm} onChange={setSearchTerm} onSubmit={handleSearchSubmit} className="max-w-md" />
         </div>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-0 sm:gap-1">
           <LanguageSwitcher />
           <ThemeToggle />
 
-          <IconButton component={Link} href="/sevimlilar" aria-label={dict.favorites.title}>
+          <IconButton component={Link} href="/sevimlilar" aria-label={dict.favorites.title} className="!p-1.5 sm:!p-2">
             <Badge badgeContent={favoritesCount} color="error" max={99}>
               <FavoriteBorderIcon />
             </Badge>
           </IconButton>
 
-          <IconButton component={Link} href="/savat" aria-label={dict.nav.cart}>
+          <IconButton component={Link} href="/savat" aria-label={dict.nav.cart} className="!p-1.5 sm:!p-2">
             <Badge badgeContent={cartCount} color="primary" max={99}>
               <ShoppingCartOutlinedIcon />
             </Badge>
           </IconButton>
 
           {userProfile ? (
-            <IconButton component={Link} href="/profil" aria-label={dict.nav.profile}>
+            <IconButton component={Link} href="/profil" aria-label={dict.nav.profile} className="!p-1.5 sm:!p-2">
               <Avatar src={userProfile.photoURL ?? undefined} sx={{ width: 32, height: 32 }}>
                 {userProfile.displayName?.[0] ?? userProfile.email?.[0] ?? "U"}
               </Avatar>
             </IconButton>
           ) : (
-            <Button component={Link} href="/kirish" variant="contained" size="small" className="!ml-1 whitespace-nowrap">
+            <Button component={Link} href="/kirish" variant="contained" size="small" className="!ml-1 whitespace-nowrap !px-2.5 !text-xs sm:!px-4 sm:!text-sm">
               {dict.nav.login}
             </Button>
           )}

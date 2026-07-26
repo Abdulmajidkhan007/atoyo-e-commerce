@@ -31,7 +31,7 @@ export function LanguageSwitcher() {
       <IconButton
         aria-label="Tilni almashtirish"
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        className="!text-navy-500 dark:!text-navy-100"
+        className="!p-1.5 !text-navy-500 sm:!p-2 dark:!text-navy-100"
       >
         <span className="flex items-center gap-1">
           <LanguageOutlinedIcon fontSize="small" />

@@ -24,13 +24,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
           justifyContent: "space-between",
           width: "100%",
           height: "100%",
-          background: "linear-gradient(135deg, #0B1220 0%, #12203A 100%)",
+          background: "linear-gradient(135deg, #04202F 0%, #0B3B54 100%)",
           color: "white",
           fontFamily: "sans-serif",
           padding: "64px",
         }}
       >
-        <div style={{ display: "flex", fontSize: "32px", color: "#00D2C4", fontWeight: 700 }}>
+        <div style={{ display: "flex", fontSize: "32px", color: "#C49A6C", fontWeight: 700 }}>
           Atoyo Santexnika
         </div>
 
@@ -39,7 +39,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
             {name.slice(0, 90)}
           </div>
           {price && (
-            <div style={{ display: "flex", marginTop: "24px", fontSize: "44px", fontWeight: 800, color: "#00D2C4" }}>
+            <div style={{ display: "flex", marginTop: "24px", fontSize: "44px", fontWeight: 800, color: "#C49A6C" }}>
               {price}
             </div>
           )}

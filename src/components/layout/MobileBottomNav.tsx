@@ -33,12 +33,14 @@ export function MobileBottomNav() {
           <Link
             key={href}
             href={href}
-            className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] ${
+            // Oltita bo'lim tor telefon ekraniga ham sig'ishi kerak:
+            // yon bo'shliqlar minimal, matn kichik va bir qatorda.
+            className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 px-0.5 pb-2 pt-1.5 ${
               isActive ? "text-aqua-600 dark:text-aqua-300" : "text-navy-300"
             }`}
           >
-            <Icon fontSize="small" />
-            <span className="w-full truncate text-center">{label}</span>
+            <Icon sx={{ fontSize: 20 }} />
+            <span className="w-full truncate text-center text-[10px] leading-tight">{label}</span>
           </Link>
         );
       })}

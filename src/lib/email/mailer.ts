@@ -44,7 +44,7 @@ export async function sendGenericEmail(to: string, subject: string, bodyHtml: st
       subject,
       html: `
         <div style="font-family:sans-serif;max-width:520px">
-          <h2 style="color:#0B1220">Atoyo Santexnika</h2>
+          <h2 style="color:#072D40">Atoyo Santexnika</h2>
           ${bodyHtml}
           <hr style="border:none;border-top:1px solid #eee" />
           <p style="color:#888;font-size:12px">Bu avtomatik xabar — javob yozish shart emas.</p>
@@ -73,7 +73,7 @@ export async function sendOrderStatusEmail(to: string, order: Order, status: Ord
       subject: `Buyurtma #${order.id.slice(0, 8)} — ${STATUS_LABELS[status]}`,
       html: `
         <div style="font-family:sans-serif;max-width:520px">
-          <h2 style="color:#0B1220">Atoyo Santexnika</h2>
+          <h2 style="color:#072D40">Atoyo Santexnika</h2>
           <p>Hurmatli ${order.customerName}, buyurtmangiz holati yangilandi:</p>
           <p style="font-size:18px;font-weight:bold;color:#00A399">${STATUS_LABELS[status]}</p>
           <p><b>Buyurtma:</b> #${order.id.slice(0, 8)}</p>

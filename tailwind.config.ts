@@ -9,24 +9,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // BREND RANGLARI (logotipdan olingan): chuqur "petrol" ko'k fon,
+        // qumli-oltin urg'u va oq. `aqua` nomi eski klasslar buzilmasligi
+        // uchun saqlangan, lekin qiymatlari brend oltin rangi.
         navy: {
-          DEFAULT: "#0B1E33",
-          50: "#EAF0F6",
-          100: "#CBDBE9",
-          300: "#6C93B4",
-          500: "#1F3A5F",
-          700: "#122844",
-          900: "#0B1E33",
-          950: "#060F1A",
+          DEFAULT: "#072D40",
+          50: "#EDF4F8",
+          100: "#C9DCE6",
+          300: "#5E8CA6",
+          500: "#175071",
+          700: "#0B3B54",
+          900: "#072D40",
+          950: "#04202F",
         },
         aqua: {
-          DEFAULT: "#00D2C4",
-          50: "#E6FBF9",
-          100: "#B3F3EE",
-          300: "#4DE3D8",
-          500: "#00D2C4",
-          600: "#00A89D",
-          700: "#007E76",
+          DEFAULT: "#C49A6C",
+          50: "#FAF4EC",
+          100: "#F0E1CC",
+          300: "#DCC09A",
+          500: "#C49A6C",
+          600: "#8A6640",
+          700: "#6B4E31",
         },
       },
       fontFamily: {

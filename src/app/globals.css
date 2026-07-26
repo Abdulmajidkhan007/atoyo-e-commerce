@@ -4,16 +4,16 @@
 
 :root {
   --color-bg: #ffffff;
-  --color-bg-elevated: #f4f7fa;
-  --color-fg: #0b1e33;
-  --color-border: #e2e8f0;
+  --color-bg-elevated: #f3f7fa;
+  --color-fg: #072d40;
+  --color-border: #dfe8ee;
 }
 
 .dark {
-  --color-bg: #0b1e33;
-  --color-bg-elevated: #122844;
-  --color-fg: #f4f7fa;
-  --color-border: #1f3a5f;
+  --color-bg: #072d40;
+  --color-bg-elevated: #0b3b54;
+  --color-fg: #edf4f8;
+  --color-border: #175071;
 }
 
 body {
