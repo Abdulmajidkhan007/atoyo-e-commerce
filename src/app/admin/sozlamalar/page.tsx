@@ -1,4 +1,5 @@
 import { resolveTopicConfig } from "@/lib/telegram/topics";
+import { resolveChannelId } from "@/lib/telegram/channel";
 import { getRequiredChannels } from "@/lib/telegram/required-channels";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { BotSettingsForm } from "@/components/admin/BotSettingsForm";
@@ -7,10 +8,11 @@ import { SiteSettingsForm } from "@/components/admin/SiteSettingsForm";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
-  const [topicConfig, requiredChannels, siteSettings] = await Promise.all([
+  const [topicConfig, requiredChannels, siteSettings, channelId] = await Promise.all([
     resolveTopicConfig(),
     getRequiredChannels(),
     getSiteSettings(),
+    resolveChannelId(),
   ]);
 
   return (
@@ -30,7 +32,11 @@ export default async function AdminSettingsPage() {
           Telegram guruhingizdagi forum-topic Thread ID raqamlari va mijoz-bot uchun majburiy
           obuna kanallarini shu yerdan boshqaring.
         </p>
-        <BotSettingsForm initialConfig={topicConfig} initialChannels={requiredChannels} />
+        <BotSettingsForm
+          initialConfig={topicConfig}
+          initialChannels={requiredChannels}
+          initialChannelId={channelId ?? ""}
+        />
       </section>
     </div>
   );

@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
+import { announceProduct } from "@/lib/telegram/channel";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
 
   await ref.set(product);
   await registerFacets({ brand: product.brand, country: product.manufacturerCountry });
+  await announceProduct(product, "new");
   await logAction(`📦 Yangi mahsulot (${admin.email ?? "admin"}): ${product.name} — ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`);
   return NextResponse.json({ product }, { status: 201 });
 }

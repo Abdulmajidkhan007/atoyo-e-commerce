@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
+import { announceBlogPost } from "@/lib/telegram/channel";
 import type { BlogPost } from "@/types/content";
 
 export const runtime = "nodejs";
@@ -48,5 +49,6 @@ export async function POST(request: Request) {
   };
 
   await ref.set(post);
+  await announceBlogPost(post, "new");
   return NextResponse.json({ post }, { status: 201 });
 }

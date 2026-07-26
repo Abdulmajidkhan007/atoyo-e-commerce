@@ -2,17 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  startAfter,
-  getDocs,
-  type QueryConstraint,
-  type QueryDocumentSnapshot,
-  type DocumentData,
-} from "firebase/firestore";
-import {
   Avatar,
   Button,
   Chip,
@@ -28,7 +17,6 @@ import {
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
-import { getFirebaseDb } from "@/lib/firebase/client";
 import {
   PERMISSION_KEYS,
   PERMISSION_LABELS,
@@ -39,45 +27,50 @@ import {
 } from "@/lib/permissions";
 import type { AppUser } from "@/types/user";
 
-const PAGE_SIZE = 20;
+interface UsersPage {
+  users: AppUser[];
+  nextCursor: number | null;
+  error?: string;
+}
+
+async function fetchUsersPage(cursor: number | null): Promise<UsersPage> {
+  const res = await fetch(`/api/admin/users${cursor ? `?cursor=${cursor}` : ""}`, { cache: "no-store" });
+  const data = (await res.json()) as UsersPage;
+  if (!res.ok) throw new Error(data.error ?? "Foydalanuvchilarni yuklab bo'lmadi.");
+  return data;
+}
 
 /**
- * Foydalanuvchilar va rollar. Rol/huquq o'zgartirish va o'chirish FAQAT
- * loyiha egasi (owner) uchun ochiq va server API orqali bajariladi
- * (/api/admin/users/[id]) - client Firestore yozuvi ishlatilmaydi.
+ * Foydalanuvchilar va rollar. O'qish ham, rol/huquq o'zgartirish ham
+ * server API orqali (/api/admin/users) - client Firestore ishlatilmaydi,
+ * chunki admin panelda client auth sessiyasi tiklanmaydi.
  */
 export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
   const [users, setUsers] = useState<AppUser[]>([]);
-  const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [cursor, setCursor] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingUid, setUpdatingUid] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [permTarget, setPermTarget] = useState<AppUser | null>(null);
   const [permDraft, setPermDraft] = useState<AdminPermissions>({});
 
-  const fetchPage = async (afterCursor: QueryDocumentSnapshot<DocumentData> | null) => {
-    const constraints: QueryConstraint[] = [orderBy("createdAt", "desc"), limit(PAGE_SIZE)];
-    if (afterCursor) constraints.push(startAfter(afterCursor));
-    const snapshot = await getDocs(query(collection(getFirebaseDb(), "users"), ...constraints));
-    return {
-      users: snapshot.docs.map((d) => ({ uid: d.id, ...d.data() }) as AppUser),
-      lastCursor: snapshot.docs.at(-1) ?? null,
-      hasMore: snapshot.docs.length === PAGE_SIZE,
-    };
-  };
-
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      setIsLoading(true);
-      const page = await fetchPage(null);
-      if (cancelled) return;
-      setUsers(page.users);
-      setCursor(page.lastCursor);
-      setHasMore(page.hasMore);
-      setIsLoading(false);
-    })();
+    fetchUsersPage(null)
+      .then((page) => {
+        if (cancelled) return;
+        setUsers(page.users);
+        setCursor(page.nextCursor);
+        setHasMore(page.nextCursor !== null);
+      })
+      // Xato bo'lsa ham spinner to'xtaydi - sahifa cheksiz aylanmasin.
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Xatolik.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -85,11 +78,16 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
 
   const loadMore = async () => {
     setIsLoading(true);
-    const page = await fetchPage(cursor);
-    setUsers((prev) => [...prev, ...page.users]);
-    setCursor(page.lastCursor);
-    setHasMore(page.hasMore);
-    setIsLoading(false);
+    try {
+      const page = await fetchUsersPage(cursor);
+      setUsers((prev) => [...prev, ...page.users]);
+      setCursor(page.nextCursor);
+      setHasMore(page.nextCursor !== null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Xatolik.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const patchUser = async (uid: string, body: Record<string, unknown>) => {
@@ -180,6 +178,13 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-navy-700">
+            {!isLoading && users.length === 0 && (
+              <tr>
+                <td colSpan={viewerIsOwner ? 3 : 2} className="px-4 py-6 text-center text-navy-300">
+                  Foydalanuvchilar topilmadi.
+                </td>
+              </tr>
+            )}
             {users.map((user) => {
               const targetIsOwner = isOwner(user);
               const busy = updatingUid === user.uid;

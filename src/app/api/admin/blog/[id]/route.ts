@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
+import { announceBlogPost } from "@/lib/telegram/channel";
 import type { BlogPost } from "@/types/content";
 
 export const runtime = "nodejs";
@@ -35,7 +36,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.isPublished !== undefined) updates.isPublished = d.isPublished;
 
   await ref.update(updates);
-  return NextResponse.json({ post: { ...(snap.data() as BlogPost), ...updates, id } });
+  const post = { ...(snap.data() as BlogPost), ...updates, id } as BlogPost;
+  await announceBlogPost(post, "updated");
+  return NextResponse.json({ post });
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -1,12 +1,19 @@
 import Image from "next/image";
 import { getDashboardStats, getTopSellingProducts } from "@/lib/firebase/admin-analytics";
+import { getCurrentAppUser } from "@/lib/firebase/session";
+import { isOwner } from "@/lib/permissions";
+import { ResetDemoData } from "@/components/admin/ResetDemoData";
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
 export default async function AdminDashboardPage() {
-  const [stats, topProducts] = await Promise.all([getDashboardStats(), getTopSellingProducts(5)]);
+  const [stats, topProducts, viewer] = await Promise.all([
+    getDashboardStats(),
+    getTopSellingProducts(5),
+    getCurrentAppUser(),
+  ]);
 
   return (
     <div>
@@ -58,6 +65,9 @@ export default async function AdminDashboardPage() {
           </table>
         </div>
       )}
+
+      {/* Sinov ma'lumotlarini tozalash - faqat loyiha egasiga ko'rinadi. */}
+      {isOwner(viewer) && <ResetDemoData />}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage, answerCallbackQuery, downloadTelegramFile } from "./bot";
 import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
+import { announceProduct } from "./channel";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
 /**
@@ -239,6 +240,14 @@ async function finalizeNewProduct(userId: number, session: AdminSession, photoFi
       console.error("Telegram rasmni yuklashda xato:", error);
       photoNote = `⚠️ Rasm yuklanmadi. Keyinroq: /tahrir ${ref.id}`;
     }
+  }
+
+  // Rasm biriktirilgandan keyin - kanalga e'lon (eng yangi holat bilan).
+  try {
+    const fresh = await getAdminDb().collection("products").doc(ref.id).get();
+    if (fresh.exists) await announceProduct({ id: fresh.id, ...fresh.data() } as Product, "new");
+  } catch (error) {
+    console.error("Kanalga e'lon (yangi mahsulot) xatosi:", error);
   }
 
   await sendChatMessage(
@@ -514,7 +523,11 @@ async function applyEditValue(userId: number, session: AdminSession, field: stri
   await saveSession(userId, session);
   const snap = await getAdminDb().collection("products").doc(session.productId).get();
   await sendChatMessage(session.chatId, "✅ Yangilandi.", { threadId: session.threadId });
-  if (snap.exists) await sendEditMenu(session, { id: snap.id, ...snap.data() } as Product);
+  if (snap.exists) {
+    const product = { id: snap.id, ...snap.data() } as Product;
+    await announceProduct(product, "updated");
+    await sendEditMenu(session, product);
+  }
 }
 
 // ---------------------------------------------------------------------------

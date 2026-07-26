@@ -1,5 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { announceProduct } from "./channel";
 import { sendChatMessage } from "./bot";
 import { startNewProductFlow, startEditProductFlow, cancelAdminSession } from "./admin-session";
 import { sendBroadcast } from "@/lib/broadcast";
@@ -155,6 +156,7 @@ export async function handleAdminCommand(params: {
         }
         const field = command === "/narx" ? "price" : "stock";
         await getAdminDb().collection("products").doc(id).update({ [field]: value, updatedAt: Date.now() });
+        await announceProduct({ ...product, [field]: value } as Product, "updated");
         await reply(`✅ <b>${product.name}</b>\n${command === "/narx" ? `Yangi narx: ${formatSom(value)}` : `Yangi zaxira: ${value} dona`}`);
         return;
       }
@@ -221,6 +223,7 @@ export async function handleAdminCommand(params: {
           updatedAt: now,
         };
         await ref.set(product);
+        await announceProduct(product, "new");
         await reply(`✅ Qo'shildi: <b>${name}</b>\nID: <code>${ref.id}</code> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo-uz.netlify.app/admin/katalog`);
         return;
       }
@@ -268,6 +271,7 @@ export async function handleAdminCommand(params: {
           return;
         }
         await getAdminDb().collection("products").doc(id).update(updates);
+        await announceProduct({ ...product, ...updates } as Product, "updated");
         await reply(`✅ <b>${product.name}</b> yangilandi (${Object.keys(updates).filter((k) => k !== "updatedAt").join(", ")}).`);
         return;
       }
@@ -286,6 +290,7 @@ export async function handleAdminCommand(params: {
         }
         const isActive = command === "/tikla";
         await getAdminDb().collection("products").doc(id).update({ isActive, updatedAt: Date.now() });
+        await announceProduct({ ...product, isActive } as Product, "updated");
         await reply(isActive ? `✅ <b>${product.name}</b> katalogga qaytarildi.` : `🚫 <b>${product.name}</b> katalogdan yashirildi.`);
         return;
       }

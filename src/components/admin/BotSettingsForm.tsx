@@ -1,24 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { doc, setDoc } from "firebase/firestore";
 import { TextField, Button, Alert, CircularProgress, IconButton, Snackbar } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
-import { getFirebaseDb } from "@/lib/firebase/client";
 import type { TelegramTopicConfig } from "@/types/telegram";
 import type { RequiredChannel } from "@/lib/telegram/required-channels";
 
 interface BotSettingsFormProps {
   initialConfig: TelegramTopicConfig;
   initialChannels: RequiredChannel[];
+  initialChannelId: string;
 }
 
-export function BotSettingsForm({ initialConfig, initialChannels }: BotSettingsFormProps) {
+export function BotSettingsForm({ initialConfig, initialChannels, initialChannelId }: BotSettingsFormProps) {
   const [orders, setOrders] = useState(String(initialConfig.orders));
   const [contact, setContact] = useState(String(initialConfig.contact));
   const [subscribers, setSubscribers] = useState(String(initialConfig.subscribers));
   const [actions, setActions] = useState(String(initialConfig.actions));
+  const [channelId, setChannelId] = useState(initialChannelId);
   const [channels, setChannels] = useState<RequiredChannel[]>(initialChannels);
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
@@ -36,17 +36,21 @@ export function BotSettingsForm({ initialConfig, initialChannels }: BotSettingsF
         .map((c) => ({ chatId: c.chatId.trim(), title: c.title.trim(), url: c.url.trim() }))
         .filter((c) => c.chatId);
 
-      await setDoc(
-        doc(getFirebaseDb(), "settings", "telegram"),
-        {
-          orders: Number(orders),
-          contact: Number(contact),
-          subscribers: Number(subscribers),
-          actions: Number(actions),
+      // Yozuv server API orqali (Admin SDK) - client Firestore yozuvi
+      // admin panelda osilib qoladi.
+      const res = await fetch("/api/admin/telegram-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orders: Number(orders) || 0,
+          contact: Number(contact) || 0,
+          subscribers: Number(subscribers) || 0,
+          actions: Number(actions) || 0,
+          channelId: channelId.trim(),
           requiredChannels: cleanChannels,
-        },
-        { merge: true }
-      );
+        }),
+      });
+      if (!res.ok) throw new Error("failed");
       setResult("success");
     } catch {
       setResult("error");
@@ -64,6 +68,24 @@ export function BotSettingsForm({ initialConfig, initialChannels }: BotSettingsF
         <TextField label="#Kontakt - Thread ID" type="number" value={contact} onChange={(e) => setContact(e.target.value)} />
         <TextField label="#Obunachilar - Thread ID" type="number" value={subscribers} onChange={(e) => setSubscribers(e.target.value)} />
         <TextField label="#Actions (hodisalar) - Thread ID" type="number" value={actions} onChange={(e) => setActions(e.target.value)} />
+      </div>
+
+      {/* E'lon kanali */}
+      <div className="flex flex-col gap-3 rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
+        <div>
+          <h2 className="font-semibold text-navy-900 dark:text-white">E&apos;lon kanali</h2>
+          <p className="mt-1 text-xs text-navy-300">
+            Yangi mahsulot va blog postlari (saytdan ham, adminlar guruhidan ham) shu kanalga
+            avtomatik chiqadi. Bot kanalda <b>admin</b> bo&apos;lishi kerak. Bo&apos;sh qoldirilsa —
+            Netlify&apos;dagi <code>TELEGRAM_CHANNEL_ID</code> qiymati ishlatiladi.
+          </p>
+        </div>
+        <TextField
+          label="Kanal ID yoki @username"
+          placeholder="@atoyo_kanal yoki -1001234567890"
+          value={channelId}
+          onChange={(e) => setChannelId(e.target.value)}
+        />
       </div>
 
       {/* Majburiy kanallar */}

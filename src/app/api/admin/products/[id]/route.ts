@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
+import { announceProduct } from "@/lib/telegram/channel";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -86,6 +87,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   await ref.update(updates);
   await registerFacets({ brand: d.brand, country: d.manufacturerCountry });
   const updated = { ...existing, ...updates, id } as Product;
+  // Tahrirlangan mahsulot ham kanalga yangi holati bilan chiqadi.
+  await announceProduct(updated, "updated");
   return NextResponse.json({ product: updated });
 }
 
