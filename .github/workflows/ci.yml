@@ -65,12 +65,20 @@ jobs:
   #    Imzo: hozircha debug kaliti bilan (test uchun o'rnatsa bo'ladi).
   #    Play Store uchun o'z keystore'ingiz va `bundleRelease` (AAB) kerak -
   #    ATOYO_KEYSTORE_* secretlari qo'shilgach shu yerga qo'shiladi.
+  #
+  #    APK ikki joyga chiqadi:
+  #      • artifakt (`atoyo-apk`) - PR va debug uchun, 14 kun;
+  #      • ochiq Release (`latest` tegi) - portfolio/sayt havolasi uchun,
+  #        muddatsiz va GitHub akkauntisiz yuklab olinadi.
   # ---------------------------------------------------------------------
   android-apk:
     name: Android APK
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Release yaratish (teg + asset) uchun yozish huquqi kerak.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -159,3 +167,45 @@ jobs:
           path: mobile/android/app/build/outputs/apk/release/app-release.apk
           retention-days: 14
           if-no-files-found: error
+
+      # Ochiq Release: doimiy havola
+      #   https://github.com/<owner>/<repo>/releases/latest/download/app-release.apk
+      # Faqat default branch'ga push'da ishlaydi (PR'da emas), `latest`
+      # tegi har build'da shu commit'ga ko'chiriladi va asset almashtiriladi.
+      # Fayl nomi app-release.apk bo'lib qolishi SHART - havola shunga bog'liq.
+      - name: Ochiq Release (latest)
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APK: mobile/android/app/build/outputs/apk/release/app-release.apk
+        run: |
+          set -euo pipefail
+          BUILD_DATE="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          NOTES=$(printf '%s\n' \
+            "Atoyo Android ilovasi - avtomatik build." \
+            "" \
+            "- Commit: \`${GITHUB_SHA}\`" \
+            "- Sana: ${BUILD_DATE}" \
+            "- Branch: \`${GITHUB_REF_NAME}\`" \
+            "" \
+            "Yuklab olish: [app-release.apk](https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/app-release.apk)" \
+            "" \
+            "APK debug kaliti bilan imzolangan - o'rnatishda \"Noma'lum manbalar\" ruxsati kerak.")
+
+          # Ko'chuvchi "latest" tegini joriy commit'ga o'tkazamiz. API
+          # orqali - checkout sayoz (shallow) bo'lgani uchun teg push'i
+          # har doim ham o'tmaydi.
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/latest" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/latest" \
+              -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref=refs/tags/latest -f sha="$GITHUB_SHA" >/dev/null
+          fi
+
+          if gh release view latest >/dev/null 2>&1; then
+            gh release edit latest --target "$GITHUB_SHA" --title "Atoyo ilovasi (oxirgi build)" --notes "$NOTES" --latest
+            gh release upload latest "$APK" --clobber
+          else
+            gh release create latest "$APK" --target "$GITHUB_SHA" --title "Atoyo ilovasi (oxirgi build)" --notes "$NOTES" --latest
+          fi

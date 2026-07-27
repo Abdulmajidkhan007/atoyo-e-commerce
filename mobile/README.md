@@ -149,6 +149,21 @@ Keyingi push'da APK tayyor bo'ladi: **Actions → oxirgi run → Artifacts →
 atoyo-apk**. Uni telefonga o'rnatib sinab ko'rsangiz bo'ladi
 ("Noma'lum manbalardan o'rnatish" ruxsati kerak).
 
+### Doimiy yuklab olish havolasi
+
+Artifakt 14 kunda o'chadi va uni olish uchun GitHub akkaunti kerak.
+Shuning uchun default branch'ga har push'da APK **ochiq Release**'ga ham
+joylanadi (`latest` tegi har build'da shu commit'ga ko'chadi):
+
+```
+https://github.com/Abdulmajidkhan007/atoyo-e-commerce/releases/latest/download/app-release.apk
+```
+
+Bu havola doim oxirgi build'ga olib boradi va akkauntsiz ochiladi —
+portfolio saytidagi "Ilovani yuklab olish" tugmasiga shuni qo'ying.
+Release izohida commit SHA va build sanasi turadi. Fayl nomini
+(`app-release.apk`) o'zgartirmang — havola aynan shu nomga bog'liq.
+
 > Bu APK **debug kaliti** bilan imzolanadi — sinash uchun yetarli, lekin
 > Play Store'ga yaramaydi. Play uchun o'z keystore'ingiz va `bundleRelease`
 > (AAB) kerak; kalitni bergach CI'ga qo'shib beraman.
