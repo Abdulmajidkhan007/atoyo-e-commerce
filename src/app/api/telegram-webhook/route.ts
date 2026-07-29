@@ -5,6 +5,9 @@ import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 import { handleAdminCommand } from "@/lib/telegram/admin-commands";
 import { handleAdminSessionMessage, handleAdminSessionCallback } from "@/lib/telegram/admin-session";
 import { handleCustomerMessage, handleCustomerCallback } from "@/lib/telegram/customer-bot";
+import { handleIntakeMessage } from "@/lib/telegram/product-intake";
+import { resolveTopicConfig } from "@/lib/telegram/topics";
+import { getTelegramSecrets } from "@/lib/telegram/secrets";
 
 interface TelegramChat {
   id: number;
@@ -27,6 +30,10 @@ interface TelegramMessage {
   location?: { latitude: number; longitude: number };
   /** Rasm o'lchamlari ro'yxati - oxirgisi eng katta. */
   photo?: { file_id: string }[];
+  /** Rasm izohi (albomda faqat bitta xabarda bo'ladi). */
+  caption?: string;
+  /** Albom (bir nechta rasm bitta post) identifikatori. */
+  media_group_id?: string;
 }
 
 interface TelegramCallbackQuery {
@@ -41,19 +48,23 @@ interface TelegramUpdate {
   callback_query?: TelegramCallbackQuery;
 }
 
-function isAdminGroupChat(chat: TelegramChat | undefined): boolean {
+function isAdminGroupChat(chat: TelegramChat | undefined, staffChatId: string): boolean {
   // Admin buyruqlari FAQAT yopiq xodimlar guruhida ishlaydi - guruh
   // a'zoligi o'zi ruxsat hisoblanadi (guruhga faqat xodimlar qo'shiladi).
   // Shaxsiy chatdagi mijozlar bu shartdan hech qachon o'ta olmaydi.
-  return String(chat?.id) === process.env.TELEGRAM_CHAT_ID;
+  // Guruh ID si admin panelda almashtirilishi mumkin (secrets/telegram).
+  return Boolean(staffChatId) && String(chat?.id) === staffChatId;
 }
 
 export async function POST(request: Request) {
   // Telegram webhook so'rovlari `secret_token` headeri bilan tasdiqlanadi
   // (setWebhook chaqirilganda o'rnatiladi) - manzilni bilgan tashqi tomon
   // soxta so'rov yubora olmaydi.
+  // Maxfiy so'z va xodimlar guruhi ID si admin panelda almashtirilgan
+  // bo'lsa - o'sha qiymatlar, aks holda env.
+  const { webhookSecret, chatId: staffChatId } = await getTelegramSecrets();
   const secretHeader = request.headers.get("x-telegram-bot-api-secret-token");
-  if (secretHeader !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+  if (!webhookSecret || secretHeader !== webhookSecret) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 401 });
   }
 
@@ -69,7 +80,7 @@ export async function POST(request: Request) {
       // xabarlarda mavjud, shuning uchun faqat o'sha yerdan kela oladi.
       const statusCallback = decodeOrderStatusCallback(callbackQuery.data);
       if (statusCallback) {
-        if (!isAdminGroupChat(chat)) {
+        if (!isAdminGroupChat(chat, staffChatId)) {
           await answerCallbackQuery(callbackQuery.id, "Ruxsat yo'q.");
           return NextResponse.json({ ok: true });
         }
@@ -82,7 +93,7 @@ export async function POST(request: Request) {
 
       // Admin guruhdagi interaktiv oqim tugmalari (ap|...) - /yangi va /tahrir
       // bosqichma-bosqich menyulari. Faqat yopiq xodimlar guruhida.
-      if (isAdminGroupChat(chat) && callbackUserId) {
+      if (isAdminGroupChat(chat, staffChatId) && callbackUserId) {
         await handleAdminSessionCallback({
           chatId: chat.id,
           userId: callbackUserId,
@@ -111,8 +122,54 @@ export async function POST(request: Request) {
     // ============ 2) Xabarlar (matn yoki telefon kontakti) ============
     const message = update?.message;
     if (message && (message.text || message.contact || message.location || message.photo)) {
-      if (isAdminGroupChat(message.chat)) {
+      if (isAdminGroupChat(message.chat, staffChatId)) {
         const adminUserId = message.from?.id;
+
+        // "Kirim" topic'i: rasm + izoh = yangi mahsulot. Bu topic
+        // buyruqlarga ham, interaktiv sessiyaga ham tegishli emas -
+        // shuning uchun eng birinchi tekshiriladi.
+        const topics = await resolveTopicConfig();
+        const isIntakeTopic =
+          topics.intake > 0 && message.message_thread_id === topics.intake && adminUserId;
+
+        if (isIntakeTopic && !message.text?.trim().startsWith("/")) {
+          const photoFileId = message.photo?.at(-1)?.file_id;
+          const caption = message.caption ?? message.text;
+
+          // Yangi kirim = rasm + izoh. Albom rasmlari (media_group_id)
+          // ham doim kirim oqimiga ketadi - ular yaratilgan mahsulotga
+          // qo'shiladi. Qolgan hollarda (izohsiz yolg'iz rasm, oddiy
+          // matn) avval faol tahrir sessiyasiga imkon beramiz: mahsulot
+          // yaratilgandan keyingi "qolgan ma'lumotlar" tugmalari shu
+          // topic'da javob kutadi.
+          const isNewIntake = Boolean(photoFileId && caption?.trim());
+          const belongsToAlbum = Boolean(photoFileId && message.media_group_id);
+
+          if (!isNewIntake && !belongsToAlbum) {
+            const handledBySession = await handleAdminSessionMessage({
+              chatId: message.chat.id,
+              userId: adminUserId,
+              threadId: message.message_thread_id,
+              text: message.text ?? "",
+              photoFileId,
+            });
+            if (handledBySession) return NextResponse.json({ ok: true });
+          }
+
+          await handleIntakeMessage({
+            chatId: message.chat.id,
+            threadId: message.message_thread_id,
+            userId: adminUserId,
+            authorName: [message.from?.first_name, message.from?.last_name]
+              .filter(Boolean)
+              .join(" "),
+            caption,
+            photoFileId,
+            mediaGroupId: message.media_group_id,
+          });
+          return NextResponse.json({ ok: true });
+        }
+
         if (message.text?.trim().startsWith("/")) {
           // "/" buyruqlar (jumladan interaktiv oqimni boshlovchi /yangi, /tahrir).
           await handleAdminCommand({

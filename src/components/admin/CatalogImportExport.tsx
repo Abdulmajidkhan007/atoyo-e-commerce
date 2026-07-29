@@ -5,6 +5,18 @@ import { Alert, Button, CircularProgress } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 
+/** Excel faylni base64 ga o'girish (FileReader "data:...;base64," qaytaradi). */
+async function fileToBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const CHUNK = 0x8000; // katta fayllarda stack toshib ketmasligi uchun bo'lib o'giramiz
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
 interface ImportResult {
   created: number;
   updated: number;
@@ -30,11 +42,17 @@ export function CatalogImportExport() {
     setResult(null);
     setError(null);
     try {
-      const csv = await file.text();
+      // Excel faylini serverga base64 ko'rinishida yuboramiz (u yerda
+      // o'qiladi), CSV esa matn sifatida - ikkalasi bir xil importga tushadi.
+      const isExcel = /\.xlsx$/i.test(file.name);
+      const payload = isExcel
+        ? { xlsx: await fileToBase64(file) }
+        : { csv: await file.text() };
+
       const res = await fetch("/api/admin/products/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv }),
+        body: JSON.stringify(payload),
       });
       const data = (await res.json()) as ImportResult & { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Import bajarilmadi.");
@@ -65,13 +83,34 @@ export function CatalogImportExport() {
           disabled={importing}
           onClick={() => fileInput.current?.click()}
         >
-          CSV dan yuklash
+          CSV yoki Excel yuklash
         </Button>
-        <input ref={fileInput} type="file" accept=".csv,text/csv" hidden onChange={handleFile} />
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          hidden
+          onChange={handleFile}
+        />
+
+        <Button
+          component="a"
+          href="/namuna/atoyo-mahsulotlar.xlsx"
+          download
+          variant="text"
+          size="small"
+          startIcon={<DownloadOutlinedIcon />}
+        >
+          Namuna Excel
+        </Button>
+        <Button component="a" href="/namuna/atoyo-mahsulotlar.csv" download variant="text" size="small">
+          Namuna CSV
+        </Button>
 
         <p className="text-xs text-navy-300">
           Fayldagi <code>id</code> ustuni to&apos;ldirilgan qatorlar mavjud mahsulotni yangilaydi, bo&apos;sh
-          qatorlar yangi mahsulot yaratadi.
+          qatorlar yangi mahsulot yaratadi. Excel’da rasm bo&apos;lmaydi — <code>images</code> ustuniga
+          rasm havolalarini yozing yoki rasmni keyin Telegram/admin panel orqali qo&apos;shing.
         </p>
       </div>
 

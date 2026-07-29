@@ -30,7 +30,46 @@ const MATERIALS: ProductMaterial[] = [
   "pvc",
 ];
 
-const bodySchema = z.object({ csv: z.string().min(1).max(5_000_000) });
+/**
+ * Import ikki ko'rinishda keladi:
+ *   • `csv`   - CSV matni (admin panel faylni o'zi o'qiydi);
+ *   • `xlsx`  - Excel faylining base64 ko'rinishi (bir bosishda yuklash).
+ * Excel varag'ining birinchi qatori sarlavha bo'lishi kerak - ustun
+ * nomlari CSV bilan bir xil (namuna: /namuna/atoyo-mahsulotlar.xlsx).
+ */
+const bodySchema = z.union([
+  z.object({ csv: z.string().min(1).max(5_000_000) }),
+  z.object({ xlsx: z.string().min(1).max(12_000_000) }),
+]);
+
+/** Excel katakchasidagi qiymatni CSV bilan bir xil matnga keltiradi. */
+function cellToText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  }
+  if (typeof value === "boolean") return value ? "1" : "0";
+  return String(value).trim();
+}
+
+/** Excel faylini CSV import bilan bir xil qator obyektlariga aylantiradi. */
+async function parseXlsx(base64: string): Promise<Record<string, string>[]> {
+  // `readSheet` - birinchi varaq (namunadagi "Yo'riqnoma" varag'i o'qilmaydi).
+  const { readSheet } = await import("read-excel-file/node");
+  const rows = (await readSheet(Buffer.from(base64, "base64"))) as unknown[][];
+  if (rows.length < 2) return [];
+
+  const headers = (rows[0] ?? []).map((cell) => cellToText(cell));
+  return rows.slice(1).flatMap((cells) => {
+    const row: Record<string, string> = {};
+    headers.forEach((header, i) => {
+      if (header) row[header] = cellToText(cells[i]);
+    });
+    // Butunlay bo'sh qatorlar (Excel'da tez-tez uchraydi) tashlab yuboriladi.
+    return Object.values(row).some((value) => value !== "") ? [row] : [];
+  });
+}
 
 /** Firestore batch chegarasi 500 - xavfsiz oraliq bilan bo'lib yozamiz. */
 const BATCH_SIZE = 400;
@@ -61,10 +100,26 @@ export async function POST(request: Request) {
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsedBody = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsedBody.success) return NextResponse.json({ error: "CSV matni yuborilmadi." }, { status: 400 });
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: "CSV yoki Excel fayli yuborilmadi." }, { status: 400 });
+  }
 
-  const rows = parseCsv(parsedBody.data.csv);
-  if (rows.length === 0) return NextResponse.json({ error: "CSV bo'sh yoki noto'g'ri." }, { status: 400 });
+  let rows: Record<string, string>[];
+  if ("xlsx" in parsedBody.data) {
+    try {
+      rows = await parseXlsx(parsedBody.data.xlsx);
+    } catch (error) {
+      console.error("Excel faylni o'qishda xato:", error);
+      return NextResponse.json(
+        { error: "Excel faylni o'qib bo'lmadi. .xlsx formatida ekanini tekshiring." },
+        { status: 400 }
+      );
+    }
+  } else {
+    rows = parseCsv(parsedBody.data.csv);
+  }
+
+  if (rows.length === 0) return NextResponse.json({ error: "Fayl bo'sh yoki noto'g'ri." }, { status: 400 });
   if (rows.length > 5000) {
     return NextResponse.json({ error: "Bir martada 5000 tagacha qator import qilinadi." }, { status: 400 });
   }
@@ -190,7 +245,7 @@ export async function POST(request: Request) {
 
   if (created + updated > 0) {
     await logAction(
-      `📤 CSV import (${admin.email ?? "admin"}): ${created} ta yangi, ${updated} ta yangilangan mahsulot`
+      `📤 ${"xlsx" in parsedBody.data ? "Excel" : "CSV"} import (${admin.email ?? "admin"}): ${created} ta yangi, ${updated} ta yangilangan mahsulot`
     );
   }
 

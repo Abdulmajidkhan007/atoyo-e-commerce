@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TextField, Button, Alert, CircularProgress, IconButton, Snackbar } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
+import { useChallenge } from "./ChallengeDialog";
 import type { TelegramTopicConfig } from "@/types/telegram";
 import type { RequiredChannel } from "@/lib/telegram/required-channels";
 
@@ -18,10 +19,13 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
   const [contact, setContact] = useState(String(initialConfig.contact));
   const [subscribers, setSubscribers] = useState(String(initialConfig.subscribers));
   const [actions, setActions] = useState(String(initialConfig.actions));
+  const [intake, setIntake] = useState(String(initialConfig.intake));
   const [channelId, setChannelId] = useState(initialChannelId);
   const [channels, setChannels] = useState<RequiredChannel[]>(initialChannels);
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const challenge = useChallenge();
 
   const updateChannel = (index: number, field: keyof RequiredChannel, value: string) => {
     setChannels((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)));
@@ -29,6 +33,13 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorText(null);
+
+    // Saqlashdan oldin jumboq: tasodifiy (yoki begona) o'zgartirishning
+    // oldini oladi. Javob server tomonda tekshiriladi.
+    const answer = await challenge.ask();
+    if (!answer) return;
+
     setIsSaving(true);
     setResult(null);
     try {
@@ -46,13 +57,17 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
           contact: Number(contact) || 0,
           subscribers: Number(subscribers) || 0,
           actions: Number(actions) || 0,
+          intake: Number(intake) || 0,
           channelId: channelId.trim(),
           requiredChannels: cleanChannels,
+          ...answer,
         }),
       });
-      if (!res.ok) throw new Error("failed");
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Saqlashda xatolik yuz berdi.");
       setResult("success");
-    } catch {
+    } catch (err) {
+      setErrorText(err instanceof Error ? err.message : "Saqlashda xatolik yuz berdi.");
       setResult("error");
     } finally {
       setIsSaving(false);
@@ -68,6 +83,13 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
         <TextField label="#Kontakt - Thread ID" type="number" value={contact} onChange={(e) => setContact(e.target.value)} />
         <TextField label="#Obunachilar - Thread ID" type="number" value={subscribers} onChange={(e) => setSubscribers(e.target.value)} />
         <TextField label="#Actions (hodisalar) - Thread ID" type="number" value={actions} onChange={(e) => setActions(e.target.value)} />
+        <TextField
+          label="#Kirim (mahsulot qo'shish) - Thread ID"
+          type="number"
+          value={intake}
+          onChange={(e) => setIntake(e.target.value)}
+          helperText="Shu topic'ga rasm + izoh tashlansa, bot mahsulotni katalogga qo'shadi. 0 - o'chirilgan."
+        />
       </div>
 
       {/* E'lon kanali */}
@@ -136,9 +158,13 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
         </Button>
       </div>
 
+      {errorText && <Alert severity="error">{errorText}</Alert>}
+
       <Button type="submit" variant="contained" disabled={isSaving} className="!w-fit">
         {isSaving ? <CircularProgress size={20} color="inherit" /> : "Saqlash"}
       </Button>
+
+      {challenge.dialog}
 
       <Snackbar
         open={result !== null}
@@ -148,7 +174,7 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
       >
         {result ? (
           <Alert severity={result} variant="filled" onClose={() => setResult(null)} sx={{ width: "100%" }}>
-            {result === "success" ? "Bot sozlamalari saqlandi." : "Saqlashda xatolik yuz berdi."}
+            {result === "success" ? "Bot sozlamalari saqlandi." : (errorText ?? "Saqlashda xatolik yuz berdi.")}
           </Alert>
         ) : undefined}
       </Snackbar>

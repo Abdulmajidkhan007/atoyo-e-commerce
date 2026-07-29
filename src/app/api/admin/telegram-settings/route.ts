@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
+import { consumeChallenge } from "@/lib/security/challenge";
+import { logAction } from "@/lib/telegram/action-log";
 
 export const runtime = "nodejs";
 
@@ -10,6 +12,11 @@ const schema = z.object({
   contact: z.number().int().min(0),
   subscribers: z.number().int().min(0),
   actions: z.number().int().min(0),
+  /** "Kirim" topic'i - rasm + izoh tashlansa mahsulot yaratiladi. */
+  intake: z.number().int().min(0).default(0),
+  /** Jumboq (server tomonda tekshiriladi - UI'ni chetlab o'tib bo'lmaydi). */
+  challengeId: z.string().min(8).max(64),
+  challengeAnswer: z.number().int(),
   /** E'lon kanali: @username yoki -100... ID. Bo'sh - env'dagi qiymat ishlatiladi. */
   channelId: z.string().max(100).default(""),
   requiredChannels: z
@@ -36,6 +43,22 @@ export async function PATCH(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
 
-  await getAdminDb().doc("settings/telegram").set(parsed.data, { merge: true });
+  // Topic/kanal ID lari bot ishlashini butunlay to'xtatib qo'yishi
+  // mumkin - shuning uchun saqlashdan oldin jumboq javobi tekshiriladi.
+  const passed = await consumeChallenge({
+    id: parsed.data.challengeId,
+    answer: parsed.data.challengeAnswer,
+    uid: admin.uid,
+  });
+  if (!passed) {
+    return NextResponse.json(
+      { error: "Jumboq javobi noto'g'ri yoki eskirgan. Qaytadan urinib ko'ring." },
+      { status: 403 }
+    );
+  }
+
+  const { challengeId: _id, challengeAnswer: _answer, ...settings } = parsed.data;
+  await getAdminDb().doc("settings/telegram").set(settings, { merge: true });
+  await logAction(`⚙️ Bot sozlamalari yangilandi (${admin.email ?? "admin"})`);
   return NextResponse.json({ ok: true });
 }

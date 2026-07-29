@@ -1,6 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { sendChatMessage } from "./bot";
+import { sendChatMessage, sendMediaGroup } from "./bot";
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import type { Product } from "@/types/product";
 import type { BlogPost } from "@/types/content";
@@ -41,13 +41,27 @@ export async function resolveChannelId(): Promise<string | null> {
  * bersa - jimgina o'tib ketadi: e'lon mahsulot/post saqlanishiga
  * hech qachon xalaqit bermasligi kerak.
  */
-async function publish(text: string, options: { photoUrl?: string; buttonText: string; buttonUrl: string }) {
+async function publish(
+  text: string,
+  options: { photoUrl?: string; photoUrls?: string[]; buttonText: string; buttonUrl: string }
+) {
   const channelId = await resolveChannelId();
   if (!channelId) return;
 
+  // Bir nechta rasm bo'lsa - albom. Albomga inline tugma qo'shib
+  // bo'lmaydi, shuning uchun havola caption ichida beriladi.
+  const gallery = (options.photoUrls ?? []).filter(Boolean).slice(0, 10);
+
   try {
+    if (gallery.length > 1) {
+      await sendMediaGroup(channelId, gallery, {
+        caption: `${text}\n\n<a href="${options.buttonUrl}">${options.buttonText}</a>`,
+      });
+      return;
+    }
+
     await sendChatMessage(channelId, text, {
-      photoUrl: options.photoUrl || undefined,
+      photoUrl: gallery[0] ?? options.photoUrl ?? undefined,
       replyMarkup: { inline_keyboard: [[{ text: options.buttonText, url: options.buttonUrl }]] },
     });
   } catch (error) {
@@ -76,8 +90,15 @@ export async function announceProduct(product: Product, mode: "new" | "updated" 
   if (product.stock > 0) lines.push(`📦 Mavjud: ${product.stock} dona`);
   if (product.description) lines.push(``, escapeHtml(product.description.slice(0, 400)));
 
-  await publish(lines.join("\n"), {
+  // Albom caption'i 1024 belgi bilan cheklangan - tavsif uzun bo'lsa
+  // e'lon jimgina kesilib qolmasligi uchun qisqartiramiz.
+  const gallery = (product.images ?? []).filter(Boolean).slice(0, 10);
+  const text = lines.join("\n");
+  const caption = gallery.length > 1 && text.length > 850 ? `${text.slice(0, 847)}...` : text;
+
+  await publish(caption, {
     photoUrl: product.thumbnailUrl,
+    photoUrls: gallery,
     buttonText: "🛒 Saytda ko'rish",
     buttonUrl: `${siteUrl()}/mahsulot/${product.id}`,
   });

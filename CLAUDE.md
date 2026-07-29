@@ -80,8 +80,16 @@ foydalanuvchi so'raganda.
   kanal gate → katalog/savat/checkout, `/start` salomlashuv rasmi, `/profil`.
 - `admin-commands.ts` + `admin-session.ts` — yopiq guruh: interaktiv `/yangi`
   va `/tahrir` (tugmali), `/narx /zaxira /top /uchir /tikla /buyurtmalar /stat`.
+- `product-intake.ts` + `intake-parser.ts` — "Kirim" topic'i (thread 151):
+  rasm(lar) + izoh (nom/narx/soni/kimdan/material) → mahsulot yaratiladi,
+  keyin ixtiyoriy maydonlar tugmalari. Albom (media_group) holati
+  `intakeAlbums/{mediaGroupId}` da.
 - Webhook: `src/app/api/telegram-webhook/route.ts`. Topic Thread ID'lar
-  Firestore `settings/telegram` da (buyurtmalar topic = 2).
+  Firestore `settings/telegram` da (buyurtmalar topic = 2, kirim = 151).
+- Bot tokeni/guruh ID/webhook siri: `secrets/telegram` (server-only,
+  `lib/telegram/secrets.ts`) → env'dan ustun. Sozlamalarni saqlash
+  serverda tekshiriladigan "jumboq" bilan himoyalangan
+  (`lib/security/challenge.ts`).
 - Env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (xodimlar guruhi),
   `TELEGRAM_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL` (OG rasm URL'lari uchun).
 

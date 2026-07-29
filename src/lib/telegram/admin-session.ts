@@ -4,6 +4,8 @@ import { sendChatMessage, answerCallbackQuery, downloadTelegramFile } from "./bo
 import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { announceProduct } from "./channel";
+import { registerFacets } from "@/lib/products/facets";
+import { parseDate } from "./intake-parser";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
 /**
@@ -280,9 +282,64 @@ const EDIT_FIELDS: { field: string; label: string }[] = [
   { field: "brand", label: "™️ Brend" },
   { field: "country", label: "🌍 Davlat" },
   { field: "discount", label: "🔻 Chegirma" },
+  { field: "discountUntil", label: "⏳ Chegirma muddati" },
+  { field: "supplier", label: "🚚 Kimdan kelgan" },
   { field: "description", label: "📝 Tavsif" },
   { field: "photo", label: "🖼 Rasm" },
 ];
+
+/**
+ * Kirim topic'idan yaratilgan mahsulot uchun "qolgan ma'lumotlarni
+ * to'ldirasizmi?" savoli. Majburiy maydonlar allaqachon to'lgan -
+ * bu yerdagilarning hammasi ixtiyoriy, shuning uchun "keyinroq"
+ * tugmasi ham bor. Tugmalar mavjud tahrir oqimini (ap|ef|...) ishlatadi.
+ */
+const OPTIONAL_FIELDS: { field: string; label: string }[] = [
+  { field: "category", label: "🏷 Kategoriya" },
+  { field: "brand", label: "™️ Brend" },
+  { field: "country", label: "🌍 Davlat" },
+  { field: "description", label: "📝 Tavsif" },
+  { field: "discount", label: "🔻 Chegirma" },
+  { field: "discountUntil", label: "⏳ Chegirma muddati" },
+  { field: "photo", label: "🖼 Yana rasm" },
+  { field: "name", label: "✏️ Nomni tuzatish" },
+];
+
+export async function startOptionalFieldsFlow(params: {
+  chatId: number;
+  threadId?: number;
+  userId: number;
+  product: Product;
+  /** Tugmalar ustida chiqadigan xabar (kirim xulosasi). */
+  header: string;
+}): Promise<void> {
+  const { chatId, threadId, userId, product, header } = params;
+
+  const session: AdminSession = {
+    flow: "edit_product",
+    step: "menu",
+    chatId,
+    threadId,
+    draft: {},
+    productId: product.id,
+    updatedAt: Date.now(),
+  };
+  await saveSession(userId, session);
+
+  const rows: InlineButton[][] = [];
+  for (let i = 0; i < OPTIONAL_FIELDS.length; i += 2) {
+    rows.push(
+      OPTIONAL_FIELDS.slice(i, i + 2).map((f) => ({ text: f.label, callback_data: `ap|ef|${f.field}` }))
+    );
+  }
+  rows.push([{ text: "✅ Yetarli, tayyor", callback_data: "ap|done" }]);
+
+  await sendChatMessage(
+    chatId,
+    [header, "", "Qolgan ma'lumotlarni ham to'ldirasizmi? (ixtiyoriy)"].join("\n"),
+    { replyMarkup: { inline_keyboard: rows }, threadId }
+  );
+}
 
 async function sendEditMenu(session: AdminSession, product: Product): Promise<void> {
   const rows: InlineButton[][] = [];
@@ -314,6 +371,9 @@ const EDIT_VALUE_PROMPTS: Record<string, string> = {
   brand: "Yangi <b>brend</b>ni yuboring:",
   country: "Yangi <b>davlat</b>ni yuboring:",
   discount: "Yangi <b>chegirma narx</b>ini yuboring (o'chirish uchun 0):",
+  discountUntil:
+    "Chegirma <b>qaysi kungacha</b> amal qiladi? Sanani <code>31.12.2026</code> ko'rinishida yuboring (muddatsiz uchun 0):",
+  supplier: "Mahsulot <b>kimdan kelgan</b>ini yuboring:",
   description: "Yangi <b>tavsif</b>ni yuboring:",
   photo: "🖼 Yangi <b>rasm</b>ni yuboring (oddiy rasm sifatida):",
 };
@@ -507,10 +567,31 @@ async function applyEditValue(userId: number, session: AdminSession, field: stri
     if (field === "price") updates.price = n;
     else if (field === "stock") updates.stock = n;
     else updates.discountPrice = n > 0 ? n : null;
+  } else if (field === "discountUntil") {
+    // "0" - muddatni olib tashlash; aks holda kun.oy.yil kutiladi.
+    if (value.trim() === "0") {
+      updates.discountUntil = null;
+    } else {
+      const until = parseDate(value);
+      if (until === null) {
+        await sendChatMessage(
+          session.chatId,
+          "Sanani <code>31.12.2026</code> ko'rinishida yuboring (muddatsiz uchun 0):",
+          { threadId: session.threadId }
+        );
+        return;
+      }
+      updates.discountUntil = until;
+    }
   } else if (field === "brand") {
     updates.brand = value;
+    void registerFacets({ brand: value });
   } else if (field === "country") {
     updates.manufacturerCountry = value;
+    void registerFacets({ country: value });
+  } else if (field === "supplier") {
+    updates.supplier = value;
+    void registerFacets({ supplier: value });
   } else if (field === "description") {
     updates.description = value;
   }

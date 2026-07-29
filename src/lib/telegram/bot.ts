@@ -1,23 +1,29 @@
 import "server-only";
 import { resolveTopicConfig, resolveThreadId } from "./topics";
+import { getTelegramSecrets } from "./secrets";
 import type { TelegramTopicKey } from "@/types/telegram";
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
 
-function getBotToken(): string {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) throw new Error("TELEGRAM_BOT_TOKEN aniqlanmagan.");
-  return token;
+/**
+ * Token va guruh ID si avval admin panelda saqlangan qiymatdan
+ * (server-only `secrets/telegram`), u bo'lmasa env'dan olinadi -
+ * shuning uchun ikkalasi ham async.
+ */
+async function getBotToken(): Promise<string> {
+  const { botToken } = await getTelegramSecrets();
+  if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN aniqlanmagan.");
+  return botToken;
 }
 
-function getChatId(): string {
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+async function getChatId(): Promise<string> {
+  const { chatId } = await getTelegramSecrets();
   if (!chatId) throw new Error("TELEGRAM_CHAT_ID aniqlanmagan.");
   return chatId;
 }
 
 async function callTelegramApi<T>(method: string, payload: Record<string, unknown>): Promise<T> {
-  const response = await fetch(`${TELEGRAM_API_BASE}/bot${getBotToken()}/${method}`, {
+  const response = await fetch(`${TELEGRAM_API_BASE}/bot${await getBotToken()}/${method}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -87,6 +93,36 @@ export async function sendChatMessage(
   });
 }
 
+/**
+ * Bir nechta rasmni bitta "albom" (media group) qilib yuboradi.
+ * Telegram cheklovlari: 2-10 ta element, faqat birinchisida caption
+ * bo'lishi mumkin va albomga inline tugma biriktirib bo'lmaydi -
+ * shuning uchun havola caption ichida HTML <a> sifatida beriladi.
+ *
+ * Bitta rasm qolsa albom yuborilmaydi (Telegram xato beradi) - chaqiruvchi
+ * tomonda oddiy sendPhoto ishlatiladi.
+ */
+export async function sendMediaGroup(
+  chatId: number | string,
+  photoUrls: string[],
+  options?: { caption?: string; threadId?: number }
+): Promise<void> {
+  const photos = photoUrls.filter(Boolean).slice(0, 10);
+  if (photos.length < 2) return;
+
+  await callTelegramApi("sendMediaGroup", {
+    chat_id: chatId,
+    message_thread_id: options?.threadId,
+    media: photos.map((url, index) => ({
+      type: "photo",
+      media: url,
+      ...(index === 0 && options?.caption
+        ? { caption: options.caption, parse_mode: "HTML" }
+        : {}),
+    })),
+  });
+}
+
 /** Berilgan forum-topic (thread) ga xabar yuboradi. */
 export async function sendTopicMessage(
   topicKey: TelegramTopicKey,
@@ -96,7 +132,7 @@ export async function sendTopicMessage(
   const threadId = resolveThreadId(await resolveTopicConfig(), topicKey);
 
   return callTelegramApi<SentMessage>("sendMessage", {
-    chat_id: getChatId(),
+    chat_id: await getChatId(),
     message_thread_id: threadId,
     text,
     parse_mode: "HTML",
@@ -111,7 +147,7 @@ export async function editTopicMessageText(
   replyMarkup?: InlineKeyboardMarkup
 ): Promise<void> {
   await callTelegramApi("editMessageText", {
-    chat_id: getChatId(),
+    chat_id: await getChatId(),
     message_id: messageId,
     text,
     parse_mode: "HTML",
@@ -175,7 +211,7 @@ export async function downloadTelegramFile(
   const filePath = info.file_path ?? "";
   if (!filePath) throw new Error("Telegram fayl yo'li topilmadi.");
 
-  const response = await fetch(`${TELEGRAM_API_BASE}/file/bot${getBotToken()}/${filePath}`, {
+  const response = await fetch(`${TELEGRAM_API_BASE}/file/bot${await getBotToken()}/${filePath}`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(`Telegram faylini yuklab bo'lmadi (HTTP ${response.status}).`);

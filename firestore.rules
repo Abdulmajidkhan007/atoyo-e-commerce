@@ -105,6 +105,22 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Telegram "Kirim" topic'idagi albom holati (vaqtinchalik) - faqat server.
+    match /intakeAlbums/{mediaGroupId} {
+      allow read, write: if false;
+    }
+
+    // Sozlamalarni o'zgartirish uchun bir martalik jumboq - faqat server.
+    match /adminChallenges/{challengeId} {
+      allow read, write: if false;
+    }
+
+    // Maxfiy kalitlar (bot tokeni, webhook siri...) - clientga hech qachon
+    // ochilmaydi, faqat server (Admin SDK) o'qiydi va yozadi.
+    match /secrets/{docId} {
+      allow read, write: if false;
+    }
+
     // Filtr ro'yxatlari (brend/davlat) - hamma o'qiy oladi, server yozadi.
     match /metadata/{docId} {
       allow read: if true;

@@ -6,6 +6,7 @@ import {
   sendChatMessageWithReplyKeyboard,
   removeReplyKeyboard,
   isChatMember,
+  sendMediaGroup,
 } from "./bot";
 import { getRequiredChannels } from "./required-channels";
 import { createOrder, OrderValidationError } from "@/lib/orders/create-order";
@@ -409,9 +410,24 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
     { text: t.cart, callback_data: "crt" },
   ]);
 
+  // Mahsulotda bir nechta rasm bo'lsa - avval albom, keyin tugmali
+  // kartochka (albomga inline tugma biriktirib bo'lmaydi). Albom
+  // yuborilmasa ham kartochka baribir chiqadi.
+  const gallery = (product.images ?? []).filter(Boolean).slice(0, 10);
+  let sentGallery = false;
+  if (gallery.length > 1) {
+    try {
+      await sendMediaGroup(chatId, gallery);
+      sentGallery = true;
+    } catch (error) {
+      console.error("Mahsulot albomini yuborishda xato:", error);
+    }
+  }
+
   await sendChatMessage(chatId, lines.join("\n"), {
     replyMarkup: { inline_keyboard: rows },
-    photoUrl: product.thumbnailUrl || undefined,
+    // Albom yuborilgan bo'lsa birinchi rasm takrorlanmaydi.
+    photoUrl: sentGallery ? undefined : gallery[0] || product.thumbnailUrl || undefined,
   });
 }
 

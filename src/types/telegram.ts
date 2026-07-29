@@ -1,4 +1,4 @@
-export type TelegramTopicKey = "orders" | "contact" | "subscribers" | "actions";
+export type TelegramTopicKey = "orders" | "contact" | "subscribers" | "actions" | "intake";
 
 export interface TelegramTopicConfig {
   orders: number;
@@ -6,6 +6,11 @@ export interface TelegramTopicConfig {
   subscribers: number;
   /** Sayt/botdagi barcha hodisalar (ro'yxatdan o'tish, o'chirish, kirim...) tushadigan topic. */
   actions: number;
+  /**
+   * "Kirim" topic'i: admin shu yerga rasm(lar) + izoh tashlasa, bot
+   * mahsulotni katalogga qo'shadi (src/lib/telegram/product-intake.ts).
+   */
+  intake: number;
 }
 
 /** Telegram webhook orqali keladigan callback_query payloadi (inline tugmalar) */
