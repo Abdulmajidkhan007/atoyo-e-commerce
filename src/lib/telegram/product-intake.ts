@@ -38,6 +38,13 @@ import type { StockIntake } from "@/types/intake";
 const MAX_IMAGES = 10;
 /** Albom hujjati shuncha vaqtdan keyin keraksiz - tozalash uchun belgi. */
 const ALBUM_TTL_MS = 60 * 60 * 1000;
+/**
+ * Albomdagi rasmlar Telegramdan alohida-alohida (odatda 1 soniya ichida)
+ * keladi. Kanalga e'lon HAMMASI kelgandan keyin ketishi kerak, aks holda
+ * postda bitta rasm qolib ketadi. Shuning uchun oxirgi rasmdan keyin
+ * shuncha kutamiz va faqat eng oxirgi chaqiruv e'lon qiladi.
+ */
+const ALBUM_SETTLE_MS = 2500;
 
 interface AlbumDoc {
   productId?: string;
@@ -45,6 +52,10 @@ interface AlbumDoc {
   pendingPhotos?: string[];
   /** Izoh xato bo'lsa - albomning qolgan rasmlari e'tiborsiz qoladi. */
   rejected?: boolean;
+  /** Oxirgi rasm qachon biriktirilgani (e'lonni kutish uchun). */
+  lastPhotoAt?: number;
+  /** E'lon yuborilganmi (bir albom - bitta e'lon). */
+  announced?: boolean;
   createdAt: number;
 }
 
@@ -85,6 +96,38 @@ async function attachPhoto(productId: string, fileId: string): Promise<void> {
       updatedAt: Date.now(),
     });
   });
+}
+
+/**
+ * Albom tugashini kutib, kanalga e'lon qiladi.
+ *
+ * Har bir albom rasmi alohida webhook chaqiruvi bo'lgani uchun bu
+ * funksiya bir necha marta parallel ishga tushadi: har biri kutadi va
+ * o'zidan keyin yangi rasm kelgan bo'lsa - jim chekinadi. E'lonni
+ * "band qilish" tranzaksiyada bo'ladi, ya'ni e'lon aniq bir marta ketadi.
+ */
+async function announceWhenAlbumSettles(mediaGroupId: string, productId: string): Promise<void> {
+  const ref = albumRef(mediaGroupId);
+  await ref.set({ productId, lastPhotoAt: Date.now(), createdAt: Date.now() }, { merge: true });
+  await new Promise((resolve) => setTimeout(resolve, ALBUM_SETTLE_MS));
+
+  const db = getAdminDb();
+  const claimed = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.data() as AlbumDoc | undefined;
+    if (!data || data.announced) return false;
+    // Kutish oralig'ida yangi rasm kelgan bo'lsa - e'lonni o'sha chaqiruv qiladi.
+    if (Date.now() - (data.lastPhotoAt ?? 0) < ALBUM_SETTLE_MS - 300) return false;
+    tx.set(ref, { announced: true }, { merge: true });
+    return true;
+  });
+  if (!claimed) return;
+
+  const snap = await db.collection("products").doc(productId).get();
+  if (!snap.exists) return;
+  await announceProduct({ id: snap.id, ...snap.data() } as Product, "new").catch((error) =>
+    console.error("Kanalga e'lon (albom) xatosi:", error)
+  );
 }
 
 /** Kirim tarixiga yozuv (sayt: /admin/katalog/kirim/tarix). */
@@ -172,6 +215,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
       await attachPhoto(album.productId, photoFileId).catch((error) =>
         console.error("Albom rasmini qo'shishda xato:", error)
       );
+      // Albom tugagach - kanalga e'lon (barcha rasmlar bilan).
+      await announceWhenAlbumSettles(mediaGroupId, album.productId);
       return true;
     }
 
@@ -186,6 +231,20 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
   }
 
   // 3) Izohli xabar - mahsulotni yaratamiz.
+  //    Telegram javob kechiksa bir xil update'ni qayta yuborishi mumkin;
+  //    albom uchun mahsulot allaqachon yaratilgan bo'lsa - ikkinchisini
+  //    yaratmay, rasmni o'shanga qo'shamiz.
+  if (mediaGroupId) {
+    const existing = (await albumRef(mediaGroupId).get()).data() as AlbumDoc | undefined;
+    if (existing?.productId) {
+      await attachPhoto(existing.productId, photoFileId).catch((error) =>
+        console.error("Albom rasmini qo'shishda xato:", error)
+      );
+      await announceWhenAlbumSettles(mediaGroupId, existing.productId);
+      return true;
+    }
+  }
+
   const parsed = parseIntakeCaption(caption);
 
   if (parsed.missing.length > 0) {
@@ -279,19 +338,17 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     ),
   ]);
 
-  // Kanalga e'lon - rasmlar biriktirilgandan keyingi holat bilan.
   const fresh = await ref.get();
   const saved = { id: fresh.id, ...fresh.data() } as Product;
-  await announceProduct(saved, "new").catch((error) =>
-    console.error("Kanalga e'lon (kirim) xatosi:", error)
-  );
 
   const summary = [
     `✅ <b>Katalogga qo'shildi:</b> ${escapeHtml(saved.name)}`,
     `ID: <code>${saved.id}</code>`,
     `💰 ${formatSom(saved.price)} | 📦 ${saved.stock} dona`,
     `🚚 Kimdan: ${escapeHtml(saved.supplier ?? "")}`,
-    `🖼 Rasm: ${saved.images.length} ta${photoError ? " (ba'zi rasmlar yuklanmadi)" : ""}`,
+    mediaGroupId
+      ? "🖼 Rasmlar yuklanmoqda — hammasi tayyor bo'lgach kanalga albom bo'lib chiqadi."
+      : `🖼 Rasm: ${saved.images.length} ta${photoError ? " (ba'zi rasmlar yuklanmadi)" : ""}`,
     parsed.categoryGuessed ? "🏷 Kategoriya nomdan taxmin qilindi — kerak bo'lsa tugmadan o'zgartiring." : "",
     ...parsed.warnings.map((warning) => `⚠️ ${warning}`),
   ]
@@ -305,6 +362,16 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     product: saved,
     header: summary,
   });
+
+  // Kanalga e'lon: albom bo'lsa qolgan rasmlar kelishini kutamiz,
+  // yolg'iz rasm bo'lsa - darhol.
+  if (mediaGroupId) {
+    await announceWhenAlbumSettles(mediaGroupId, saved.id);
+  } else {
+    await announceProduct(saved, "new").catch((error) =>
+      console.error("Kanalga e'lon (kirim) xatosi:", error)
+    );
+  }
 
   // Eski albom hujjatlarini tozalab turamiz (fon rejimida, xatosiz).
   void cleanupOldAlbums();

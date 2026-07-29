@@ -52,13 +52,20 @@ Ixtiyoriy qatorlar ham darhol yozilsa bo'ladi: `Brend:`, `Davlat:`,
 
 ### Keyin nima bo'ladi
 
-1. Mahsulot **darhol katalogga tushadi** va e'lon kanaliga chiqadi
-   (rasmlar albom bo'lib ketadi).
+1. Mahsulot **darhol katalogga tushadi**. Kanalga e'lon esa albomdagi
+   **hamma rasm kelib bo'lgach** chiqadi (Telegram albom rasmlarini
+   alohida-alohida yuboradi — bot ~2.5 soniya kutib, keyin bittagina
+   albom-post tashlaydi).
 2. Bot javob beradi: qo'shilgani, ID si va **"Qolgan ma'lumotlarni ham
    to'ldirasizmi?"** degan savol — ostida tugmalar:
    🏷 Kategoriya · ™️ Brend · 🌍 Davlat · 📝 Tavsif · 🔻 Chegirma ·
    ⏳ Chegirma muddati · 🖼 Yana rasm · ✏️ Nomni tuzatish · ✅ Yetarli.
    Bularning hammasi ixtiyoriy — bosmasangiz ham mahsulot ishlayveradi.
+   Har bir to'ldirishdan keyin **kanaldagi e'lon ham yangilanadi**: yangi
+   post tashlanmaydi, avvalgi postning matni tahrirlanadi. Faqat yangi
+   rasm qo'shilsa post qaytadan tashlanadi (yuborilgan albomga rasm
+   qo'shib bo'lmaydi). "✅ Yetarli, tayyor" tugmasi ham e'lonni oxirgi
+   holat bilan tekshirib chiqadi.
 3. Kirim **tarixga** yoziladi (`/admin/katalog/kirim/tarix`): kim, qachon,
    kimdan, nechta.
 

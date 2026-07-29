@@ -1,6 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { sendChatMessage, sendMediaGroup } from "./bot";
+import { sendChatMessage, sendMediaGroup, editMessageCaptionOrText, deleteMessage } from "./bot";
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import type { Product } from "@/types/product";
 import type { BlogPost } from "@/types/content";
@@ -44,9 +44,9 @@ export async function resolveChannelId(): Promise<string | null> {
 async function publish(
   text: string,
   options: { photoUrl?: string; photoUrls?: string[]; buttonText: string; buttonUrl: string }
-) {
+): Promise<{ chatId: string; messageId: number; hasPhoto: boolean } | null> {
   const channelId = await resolveChannelId();
-  if (!channelId) return;
+  if (!channelId) return null;
 
   // Bir nechta rasm bo'lsa - albom. Albomga inline tugma qo'shib
   // bo'lmaydi, shuning uchun havola caption ichida beriladi.
@@ -54,25 +54,27 @@ async function publish(
 
   try {
     if (gallery.length > 1) {
-      await sendMediaGroup(channelId, gallery, {
+      const sent = await sendMediaGroup(channelId, gallery, {
         caption: `${text}\n\n<a href="${options.buttonUrl}">${options.buttonText}</a>`,
       });
-      return;
+      const first = sent[0];
+      return first ? { chatId: channelId, messageId: first.message_id, hasPhoto: true } : null;
     }
 
-    await sendChatMessage(channelId, text, {
-      photoUrl: gallery[0] ?? options.photoUrl ?? undefined,
+    const photoUrl = gallery[0] ?? options.photoUrl ?? undefined;
+    const sent = await sendChatMessage(channelId, text, {
+      photoUrl,
       replyMarkup: { inline_keyboard: [[{ text: options.buttonText, url: options.buttonUrl }]] },
     });
+    return { chatId: channelId, messageId: sent.message_id, hasPhoto: Boolean(photoUrl) };
   } catch (error) {
     console.error("Kanalga e'lon yuborishda xato:", error);
+    return null;
   }
 }
 
-/** Yangi yoki tahrirlangan mahsulot e'loni. */
-export async function announceProduct(product: Product, mode: "new" | "updated" = "new"): Promise<void> {
-  if (!product.isActive) return;
-
+/** Mahsulot e'loni matni (yangi post uchun ham, tahrir uchun ham bir xil). */
+function buildProductText(product: Product, mode: "new" | "updated"): string {
   const hasDiscount = isDiscountActive(product);
   const priceLine = hasDiscount
     ? `💰 <s>${formatSom(product.price)}</s> <b>${formatSom(effectivePrice(product))}</b>`
@@ -88,20 +90,97 @@ export async function announceProduct(product: Product, mode: "new" | "updated" 
   }
   lines.push(priceLine);
   if (product.stock > 0) lines.push(`📦 Mavjud: ${product.stock} dona`);
+  if (product.material) lines.push(`🧱 ${escapeHtml(MATERIAL_LABELS[product.material] ?? product.material)}`);
   if (product.description) lines.push(``, escapeHtml(product.description.slice(0, 400)));
 
+  return lines.join("\n");
+}
+
+const MATERIAL_LABELS: Record<string, string> = {
+  polypropylene: "Polipropilen",
+  "metal-plastic": "Metalloplastik",
+  steel: "Po'lat",
+  copper: "Mis",
+  brass: "Latun",
+  "cast-iron": "Cho'yan",
+  pvc: "PVX",
+};
+
+/**
+ * Yangi yoki tahrirlangan mahsulot e'loni.
+ *
+ * Mahsulot yangilanganda kanalga YANGI post tashlanmaydi - avvalgi
+ * postning izohi tahrirlanadi (kanal takror e'lonlar bilan to'lib
+ * ketmasligi uchun). Rasmlar soni o'zgargan bo'lsa (yangi rasm
+ * qo'shilgan) - eski post o'chirilib, yangisi tashlanadi, chunki
+ * yuborilgan albomga rasm qo'shib bo'lmaydi.
+ */
+export async function announceProduct(product: Product, mode: "new" | "updated" = "new"): Promise<void> {
+  if (!product.isActive) return;
+
+  const gallery = (product.images ?? []).filter(Boolean).slice(0, 10);
+  const text = buildProductText(product, mode);
   // Albom caption'i 1024 belgi bilan cheklangan - tavsif uzun bo'lsa
   // e'lon jimgina kesilib qolmasligi uchun qisqartiramiz.
-  const gallery = (product.images ?? []).filter(Boolean).slice(0, 10);
-  const text = lines.join("\n");
   const caption = gallery.length > 1 && text.length > 850 ? `${text.slice(0, 847)}...` : text;
+  const buttonUrl = `${siteUrl()}/mahsulot/${product.id}`;
+  const buttonText = "🛒 Saytda ko'rish";
 
-  await publish(caption, {
+  const posted =
+    product.channelChatId && product.channelMessageId
+      ? {
+          chatId: product.channelChatId,
+          messageId: product.channelMessageId,
+          photoCount: product.channelPhotoCount ?? 0,
+        }
+      : null;
+
+  // 1) Post bor va rasmlar o'zgarmagan - o'shanisini tahrirlaymiz.
+  if (posted && posted.photoCount === gallery.length) {
+    try {
+      await editMessageCaptionOrText({
+        chatId: posted.chatId,
+        messageId: posted.messageId,
+        hasPhoto: gallery.length > 0,
+        text: gallery.length > 1 ? `${caption}\n\n<a href="${buttonUrl}">${buttonText}</a>` : caption,
+        replyMarkup:
+          gallery.length > 1
+            ? undefined
+            : { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] },
+      });
+      return;
+    } catch (error) {
+      // Matn o'zgarmagan bo'lsa Telegram xato beradi - bu xato emas.
+      if (error instanceof Error && /not modified/i.test(error.message)) return;
+      // Xabar o'chirilgan/juda eski bo'lsa - pastda yangisini tashlaymiz.
+      console.error("Kanaldagi e'lonni tahrirlashda xato:", error);
+    }
+  }
+
+  // 2) Rasmlar soni o'zgargan bo'lsa eski postni olib tashlaymiz.
+  if (posted && posted.photoCount !== gallery.length) {
+    await deleteMessage(posted.chatId, posted.messageId).catch(() => {});
+  }
+
+  const sent = await publish(caption, {
     photoUrl: product.thumbnailUrl,
     photoUrls: gallery,
-    buttonText: "🛒 Saytda ko'rish",
-    buttonUrl: `${siteUrl()}/mahsulot/${product.id}`,
+    buttonText,
+    buttonUrl,
   });
+
+  // Keyingi tahrirlarda shu postni topish uchun ID sini saqlab qo'yamiz.
+  if (sent) {
+    await getAdminDb()
+      .collection("products")
+      .doc(product.id)
+      .update({
+        channelChatId: sent.chatId,
+        channelMessageId: sent.messageId,
+        channelPhotoCount: gallery.length,
+      })
+      .catch((error) => console.error("E'lon ID sini saqlashda xato:", error));
+  }
 }
 
 /** Yangi yoki tahrirlangan blog posti e'loni. */

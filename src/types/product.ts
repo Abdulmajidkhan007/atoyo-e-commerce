@@ -50,6 +50,14 @@ export interface Product {
   isActive: boolean;
   /** Necha marta buyurtma qilingani - admin tahlillarida "eng ko'p sotilgan" saralash uchun. */
   salesCount: number;
+  /**
+   * E'lon kanalidagi post - mahsulot yangilanganda yangi post tashlamay,
+   * o'shanisi tahrirlanadi (`lib/telegram/channel.ts`).
+   */
+  channelChatId?: string;
+  channelMessageId?: number;
+  /** E'lon paytidagi rasm soni - o'zgargan bo'lsa post qaytadan tashlanadi. */
+  channelPhotoCount?: number;
   /** Sharhlar reytingi (POST /api/products/[id]/reviews avtomatik yangilaydi). */
   ratingSum?: number;
   ratingCount?: number;

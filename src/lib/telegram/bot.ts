@@ -106,11 +106,11 @@ export async function sendMediaGroup(
   chatId: number | string,
   photoUrls: string[],
   options?: { caption?: string; threadId?: number }
-): Promise<void> {
+): Promise<SentMessage[]> {
   const photos = photoUrls.filter(Boolean).slice(0, 10);
-  if (photos.length < 2) return;
+  if (photos.length < 2) return [];
 
-  await callTelegramApi("sendMediaGroup", {
+  return callTelegramApi<SentMessage[]>("sendMediaGroup", {
     chat_id: chatId,
     message_thread_id: options?.threadId,
     media: photos.map((url, index) => ({
@@ -139,6 +139,33 @@ export async function sendTopicMessage(
     disable_web_page_preview: false,
     reply_markup: replyMarkup,
   });
+}
+
+/**
+ * Yuborilgan xabar matnini/izohini yangilaydi. Kanaldagi e'lon
+ * o'zgarganda yangi post tashlamaslik uchun ishlatiladi (albomda
+ * birinchi - izohli - xabar tahrirlanadi).
+ */
+export async function editMessageCaptionOrText(params: {
+  chatId: number | string;
+  messageId: number;
+  text: string;
+  /** Xabar rasm bilan yuborilganmi (unda caption tahrirlanadi). */
+  hasPhoto: boolean;
+  replyMarkup?: InlineKeyboardMarkup;
+}): Promise<void> {
+  await callTelegramApi(params.hasPhoto ? "editMessageCaption" : "editMessageText", {
+    chat_id: params.chatId,
+    message_id: params.messageId,
+    ...(params.hasPhoto ? { caption: params.text } : { text: params.text }),
+    parse_mode: "HTML",
+    reply_markup: params.replyMarkup,
+  });
+}
+
+/** Xabarni o'chiradi (bot o'zi yuborgan xabarni 48 soat ichida o'chira oladi). */
+export async function deleteMessage(chatId: number | string, messageId: number): Promise<void> {
+  await callTelegramApi("deleteMessage", { chat_id: chatId, message_id: messageId });
 }
 
 export async function editTopicMessageText(

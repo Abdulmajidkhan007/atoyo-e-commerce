@@ -455,16 +455,18 @@ export async function handleAdminSessionMessage(params: {
       });
       return true;
     }
+    let photoAdded = false;
     if (session.productId) {
       try {
         await attachTelegramPhoto(session.productId, photoFileId);
-        await sendChatMessage(chatId, "🖼 Rasm yangilandi ✅", { threadId: session.threadId });
+        photoAdded = true;
+        await sendChatMessage(chatId, "🖼 Rasm qo'shildi ✅", { threadId: session.threadId });
       } catch (error) {
         console.error("Rasm yangilashda xato:", error);
         await sendChatMessage(chatId, "⚠️ Rasm yuklanmadi. Qayta urinib ko'ring.", { threadId: session.threadId });
       }
     }
-    await reloadEditMenu(userId, session);
+    await reloadEditMenu(userId, session, photoAdded);
     return true;
   }
 
@@ -654,6 +656,20 @@ export async function handleAdminSessionCallback(params: {
   if (action === "done") {
     await clearSession(userId);
     await answerCallbackQuery(callbackQueryId, "Tayyor ✅");
+
+    // Ishonchli yakun: kanalga e'lon hali chiqmagan bo'lsa (masalan
+    // albom kutilayotganda uzilib qolgan bo'lsa) shu yerda chiqadi,
+    // chiqqan bo'lsa - oxirgi holat bilan yangilanadi.
+    if (session.productId) {
+      const snap = await getAdminDb().collection("products").doc(session.productId).get();
+      if (snap.exists) {
+        const product = { id: snap.id, ...snap.data() } as Product;
+        await announceProduct(product, product.channelMessageId ? "updated" : "new").catch((error) =>
+          console.error("Kanalga e'lon (yakun) xatosi:", error)
+        );
+      }
+    }
+
     await sendChatMessage(session.chatId, "✅ Tahrirlash yakunlandi.", { threadId: session.threadId });
     return;
   }
@@ -666,7 +682,7 @@ export async function handleAdminSessionCallback(params: {
       await advanceNewProduct(userId, session);
     } else if (session.flow === "edit_product" && session.productId) {
       await getAdminDb().collection("products").doc(session.productId).update({ category: value, updatedAt: Date.now() });
-      await reloadEditMenu(userId, session);
+      await reloadEditMenu(userId, session, true);
     }
     return;
   }
@@ -679,7 +695,7 @@ export async function handleAdminSessionCallback(params: {
       await advanceNewProduct(userId, session);
     } else if (session.flow === "edit_product" && session.productId) {
       await getAdminDb().collection("products").doc(session.productId).update({ material: value, updatedAt: Date.now() });
-      await reloadEditMenu(userId, session);
+      await reloadEditMenu(userId, session, true);
     }
     return;
   }
@@ -725,11 +741,24 @@ export async function handleAdminSessionCallback(params: {
   await answerCallbackQuery(callbackQueryId);
 }
 
-async function reloadEditMenu(userId: number, session: AdminSession): Promise<void> {
+async function reloadEditMenu(
+  userId: number,
+  session: AdminSession,
+  /** Mahsulot o'zgargan bo'lsa - kanaldagi e'lon ham yangilanadi. */
+  changed = false
+): Promise<void> {
   session.step = "menu";
   session.editField = undefined;
   await saveSession(userId, session);
   if (!session.productId) return;
   const snap = await getAdminDb().collection("products").doc(session.productId).get();
-  if (snap.exists) await sendEditMenu(session, { id: snap.id, ...snap.data() } as Product);
+  if (!snap.exists) return;
+
+  const product = { id: snap.id, ...snap.data() } as Product;
+  if (changed) {
+    await announceProduct(product, "updated").catch((error) =>
+      console.error("Kanaldagi e'lonni yangilashda xato:", error)
+    );
+  }
+  await sendEditMenu(session, product);
 }
