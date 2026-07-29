@@ -12,10 +12,11 @@ export const runtime = "nodejs";
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(4000).optional(),
-  category: z
-    .enum(["pipes", "fittings", "faucets", "shower-systems", "boilers", "radiators", "pumps", "sanitary-ware"])
-    .optional(),
-  material: z.enum(["polypropylene", "metal-plastic", "steel", "copper", "brass", "cast-iron", "pvc"]).optional(),
+  // Admin qo'shgan yangi turlar ham bo'lishi mumkin (metadata/taxonomy).
+  category: z.string().min(1).max(60).optional(),
+  material: z.string().min(1).max(60).optional(),
+  /** Sotish turi: dona / metr / kg ... */
+  unit: z.string().min(1).max(30).optional(),
   brand: z.string().max(120).optional(),
   manufacturerCountry: z.string().max(120).optional(),
   supplier: z.string().max(120).optional(),
@@ -60,6 +61,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.description !== undefined) updates.description = d.description.trim();
   if (d.category !== undefined) updates.category = d.category;
   if (d.material !== undefined) updates.material = d.material;
+  if (d.unit !== undefined) updates.unit = d.unit;
   if (d.brand !== undefined) updates.brand = d.brand.trim();
   if (d.manufacturerCountry !== undefined) updates.manufacturerCountry = d.manufacturerCountry.trim();
   if (d.supplier !== undefined) updates.supplier = d.supplier.trim();

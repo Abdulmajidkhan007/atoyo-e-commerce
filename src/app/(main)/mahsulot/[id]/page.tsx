@@ -4,6 +4,8 @@ import { Chip } from "@mui/material";
 import { getProductById } from "@/lib/firebase/admin-products";
 import { getDictionary } from "@/lib/i18n/server";
 import { isDiscountActive, effectivePrice } from "@/lib/products/pricing";
+import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { labelOf } from "@/lib/products/taxonomy";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { FavoriteButton } from "@/components/product/FavoriteButton";
 import { ProductGallery } from "@/components/product/ProductGallery";
@@ -48,9 +50,18 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
 
 export default async function ProductPage({ params }: ProductPageParams) {
   const { id } = await params;
-  const [product, dict] = await Promise.all([getProductById(id), getDictionary()]);
+  const [product, dict, taxonomy] = await Promise.all([
+    getProductById(id),
+    getDictionary(),
+    getTaxonomy(),
+  ]);
 
   if (!product) notFound();
+
+  // Admin qo'shgan kategoriya/sotish turi lug'atda bo'lmasligi mumkin -
+  // bunday holda `metadata/taxonomy` dagi nom ishlatiladi.
+  const categoryLabel = labelOf(taxonomy.categories, product.category);
+  const unitLabel = labelOf(taxonomy.units, product.unit) || "dona";
 
   // Chegirma muddati o'tgan bo'lsa - oddiy narx ko'rsatiladi.
   const hasDiscount = isDiscountActive(product);
@@ -64,7 +75,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
         />
 
         <div className="flex flex-col gap-3">
-          <Chip label={dict.categories[product.category] ?? product.category} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
+          <Chip label={(dict.categories as Record<string, string>)[product.category] ?? categoryLabel} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
 
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{product.name}</h1>
@@ -84,6 +95,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
             <span className="text-2xl font-bold text-navy-900 dark:text-white">
               {formatSom(hasDiscount ? product.discountPrice! : product.price)}
             </span>
+            <span className="text-sm text-navy-300">/ {unitLabel}</span>
           </div>
 
           <p className="text-sm text-navy-500 dark:text-navy-100">{product.description}</p>
@@ -110,12 +122,23 @@ export default async function ProductPage({ params }: ProductPageParams) {
           </dl>
 
           <p className="text-sm text-navy-300">
-            {dict.product.inStock}: <span className="font-medium text-navy-900 dark:text-white">{product.stock} {dict.product.unit}</span>
+            {dict.product.inStock}: <span className="font-medium text-navy-900 dark:text-white">{product.stock} {unitLabel}</span>
           </p>
 
           <AddToCartButton product={product} />
         </div>
       </div>
+
+      {(product.videos ?? []).length > 0 && (
+        <div className="mt-8 flex flex-col gap-3">
+          <h2 className="text-lg font-semibold text-navy-900 dark:text-white">Video</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(product.videos ?? []).map((url) => (
+              <video key={url} src={url} controls playsInline preload="metadata" className="w-full rounded-xl2 border border-navy-100 dark:border-navy-500" />
+            ))}
+          </div>
+        </div>
+      )}
 
       <ProductReviews productId={product.id} />
     </section>

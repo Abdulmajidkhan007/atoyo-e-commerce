@@ -13,17 +13,12 @@ export const runtime = "nodejs";
 const productSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(4000).default(""),
-  category: z.enum([
-    "pipes",
-    "fittings",
-    "faucets",
-    "shower-systems",
-    "boilers",
-    "radiators",
-    "pumps",
-    "sanitary-ware",
-  ]),
-  material: z.enum(["polypropylene", "metal-plastic", "steel", "copper", "brass", "cast-iron", "pvc"]),
+  // Kategoriya/material admin qo'shgan yangi turlar ham bo'lishi mumkin
+  // (metadata/taxonomy) - shuning uchun ro'yxat emas, slug tekshiriladi.
+  category: z.string().min(1).max(60),
+  material: z.string().min(1).max(60),
+  /** Sotish turi: dona / metr / kg ... - majburiy. */
+  unit: z.string().min(1).max(30),
   brand: z.string().max(120).default(""),
   manufacturerCountry: z.string().max(120).default(""),
   supplier: z.string().max(120).default(""),
@@ -75,6 +70,7 @@ export async function POST(request: Request) {
     manufacturerCountry: d.manufacturerCountry.trim(),
     supplier: d.supplier.trim(),
     material: d.material,
+    unit: d.unit,
     dimensions: {
       ...(d.diameterMm !== undefined ? { diameterMm: d.diameterMm } : {}),
       ...(d.lengthMm !== undefined ? { lengthMm: d.lengthMm } : {}),

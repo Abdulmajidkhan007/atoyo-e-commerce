@@ -110,7 +110,7 @@ export function FilterPanel({ variant = "sidebar" }: { variant?: "sidebar" | "pl
         >
           <MenuItem value="">{dict.filters.all}</MenuItem>
           {CATEGORY_VALUES.map((value) => (
-            <MenuItem key={value} value={value}>{dict.categories[value]}</MenuItem>
+            <MenuItem key={value} value={value}>{(dict.categories as Record<string, string>)[value] ?? value}</MenuItem>
           ))}
         </Select>
       </FormControl>

@@ -30,6 +30,8 @@ interface TelegramMessage {
   location?: { latitude: number; longitude: number };
   /** Rasm o'lchamlari ro'yxati - oxirgisi eng katta. */
   photo?: { file_id: string }[];
+  /** Video (kirim topic'ida mahsulot videosi sifatida qabul qilinadi). */
+  video?: { file_id: string };
   /** Rasm izohi (albomda faqat bitta xabarda bo'ladi). */
   caption?: string;
   /** Albom (bir nechta rasm bitta post) identifikatori. */
@@ -121,7 +123,10 @@ export async function POST(request: Request) {
 
     // ============ 2) Xabarlar (matn yoki telefon kontakti) ============
     const message = update?.message;
-    if (message && (message.text || message.contact || message.location || message.photo)) {
+    if (
+      message &&
+      (message.text || message.contact || message.location || message.photo || message.video)
+    ) {
       if (isAdminGroupChat(message.chat, staffChatId)) {
         const adminUserId = message.from?.id;
 
@@ -134,6 +139,12 @@ export async function POST(request: Request) {
 
         if (isIntakeTopic && !message.text?.trim().startsWith("/")) {
           const photoFileId = message.photo?.at(-1)?.file_id;
+          const videoFileId = message.video?.file_id;
+          const media = photoFileId
+            ? ({ fileId: photoFileId, kind: "photo" } as const)
+            : videoFileId
+              ? ({ fileId: videoFileId, kind: "video" } as const)
+              : undefined;
           const caption = message.caption ?? message.text;
 
           // Yangi kirim = rasm + izoh. Albom rasmlari (media_group_id)
@@ -142,8 +153,8 @@ export async function POST(request: Request) {
           // matn) avval faol tahrir sessiyasiga imkon beramiz: mahsulot
           // yaratilgandan keyingi "qolgan ma'lumotlar" tugmalari shu
           // topic'da javob kutadi.
-          const isNewIntake = Boolean(photoFileId && caption?.trim());
-          const belongsToAlbum = Boolean(photoFileId && message.media_group_id);
+          const isNewIntake = Boolean(media && caption?.trim());
+          const belongsToAlbum = Boolean(media && message.media_group_id);
 
           if (!isNewIntake && !belongsToAlbum) {
             const handledBySession = await handleAdminSessionMessage({
@@ -164,7 +175,7 @@ export async function POST(request: Request) {
               .filter(Boolean)
               .join(" "),
             caption,
-            photoFileId,
+            media,
             mediaGroupId: message.media_group_id,
           });
           return NextResponse.json({ ok: true });

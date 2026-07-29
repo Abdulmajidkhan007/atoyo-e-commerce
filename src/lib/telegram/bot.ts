@@ -102,24 +102,48 @@ export async function sendChatMessage(
  * Bitta rasm qolsa albom yuborilmaydi (Telegram xato beradi) - chaqiruvchi
  * tomonda oddiy sendPhoto ishlatiladi.
  */
+export interface MediaItem {
+  url: string;
+  type: "photo" | "video";
+}
+
 export async function sendMediaGroup(
   chatId: number | string,
-  photoUrls: string[],
+  items: (string | MediaItem)[],
   options?: { caption?: string; threadId?: number }
 ): Promise<SentMessage[]> {
-  const photos = photoUrls.filter(Boolean).slice(0, 10);
-  if (photos.length < 2) return [];
+  const media = items
+    .map((item) => (typeof item === "string" ? { url: item, type: "photo" as const } : item))
+    .filter((item) => item.url)
+    .slice(0, 10);
+  if (media.length < 2) return [];
 
   return callTelegramApi<SentMessage[]>("sendMediaGroup", {
     chat_id: chatId,
     message_thread_id: options?.threadId,
-    media: photos.map((url, index) => ({
-      type: "photo",
-      media: url,
+    media: media.map((item, index) => ({
+      type: item.type,
+      media: item.url,
       ...(index === 0 && options?.caption
         ? { caption: options.caption, parse_mode: "HTML" }
         : {}),
     })),
+  });
+}
+
+/** Bitta video yuborish (albom bo'lmaganda). */
+export async function sendVideo(
+  chatId: number | string,
+  videoUrl: string,
+  options?: { caption?: string; replyMarkup?: InlineKeyboardMarkup; threadId?: number }
+): Promise<SentMessage> {
+  return callTelegramApi<SentMessage>("sendVideo", {
+    chat_id: chatId,
+    message_thread_id: options?.threadId,
+    video: videoUrl,
+    caption: options?.caption,
+    parse_mode: "HTML",
+    reply_markup: options?.replyMarkup,
   });
 }
 

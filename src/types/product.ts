@@ -1,21 +1,15 @@
-export type ProductMaterial =
-  | "polypropylene"
-  | "metal-plastic"
-  | "steel"
-  | "copper"
-  | "brass"
-  | "cast-iron"
-  | "pvc";
+/**
+ * Material va kategoriya endi qat'iy ro'yxat emas: standart qiymatlar
+ * `lib/products/taxonomy.ts` da, admin panel esa yangilarini qo'sha
+ * oladi (Firestore `metadata/taxonomy`). Shuning uchun bu yerda oddiy
+ * slug (matn) turadi - eski qiymatlar ham shundayligicha ishlaydi.
+ */
+export type ProductMaterial = string;
 
-export type ProductCategory =
-  | "pipes" // quvurlar
-  | "fittings" // muftalar
-  | "faucets" // kranlar
-  | "shower-systems" // dush tizimlari
-  | "boilers" // isitish qozonlari
-  | "radiators"
-  | "pumps"
-  | "sanitary-ware";
+export type ProductCategory = string;
+
+/** Sotish turi: dona, metr, kg, litr... (`taxonomy.ts` dagi `units`). */
+export type ProductUnit = string;
 
 export interface ProductDimensions {
   diameterMm?: number;
@@ -38,6 +32,8 @@ export interface Product {
   /** Mahsulot kimdan kelgan (yetkazib beruvchi) - kirim hujjati uchun. */
   supplier?: string;
   material: ProductMaterial;
+  /** Mahsulot nima bilan sotiladi: dona / metr / kg ... (standart "dona"). */
+  unit: ProductUnit;
   dimensions: ProductDimensions;
   price: number;
   discountPrice?: number | null;
@@ -46,6 +42,8 @@ export interface Product {
   currency: "UZS";
   stock: number;
   images: string[];
+  /** Mahsulot videolari (Telegram kirimida yuborilgan qisqa videolar). */
+  videos?: string[];
   thumbnailUrl: string;
   isActive: boolean;
   /** Necha marta buyurtma qilingani - admin tahlillarida "eng ko'p sotilgan" saralash uchun. */

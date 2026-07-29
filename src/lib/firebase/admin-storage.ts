@@ -5,6 +5,9 @@ import { getAdminStorage } from "./admin";
 const BUCKET_NAME = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "";
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+/** Telegram bot API fayl yuklashning o'zi 20 MB bilan cheklangan. */
+const MAX_VIDEO_BYTES = 20 * 1024 * 1024;
+const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 
 /**
  * Rasmni Admin SDK orqali Firebase Storage'ga yuklaydi va ochiq
@@ -25,7 +28,14 @@ export async function uploadImageAdmin(
   if (file.buffer.length > MAX_IMAGE_BYTES) {
     throw new Error("Rasm hajmi 8MB dan oshmasligi kerak.");
   }
+  return saveToStorage(folder, file);
+}
 
+/** Faylni Storage'ga yozib, ochiq download URL'ini qaytaradi. */
+async function saveToStorage(
+  folder: string,
+  file: { buffer: Buffer; contentType: string; originalName: string }
+): Promise<string> {
   const safeName = file.originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-60);
   const safeFolder = folder.replace(/[^a-zA-Z0-9/_-]/g, "_");
   const filePath = `${safeFolder}/${randomUUID()}-${safeName}`;
@@ -46,6 +56,23 @@ export async function uploadImageAdmin(
   return `https://firebasestorage.googleapis.com/v0/b/${BUCKET_NAME}/o/${encodeURIComponent(
     filePath
   )}?alt=media&token=${token}`;
+}
+
+/**
+ * Mahsulot videosi (Telegramdan kelgan qisqa video/reels).
+ * Rasm bilan bir xil "download token" URL qaytadi.
+ */
+export async function uploadVideoAdmin(
+  folder: string,
+  file: { buffer: Buffer; contentType: string; originalName: string }
+): Promise<string> {
+  if (!ALLOWED_VIDEO_TYPES.includes(file.contentType)) {
+    throw new Error("Faqat MP4, MOV yoki WebM video qabul qilinadi.");
+  }
+  if (file.buffer.length > MAX_VIDEO_BYTES) {
+    throw new Error("Video hajmi 20MB dan oshmasligi kerak.");
+  }
+  return saveToStorage(folder, file);
 }
 
 /** Mahsulot rasmi uchun qulaylik funksiyasi. */

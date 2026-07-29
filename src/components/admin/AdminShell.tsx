@@ -9,6 +9,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -27,6 +28,7 @@ import { DEFAULT_ADMIN_PERMISSIONS, type AdminPermissions, type PermissionKey } 
 const NAV_ITEMS: { href: string; label: string; Icon: typeof DashboardOutlinedIcon; perm?: PermissionKey }[] = [
   { href: "/admin", label: "Dashboard", Icon: DashboardOutlinedIcon },
   { href: "/admin/katalog", label: "Katalog", Icon: Inventory2OutlinedIcon, perm: "products" },
+  { href: "/admin/katalog/turlar", label: "Turlar", Icon: CategoryOutlinedIcon, perm: "products" },
   { href: "/admin/buyurtmalar", label: "Buyurtmalar", Icon: ReceiptLongOutlinedIcon, perm: "orders" },
   { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar", Icon: GroupOutlinedIcon, perm: "users" },
   { href: "/admin/blog", label: "Blog", Icon: ArticleOutlinedIcon, perm: "blog" },

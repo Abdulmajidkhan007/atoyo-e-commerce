@@ -1,3 +1,4 @@
+import { matchTaxonomy, type Taxonomy } from "@/lib/products/taxonomy";
 import type { ProductCategory, ProductMaterial } from "@/types/product";
 
 /**
@@ -28,6 +29,7 @@ export type IntakeField =
   | "description"
   | "discount"
   | "discountUntil"
+  | "unit"
   | "diameter"
   | "length"
   | "weight";
@@ -117,6 +119,13 @@ const FIELD_ALIASES: Record<string, IntakeField> = {
   uzunlik: "length",
   uzunligi: "length",
   length: "length",
+
+  "sotish turi": "unit",
+  "olchov": "unit",
+  "olchov birligi": "unit",
+  birlik: "unit",
+  unit: "unit",
+  turi: "unit",
 
   ogirlik: "weight",
   ogirligi: "weight",
@@ -241,9 +250,9 @@ export interface ParsedIntake {
   stock: number | null;
   supplier: string;
   material: ProductMaterial | null;
-  category: ProductCategory;
-  /** Kategoriya izohda yozilganmi (yo'q bo'lsa nomdan taxmin qilingan). */
-  categoryGuessed: boolean;
+  category: ProductCategory | null;
+  /** Sotish turi: dona / metr / kg ... */
+  unit: string | null;
   brand: string;
   manufacturerCountry: string;
   description: string;
@@ -258,15 +267,25 @@ export interface ParsedIntake {
   warnings: string[];
 }
 
-export function guessCategory(name: string): ProductCategory {
+/**
+ * Nomdan kategoriya taxmini - endi kategoriya majburiy, lekin xato
+ * xabarida "shu bo'lsa kerak" deb taklif qilish uchun ishlatiladi.
+ */
+export function guessCategory(name: string): ProductCategory | null {
   for (const [pattern, category] of CATEGORY_HINTS) {
     if (pattern.test(name)) return category;
   }
-  return "sanitary-ware";
+  return null;
 }
 
-/** Izohni (caption) mahsulot maydonlariga ajratadi. */
-export function parseIntakeCaption(caption: string): ParsedIntake {
+/**
+ * Izohni (caption) mahsulot maydonlariga ajratadi.
+ *
+ * `taxonomy` - kategoriya/material/sotish turi ro'yxatlari: admin panel
+ * orqali qo'shilgan YANGI turlar ham shu yerdan keladi, ya'ni bot ularni
+ * ham tanidi (masalan "Kategoriya: Kanalizatsiya").
+ */
+export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedIntake {
   const values = new Map<IntakeField, string>();
   const warnings: string[] = [];
   const unlabeled: string[] = [];
@@ -303,24 +322,36 @@ export function parseIntakeCaption(caption: string): ParsedIntake {
   const stock = values.has("stock") ? parseAmount(values.get("stock")!) : null;
   const supplier = (values.get("supplier") ?? "").trim();
 
+  // Material: avval qisqartma lug'ati (ppr, mp...), keyin taxonomy nomlari.
   let material: ProductMaterial | null = null;
   if (values.has("material")) {
-    const key = normalizeKey(values.get("material")!);
+    const raw = values.get("material")!;
+    const key = normalizeKey(raw);
     material =
       MATERIAL_ALIASES[key] ??
+      matchTaxonomy(taxonomy.materials, raw) ??
       Object.entries(MATERIAL_ALIASES).find(([alias]) => key.includes(alias))?.[1] ??
       null;
-    if (!material) warnings.push(`Material tanilmadi: "${values.get("material")}"`);
+    if (!material) warnings.push(`Material tanilmadi: "${raw}"`);
   }
 
   let category: ProductCategory | null = null;
   if (values.has("category")) {
-    const key = normalizeKey(values.get("category")!);
+    const raw = values.get("category")!;
+    const key = normalizeKey(raw);
     category =
       CATEGORY_ALIASES[key] ??
+      matchTaxonomy(taxonomy.categories, raw) ??
       Object.entries(CATEGORY_ALIASES).find(([alias]) => key.includes(alias))?.[1] ??
       null;
-    if (!category) warnings.push(`Kategoriya tanilmadi: "${values.get("category")}"`);
+    if (!category) warnings.push(`Kategoriya tanilmadi: "${raw}"`);
+  }
+
+  let unit: string | null = null;
+  if (values.has("unit")) {
+    const raw = values.get("unit")!;
+    unit = matchTaxonomy(taxonomy.units, raw);
+    if (!unit) warnings.push(`Sotish turi tanilmadi: "${raw}"`);
   }
 
   const discountPrice = values.has("discount") ? parseAmount(values.get("discount")!) : null;
@@ -335,6 +366,8 @@ export function parseIntakeCaption(caption: string): ParsedIntake {
   if (stock === null || stock < 0) missing.push("stock");
   if (!supplier) missing.push("supplier");
   if (!material) missing.push("material");
+  if (!category) missing.push("category");
+  if (!unit) missing.push("unit");
 
   return {
     name,
@@ -342,8 +375,8 @@ export function parseIntakeCaption(caption: string): ParsedIntake {
     stock,
     supplier,
     material,
-    category: category ?? guessCategory(name),
-    categoryGuessed: !category,
+    category,
+    unit,
     brand: (values.get("brand") ?? "").trim(),
     manufacturerCountry: (values.get("country") ?? "").trim(),
     description: (values.get("description") ?? "").trim(),
@@ -359,6 +392,7 @@ export function parseIntakeCaption(caption: string): ParsedIntake {
 
 export const INTAKE_FIELD_LABELS: Record<IntakeField, string> = {
   name: "Nomi",
+  unit: "Sotish turi (dona/metr/kg...)",
   price: "Narxi",
   stock: "Soni",
   supplier: "Kimdan kelgan",
@@ -377,8 +411,10 @@ export const INTAKE_FIELD_LABELS: Record<IntakeField, string> = {
 /** Xato bo'lganda ko'rsatiladigan namuna. */
 export const INTAKE_TEMPLATE = [
   "PPR quvur 25mm",
+  "Kategoriya: quvurlar",
   "Narxi: 45000",
   "Soni: 120",
+  "Sotish turi: metr",
   "Kimdan: Akmal aka",
   "Material: polipropilen",
 ].join("\n");

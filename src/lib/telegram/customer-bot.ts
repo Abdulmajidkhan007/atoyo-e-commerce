@@ -7,6 +7,7 @@ import {
   removeReplyKeyboard,
   isChatMember,
   sendMediaGroup,
+  type MediaItem,
 } from "./bot";
 import { getRequiredChannels } from "./required-channels";
 import { createOrder, OrderValidationError } from "@/lib/orders/create-order";
@@ -17,6 +18,7 @@ import { logAction } from "./action-log";
 import { attachLoginCode } from "./telegram-auth";
 import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 import { getFacets } from "@/lib/products/facets";
+import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import { getPublishedPosts, getSiteSettings } from "@/lib/firebase/admin-content";
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
 import type { Product, ProductCategory } from "@/types/product";
@@ -283,7 +285,7 @@ async function showProfile(chatId: number, userId: number, t: BotDict): Promise<
 
 async function showCategories(chatId: number, t: BotDict): Promise<void> {
   const rows = (Object.keys(t.categories) as ProductCategory[]).map((value) => [
-    { text: t.categories[value], callback_data: `c|${value}|0` },
+    { text: t.categories[value] ?? value, callback_data: `c|${value}|0` },
   ]);
   rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);
   await sendChatMessage(chatId, t.chooseCategory, { replyMarkup: { inline_keyboard: rows } });
@@ -363,7 +365,7 @@ async function showCategoryPage(
   rows.push([{ text: t.filter, callback_data: `flt|menu|${category}` }]);
 
   const activeFilter = [filters.brand, filters.material].filter(Boolean).join(" · ");
-  const header = `<b>${t.categories[category]}</b> — ${page + 1}-${t.page}${activeFilter ? `\n⚙️ ${activeFilter}` : ""}`;
+  const header = `<b>${t.categories[category] ?? category}</b> — ${page + 1}-${t.page}${activeFilter ? `\n⚙️ ${activeFilter}` : ""}`;
 
   await sendChatMessage(chatId, `${header}:`, { replyMarkup: { inline_keyboard: rows } });
 }
@@ -388,14 +390,15 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
   const session = await getSession(chatId);
   const isFavorite = (session.favorites ?? []).includes(product.id);
 
+  const unit = labelOf(BUILTIN_UNITS, product.unit) || product.unit || DEFAULT_UNIT;
   const lines = [
     `<b>${product.name}</b>`,
     product.brand ? `${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
-    `💰 <b>${formatSom(price)}</b>${price < product.price ? ` <s>${formatSom(product.price)}</s>` : ""}`,
+    `💰 <b>${formatSom(price)}</b> / ${unit}${price < product.price ? ` <s>${formatSom(product.price)}</s>` : ""}`,
     (product.ratingCount ?? 0) > 0
       ? `⭐️ ${product.ratingAvg?.toFixed(1)} (${product.ratingCount})`
       : "",
-    product.stock > 0 ? `${t.inStock}: ${product.stock} ${t.unit}` : `❌ ${t.outOfStock}`,
+    product.stock > 0 ? `${t.inStock}: ${product.stock} ${unit}` : `❌ ${t.outOfStock}`,
     product.description ? `\n${product.description}` : "",
   ].filter(Boolean);
 
@@ -413,7 +416,13 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
   // Mahsulotda bir nechta rasm bo'lsa - avval albom, keyin tugmali
   // kartochka (albomga inline tugma biriktirib bo'lmaydi). Albom
   // yuborilmasa ham kartochka baribir chiqadi.
-  const gallery = (product.images ?? []).filter(Boolean).slice(0, 10);
+  // Rasm va videolar - bitta albom. Albomga tugma biriktirib
+  // bo'lmagani uchun tugmali kartochka keyin yuboriladi.
+  const gallery: MediaItem[] = [
+    ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
+    ...(product.videos ?? []).filter(Boolean).map((url) => ({ url, type: "video" as const })),
+  ].slice(0, 10);
+
   let sentGallery = false;
   if (gallery.length > 1) {
     try {
@@ -427,7 +436,7 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
   await sendChatMessage(chatId, lines.join("\n"), {
     replyMarkup: { inline_keyboard: rows },
     // Albom yuborilgan bo'lsa birinchi rasm takrorlanmaydi.
-    photoUrl: sentGallery ? undefined : gallery[0] || product.thumbnailUrl || undefined,
+    photoUrl: sentGallery ? undefined : gallery[0]?.url || product.thumbnailUrl || undefined,
   });
 }
 
@@ -848,7 +857,7 @@ async function showFilterMenu(chatId: number, category: ProductCategory, t: BotD
     { text: t.back, callback_data: `c|${category}|0` },
   ]);
 
-  await sendChatMessage(chatId, `${t.filterTitle}\n${t.categories[category]}`, {
+  await sendChatMessage(chatId, `${t.filterTitle}\n${t.categories[category] ?? category}`, {
     replyMarkup: { inline_keyboard: rows },
   });
 }

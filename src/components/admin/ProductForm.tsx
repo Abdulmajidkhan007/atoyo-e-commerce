@@ -14,36 +14,33 @@ import {
 } from "@mui/material";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import CloseIcon from "@mui/icons-material/Close";
-import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
+import {
+  BUILTIN_CATEGORIES,
+  BUILTIN_MATERIALS,
+  BUILTIN_UNITS,
+  DEFAULT_UNIT,
+  type Taxonomy,
+} from "@/lib/products/taxonomy";
+import type { Product } from "@/types/product";
 
-const CATEGORY_OPTIONS: { value: ProductCategory; label: string }[] = [
-  { value: "pipes", label: "Quvurlar" },
-  { value: "fittings", label: "Muftalar" },
-  { value: "faucets", label: "Kranlar" },
-  { value: "shower-systems", label: "Dush tizimlari" },
-  { value: "boilers", label: "Isitish qozonlari" },
-  { value: "radiators", label: "Radiatorlar" },
-  { value: "pumps", label: "Nasoslar" },
-  { value: "sanitary-ware", label: "Santexnika buyumlari" },
-];
-
-const MATERIAL_OPTIONS: { value: ProductMaterial; label: string }[] = [
-  { value: "polypropylene", label: "Polipropilen" },
-  { value: "metal-plastic", label: "Metalplastik" },
-  { value: "steel", label: "Po'lat" },
-  { value: "copper", label: "Mis" },
-  { value: "brass", label: "Latun" },
-  { value: "cast-iron", label: "Cho'yan" },
-  { value: "pvc", label: "PVX" },
-];
+/**
+ * Kategoriya / material / sotish turi ro'yxatlari serverdan olinadi:
+ * standart turlar + admin qo'shganlari (/admin/katalog/turlar).
+ */
+const FALLBACK_TAXONOMY: Taxonomy = {
+  categories: BUILTIN_CATEGORIES,
+  materials: BUILTIN_MATERIALS,
+  units: BUILTIN_UNITS,
+};
 
 const MAX_IMAGES = 10;
 
 const EMPTY_FORM = {
   name: "",
   description: "",
-  category: "pipes" as ProductCategory,
-  material: "polypropylene" as ProductMaterial,
+  category: "",
+  material: "",
+  unit: DEFAULT_UNIT,
   brand: "",
   manufacturerCountry: "",
   supplier: "",
@@ -78,10 +75,21 @@ interface ProductFormProps {
  */
 export function ProductForm({ product, initialName, onSaved, onCancel }: ProductFormProps) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [taxonomy, setTaxonomy] = useState<Taxonomy>(FALLBACK_TAXONOMY);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<NewImage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Ro'yxatlar admin panelda o'zgarishi mumkin - har ochilganda o'qiymiz.
+    fetch("/api/taxonomy")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { taxonomy?: Taxonomy } | null) => {
+        if (data?.taxonomy) setTaxonomy(data.taxonomy);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     function resetForTarget() {
@@ -92,6 +100,7 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
               description: product.description,
               category: product.category,
               material: product.material,
+              unit: product.unit || DEFAULT_UNIT,
               brand: product.brand,
               manufacturerCountry: product.manufacturerCountry,
               supplier: product.supplier ?? "",
@@ -129,6 +138,10 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
       setError("Nomi, narxi va zaxira miqdorini kiriting.");
       return;
     }
+    if (!form.category || !form.material || !form.unit) {
+      setError("Kategoriya, material va sotish turini tanlang.");
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -153,6 +166,7 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
         description: form.description.trim(),
         category: form.category,
         material: form.material,
+        unit: form.unit,
         brand: form.brand.trim(),
         manufacturerCountry: form.manufacturerCountry.trim(),
         supplier: form.supplier.trim(),
@@ -206,34 +220,48 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
       />
 
       <div className="grid grid-cols-2 gap-3">
-        <FormControl size="small" fullWidth>
+        <FormControl size="small" fullWidth required>
           <InputLabel id="pf-category">Kategoriya</InputLabel>
           <Select
             labelId="pf-category"
             label="Kategoriya"
             value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value as ProductCategory })}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
           >
-            {CATEGORY_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            {taxonomy.categories.map((item) => (
+              <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
             ))}
           </Select>
         </FormControl>
 
-        <FormControl size="small" fullWidth>
+        <FormControl size="small" fullWidth required>
           <InputLabel id="pf-material">Material</InputLabel>
           <Select
             labelId="pf-material"
             label="Material"
             value={form.material}
-            onChange={(e) => setForm({ ...form, material: e.target.value as ProductMaterial })}
+            onChange={(e) => setForm({ ...form, material: e.target.value })}
           >
-            {MATERIAL_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            {taxonomy.materials.map((item) => (
+              <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
             ))}
           </Select>
         </FormControl>
       </div>
+
+      <FormControl size="small" fullWidth required>
+        <InputLabel id="pf-unit">Sotish turi</InputLabel>
+        <Select
+          labelId="pf-unit"
+          label="Sotish turi"
+          value={form.unit}
+          onChange={(e) => setForm({ ...form, unit: e.target.value })}
+        >
+          {taxonomy.units.map((item) => (
+            <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
       <div className="grid grid-cols-2 gap-3">
         <TextField size="small" label="Brend" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
@@ -254,9 +282,9 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
       />
 
       <div className="grid grid-cols-3 gap-3">
-        <TextField size="small" type="number" label="Narx (so'm)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+        <TextField size="small" type="number" label={`Narx (so'm / ${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit})`} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
         <TextField size="small" type="number" label="Chegirma narxi" value={form.discountPrice} onChange={(e) => setForm({ ...form, discountPrice: e.target.value })} />
-        <TextField size="small" type="number" label="Zaxira (dona)" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+        <TextField size="small" type="number" label={`Zaxira (${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit})`} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
       </div>
 
       <TextField

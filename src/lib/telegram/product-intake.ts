@@ -1,14 +1,16 @@
 import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
+import { uploadImageAdmin, uploadVideoAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
 import { sendChatMessage, downloadTelegramFile } from "./bot";
 import { announceProduct } from "./channel";
 import { logAction } from "./action-log";
 import { startOptionalFieldsFlow } from "./admin-session";
-import { INTAKE_FIELD_LABELS, INTAKE_TEMPLATE, parseIntakeCaption } from "./intake-parser";
+import { INTAKE_FIELD_LABELS, INTAKE_TEMPLATE, parseIntakeCaption, guessCategory } from "./intake-parser";
+import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { labelOf } from "@/lib/products/taxonomy";
 import type { Product } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
 
@@ -36,6 +38,7 @@ import type { StockIntake } from "@/types/intake";
  */
 
 const MAX_IMAGES = 10;
+const MAX_VIDEOS = 3;
 /** Albom hujjati shuncha vaqtdan keyin keraksiz - tozalash uchun belgi. */
 const ALBUM_TTL_MS = 60 * 60 * 1000;
 /**
@@ -46,10 +49,16 @@ const ALBUM_TTL_MS = 60 * 60 * 1000;
  */
 const ALBUM_SETTLE_MS = 2500;
 
+/** Kirimda kelgan fayl: rasm yoki video. */
+export interface IntakeMedia {
+  fileId: string;
+  kind: "photo" | "video";
+}
+
 interface AlbumDoc {
   productId?: string;
-  /** Izohli xabardan oldin kelgan rasmlar. */
-  pendingPhotos?: string[];
+  /** Hali biriktirilmagan fayllar navbati (tartibi saqlanadi). */
+  pendingMedia?: IntakeMedia[];
   /** Izoh xato bo'lsa - albomning qolgan rasmlari e'tiborsiz qoladi. */
   rejected?: boolean;
   /** Oxirgi rasm qachon biriktirilgani (e'lonni kutish uchun). */
@@ -71,31 +80,80 @@ function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
-/** Telegram rasmini Storage'ga yuklab, mahsulot rasmiga qo'shadi. */
-async function attachPhoto(productId: string, fileId: string): Promise<void> {
-  const file = await downloadTelegramFile(fileId);
-  const url = await uploadImageAdmin(`products/${productId}`, {
-    buffer: file.buffer,
-    contentType: file.contentType,
-    originalName: file.fileName,
-  });
+/**
+ * Telegram media faylini (rasm yoki video) Storage'ga yuklab,
+ * mahsulotga qo'shadi.
+ *
+ * Albom fayllari parallel kelgani uchun massiv TRANZAKSIYADA
+ * yangilanadi - aks holda oxirgi yozuv oldingilarini o'chirib yuboradi.
+ */
+async function attachMedia(productId: string, media: IntakeMedia): Promise<void> {
+  const file = await downloadTelegramFile(media.fileId);
+  const isVideo = media.kind === "video";
+  const url = isVideo
+    ? await uploadVideoAdmin(`products/${productId}`, {
+        buffer: file.buffer,
+        // Telegram video fayl yo'li .mp4 bo'ladi; getFile turini bermaydi.
+        contentType: "video/mp4",
+        originalName: file.fileName.replace(/\.[^.]+$/, ".mp4"),
+      })
+    : await uploadImageAdmin(`products/${productId}`, {
+        buffer: file.buffer,
+        contentType: file.contentType,
+        originalName: file.fileName,
+      });
 
-  // Albom rasmlari parallel kelishi mumkin - massivni tranzaksiyada
-  // yangilaymiz, aks holda oxirgi yozuv oldingilarini o'chirib yuboradi.
   const ref = getAdminDb().collection("products").doc(productId);
   await getAdminDb().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) return;
     const data = snap.data() as Product;
+
+    if (isVideo) {
+      const videos = [...(data.videos ?? [])];
+      if (videos.includes(url) || videos.length >= MAX_VIDEOS) return;
+      videos.push(url);
+      tx.update(ref, { videos, updatedAt: Date.now() });
+      return;
+    }
+
     const images = [...(data.images ?? [])];
     if (images.includes(url) || images.length >= MAX_IMAGES) return;
     images.push(url);
-    tx.update(ref, {
-      images,
-      thumbnailUrl: data.thumbnailUrl || url,
-      updatedAt: Date.now(),
-    });
+    tx.update(ref, { images, thumbnailUrl: data.thumbnailUrl || url, updatedAt: Date.now() });
   });
+}
+
+/**
+ * Albom navbatini bo'shatadi.
+ *
+ * Telegram albom fayllarini alohida so'rov qilib yuboradi va ular
+ * mahsulot yaratilishidan OLDIN ham kelishi mumkin. Shuning uchun har
+ * bir fayl avval navbatga (`pendingMedia`) yoziladi, mahsulot tayyor
+ * bo'lgach esa istalgan chaqiruv navbatni bo'shatadi: tranzaksiyada
+ * bittasini olib chiqadi va biriktiradi - shunda har fayl aniq bir
+ * marta qo'shiladi va hech biri yo'qolmaydi.
+ */
+async function drainPendingMedia(mediaGroupId: string, productId: string): Promise<void> {
+  const ref = albumRef(mediaGroupId);
+
+  for (let guard = 0; guard < MAX_IMAGES + MAX_VIDEOS + 2; guard += 1) {
+    const next = await getAdminDb().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const queue = ((snap.data() as AlbumDoc | undefined)?.pendingMedia ?? []) as IntakeMedia[];
+      if (queue.length === 0) return null;
+      const [first, ...rest] = queue;
+      tx.set(ref, { pendingMedia: rest }, { merge: true });
+      return first ?? null;
+    });
+    if (!next) return;
+
+    try {
+      await attachMedia(productId, next);
+    } catch (error) {
+      console.error("Albom faylini biriktirishda xato:", error);
+    }
+  }
 }
 
 /**
@@ -122,6 +180,10 @@ async function announceWhenAlbumSettles(mediaGroupId: string, productId: string)
     return true;
   });
   if (!claimed) return;
+
+  // Kutish oralig'ida navbatda qolgan fayllar bo'lsa - avval ularni
+  // biriktiramiz, shundagina e'lon to'liq albom bilan chiqadi.
+  await drainPendingMedia(mediaGroupId, productId);
 
   const snap = await db.collection("products").doc(productId).get();
   if (!snap.exists) return;
@@ -161,8 +223,8 @@ export interface IntakeMessageParams {
   /** Xabar muallifi (kirim tarixida ko'rinadi). */
   authorName?: string;
   caption?: string;
-  /** Xabardagi eng katta o'lchamdagi rasm. */
-  photoFileId?: string;
+  /** Xabardagi rasm (eng katta o'lcham) yoki video. */
+  media?: IntakeMedia;
   mediaGroupId?: string;
 }
 
@@ -171,15 +233,14 @@ export interface IntakeMessageParams {
  * `true` - xabar shu oqimga tegishli edi (boshqa handler chaqirilmaydi).
  */
 export async function handleIntakeMessage(params: IntakeMessageParams): Promise<boolean> {
-  const { chatId, threadId, userId, caption, photoFileId, mediaGroupId } = params;
+  const { chatId, threadId, userId, caption, media, mediaGroupId } = params;
 
-  // 1) Rasmsiz xabar - eslatma (albom holati buzilmasin uchun faqat
-  //    izohli yoki yolg'iz xabarlarga javob beramiz).
-  if (!photoFileId) {
+  // 1) Fayl umuman yo'q - eslatma.
+  if (!media) {
     await sendChatMessage(
       chatId,
       [
-        "🖼 Kirim uchun kamida <b>1 ta rasm</b> kerak.",
+        "🖼 Kirim uchun kamida <b>1 ta rasm</b> kerak (video ham qo'shsa bo'ladi).",
         "",
         "Rasm(lar)ni tashlab, izohiga quyidagicha yozing:",
         `<pre>${escapeHtml(INTAKE_TEMPLATE)}</pre>`,
@@ -189,16 +250,16 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     return true;
   }
 
-  // 2) Izohsiz albom rasmi - mahsulot allaqachon yaratilgan bo'lsa
-  //    unga qo'shamiz, hali yaratilmagan bo'lsa navbatga qo'yamiz.
+  // 2) Izohsiz fayl - albom bo'lagi. Navbatga qo'yamiz va mahsulot
+  //    tayyor bo'lsa (yoki bir ozdan keyin tayyor bo'lsa) biriktiramiz.
   if (!caption?.trim()) {
     if (!mediaGroupId) {
       await sendChatMessage(
         chatId,
         [
-          "ℹ️ Rasm izohsiz kelgani uchun mahsulot yaratilmadi.",
+          "ℹ️ Fayl izohsiz kelgani uchun mahsulot yaratilmadi.",
           "",
-          "Rasm izohiga quyidagilarni yozing:",
+          "Izohga quyidagilarni yozing:",
           `<pre>${escapeHtml(INTAKE_TEMPLATE)}</pre>`,
         ].join("\n"),
         { threadId }
@@ -207,60 +268,88 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     }
 
     const ref = albumRef(mediaGroupId);
-    const snap = await ref.get();
-    const album = snap.data() as AlbumDoc | undefined;
-
+    const album = (await ref.get()).data() as AlbumDoc | undefined;
     if (album?.rejected) return true;
-    if (album?.productId) {
-      await attachPhoto(album.productId, photoFileId).catch((error) =>
-        console.error("Albom rasmini qo'shishda xato:", error)
-      );
-      // Albom tugagach - kanalga e'lon (barcha rasmlar bilan).
-      await announceWhenAlbumSettles(mediaGroupId, album.productId);
-      return true;
-    }
 
+    // Navbatga qo'shamiz (mahsulot hali yaratilmagan bo'lishi mumkin).
     await ref.set(
       {
-        pendingPhotos: FieldValue.arrayUnion(photoFileId),
+        pendingMedia: FieldValue.arrayUnion(media),
+        lastPhotoAt: Date.now(),
         createdAt: album?.createdAt ?? Date.now(),
       },
       { merge: true }
     );
+
+    if (album?.productId) {
+      await drainPendingMedia(mediaGroupId, album.productId);
+      await announceWhenAlbumSettles(mediaGroupId, album.productId);
+      return true;
+    }
+
+    // Mahsulot hali yaratilmagan - izohli xabar kelishini kutamiz.
+    // Kutgandan keyin ham navbatni o'zimiz bo'shatib qo'yamiz, chunki
+    // izohli xabar bizdan oldin ham, keyin ham kelishi mumkin.
+    await new Promise((resolve) => setTimeout(resolve, ALBUM_SETTLE_MS));
+    const later = (await ref.get()).data() as AlbumDoc | undefined;
+    if (later?.productId) {
+      await drainPendingMedia(mediaGroupId, later.productId);
+      await announceWhenAlbumSettles(mediaGroupId, later.productId);
+    }
     return true;
   }
 
   // 3) Izohli xabar - mahsulotni yaratamiz.
   //    Telegram javob kechiksa bir xil update'ni qayta yuborishi mumkin;
   //    albom uchun mahsulot allaqachon yaratilgan bo'lsa - ikkinchisini
-  //    yaratmay, rasmni o'shanga qo'shamiz.
+  //    yaratmay, faylni o'shanga qo'shamiz.
   if (mediaGroupId) {
     const existing = (await albumRef(mediaGroupId).get()).data() as AlbumDoc | undefined;
     if (existing?.productId) {
-      await attachPhoto(existing.productId, photoFileId).catch((error) =>
-        console.error("Albom rasmini qo'shishda xato:", error)
+      await albumRef(mediaGroupId).set(
+        { pendingMedia: FieldValue.arrayUnion(media), lastPhotoAt: Date.now() },
+        { merge: true }
       );
+      await drainPendingMedia(mediaGroupId, existing.productId);
       await announceWhenAlbumSettles(mediaGroupId, existing.productId);
       return true;
     }
   }
 
-  const parsed = parseIntakeCaption(caption);
+  const taxonomy = await getTaxonomy();
+  const parsed = parseIntakeCaption(caption, taxonomy);
 
   if (parsed.missing.length > 0) {
     if (mediaGroupId) {
       await albumRef(mediaGroupId).set({ rejected: true, createdAt: Date.now() }, { merge: true });
     }
+
+    const guess = guessCategory(parsed.name);
     await sendChatMessage(
       chatId,
       [
         "⚠️ <b>Mahsulot qo'shilmadi.</b> Quyidagilar yetishmayapti:",
         ...parsed.missing.map((field) => `• ${INTAKE_FIELD_LABELS[field]}`),
+        ...parsed.warnings.map((warning) => `⚠️ ${warning}`),
+        "",
+        parsed.missing.includes("category")
+          ? `🏷 Kategoriyalar: ${taxonomy.categories.map((c) => c.label).join(", ")}${
+              guess ? `\n(nomiga qaraganda "${labelOf(taxonomy.categories, guess)}" bo'lsa kerak)` : ""
+            }`
+          : "",
+        parsed.missing.includes("unit")
+          ? `📐 Sotish turlari: ${taxonomy.units.map((u) => u.label).join(", ")}`
+          : "",
+        parsed.missing.includes("material")
+          ? `🧱 Materiallar: ${taxonomy.materials.map((m) => m.label).join(", ")}`
+          : "",
         "",
         "Namuna:",
         `<pre>${escapeHtml(INTAKE_TEMPLATE)}</pre>`,
         "Rasmni izohi bilan qaytadan tashlang.",
-      ].join("\n"),
+      ]
+        .filter(Boolean)
+        .join("\n"),
       { threadId }
     );
     return true;
@@ -279,11 +368,12 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     nameSearchIndex: parsed.name.toLowerCase(),
     nameTokens: buildNameTokens(parsed.name, parsed.brand),
     description: parsed.description,
-    category: parsed.category,
+    category: parsed.category!,
     brand: parsed.brand,
     manufacturerCountry: parsed.manufacturerCountry,
     supplier: parsed.supplier,
     material: parsed.material!,
+    unit: parsed.unit!,
     dimensions: {
       ...(parsed.diameterMm !== null ? { diameterMm: parsed.diameterMm } : {}),
       ...(parsed.lengthMm !== null ? { lengthMm: parsed.lengthMm } : {}),
@@ -295,6 +385,7 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     currency: "UZS",
     stock: parsed.stock!,
     images: [],
+    videos: [],
     thumbnailUrl: "",
     isActive: true,
     salesCount: 0,
@@ -303,26 +394,26 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
   };
   await ref.set(product);
 
-  // Albom: shu xabarning rasmi + oldinroq kelgan rasmlar.
-  let pendingPhotos: string[] = [];
+  // Shu xabarning faylini ham navbatga qo'shib, hammasini birga
+  // biriktiramiz (oldin kelgan fayllar navbatda turgan bo'lishi mumkin).
   if (mediaGroupId) {
-    const albumSnap = await albumRef(mediaGroupId).get();
-    pendingPhotos = (albumSnap.data() as AlbumDoc | undefined)?.pendingPhotos ?? [];
     await albumRef(mediaGroupId).set(
-      { productId: ref.id, pendingPhotos: [], createdAt: Date.now() },
+      {
+        productId: ref.id,
+        pendingMedia: FieldValue.arrayUnion(media),
+        lastPhotoAt: Date.now(),
+        createdAt: Date.now(),
+      },
       { merge: true }
+    );
+    await drainPendingMedia(mediaGroupId, ref.id);
+  } else {
+    await attachMedia(ref.id, media).catch((error) =>
+      console.error("Kirim faylini yuklashda xato:", error)
     );
   }
 
-  let photoError = false;
-  for (const fileId of [photoFileId, ...pendingPhotos].slice(0, MAX_IMAGES)) {
-    try {
-      await attachPhoto(ref.id, fileId);
-    } catch (error) {
-      photoError = true;
-      console.error("Kirim rasmini yuklashda xato:", error);
-    }
-  }
+  const unitLabel = labelOf(taxonomy.units, parsed.unit ?? undefined);
 
   await Promise.all([
     registerFacets({
@@ -334,7 +425,7 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
       console.error("Kirim tarixini yozishda xato:", error)
     ),
     logAction(
-      `📥 Telegram kirim: ${parsed.name} — ${parsed.stock} dona, ${formatSom(parsed.price!)} (${parsed.supplier})`
+      `📥 Telegram kirim: ${parsed.name} — ${parsed.stock} ${unitLabel}, ${formatSom(parsed.price!)} (${parsed.supplier})`
     ),
   ]);
 
@@ -344,12 +435,12 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
   const summary = [
     `✅ <b>Katalogga qo'shildi:</b> ${escapeHtml(saved.name)}`,
     `ID: <code>${saved.id}</code>`,
-    `💰 ${formatSom(saved.price)} | 📦 ${saved.stock} dona`,
+    `🏷 ${labelOf(taxonomy.categories, saved.category)} | 🧱 ${labelOf(taxonomy.materials, saved.material)}`,
+    `💰 ${formatSom(saved.price)} / ${unitLabel} | 📦 ${saved.stock} ${unitLabel}`,
     `🚚 Kimdan: ${escapeHtml(saved.supplier ?? "")}`,
     mediaGroupId
-      ? "🖼 Rasmlar yuklanmoqda — hammasi tayyor bo'lgach kanalga albom bo'lib chiqadi."
-      : `🖼 Rasm: ${saved.images.length} ta${photoError ? " (ba'zi rasmlar yuklanmadi)" : ""}`,
-    parsed.categoryGuessed ? "🏷 Kategoriya nomdan taxmin qilindi — kerak bo'lsa tugmadan o'zgartiring." : "",
+      ? "🖼 Fayllar yuklanmoqda — hammasi tayyor bo'lgach kanalga albom bo'lib chiqadi."
+      : `🖼 ${media.kind === "video" ? "Video" : "Rasm"} qo'shildi.`,
     ...parsed.warnings.map((warning) => `⚠️ ${warning}`),
   ]
     .filter(Boolean)
@@ -363,12 +454,13 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     header: summary,
   });
 
-  // Kanalga e'lon: albom bo'lsa qolgan rasmlar kelishini kutamiz,
-  // yolg'iz rasm bo'lsa - darhol.
+  // Kanalga e'lon: albom bo'lsa qolgan fayllar kelishini kutamiz,
+  // yolg'iz fayl bo'lsa - darhol.
   if (mediaGroupId) {
     await announceWhenAlbumSettles(mediaGroupId, saved.id);
   } else {
-    await announceProduct(saved, "new").catch((error) =>
+    const withMedia = await ref.get();
+    await announceProduct({ id: withMedia.id, ...withMedia.data() } as Product, "new").catch((error) =>
       console.error("Kanalga e'lon (kirim) xatosi:", error)
     );
   }

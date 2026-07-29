@@ -1,5 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
 import { announceProduct } from "./channel";
 import { sendChatMessage } from "./bot";
 import { startNewProductFlow, startEditProductFlow, cancelAdminSession } from "./admin-session";
@@ -210,7 +211,8 @@ export async function handleAdminCommand(params: {
           brand: brand ?? "",
           manufacturerCountry: country ?? "",
           material,
-          dimensions: {},
+          unit: DEFAULT_UNIT,
+    dimensions: {},
           price,
           discountPrice: null,
           currency: "UZS",

@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
 import { parseCsv } from "@/lib/products/csv";
+import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
 import { logAction } from "@/lib/telegram/action-log";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
@@ -182,6 +183,8 @@ export async function POST(request: Request) {
     const ref = id ? db.collection("products").doc(id) : db.collection("products").doc();
     const isUpdate = Boolean(id);
 
+    const unit = (row.unit ?? "").trim() || DEFAULT_UNIT;
+
     const base = {
       name,
       nameSearchIndex: name.toLowerCase(),
@@ -189,6 +192,7 @@ export async function POST(request: Request) {
       description: (row.description ?? "").trim(),
       category,
       material,
+      unit,
       brand,
       manufacturerCountry: country,
       supplier,

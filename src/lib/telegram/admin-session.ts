@@ -5,6 +5,8 @@ import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { announceProduct } from "./channel";
 import { registerFacets } from "@/lib/products/facets";
+import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { DEFAULT_UNIT, labelOf, type TaxonomyItem } from "@/lib/products/taxonomy";
 import { parseDate } from "./intake-parser";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
@@ -20,31 +22,35 @@ import type { Product, ProductCategory, ProductMaterial } from "@/types/product"
  * guruhdagi barcha <code>ap|</code> tugmalarini shu modulga yo'naltiradi.
  */
 
-const CATEGORY_LABELS: Record<ProductCategory, string> = {
-  pipes: "🔧 Quvurlar",
-  fittings: "🔩 Muftalar",
-  faucets: "🚰 Kranlar",
-  "shower-systems": "🚿 Dush tizimlari",
-  boilers: "🔥 Isitish qozonlari",
-  radiators: "🌡 Radiatorlar",
-  pumps: "⚙️ Nasoslar",
-  "sanitary-ware": "🚽 Santexnika",
-};
-
-const MATERIAL_LABELS: Record<ProductMaterial, string> = {
-  polypropylene: "Polipropilen",
-  "metal-plastic": "Metalloplastik",
-  steel: "Po'lat",
-  copper: "Mis",
-  brass: "Latun",
-  "cast-iron": "Cho'yan",
-  pvc: "PVX",
+/** Emoji bilan chiroyli ko'rinsin - standart kategoriyalar uchun. */
+const CATEGORY_ICONS: Record<string, string> = {
+  pipes: "🔧",
+  fittings: "🔩",
+  faucets: "🚰",
+  "shower-systems": "🚿",
+  boilers: "🔥",
+  radiators: "🌡",
+  pumps: "⚙️",
+  "sanitary-ware": "🚽",
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
 
 // Yangi mahsulot oqimi bosqichlari tartibi.
-const NEW_STEPS = ["name", "category", "price", "stock", "brand", "country", "material", "description", "photo"] as const;
+// Kategoriya, material va sotish turi - majburiy bosqichlar (tugmalar
+// bilan tanlanadi), qolganlarini o'tkazib yuborsa ham bo'ladi.
+const NEW_STEPS = [
+  "name",
+  "category",
+  "price",
+  "unit",
+  "stock",
+  "material",
+  "brand",
+  "country",
+  "description",
+  "photo",
+] as const;
 type NewStep = (typeof NEW_STEPS)[number];
 
 /** Telegram'dan kelgan rasmni Storage'ga o'tkazib, mahsulotga bog'laydi. */
@@ -111,26 +117,33 @@ function parseNumber(text: string): number {
 const cancelButton: InlineButton = { text: "✖️ Bekor qilish", callback_data: "ap|cancel" };
 const skipButton: InlineButton = { text: "⏭ O'tkazish", callback_data: "ap|skip" };
 
-function categoryKeyboard(prefix: string): InlineButton[][] {
-  const cats = Object.entries(CATEGORY_LABELS) as [ProductCategory, string][];
+/** Ro'yxatdan ikki ustunli tugmalar yasaydi. */
+function itemsKeyboard(items: TaxonomyItem[], prefix: string, icons = false): InlineButton[][] {
   const rows: InlineButton[][] = [];
-  for (let i = 0; i < cats.length; i += 2) {
+  for (let i = 0; i < items.length; i += 2) {
     rows.push(
-      cats.slice(i, i + 2).map(([value, label]) => ({ text: label, callback_data: `${prefix}${value}` }))
+      items.slice(i, i + 2).map((item) => ({
+        text: icons ? `${CATEGORY_ICONS[item.slug] ?? "🏷"} ${item.label}` : item.label,
+        callback_data: `${prefix}${item.slug}`,
+      }))
     );
   }
   return rows;
 }
 
-function materialKeyboard(prefix: string): InlineButton[][] {
-  const mats = Object.entries(MATERIAL_LABELS) as [ProductMaterial, string][];
-  const rows: InlineButton[][] = [];
-  for (let i = 0; i < mats.length; i += 2) {
-    rows.push(
-      mats.slice(i, i + 2).map(([value, label]) => ({ text: label, callback_data: `${prefix}${value}` }))
-    );
-  }
-  return rows;
+async function categoryKeyboard(prefix: string): Promise<InlineButton[][]> {
+  const { categories } = await getTaxonomy();
+  return itemsKeyboard(categories, prefix, true);
+}
+
+async function materialKeyboard(prefix: string): Promise<InlineButton[][]> {
+  const { materials } = await getTaxonomy();
+  return itemsKeyboard(materials, prefix);
+}
+
+async function unitKeyboard(prefix: string): Promise<InlineButton[][]> {
+  const { units } = await getTaxonomy();
+  return itemsKeyboard(units, prefix);
 }
 
 // ---------------------------------------------------------------------------
@@ -152,7 +165,7 @@ async function sendNewStepPrompt(session: AdminSession): Promise<void> {
       return;
     case "category":
       await sendChatMessage(session.chatId, `${head}\n\n<b>Kategoriya</b>ni tanlang:`, {
-        replyMarkup: { inline_keyboard: [...categoryKeyboard("ap|cat|"), [cancelButton]] },
+        replyMarkup: { inline_keyboard: [...(await categoryKeyboard("ap|cat|")), [cancelButton]] },
         ...opts,
       });
       return;
@@ -162,11 +175,21 @@ async function sendNewStepPrompt(session: AdminSession): Promise<void> {
         ...opts,
       });
       return;
-    case "stock":
-      await sendChatMessage(session.chatId, `${head}\n\n<b>Zaxira</b> sonini yuboring (masalan 30):`, {
-        replyMarkup: { inline_keyboard: [[cancelButton]] },
+    case "unit":
+      await sendChatMessage(session.chatId, `${head}\n\n<b>Sotish turi</b>ni tanlang (dona/metr/kg...):`, {
+        replyMarkup: { inline_keyboard: [...(await unitKeyboard("ap|unt|")), [cancelButton]] },
         ...opts,
       });
+      return;
+    case "stock":
+      await sendChatMessage(
+        session.chatId,
+        `${head}\n\n<b>Zaxira</b> miqdorini yuboring (${labelOf(
+          (await getTaxonomy()).units,
+          session.draft.unit ?? DEFAULT_UNIT
+        )} hisobida, masalan 30):`,
+        { replyMarkup: { inline_keyboard: [[cancelButton]] }, ...opts }
+      );
       return;
     case "brand":
       await sendChatMessage(session.chatId, `${head}\n\n<b>Brend</b>ni yuboring (yoki o'tkazing):`, {
@@ -182,7 +205,7 @@ async function sendNewStepPrompt(session: AdminSession): Promise<void> {
       return;
     case "material":
       await sendChatMessage(session.chatId, `${head}\n\n<b>Material</b>ni tanlang (yoki o'tkazing):`, {
-        replyMarkup: { inline_keyboard: [...materialKeyboard("ap|mat|"), [skipButton], [cancelButton]] },
+        replyMarkup: { inline_keyboard: [...(await materialKeyboard("ap|mat|")), [cancelButton]] },
         ...opts,
       });
       return;
@@ -217,6 +240,7 @@ async function finalizeNewProduct(userId: number, session: AdminSession, photoFi
     brand: d.brand ?? "",
     manufacturerCountry: d.manufacturerCountry ?? "",
     material: (d.material as ProductMaterial) ?? "brass",
+    unit: d.unit ?? DEFAULT_UNIT,
     dimensions: {},
     price: d.price ?? 0,
     discountPrice: null,
@@ -257,7 +281,7 @@ async function finalizeNewProduct(userId: number, session: AdminSession, photoFi
     [
       `✅ <b>Qo'shildi:</b> ${product.name}`,
       `ID: <code>${ref.id}</code>`,
-      `Kategoriya: ${CATEGORY_LABELS[product.category]}`,
+      `Kategoriya: ${labelOf((await getTaxonomy()).categories, product.category)}`,
       `Narx: ${formatSom(product.price)} | Zaxira: ${product.stock} dona`,
       product.brand ? `Brend: ${product.brand}` : "",
       "",
@@ -283,6 +307,7 @@ const EDIT_FIELDS: { field: string; label: string }[] = [
   { field: "country", label: "🌍 Davlat" },
   { field: "discount", label: "🔻 Chegirma" },
   { field: "discountUntil", label: "⏳ Chegirma muddati" },
+  { field: "unit", label: "📐 Sotish turi" },
   { field: "supplier", label: "🚚 Kimdan kelgan" },
   { field: "description", label: "📝 Tavsif" },
   { field: "photo", label: "🖼 Rasm" },
@@ -298,6 +323,7 @@ const OPTIONAL_FIELDS: { field: string; label: string }[] = [
   { field: "category", label: "🏷 Kategoriya" },
   { field: "brand", label: "™️ Brend" },
   { field: "country", label: "🌍 Davlat" },
+  { field: "unit", label: "📐 Sotish turi" },
   { field: "description", label: "📝 Tavsif" },
   { field: "discount", label: "🔻 Chegirma" },
   { field: "discountUntil", label: "⏳ Chegirma muddati" },
@@ -505,7 +531,7 @@ async function handleNewProductText(
     return;
   }
 
-  if (step === "category" || step === "material") {
+  if (step === "category" || step === "material" || step === "unit") {
     // Bu bosqichlarda tugma tanlanishi kerak.
     await sendChatMessage(session.chatId, "Iltimos, yuqoridagi tugmalardan birini tanlang.", {
       threadId: session.threadId,
@@ -700,6 +726,19 @@ export async function handleAdminSessionCallback(params: {
     return;
   }
 
+  // Sotish turi tanlash
+  if (action === "unt") {
+    await answerCallbackQuery(callbackQueryId);
+    if (session.flow === "new_product") {
+      session.draft.unit = value;
+      await advanceNewProduct(userId, session);
+    } else if (session.flow === "edit_product" && session.productId) {
+      await getAdminDb().collection("products").doc(session.productId).update({ unit: value, updatedAt: Date.now() });
+      await reloadEditMenu(userId, session, true);
+    }
+    return;
+  }
+
   // Optional bosqichni o'tkazish (yangi mahsulot)
   if (action === "skip" && session.flow === "new_product") {
     await answerCallbackQuery(callbackQueryId, "O'tkazildi");
@@ -712,14 +751,27 @@ export async function handleAdminSessionCallback(params: {
     await answerCallbackQuery(callbackQueryId);
     if (value === "category") {
       await sendChatMessage(session.chatId, "Yangi <b>kategoriya</b>ni tanlang:", {
-        replyMarkup: { inline_keyboard: [...categoryKeyboard("ap|cat|"), [{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]] },
+        replyMarkup: {
+          inline_keyboard: [...(await categoryKeyboard("ap|cat|")), [{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]],
+        },
+        threadId: session.threadId,
+      });
+      return;
+    }
+    if (value === "unit") {
+      await sendChatMessage(session.chatId, "Yangi <b>sotish turi</b>ni tanlang:", {
+        replyMarkup: {
+          inline_keyboard: [...(await unitKeyboard("ap|unt|")), [{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]],
+        },
         threadId: session.threadId,
       });
       return;
     }
     if (value === "material") {
       await sendChatMessage(session.chatId, "Yangi <b>material</b>ni tanlang:", {
-        replyMarkup: { inline_keyboard: [...materialKeyboard("ap|mat|"), [{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]] },
+        replyMarkup: {
+          inline_keyboard: [...(await materialKeyboard("ap|mat|")), [{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]],
+        },
         threadId: session.threadId,
       });
       return;

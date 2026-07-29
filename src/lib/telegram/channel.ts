@@ -1,7 +1,14 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { sendChatMessage, sendMediaGroup, editMessageCaptionOrText, deleteMessage } from "./bot";
+import {
+  sendChatMessage,
+  sendMediaGroup,
+  editMessageCaptionOrText,
+  deleteMessage,
+  type MediaItem,
+} from "./bot";
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
+import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import type { Product } from "@/types/product";
 import type { BlogPost } from "@/types/content";
 
@@ -43,14 +50,14 @@ export async function resolveChannelId(): Promise<string | null> {
  */
 async function publish(
   text: string,
-  options: { photoUrl?: string; photoUrls?: string[]; buttonText: string; buttonUrl: string }
+  options: { photoUrl?: string; media?: MediaItem[]; buttonText: string; buttonUrl: string }
 ): Promise<{ chatId: string; messageId: number; hasPhoto: boolean } | null> {
   const channelId = await resolveChannelId();
   if (!channelId) return null;
 
   // Bir nechta rasm bo'lsa - albom. Albomga inline tugma qo'shib
   // bo'lmaydi, shuning uchun havola caption ichida beriladi.
-  const gallery = (options.photoUrls ?? []).filter(Boolean).slice(0, 10);
+  const gallery = (options.media ?? []).filter((item) => item.url).slice(0, 10);
 
   try {
     if (gallery.length > 1) {
@@ -61,7 +68,7 @@ async function publish(
       return first ? { chatId: channelId, messageId: first.message_id, hasPhoto: true } : null;
     }
 
-    const photoUrl = gallery[0] ?? options.photoUrl ?? undefined;
+    const photoUrl = gallery[0]?.url ?? options.photoUrl ?? undefined;
     const sent = await sendChatMessage(channelId, text, {
       photoUrl,
       replyMarkup: { inline_keyboard: [[{ text: options.buttonText, url: options.buttonUrl }]] },
@@ -76,9 +83,11 @@ async function publish(
 /** Mahsulot e'loni matni (yangi post uchun ham, tahrir uchun ham bir xil). */
 function buildProductText(product: Product, mode: "new" | "updated"): string {
   const hasDiscount = isDiscountActive(product);
+  // Sotish turi (dona/metr/kg...) - narx va zaxira shu birlikda.
+  const unit = labelOf(BUILTIN_UNITS, product.unit) || product.unit || DEFAULT_UNIT;
   const priceLine = hasDiscount
-    ? `💰 <s>${formatSom(product.price)}</s> <b>${formatSom(effectivePrice(product))}</b>`
-    : `💰 <b>${formatSom(product.price)}</b>`;
+    ? `💰 <s>${formatSom(product.price)}</s> <b>${formatSom(effectivePrice(product))}</b> / ${unit}`
+    : `💰 <b>${formatSom(product.price)}</b> / ${unit}`;
 
   const lines = [
     mode === "new" ? "🆕 <b>Yangi mahsulot!</b>" : "♻️ <b>Mahsulot yangilandi</b>",
@@ -89,7 +98,7 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
     lines.push(`🏷 ${escapeHtml([product.brand, product.manufacturerCountry].filter(Boolean).join(" • "))}`);
   }
   lines.push(priceLine);
-  if (product.stock > 0) lines.push(`📦 Mavjud: ${product.stock} dona`);
+  if (product.stock > 0) lines.push(`📦 Mavjud: ${product.stock} ${unit}`);
   if (product.material) lines.push(`🧱 ${escapeHtml(MATERIAL_LABELS[product.material] ?? product.material)}`);
   if (product.description) lines.push(``, escapeHtml(product.description.slice(0, 400)));
 
@@ -118,7 +127,11 @@ const MATERIAL_LABELS: Record<string, string> = {
 export async function announceProduct(product: Product, mode: "new" | "updated" = "new"): Promise<void> {
   if (!product.isActive) return;
 
-  const gallery = (product.images ?? []).filter(Boolean).slice(0, 10);
+  // Rasmlar + videolar bitta albomga (Telegram aralash albomga ruxsat beradi).
+  const gallery: MediaItem[] = [
+    ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
+    ...(product.videos ?? []).filter(Boolean).map((url) => ({ url, type: "video" as const })),
+  ].slice(0, 10);
   const text = buildProductText(product, mode);
   // Albom caption'i 1024 belgi bilan cheklangan - tavsif uzun bo'lsa
   // e'lon jimgina kesilib qolmasligi uchun qisqartiramiz.
@@ -164,7 +177,7 @@ export async function announceProduct(product: Product, mode: "new" | "updated" 
 
   const sent = await publish(caption, {
     photoUrl: product.thumbnailUrl,
-    photoUrls: gallery,
+    media: gallery,
     buttonText,
     buttonUrl,
   });
