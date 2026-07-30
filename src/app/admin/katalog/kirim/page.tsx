@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { Button, TextField, CircularProgress, Alert, IconButton, Snackbar } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { SearchBar } from "@/components/product/SearchBar";
 import { IntakeHistoryList } from "@/components/admin/IntakeHistoryList";
 import type { Product } from "@/types/product";
@@ -23,6 +22,18 @@ interface IntakeRow {
   qty: number;
   price: string; // bo'sh = o'zgarmasin
   supplier: string;
+  /** Chernovik - kirim saqlanganda katalogga chiqadi va kanalga e'lon qilinadi. */
+  isDraft?: boolean;
+}
+
+/**
+ * Admin qidiruvi: saytdagi ochiq qidiruvdan farqli o'laroq CHERNOVIK
+ * mahsulotlar ham topiladi (ular hali katalogda ko'rinmaydi).
+ */
+async function searchForIntake(term: string): Promise<Product[]> {
+  const res = await fetch(`/api/admin/products/search?q=${encodeURIComponent(term)}`);
+  if (!res.ok) return [];
+  return ((await res.json()) as { products?: Product[] }).products ?? [];
 }
 
 /**
@@ -38,8 +49,13 @@ function IntakeContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [rows, setRows] = useState<IntakeRow[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const draftId = searchParams.get("chernovik");
   const [toast, setToast] = useState<string | null>(
-    searchParams.get("yaratildi") ? "✅ Yangi mahsulot yaratildi va katalogga qo'shildi." : null
+    searchParams.get("yaratildi")
+      ? "✅ Yangi mahsulot yaratildi va katalogga qo'shildi."
+      : draftId
+        ? "📝 Mahsulot ochildi. Endi kelgan sonini kiritib, kirimni saqlang — shundan keyin katalogga chiqadi."
+        : null
   );
   const [recent, setRecent] = useState<StockIntake[] | null>(null);
 
@@ -66,6 +82,38 @@ function IntakeContent() {
     };
   }, []);
 
+  /** Yangi ochilgan chernovik darhol kirim ro'yxatiga tushadi. */
+  useEffect(() => {
+    if (!draftId) return;
+    let active = true;
+    fetch(`/api/admin/products/search?id=${encodeURIComponent(draftId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { products?: Product[] } | null) => {
+        const product = data?.products?.[0];
+        if (!active || !product) return;
+        setRows((prev) =>
+          prev.some((r) => r.productId === product.id)
+            ? prev
+            : [
+                ...prev,
+                {
+                  productId: product.id,
+                  name: product.name,
+                  currentStock: product.stock,
+                  qty: 1,
+                  price: "",
+                  supplier: product.supplier ?? "",
+                  isDraft: product.isDraft === true,
+                },
+              ]
+        );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [draftId]);
+
   const trimmed = searchTerm.trim();
 
   useEffect(() => {
@@ -77,7 +125,7 @@ function IntakeContent() {
       }
       setIsSearching(true);
       try {
-        const found = await searchProductsByPrefix(trimmed, 8);
+        const found = await searchForIntake(trimmed);
         if (!cancelled) setResults(found);
       } finally {
         if (!cancelled) setIsSearching(false);
@@ -94,7 +142,18 @@ function IntakeContent() {
     setRows((prev) =>
       prev.some((r) => r.productId === p.id)
         ? prev
-        : [...prev, { productId: p.id, name: p.name, currentStock: p.stock, qty: 1, price: "", supplier: p.supplier ?? "" }]
+        : [
+            ...prev,
+            {
+              productId: p.id,
+              name: p.name,
+              currentStock: p.stock,
+              qty: 1,
+              price: "",
+              supplier: p.supplier ?? "",
+              isDraft: p.isDraft === true,
+            },
+          ]
     );
     setSearchTerm("");
     setResults([]);
@@ -120,7 +179,12 @@ function IntakeContent() {
         }),
       });
       if (!res.ok) throw new Error("failed");
-      setToast(`✅ Kirim saqlandi: ${rows.length} ta mahsulot zaxirasi yangilandi.`);
+      const published = rows.filter((r) => r.isDraft).length;
+      setToast(
+        published > 0
+          ? `✅ Kirim saqlandi: ${rows.length} ta mahsulot zaxirasi yangilandi. ${published} ta yangi mahsulot katalogga chiqdi va kanalga e'lon qilindi.`
+          : `✅ Kirim saqlandi: ${rows.length} ta mahsulot zaxirasi yangilandi.`
+      );
       setRows([]);
       loadRecent();
     } catch {
@@ -138,10 +202,23 @@ function IntakeContent() {
           Kirim tarixi →
         </Link>
       </div>
-      <p className="mb-6 text-sm text-navy-300">
+      <p className="mb-4 text-sm text-navy-300">
         Avval mahsulotni qidiring — topilsa ro&apos;yxatga qo&apos;shib zaxirani ko&apos;paytiring.
-        Topilmasa yangi mahsulot yarating.
+        Topilmasa &quot;Yangi mahsulot ochish&quot; bilan mahsulot ta&apos;rifini yarating: u shu
+        yerda paydo bo&apos;ladi va kelgan soni kiritilgach katalogga chiqadi.
       </p>
+
+      {/* Har doim ko'rinadigan tugma: mahsulotni "ochish" (chernovik) */}
+      <div className="mb-6">
+        <Button
+          component={Link}
+          href="/admin/katalog/yangi?chernovik=1"
+          variant="outlined"
+          startIcon={<AddIcon />}
+        >
+          Yangi mahsulot ochish
+        </Button>
+      </div>
 
       {/* 1) Qidiruv */}
       <div className="rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-700">
@@ -162,7 +239,14 @@ function IntakeContent() {
                 onClick={() => addRow(p)}
                 className="flex items-center justify-between rounded-lg border border-navy-100 px-3 py-2 text-left text-sm hover:border-aqua-500 dark:border-navy-500"
               >
-                <span className="line-clamp-1 font-medium text-navy-900 dark:text-white">{p.name}</span>
+                <span className="line-clamp-1 font-medium text-navy-900 dark:text-white">
+                  {p.name}
+                  {p.isDraft && (
+                    <span className="ml-2 rounded bg-aqua-500/15 px-1.5 py-0.5 text-xs text-aqua-600">
+                      chernovik
+                    </span>
+                  )}
+                </span>
                 <span className="ml-2 shrink-0 text-navy-300">
                   {formatSom(p.price)} • zaxira: {p.stock}
                 </span>
@@ -174,11 +258,11 @@ function IntakeContent() {
                 <p className="text-sm text-navy-300">&quot;{trimmed}&quot; topilmadi — bu yangi mahsulot.</p>
                 <Button
                   component={Link}
-                  href={`/admin/katalog/yangi?nom=${encodeURIComponent(trimmed)}`}
+                  href={`/admin/katalog/yangi?chernovik=1&nom=${encodeURIComponent(trimmed)}`}
                   variant="contained"
                   startIcon={<AddIcon />}
                 >
-                  Yangi mahsulot yaratish
+                  Yangi mahsulot ochish
                 </Button>
               </div>
             )}
@@ -193,7 +277,14 @@ function IntakeContent() {
           {rows.map((row) => (
             <div key={row.productId} className="rounded-xl2 border border-navy-100 bg-white p-3 dark:border-navy-500 dark:bg-navy-700">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="line-clamp-1 font-medium text-navy-900 dark:text-white">{row.name}</p>
+                <p className="line-clamp-1 font-medium text-navy-900 dark:text-white">
+                  {row.name}
+                  {row.isDraft && (
+                    <span className="ml-2 rounded bg-aqua-500/15 px-1.5 py-0.5 text-xs text-aqua-600">
+                      chernovik → katalogga chiqadi
+                    </span>
+                  )}
+                </p>
                 <IconButton size="small" aria-label="O'chirish" onClick={() => setRows((prev) => prev.filter((r) => r.productId !== row.productId))}>
                   <DeleteOutlineIcon fontSize="small" className="text-red-400" />
                 </IconButton>

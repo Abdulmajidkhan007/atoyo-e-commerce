@@ -71,6 +71,13 @@ interface ProductFormProps {
   product?: Product | null;
   /** Yangi yaratishda nom maydonini oldindan to'ldirish (kirim qidiruvidan). */
   initialName?: string;
+  /**
+   * CHERNOVIK rejimi ("Yangi mahsulot ochish"): mahsulot faqat
+   * ta'riflanadi - zaxira so'ralmaydi, katalogga chiqmaydi va kanalga
+   * e'lon qilinmaydi. U kirim sahifasida paydo bo'ladi, zaxira kelganda
+   * nashr bo'ladi.
+   */
+  draft?: boolean;
   onSaved: (product: Product) => void;
   onCancel: () => void;
 }
@@ -81,7 +88,7 @@ interface ProductFormProps {
  * joyda qoladi. Rasmlar avval /api/admin/upload'ga, keyin mahsulot
  * /api/admin/products'ga (Admin SDK bilan, ishonchli) yoziladi.
  */
-export function ProductForm({ product, initialName, onSaved, onCancel }: ProductFormProps) {
+export function ProductForm({ product, initialName, draft = false, onSaved, onCancel }: ProductFormProps) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [taxonomy, setTaxonomy] = useState<Taxonomy>(FALLBACK_TAXONOMY);
   /** Ixtiyoriy maydonlar bo'limi yopiq turadi - forma qisqa ko'rinadi. */
@@ -191,8 +198,9 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
 
   const handleSave = async () => {
     setError(null);
-    if (!form.name.trim() || !form.price || !form.stock) {
-      setError("Nomi, narxi va zaxira miqdorini kiriting.");
+    // Chernovikda zaxira so'ralmaydi - u kirim orqali keladi.
+    if (!form.name.trim() || !form.price || (!draft && !form.stock)) {
+      setError(draft ? "Nomi va narxini kiriting." : "Nomi, narxi va zaxira miqdorini kiriting.");
       return;
     }
     if (!form.category || !form.material || !form.unit) {
@@ -232,7 +240,8 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
         discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
         // Chegirma muddati kun oxirigacha amal qiladi.
         discountUntil: form.discountUntil ? new Date(`${form.discountUntil}T23:59:59`).getTime() : null,
-        stock: Number(form.stock),
+        stock: draft ? 0 : Number(form.stock),
+        ...(draft ? { isDraft: true } : {}),
         diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
         lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
         weightKg: form.weightKg ? Number(form.weightKg) : undefined,
@@ -361,13 +370,23 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
           value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
         />
-        <TextField
-          size="small"
-          type="number"
-          label={`Zaxira (${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit}) *`}
-          value={form.stock}
-          onChange={(e) => setForm({ ...form, stock: e.target.value })}
-        />
+        {draft ? (
+          <TextField
+            size="small"
+            label="Zaxira"
+            value="Kirim orqali qo'shiladi"
+            helperText="Chernovik: zaxira kelganda katalogga chiqadi"
+            disabled
+          />
+        ) : (
+          <TextField
+            size="small"
+            type="number"
+            label={`Zaxira (${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit}) *`}
+            value={form.stock}
+            onChange={(e) => setForm({ ...form, stock: e.target.value })}
+          />
+        )}
       </div>
 
       {/* Qolgan maydonlar ixtiyoriy - forma qisqa bo'lishi uchun yopiq
@@ -521,7 +540,13 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
       <div className="flex justify-end gap-2">
         <Button onClick={onCancel}>Bekor qilish</Button>
         <Button onClick={handleSave} variant="contained" disabled={isSaving}>
-          {isSaving ? <CircularProgress size={20} color="inherit" /> : "Saqlash"}
+          {isSaving ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : draft ? (
+            "Mahsulotni ochish"
+          ) : (
+            "Saqlash"
+          )}
         </Button>
       </div>
     </div>

@@ -6,7 +6,9 @@ import { requirePermission } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
 import { getRecentIntakes } from "@/lib/products/intake-history";
+import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
 import type { StockIntake } from "@/types/intake";
+import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
 
@@ -32,6 +34,30 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   return NextResponse.json({ intakes: await getRecentIntakes(10) });
+}
+
+/**
+ * KIRIMDAN KEYINGI E'LON.
+ *
+ * • chernovik edi  -> endi katalogda: "🆕 Yangi mahsulot!";
+ * • zaxirasi 0 edi -> qayta keldi: "♻️ Mahsulot yangilandi";
+ * • narx o'zgardi  -> "♻️ Mahsulot yangilandi";
+ * • qolgan hollarda kanaldagi post jimgina yangilanadi (yangi son bilan).
+ */
+async function announceIntake(
+  refs: FirebaseFirestore.DocumentReference[],
+  before: FirebaseFirestore.DocumentSnapshot[]
+): Promise<void> {
+  const fresh = await getAdminDb().getAll(...refs);
+  await Promise.allSettled(
+    fresh.map(async (snap, i) => {
+      if (!snap.exists) return;
+      const after = { id: snap.id, ...snap.data() } as Product;
+      const old = before[i]?.data() as Product | undefined;
+      const mode = old?.isDraft ? "new" : announceModeFor(old ?? after, after);
+      await announceProduct(after, mode);
+    })
+  );
 }
 
 /**
@@ -61,6 +87,13 @@ export async function POST(request: Request) {
       stock: FieldValue.increment(item.qty),
       updatedAt: now,
     };
+    // Chernovik ("Yangi mahsulot ochish" bilan ta'riflangan) mahsulotga
+    // zaxira kelishi - uning nashr qilinishi: katalogga chiqadi va
+    // kanalga "🆕 Yangi mahsulot!" bo'lib e'lon qilinadi.
+    if ((snaps[i]?.data() as { isDraft?: boolean } | undefined)?.isDraft) {
+      updates.isDraft = false;
+      updates.isActive = true;
+    }
     if (item.price !== undefined) updates.price = item.price;
     if (item.supplier !== undefined && item.supplier.trim()) {
       updates.supplier = item.supplier.trim();
@@ -98,6 +131,7 @@ export async function POST(request: Request) {
 
   try {
     await batch.commit();
+    await announceIntake(refs, snaps);
     await logAction(`📥 Kirim (${admin.email ?? "admin"}): ${parsed.data.items.length} ta mahsulot zaxirasi yangilandi`);
     return NextResponse.json({ ok: true, updated: parsed.data.items.length });
   } catch (error) {

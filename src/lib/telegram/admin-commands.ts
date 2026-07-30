@@ -1,7 +1,7 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
-import { announceProduct } from "./channel";
+import { announceProduct, announceModeFor } from "./channel";
 import { sendChatMessage } from "./bot";
 import { startNewProductFlow, startEditProductFlow, cancelAdminSession } from "./admin-session";
 import { sendBroadcast } from "@/lib/broadcast";
@@ -157,7 +157,10 @@ export async function handleAdminCommand(params: {
         }
         const field = command === "/narx" ? "price" : "stock";
         await getAdminDb().collection("products").doc(id).update({ [field]: value, updatedAt: Date.now() });
-        await announceProduct({ ...product, [field]: value } as Product, "updated");
+        // Narx o'zgarishi kanalda "yangilandi" bo'lib chiqadi; zaxira esa
+        // faqat mahsulot tugab qolib qayta kelgan bo'lsa.
+        const afterField = { ...product, [field]: value } as Product;
+        await announceProduct(afterField, announceModeFor(product, afterField));
         await reply(`✅ <b>${product.name}</b>\n${command === "/narx" ? `Yangi narx: ${formatSom(value)}` : `Yangi zaxira: ${value} dona`}`);
         return;
       }
@@ -273,7 +276,8 @@ export async function handleAdminCommand(params: {
           return;
         }
         await getAdminDb().collection("products").doc(id).update(updates);
-        await announceProduct({ ...product, ...updates } as Product, "updated");
+        const afterEdit = { ...product, ...updates } as Product;
+        await announceProduct(afterEdit, announceModeFor(product, afterEdit));
         await reply(`✅ <b>${product.name}</b> yangilandi (${Object.keys(updates).filter((k) => k !== "updatedAt").join(", ")}).`);
         return;
       }
@@ -292,7 +296,8 @@ export async function handleAdminCommand(params: {
         }
         const isActive = command === "/tikla";
         await getAdminDb().collection("products").doc(id).update({ isActive, updatedAt: Date.now() });
-        await announceProduct({ ...product, isActive } as Product, "updated");
+        const afterVisibility = { ...product, isActive } as Product;
+        await announceProduct(afterVisibility, announceModeFor(product, afterVisibility));
         await reply(isActive ? `✅ <b>${product.name}</b> katalogga qaytarildi.` : `🚫 <b>${product.name}</b> katalogdan yashirildi.`);
         return;
       }

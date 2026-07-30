@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
-import { announceProduct } from "@/lib/telegram/channel";
+import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -30,6 +30,8 @@ const updateSchema = z.object({
   weightKg: z.number().nonnegative().nullable().optional(),
   images: z.array(z.string().url()).max(10).optional(),
   isActive: z.boolean().optional(),
+  /** `false` - chernovikni nashr qilish (katalogga chiqadi + kanalga e'lon). */
+  isDraft: z.boolean().optional(),
 });
 
 /** Mahsulotni tahrirlash (faqat admin). Faqat berilgan maydonlar yangilanadi. */
@@ -72,6 +74,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.discountUntil !== undefined) updates.discountUntil = d.discountUntil;
   if (d.stock !== undefined) updates.stock = d.stock;
   if (d.isActive !== undefined) updates.isActive = d.isActive;
+  if (d.isDraft !== undefined) {
+    updates.isDraft = d.isDraft;
+    // Chernovik nashr qilinganda katalogda ham ko'rinishi kerak.
+    if (!d.isDraft && d.isActive === undefined) updates.isActive = true;
+  }
   if (d.images !== undefined) {
     updates.images = d.images;
     updates.thumbnailUrl = d.images[0] ?? "";
@@ -91,8 +98,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   await ref.update(updates);
   await registerFacets({ brand: d.brand, country: d.manufacturerCountry, supplier: d.supplier });
   const updated = { ...existing, ...updates, id } as Product;
-  // Tahrirlangan mahsulot ham kanalga yangi holati bilan chiqadi.
-  await announceProduct(updated, "updated");
+  // Kanaldagi post har doim yangi holat bilan yangilanadi, lekin
+  // "♻️ Mahsulot yangilandi" sarlavhasi faqat narx/chegirma o'zgarganda
+  // yoki tugagan mahsulot qayta kelganda chiqadi. Chernovik nashr
+  // qilinganda esa - "🆕 Yangi mahsulot!".
+  const mode = existing.isDraft && !updated.isDraft ? "new" : announceModeFor(existing, updated);
+  await announceProduct(updated, mode);
   return NextResponse.json({ product: updated });
 }
 

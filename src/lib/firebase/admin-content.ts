@@ -18,6 +18,12 @@ export async function getSiteSettings(): Promise<SiteSettings> {
         body: data.about?.body ?? DEFAULT_SITE_SETTINGS.about.body,
         imageUrl: data.about?.imageUrl ?? DEFAULT_SITE_SETTINGS.about.imageUrl,
       },
+      channelFooter: {
+        phones: Array.isArray(data.channelFooter?.phones) ? data.channelFooter.phones : [],
+        slogan: data.channelFooter?.slogan ?? "",
+        address: data.channelFooter?.address ?? "",
+        links: Array.isArray(data.channelFooter?.links) ? data.channelFooter.links : [],
+      },
     };
   } catch {
     return DEFAULT_SITE_SETTINGS;

@@ -66,20 +66,19 @@ Ixtiyoriy qatorlar ham darhol yozilsa bo'ladi: `Brend:`, `Davlat:`,
 
 ### Keyin nima bo'ladi
 
-1. Mahsulot **darhol katalogga tushadi**. Kanalga e'lon esa albomdagi
-   **hamma rasm kelib bo'lgach** chiqadi (Telegram albom rasmlarini
-   alohida-alohida yuboradi — bot ~2.5 soniya kutib, keyin bittagina
-   albom-post tashlaydi).
-2. Bot javob beradi: qo'shilgani, ID si va **"Qolgan ma'lumotlarni ham
+1. Mahsulot **chernovik** bo'lib saqlanadi: saytda ham, kanalda ham hali
+   ko'rinmaydi. **"✅ Yetarli, tayyor"** bosilgandagina katalogga chiqadi
+   va kanalga e'lon qilinadi (albomdagi hamma rasm bilan birga).
+2. Bot javob beradi: chernovik tayyorligi, ID si va **"Qolgan ma'lumotlarni ham
    to'ldirasizmi?"** degan savol — ostida tugmalar:
    🏷 Kategoriya · ™️ Brend · 🌍 Davlat · 📝 Tavsif · 🔻 Chegirma ·
    ⏳ Chegirma muddati · 🖼 Yana rasm · ✏️ Nomni tuzatish · ✅ Yetarli.
-   Bularning hammasi ixtiyoriy — bosmasangiz ham mahsulot ishlayveradi.
-   Har bir to'ldirishdan keyin **kanaldagi e'lon ham yangilanadi**: yangi
-   post tashlanmaydi, avvalgi postning matni tahrirlanadi. Faqat yangi
-   rasm qo'shilsa post qaytadan tashlanadi (yuborilgan albomga rasm
-   qo'shib bo'lmaydi). "✅ Yetarli, tayyor" tugmasi ham e'lonni oxirgi
-   holat bilan tekshirib chiqadi.
+   Bularning hammasi ixtiyoriy — to'ldirmasangiz ham bo'ladi.
+   **"✅ Yetarli, tayyor"** bosilganda mahsulot nashr qilinadi: katalogga
+   chiqadi va kanalga **"🆕 Yangi mahsulot!"** bo'lib e'lon qilinadi.
+   Keyingi tahrirlarda yangi post tashlanmaydi — o'sha postning matni
+   tahrirlanadi (faqat yangi rasm qo'shilsa post qaytadan tashlanadi,
+   chunki yuborilgan albomga rasm qo'shib bo'lmaydi).
 3. **Video** yuborilsa u mahsulot sahifasida ham, kanal albomida ham
    ko'rinadi (20 MB gacha, 3 tagacha).
 4. Kirim **tarixga** yoziladi: `/admin/katalog/kirim` sahifasining pastida
@@ -90,6 +89,35 @@ Ixtiyoriy qatorlar ham darhol yozilsa bo'ladi: `Brend:`, `Davlat:`,
 Majburiy maydon yetishmasa mahsulot **yaratilmaydi**: bot nima
 yetishmayotganini va namunani yozib beradi, rasmni izohi bilan qayta
 tashlaysiz.
+
+### Kanalga qachon "yangilandi" deb yoziladi
+
+- **🆕 Yangi mahsulot!** — mahsulot birinchi marta e'lon qilinganda.
+- **♻️ Mahsulot yangilandi** — faqat uchta holatda: **narx o'zgardi**,
+  **chegirma** berildi (yoki olib tashlandi), yoki **tugab qolgan
+  mahsulot qayta keldi** (zaxira 0 dan ko'paydi).
+- Qolgan tahrirlar (tavsif, brend, kategoriya, rasm...) postni **jimgina**
+  yangilaydi — sarlavha o'zgarmaydi, obunachilarga takror xabar bo'lmaydi.
+
+---
+
+## 1a. Saytdan "Yangi mahsulot ochish"
+
+`/admin/katalog/kirim` sahifasining tepasida **«Yangi mahsulot ochish»**
+tugmasi doim turadi. U mahsulotni faqat **ta'riflaydi**: rasm/video,
+nomi, narxi, kategoriyasi, materiali, sotish turi, brendi, ishlab
+chiqaruvchi davlati. Zaxira so'ralmaydi.
+
+Ochilgan mahsulot **chernovik** bo'ladi:
+
+- saytda va kanalda **ko'rinmaydi**;
+- kirim sahifasining qidiruvida **«chernovik»** belgisi bilan chiqadi
+  (ochilgandan keyin darhol kirim ro'yxatiga tushib turadi);
+- kelgan soni kiritilib **kirim saqlanganda** katalogga chiqadi va
+  kanalga "🆕 Yangi mahsulot!" bo'lib e'lon qilinadi.
+
+Ya'ni mahsulot avval "ochiladi", keyin unga tovar keladi — huddi
+Telegramdagi chernovik → "✅ Yetarli, tayyor" tartibi kabi.
 
 ---
 
@@ -164,17 +192,52 @@ e'lonida va admin panelda shu ko'rinishda chiqadi.
 - **Forum topic Thread ID lari** — jumladan `#Kirim` (hozir 151). `0`
   qo'yilsa kirim oqimi o'chadi.
 - **E'lon kanali** va **majburiy obuna kanallari**.
-- **Maxfiy kalitlar** (faqat loyiha egasi ko'radi): bot tokeni, xodimlar
-  guruhi ID si, webhook siri. Bu yerdagi qiymat Netlify'dagi
-  o'zgaruvchidan **ustun turadi** — kalitni almashtirish uchun qayta
-  deploy qilish shart emas. Qiymatlar hech qachon to'liq ko'rsatilmaydi
-  (`1234…WXYZ`), `-` yozilsa panel qiymati o'chadi va yana Netlify'niki
-  ishlaydi. "Webhook'ni qayta o'rnatish" tugmasi yangi sir bilan
-  Telegram'dagi webhook'ni yangilaydi.
+- **Kanal posti footeri** — pastda alohida bo'lim.
 
-Har ikkala formada ham **saqlashdan oldin jumboq** chiqadi (masalan
+Bot sozlamalari formasida **saqlashdan oldin jumboq** chiqadi (masalan
 `37 + 48 = ?`). Savolni server beradi, javob ham **serverda** tekshiriladi
 va bir marta ishlaydi — ya'ni bu oynani chetlab o'tib to'g'ridan-to'g'ri
 API'ga so'rov yuborib bo'lmaydi. Maqsad: panelga kirgan (yoki ochiq
 qolgan kompyuterda o'tirgan) kishi bir bosishda botni ishdan chiqarib
 qo'ymasin.
+
+---
+
+## 5. Kanal posti footeri
+
+**Admin panel → Sozlamalar → «Kanal posti footeri»**. Kanalga chiqadigan
+har bir mahsulot e'loni shu tartibda tuziladi:
+
+```
+🆕 Yangi mahsulot!
+
+PPR quvur 25mm
+#️⃣ Kod: HS897
+🏷 Tebo • Turkiya
+💰 45 000 so'm / metr
+📦 Mavjud: 120 metr
+🧱 Polipropilen
+
+<tavsif>
+
+📞 +998 90 123 45 67
+📞 +998 91 234 56 78
+
+Sifat narxdan ustun
+
+📍 Toshkent, Chilonzor 12
+
+Telegram | Instagram | YouTube | Operator | Sayt
+```
+
+Footerdagi hamma narsa admin paneldan yoziladi:
+
+- **Telefon raqamlar** (5 tagacha) — har biri alohida qatorda;
+- **Shior** — yonida tayyor variantlardan tanlash tugmalari bor;
+- **Manzil** (ixtiyoriy);
+- **Havolalar** (8 tagacha) — har birining *nomi* va *havolasi*: Telegram
+  kanal, Instagram, YouTube, operator (`https://t.me/...`), sayt. Ular
+  postning eng oxirida bitta qatorda chiqadi.
+
+Bo'sh qoldirilgan qism postda umuman ko'rinmaydi. Footer blog
+e'lonlariga ham qo'shiladi.

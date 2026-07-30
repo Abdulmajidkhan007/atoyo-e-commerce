@@ -24,6 +24,18 @@ const settingsSchema = z.object({
       imageUrl: z.string().url().or(z.literal("")).default(""),
     })
     .optional(),
+  /** Kanal postining oxiri: telefonlar, shior, manzil va havolalar. */
+  channelFooter: z
+    .object({
+      phones: z.array(z.string().max(40)).max(5).default([]),
+      slogan: z.string().max(200).default(""),
+      address: z.string().max(200).default(""),
+      links: z
+        .array(z.object({ title: z.string().max(40), url: z.string().max(300) }))
+        .max(8)
+        .default([]),
+    })
+    .optional(),
 });
 
 /** Sayt sozlamalari (kontakt, ijtimoiy tarmoqlar, about) - faqat admin. */

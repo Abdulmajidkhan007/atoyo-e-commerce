@@ -32,6 +32,13 @@ const productSchema = z.object({
   lengthMm: z.number().nonnegative().optional(),
   weightKg: z.number().nonnegative().optional(),
   images: z.array(z.string().url()).max(10).default([]),
+  /**
+   * CHERNOVIK: "Yangi mahsulot ochish" - mahsulot faqat ta'riflanadi
+   * (nom, narx, kategoriya, material, sotish turi, brend, rasm).
+   * Katalogga chiqmaydi va kanalga e'lon qilinmaydi - kirim orqali
+   * zaxira kelganda nashr bo'ladi.
+   */
+  isDraft: z.boolean().default(false),
 });
 
 function slugify(name: string): string {
@@ -86,7 +93,8 @@ export async function POST(request: Request) {
     stock: d.stock,
     images: d.images,
     thumbnailUrl: d.images[0] ?? "",
-    isActive: true,
+    isActive: !d.isDraft,
+    isDraft: d.isDraft,
     salesCount: 0,
     createdAt: now,
     updatedAt: now,
@@ -94,7 +102,12 @@ export async function POST(request: Request) {
 
   await ref.set(product);
   await registerFacets({ brand: product.brand, country: product.manufacturerCountry, supplier: product.supplier });
+  // Chernovik e'lon qilinmaydi (announceProduct ham uni o'tkazib yuboradi).
   await announceProduct(product, "new");
-  await logAction(`📦 Yangi mahsulot (${admin.email ?? "admin"}): ${product.name} — ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`);
+  await logAction(
+    d.isDraft
+      ? `📝 Yangi mahsulot ochildi (${admin.email ?? "admin"}): ${product.name} — chernovik, kirim kutilmoqda`
+      : `📦 Yangi mahsulot (${admin.email ?? "admin"}): ${product.name} — ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`
+  );
   return NextResponse.json({ product }, { status: 201 });
 }

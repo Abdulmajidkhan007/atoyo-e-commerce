@@ -185,6 +185,8 @@ async function announceWhenAlbumSettles(mediaGroupId: string, productId: string)
   // biriktiramiz, shundagina e'lon to'liq albom bilan chiqadi.
   await drainPendingMedia(mediaGroupId, productId);
 
+  // Mahsulot chernovik bo'lsa e'lon chiqmaydi (announceProduct o'zi
+  // o'tkazib yuboradi) - u "✅ Yetarli, tayyor" bosilganda chiqadi.
   const snap = await db.collection("products").doc(productId).get();
   if (!snap.exists) return;
   await announceProduct({ id: snap.id, ...snap.data() } as Product, "new").catch((error) =>
@@ -392,7 +394,10 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     images: [],
     videos: [],
     thumbnailUrl: "",
-    isActive: true,
+    // CHERNOVIK: mahsulot "✅ Yetarli, tayyor" bosilgunicha katalogda ham,
+    // kanalda ham ko'rinmaydi - avval qolgan ma'lumotlar to'ldiriladi.
+    isActive: false,
+    isDraft: true,
     salesCount: 0,
     createdAt: now,
     updatedAt: now,
@@ -438,16 +443,16 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
   const saved = { id: fresh.id, ...fresh.data() } as Product;
 
   const summary = [
-    `✅ <b>Katalogga qo'shildi:</b> ${escapeHtml(saved.name)}`,
+    `📝 <b>Chernovik tayyor:</b> ${escapeHtml(saved.name)}`,
     `ID: <code>${saved.id}</code>`,
     saved.sku ? `#️⃣ Kodi: ${escapeHtml(saved.sku)}` : "",
     `🏷 ${labelOf(taxonomy.categories, saved.category)} | 🧱 ${labelOf(taxonomy.materials, saved.material)}`,
     `💰 ${formatSom(saved.price)} / ${unitLabel} | 📦 ${saved.stock} ${unitLabel}`,
     `🚚 Kimdan: ${escapeHtml(saved.supplier ?? "")}`,
-    mediaGroupId
-      ? "🖼 Fayllar yuklanmoqda — hammasi tayyor bo'lgach kanalga albom bo'lib chiqadi."
-      : `🖼 ${media.kind === "video" ? "Video" : "Rasm"} qo'shildi.`,
+    mediaGroupId ? "🖼 Fayllar yuklanmoqda..." : `🖼 ${media.kind === "video" ? "Video" : "Rasm"} qo'shildi.`,
     ...parsed.warnings.map((warning) => `⚠️ ${warning}`),
+    "",
+    "⏳ Mahsulot hali <b>katalogga chiqmadi</b>. \"✅ Yetarli, tayyor\" bosilganda katalogga qo'shiladi va kanalga e'lon qilinadi.",
   ]
     .filter(Boolean)
     .join("\n");

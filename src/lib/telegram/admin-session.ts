@@ -3,7 +3,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage, answerCallbackQuery, downloadTelegramFile } from "./bot";
 import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
-import { announceProduct } from "./channel";
+import { announceProduct, announceModeFor } from "./channel";
 import { registerFacets } from "@/lib/products/facets";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { DEFAULT_UNIT, labelOf, type TaxonomyItem } from "@/lib/products/taxonomy";
@@ -625,16 +625,20 @@ async function applyEditValue(userId: number, session: AdminSession, field: stri
   }
 
   if (!session.productId) return;
-  await getAdminDb().collection("products").doc(session.productId).update(updates);
+  const ref = getAdminDb().collection("products").doc(session.productId);
+  // Kanalda "yangilandi" deyish uchun avvalgi holat kerak (narx/chegirma
+  // o'zgardimi, tugagan mahsulot qayta keldimi).
+  const before = (await ref.get()).data() as Product | undefined;
+  await ref.update(updates);
   // Menyuga qaytamiz.
   session.step = "menu";
   session.editField = undefined;
   await saveSession(userId, session);
-  const snap = await getAdminDb().collection("products").doc(session.productId).get();
+  const snap = await ref.get();
   await sendChatMessage(session.chatId, "✅ Yangilandi.", { threadId: session.threadId });
   if (snap.exists) {
     const product = { id: snap.id, ...snap.data() } as Product;
-    await announceProduct(product, "updated");
+    await announceProduct(product, before ? announceModeFor(before, product) : "refresh");
     await sendEditMenu(session, product);
   }
 }
@@ -683,20 +687,34 @@ export async function handleAdminSessionCallback(params: {
     await clearSession(userId);
     await answerCallbackQuery(callbackQueryId, "Tayyor ✅");
 
-    // Ishonchli yakun: kanalga e'lon hali chiqmagan bo'lsa (masalan
-    // albom kutilayotganda uzilib qolgan bo'lsa) shu yerda chiqadi,
-    // chiqqan bo'lsa - oxirgi holat bilan yangilanadi.
+    // YAKUN = NASHR. Kirimdan kelgan mahsulot shu paytgacha chernovik
+    // bo'lib turadi: shu yerda katalogga chiqadi va kanalga e'lon
+    // qilinadi. Allaqachon nashr qilingan mahsulot uchun esa postdagi
+    // ma'lumot oxirgi holat bilan jimgina yangilanadi.
+    let published = false;
     if (session.productId) {
-      const snap = await getAdminDb().collection("products").doc(session.productId).get();
+      const ref = getAdminDb().collection("products").doc(session.productId);
+      const snap = await ref.get();
       if (snap.exists) {
-        const product = { id: snap.id, ...snap.data() } as Product;
-        await announceProduct(product, product.channelMessageId ? "updated" : "new").catch((error) =>
+        let product = { id: snap.id, ...snap.data() } as Product;
+        if (product.isDraft) {
+          await ref.update({ isDraft: false, isActive: true, updatedAt: Date.now() });
+          product = { ...product, isDraft: false, isActive: true };
+          published = true;
+        }
+        await announceProduct(product, published ? "new" : "refresh").catch((error) =>
           console.error("Kanalga e'lon (yakun) xatosi:", error)
         );
       }
     }
 
-    await sendChatMessage(session.chatId, "✅ Tahrirlash yakunlandi.", { threadId: session.threadId });
+    await sendChatMessage(
+      session.chatId,
+      published
+        ? "✅ <b>Mahsulot katalogga qo'shildi</b> va kanalga e'lon qilindi."
+        : "✅ Tahrirlash yakunlandi.",
+      { threadId: session.threadId }
+    );
     return;
   }
 
@@ -808,7 +826,9 @@ async function reloadEditMenu(
 
   const product = { id: snap.id, ...snap.data() } as Product;
   if (changed) {
-    await announceProduct(product, "updated").catch((error) =>
+    // Kategoriya/material kabi o'zgarishlar postni jimgina yangilaydi -
+    // "Mahsulot yangilandi" sarlavhasiga arzimaydi.
+    await announceProduct(product, "refresh").catch((error) =>
       console.error("Kanaldagi e'lonni yangilashda xato:", error)
     );
   }

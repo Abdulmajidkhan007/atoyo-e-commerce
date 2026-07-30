@@ -48,6 +48,12 @@ export interface Product {
   videos?: string[];
   thumbnailUrl: string;
   isActive: boolean;
+  /**
+   * CHERNOVIK: mahsulot ochilgan, lekin hali katalogga chiqmagan va
+   * kanalga e'lon qilinmagan. Telegram kirimida "✅ Yetarli, tayyor"
+   * bosilganda yoki saytdagi kirim orqali zaxira kelganda nashr bo'ladi.
+   */
+  isDraft?: boolean;
   /** Necha marta buyurtma qilingani - admin tahlillarida "eng ko'p sotilgan" saralash uchun. */
   salesCount: number;
   /**
@@ -58,6 +64,12 @@ export interface Product {
   channelMessageId?: number;
   /** E'lon paytidagi rasm soni - o'zgargan bo'lsa post qaytadan tashlanadi. */
   channelPhotoCount?: number;
+  /**
+   * Kanaldagi postning sarlavhasi: "Yangi mahsulot!" yoki "Mahsulot
+   * yangilandi". Post jimgina yangilanganda (masalan ixtiyoriy maydon
+   * to'ldirilganda) sarlavha o'zgarmasligi uchun saqlanadi.
+   */
+  channelMode?: "new" | "updated";
   /** Sharhlar reytingi (POST /api/products/[id]/reviews avtomatik yangilaydi). */
   ratingSum?: number;
   ratingCount?: number;

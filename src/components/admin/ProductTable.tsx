@@ -142,7 +142,15 @@ export function ProductTable() {
                       <Image src={product.thumbnailUrl} alt={product.name} fill sizes="40px" className="object-cover" />
                     </span>
                   )}
-                  <span className="line-clamp-1 text-navy-900 dark:text-white">{product.name}</span>
+                  <span className="line-clamp-1 text-navy-900 dark:text-white">
+                    {product.name}
+                    {/* Chernovik: hali katalogda ham, kanalda ham yo'q. */}
+                    {product.isDraft && (
+                      <span className="ml-2 rounded bg-aqua-500/15 px-1.5 py-0.5 text-xs text-aqua-600">
+                        chernovik
+                      </span>
+                    )}
+                  </span>
                 </td>
                 <td className="px-4 py-2">
                   <TextField

@@ -9,8 +9,9 @@ import {
 } from "./bot";
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
+import { getSiteSettings } from "@/lib/firebase/admin-content";
 import type { Product } from "@/types/product";
-import type { BlogPost } from "@/types/content";
+import type { BlogPost, ChannelPostFooter } from "@/types/content";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
 
@@ -80,6 +81,70 @@ async function publish(
   }
 }
 
+/**
+ * POST FOOTERI: telefon(lar) -> shior -> manzil -> havolalar.
+ * Admin panel > Sozlamalar > "Kanal posti footeri" dan boshqariladi.
+ * Hech narsa yozilmagan bo'lsa footer umuman qo'shilmaydi.
+ */
+function buildFooter(footer: ChannelPostFooter | undefined): string {
+  if (!footer) return "";
+
+  const blocks: string[] = [];
+
+  const phones = footer.phones.map((phone) => phone.trim()).filter(Boolean);
+  if (phones.length > 0) {
+    blocks.push(phones.map((phone) => `📞 ${escapeHtml(phone)}`).join("\n"));
+  }
+
+  const slogan = footer.slogan.trim();
+  if (slogan) blocks.push(`<i>${escapeHtml(slogan)}</i>`);
+
+  const address = footer.address.trim();
+  if (address) blocks.push(`📍 ${escapeHtml(address)}`);
+
+  // Havolalar bitta qatorda: Telegram | Instagram | YouTube | Operator | Sayt
+  const links = footer.links
+    .filter((link) => link.title.trim() && link.url.trim())
+    .map((link) => `<a href="${escapeHtml(link.url.trim())}">${escapeHtml(link.title.trim())}</a>`);
+  if (links.length > 0) blocks.push(links.join(" | "));
+
+  return blocks.length > 0 ? `\n\n${blocks.join("\n\n")}` : "";
+}
+
+/** Sozlamalardagi footer. O'qib bo'lmasa e'lon footersiz ketaveradi. */
+async function loadFooter(): Promise<ChannelPostFooter | undefined> {
+  try {
+    return (await getSiteSettings()).channelFooter;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * E'LON TURI:
+ *   • `new`      - "🆕 Yangi mahsulot!" (birinchi marta e'lon qilinganda);
+ *   • `updated`  - "♻️ Mahsulot yangilandi" (narx o'zgardi, chegirma
+ *                  berildi yoki tugab qolgan mahsulot qayta keldi);
+ *   • `refresh`  - postdagi ma'lumot jimgina yangilanadi, sarlavha esa
+ *                  avvalgicha qoladi (ixtiyoriy maydon to'ldirilganda —
+ *                  yangi mahsulot "yangilandi" deb ko'rinmasligi uchun).
+ */
+export type AnnounceMode = "new" | "updated" | "refresh";
+
+/**
+ * Mahsulot o'zgarishi kanalda "yangilandi" deb e'lon qilinishga
+ * arziydimi? Faqat NARX, CHEGIRMA va tugagandan keyin QAYTA KELISH
+ * shunga arziydi; qolgan tahrirlar postni jimgina yangilaydi.
+ */
+export function announceModeFor(before: Product, after: Product): AnnounceMode {
+  if (!after.channelMessageId) return "new";
+  if (after.price !== before.price) return "updated";
+  if ((after.discountPrice ?? null) !== (before.discountPrice ?? null)) return "updated";
+  if ((after.discountUntil ?? null) !== (before.discountUntil ?? null)) return "updated";
+  if ((before.stock ?? 0) <= 0 && (after.stock ?? 0) > 0) return "updated";
+  return "refresh";
+}
+
 /** Mahsulot e'loni matni (yangi post uchun ham, tahrir uchun ham bir xil). */
 function buildProductText(product: Product, mode: "new" | "updated"): string {
   const hasDiscount = isDiscountActive(product);
@@ -125,18 +190,28 @@ const MATERIAL_LABELS: Record<string, string> = {
  * qo'shilgan) - eski post o'chirilib, yangisi tashlanadi, chunki
  * yuborilgan albomga rasm qo'shib bo'lmaydi.
  */
-export async function announceProduct(product: Product, mode: "new" | "updated" = "new"): Promise<void> {
-  if (!product.isActive) return;
+export async function announceProduct(product: Product, mode: AnnounceMode = "new"): Promise<void> {
+  // Chernovik hali e'lon qilinmaydi - "✅ Yetarli, tayyor" bosilgandan
+  // (yoki kirim orqali zaxira kelgandan) keyin chiqadi.
+  if (!product.isActive || product.isDraft) return;
+
+  // Sarlavha: `refresh` bo'lsa postdagi avvalgi sarlavha saqlanadi.
+  const header: "new" | "updated" = mode === "refresh" ? product.channelMode ?? "new" : mode;
 
   // Rasmlar + videolar bitta albomga (Telegram aralash albomga ruxsat beradi).
   const gallery: MediaItem[] = [
     ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
     ...(product.videos ?? []).filter(Boolean).map((url) => ({ url, type: "video" as const })),
   ].slice(0, 10);
-  const text = buildProductText(product, mode);
+  const body = buildProductText(product, header);
+  const footer = buildFooter(await loadFooter());
   // Albom caption'i 1024 belgi bilan cheklangan - tavsif uzun bo'lsa
-  // e'lon jimgina kesilib qolmasligi uchun qisqartiramiz.
-  const caption = gallery.length > 1 && text.length > 850 ? `${text.slice(0, 847)}...` : text;
+  // e'lon jimgina kesilib qolmasligi uchun mahsulot qismini qisqartiramiz
+  // (footer - telefon, shior, havolalar - har doim to'liq qolsin).
+  const budget = 850 - footer.length;
+  const text =
+    gallery.length > 1 && body.length > budget ? `${body.slice(0, Math.max(120, budget - 3))}...` : body;
+  const caption = `${text}${footer}`;
   const buttonUrl = `${siteUrl()}/mahsulot/${product.id}`;
   const buttonText = "🛒 Saytda ko'rish";
 
@@ -162,6 +237,15 @@ export async function announceProduct(product: Product, mode: "new" | "updated" 
             ? undefined
             : { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] },
       });
+      // Sarlavha o'zgargan bo'lsa (masalan narx yangilandi) - eslab qolamiz,
+      // keyingi jimgina yangilanishlar shu sarlavhani saqlab qoladi.
+      if (header !== product.channelMode) {
+        await getAdminDb()
+          .collection("products")
+          .doc(product.id)
+          .update({ channelMode: header })
+          .catch(() => {});
+      }
       return;
     } catch (error) {
       // Matn o'zgarmagan bo'lsa Telegram xato beradi - bu xato emas.
@@ -192,6 +276,7 @@ export async function announceProduct(product: Product, mode: "new" | "updated" 
         channelChatId: sent.chatId,
         channelMessageId: sent.messageId,
         channelPhotoCount: gallery.length,
+        channelMode: header,
       })
       .catch((error) => console.error("E'lon ID sini saqlashda xato:", error));
   }
@@ -208,7 +293,7 @@ export async function announceBlogPost(post: BlogPost, mode: "new" | "updated" =
   ];
   if (post.excerpt) lines.push(``, escapeHtml(post.excerpt.slice(0, 500)));
 
-  await publish(lines.join("\n"), {
+  await publish(`${lines.join("\n")}${buildFooter(await loadFooter())}`, {
     photoUrl: post.coverImageUrl,
     buttonText: "📖 To'liq o'qish",
     buttonUrl: `${siteUrl()}/blog/${post.slug}`,
