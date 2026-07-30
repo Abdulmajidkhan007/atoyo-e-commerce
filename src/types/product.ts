@@ -26,6 +26,8 @@ export interface Product {
   /** Nom/brend so'zlari (array-contains qidiruvi - so'z nomning istalgan joyida bo'lsa topadi) */
   nameTokens?: string[];
   description: string;
+  /** Do'kon kodi / artikul (masalan "HS897") - qidiruvda ham ishlaydi. */
+  sku?: string;
   category: ProductCategory;
   brand: string;
   manufacturerCountry: string;

@@ -11,7 +11,13 @@ import {
   FormControl,
   CircularProgress,
   Alert,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import {
@@ -20,6 +26,7 @@ import {
   BUILTIN_UNITS,
   DEFAULT_UNIT,
   type Taxonomy,
+  type TaxonomyKind,
 } from "@/lib/products/taxonomy";
 import type { Product } from "@/types/product";
 
@@ -37,6 +44,7 @@ const MAX_IMAGES = 10;
 
 const EMPTY_FORM = {
   name: "",
+  sku: "",
   description: "",
   category: "",
   material: "",
@@ -76,6 +84,12 @@ interface ProductFormProps {
 export function ProductForm({ product, initialName, onSaved, onCancel }: ProductFormProps) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [taxonomy, setTaxonomy] = useState<Taxonomy>(FALLBACK_TAXONOMY);
+  /** Ixtiyoriy maydonlar bo'limi yopiq turadi - forma qisqa ko'rinadi. */
+  const [showExtra, setShowExtra] = useState(false);
+  /** "+" bosilganda: qaysi ro'yxatga yangi tur qo'shilyapti. */
+  const [addingKind, setAddingKind] = useState<TaxonomyKind | null>(null);
+  const [newTypeLabel, setNewTypeLabel] = useState("");
+  const [addingBusy, setAddingBusy] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<NewImage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -97,6 +111,7 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
         product
           ? {
               name: product.name,
+              sku: product.sku ?? "",
               description: product.description,
               category: product.category,
               material: product.material,
@@ -124,6 +139,48 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
   }, [product, initialName]);
 
   const totalImages = existingImages.length + newImages.length;
+
+  const unitLabel = taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit;
+
+  /**
+   * Ro'yxatda kerakli tur bo'lmasa - shu yerda qo'shiladi ("Turlar"
+   * sahifasiga o'tish shart emas) va darhol tanlanadi.
+   */
+  const addType = async () => {
+    const kind = addingKind;
+    const label = newTypeLabel.trim();
+    if (!kind || label.length < 2) return;
+
+    setAddingBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/taxonomy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, label }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        item?: { slug: string; label: string };
+        error?: string;
+      };
+      if (!res.ok || !data.item) throw new Error(data.error ?? "Qo'shilmadi.");
+
+      const item = data.item;
+      setTaxonomy((prev) => ({ ...prev, [kind]: [...prev[kind], item] }));
+      setForm((prev) => ({
+        ...prev,
+        ...(kind === "categories" ? { category: item.slug } : {}),
+        ...(kind === "materials" ? { material: item.slug } : {}),
+        ...(kind === "units" ? { unit: item.slug } : {}),
+      }));
+      setAddingKind(null);
+      setNewTypeLabel("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Yangi tur qo'shilmadi.");
+    } finally {
+      setAddingBusy(false);
+    }
+  };
 
   const handleFilesSelected = (files: FileList | null) => {
     if (!files) return;
@@ -163,6 +220,7 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
 
       const payload = {
         name: form.name.trim(),
+        sku: form.sku.trim(),
         description: form.description.trim(),
         category: form.category,
         material: form.material,
@@ -209,22 +267,31 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
 
   return (
     <div className="flex flex-col gap-4">
-      <TextField label="Nomi" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} fullWidth />
       <TextField
-        label="Tavsif"
-        value={form.description}
-        onChange={(e) => setForm({ ...form, description: e.target.value })}
-        multiline
-        minRows={2}
+        label="Nomi *"
+        value={form.name}
+        onChange={(e) => setForm({ ...form, name: e.target.value })}
         fullWidth
       />
 
-      <div className="grid grid-cols-2 gap-3">
+      <TextField
+        size="small"
+        label="Kodi / artikul"
+        placeholder="HS897"
+        value={form.sku}
+        onChange={(e) => setForm({ ...form, sku: e.target.value })}
+        helperText="Ixtiyoriy. Kod bo'yicha ham qidirish mumkin bo'ladi."
+        fullWidth
+      />
+
+      {/* Kategoriya / material / sotish turi - majburiy. Ro'yxatda
+          kerakli tur bo'lmasa yonidagi "+" bilan darhol qo'shiladi. */}
+      <div className="flex items-start gap-2">
         <FormControl size="small" fullWidth required>
-          <InputLabel id="pf-category">Kategoriya</InputLabel>
+          <InputLabel id="pf-category">Kategoriya *</InputLabel>
           <Select
             labelId="pf-category"
-            label="Kategoriya"
+            label="Kategoriya *"
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
           >
@@ -233,12 +300,17 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
             ))}
           </Select>
         </FormControl>
+        <IconButton aria-label="Yangi kategoriya" onClick={() => setAddingKind("categories")} className="!mt-0.5">
+          <AddIcon />
+        </IconButton>
+      </div>
 
+      <div className="flex items-start gap-2">
         <FormControl size="small" fullWidth required>
-          <InputLabel id="pf-material">Material</InputLabel>
+          <InputLabel id="pf-material">Material *</InputLabel>
           <Select
             labelId="pf-material"
-            label="Material"
+            label="Material *"
             value={form.material}
             onChange={(e) => setForm({ ...form, material: e.target.value })}
           >
@@ -247,21 +319,29 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
             ))}
           </Select>
         </FormControl>
+        <IconButton aria-label="Yangi material" onClick={() => setAddingKind("materials")} className="!mt-0.5">
+          <AddIcon />
+        </IconButton>
       </div>
 
-      <FormControl size="small" fullWidth required>
-        <InputLabel id="pf-unit">Sotish turi</InputLabel>
-        <Select
-          labelId="pf-unit"
-          label="Sotish turi"
-          value={form.unit}
-          onChange={(e) => setForm({ ...form, unit: e.target.value })}
-        >
-          {taxonomy.units.map((item) => (
-            <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <div className="flex items-start gap-2">
+        <FormControl size="small" fullWidth required>
+          <InputLabel id="pf-unit">Sotish turi *</InputLabel>
+          <Select
+            labelId="pf-unit"
+            label="Sotish turi *"
+            value={form.unit}
+            onChange={(e) => setForm({ ...form, unit: e.target.value })}
+          >
+            {taxonomy.units.map((item) => (
+              <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <IconButton aria-label="Yangi sotish turi" onClick={() => setAddingKind("units")} className="!mt-0.5">
+          <AddIcon />
+        </IconButton>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <TextField size="small" label="Brend" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
@@ -273,36 +353,117 @@ export function ProductForm({ product, initialName, onSaved, onCancel }: Product
         />
       </div>
 
-      <TextField
-        size="small"
-        label="Kimdan kelgan (yetkazib beruvchi)"
-        value={form.supplier}
-        onChange={(e) => setForm({ ...form, supplier: e.target.value })}
-        fullWidth
-      />
-
-      <div className="grid grid-cols-3 gap-3">
-        <TextField size="small" type="number" label={`Narx (so'm / ${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit})`} value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-        <TextField size="small" type="number" label="Chegirma narxi" value={form.discountPrice} onChange={(e) => setForm({ ...form, discountPrice: e.target.value })} />
-        <TextField size="small" type="number" label={`Zaxira (${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit})`} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField
+          size="small"
+          type="number"
+          label={`Narx (so'm / ${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit}) *`}
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: e.target.value })}
+        />
+        <TextField
+          size="small"
+          type="number"
+          label={`Zaxira (${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit}) *`}
+          value={form.stock}
+          onChange={(e) => setForm({ ...form, stock: e.target.value })}
+        />
       </div>
 
-      <TextField
+      {/* Qolgan maydonlar ixtiyoriy - forma qisqa bo'lishi uchun yopiq
+          turadi va faqat kerak bo'lganda ochiladi. */}
+      <Button
+        type="button"
+        variant="text"
         size="small"
-        type="date"
-        label="Chegirma tugash sanasi (ixtiyoriy)"
-        value={form.discountUntil}
-        onChange={(e) => setForm({ ...form, discountUntil: e.target.value })}
-        InputLabelProps={{ shrink: true }}
-        helperText="Bo'sh qoldirilsa chegirma muddatsiz amal qiladi"
-        fullWidth
-      />
+        onClick={() => setShowExtra((prev) => !prev)}
+        className="!w-fit !normal-case"
+      >
+        {showExtra ? "− Qo'shimcha ma'lumotlarni yopish" : "+ Qo'shimcha ma'lumotlar (ixtiyoriy)"}
+      </Button>
 
-      <div className="grid grid-cols-3 gap-3">
-        <TextField size="small" type="number" label="Diametri (mm)" value={form.diameterMm} onChange={(e) => setForm({ ...form, diameterMm: e.target.value })} />
-        <TextField size="small" type="number" label="Uzunligi (mm)" value={form.lengthMm} onChange={(e) => setForm({ ...form, lengthMm: e.target.value })} />
-        <TextField size="small" type="number" label="Vazni (kg)" value={form.weightKg} onChange={(e) => setForm({ ...form, weightKg: e.target.value })} />
-      </div>
+      {showExtra && (
+        <div className="flex flex-col gap-3 rounded-xl2 border border-navy-100 p-3 dark:border-navy-500">
+          <TextField
+            size="small"
+            label="Tavsif"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            multiline
+            minRows={2}
+            fullWidth
+          />
+
+          <TextField
+            size="small"
+            label="Kimdan kelgan (yetkazib beruvchi)"
+            value={form.supplier}
+            onChange={(e) => setForm({ ...form, supplier: e.target.value })}
+            fullWidth
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              size="small"
+              type="number"
+              label="Chegirma narxi"
+              value={form.discountPrice}
+              onChange={(e) => setForm({ ...form, discountPrice: e.target.value })}
+            />
+            <TextField
+              size="small"
+              type="date"
+              label="Chegirma tugash sanasi"
+              value={form.discountUntil}
+              onChange={(e) => setForm({ ...form, discountUntil: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <TextField size="small" type="number" label="Diametri (mm)" value={form.diameterMm} onChange={(e) => setForm({ ...form, diameterMm: e.target.value })} />
+            <TextField size="small" type="number" label="Uzunligi (mm)" value={form.lengthMm} onChange={(e) => setForm({ ...form, lengthMm: e.target.value })} />
+            <TextField size="small" type="number" label="Vazni (kg)" value={form.weightKg} onChange={(e) => setForm({ ...form, weightKg: e.target.value })} />
+          </div>
+        </div>
+      )}
+
+      {/* Yangi kategoriya/material/sotish turi qo'shish oynasi */}
+      <Dialog open={addingKind !== null} onClose={() => setAddingKind(null)} fullWidth maxWidth="xs">
+        <DialogTitle>
+          {addingKind === "categories"
+            ? "Yangi kategoriya"
+            : addingKind === "materials"
+              ? "Yangi material"
+              : "Yangi sotish turi"}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nomi"
+            value={newTypeLabel}
+            onChange={(e) => setNewTypeLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void addType();
+              }
+            }}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddingKind(null)}>Bekor qilish</Button>
+          <Button
+            variant="contained"
+            onClick={addType}
+            disabled={addingBusy || newTypeLabel.trim().length < 2}
+          >
+            {addingBusy ? <CircularProgress size={18} color="inherit" /> : "Qo'shish"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Rasmlar galereyasi (1-10 ta) */}
       <div>

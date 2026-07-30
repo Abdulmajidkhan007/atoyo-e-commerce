@@ -94,6 +94,7 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
     ``,
     `<b>${escapeHtml(product.name)}</b>`,
   ];
+  if (product.sku) lines.push(`#️⃣ Kod: <code>${escapeHtml(product.sku)}</code>`);
   if (product.brand || product.manufacturerCountry) {
     lines.push(`🏷 ${escapeHtml([product.brand, product.manufacturerCountry].filter(Boolean).join(" • "))}`);
   }

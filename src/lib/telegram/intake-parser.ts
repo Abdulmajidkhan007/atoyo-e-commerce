@@ -30,6 +30,7 @@ export type IntakeField =
   | "discount"
   | "discountUntil"
   | "unit"
+  | "sku"
   | "diameter"
   | "length"
   | "weight";
@@ -119,6 +120,14 @@ const FIELD_ALIASES: Record<string, IntakeField> = {
   uzunlik: "length",
   uzunligi: "length",
   length: "length",
+
+  kod: "sku",
+  kodi: "sku",
+  artikul: "sku",
+  sku: "sku",
+  code: "sku",
+  "mahsulot kodi": "sku",
+  артикул: "sku",
 
   "sotish turi": "unit",
   "olchov": "unit",
@@ -253,6 +262,8 @@ export interface ParsedIntake {
   category: ProductCategory | null;
   /** Sotish turi: dona / metr / kg ... */
   unit: string | null;
+  /** Do'kon kodi / artikul. */
+  sku: string;
   brand: string;
   manufacturerCountry: string;
   description: string;
@@ -377,6 +388,7 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
     material,
     category,
     unit,
+    sku: (values.get("sku") ?? "").trim(),
     brand: (values.get("brand") ?? "").trim(),
     manufacturerCountry: (values.get("country") ?? "").trim(),
     description: (values.get("description") ?? "").trim(),
@@ -393,6 +405,7 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
 export const INTAKE_FIELD_LABELS: Record<IntakeField, string> = {
   name: "Nomi",
   unit: "Sotish turi (dona/metr/kg...)",
+  sku: "Kodi (artikul)",
   price: "Narxi",
   stock: "Soni",
   supplier: "Kimdan kelgan",
@@ -417,4 +430,5 @@ export const INTAKE_TEMPLATE = [
   "Sotish turi: metr",
   "Kimdan: Akmal aka",
   "Material: polipropilen",
+  "Kodi: PPR-25 (ixtiyoriy)",
 ].join("\n");

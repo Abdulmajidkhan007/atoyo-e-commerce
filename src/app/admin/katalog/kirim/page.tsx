@@ -8,7 +8,9 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { SearchBar } from "@/components/product/SearchBar";
+import { IntakeHistoryList } from "@/components/admin/IntakeHistoryList";
 import type { Product } from "@/types/product";
+import type { StockIntake } from "@/types/intake";
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
@@ -39,6 +41,30 @@ function IntakeContent() {
   const [toast, setToast] = useState<string | null>(
     searchParams.get("yaratildi") ? "✅ Yangi mahsulot yaratildi va katalogga qo'shildi." : null
   );
+  const [recent, setRecent] = useState<StockIntake[] | null>(null);
+
+  /** So'nggi kirimlar - kim, qachon, qayerdan kiritgani ko'rinib turadi. */
+  const loadRecent = () => {
+    fetch("/api/admin/products/intake")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { intakes?: StockIntake[] } | null) => setRecent(data?.intakes ?? []))
+      .catch(() => setRecent([]));
+  };
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/admin/products/intake")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { intakes?: StockIntake[] } | null) => {
+        if (active) setRecent(data?.intakes ?? []);
+      })
+      .catch(() => {
+        if (active) setRecent([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const trimmed = searchTerm.trim();
 
@@ -96,6 +122,7 @@ function IntakeContent() {
       if (!res.ok) throw new Error("failed");
       setToast(`✅ Kirim saqlandi: ${rows.length} ta mahsulot zaxirasi yangilandi.`);
       setRows([]);
+      loadRecent();
     } catch {
       setToast("❌ Kirimni saqlashda xatolik. Qayta urinib ko'ring.");
     } finally {
@@ -204,6 +231,24 @@ function IntakeContent() {
           </div>
         </div>
       )}
+
+      {/* 3) So'nggi kirimlar - qayerdan, kim, qachon */}
+      <div className="mt-8 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-navy-900 dark:text-white">So&apos;nggi kirimlar</h2>
+          <Link href="/admin/katalog/kirim/tarix" className="text-sm text-aqua-600 hover:underline">
+            Hammasi →
+          </Link>
+        </div>
+
+        {recent === null ? (
+          <div className="flex justify-center py-4">
+            <CircularProgress size={22} />
+          </div>
+        ) : (
+          <IntakeHistoryList intakes={recent} />
+        )}
+      </div>
 
       <Snackbar
         open={toast !== null}

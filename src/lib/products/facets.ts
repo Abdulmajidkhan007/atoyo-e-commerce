@@ -27,10 +27,19 @@ export async function registerFacets(params: {
   country?: string;
   supplier?: string;
 }): Promise<void> {
+  // Ro'yxatda shu qiymat boshqa registrda bor bo'lsa - qayta qo'shmaymiz
+  // (aks holda "Atoyo" va "ATOYO" ikkita bo'lib ko'rinadi).
+  const existing = await getFacets().catch(() => EMPTY_FACETS);
+  const isNew = (list: string[], value: string) =>
+    !list.some((item) => item.toLowerCase() === value.toLowerCase());
+
   const updates: Record<string, unknown> = {};
-  if (params.brand?.trim()) updates.brands = FieldValue.arrayUnion(params.brand.trim());
-  if (params.country?.trim()) updates.countries = FieldValue.arrayUnion(params.country.trim());
-  if (params.supplier?.trim()) updates.suppliers = FieldValue.arrayUnion(params.supplier.trim());
+  const brand = params.brand?.trim();
+  const country = params.country?.trim();
+  const supplier = params.supplier?.trim();
+  if (brand && isNew(existing.brands, brand)) updates.brands = FieldValue.arrayUnion(brand);
+  if (country && isNew(existing.countries, country)) updates.countries = FieldValue.arrayUnion(country);
+  if (supplier && isNew(existing.suppliers, supplier)) updates.suppliers = FieldValue.arrayUnion(supplier);
   if (Object.keys(updates).length === 0) return;
 
   try {
@@ -41,16 +50,37 @@ export async function registerFacets(params: {
   }
 }
 
-/** Filtr paneli uchun brend/davlat ro'yxati (alifbo tartibida). */
+/**
+ * Bir xil qiymat turli katta-kichik harf bilan yozilgan bo'lsa
+ * ("Atoyo" va "ATOYO") ro'yxatda ikki marta chiqmasligi kerak:
+ * solishtirish kichik harflarda, ko'rsatiladigan nom esa birinchi
+ * uchraganicha qoladi.
+ */
+function dedupe(values: string[]): string[] {
+  const seen = new Map<string, string>();
+  for (const raw of values) {
+    const value = raw?.trim();
+    if (!value) continue;
+    const key = value.toLowerCase();
+    // Bir xil qiymatdan chiroyliroq yozilganini (bosh harfli) tanlaymiz.
+    const existing = seen.get(key);
+    if (!existing || (existing === existing.toUpperCase() && value !== value.toUpperCase())) {
+      seen.set(key, value);
+    }
+  }
+  return [...seen.values()].sort((a, b) => a.localeCompare(b));
+}
+
+/** Filtr paneli uchun brend/davlat ro'yxati (alifbo tartibida, takrorsiz). */
 export async function getFacets(): Promise<ProductFacets> {
   try {
     const snap = await getAdminDb().doc(FACETS_DOC.join("/")).get();
     const data = snap.data() as Partial<ProductFacets> | undefined;
     if (!data) return EMPTY_FACETS;
     return {
-      brands: (data.brands ?? []).filter(Boolean).sort((a, b) => a.localeCompare(b)),
-      countries: (data.countries ?? []).filter(Boolean).sort((a, b) => a.localeCompare(b)),
-      suppliers: (data.suppliers ?? []).filter(Boolean).sort((a, b) => a.localeCompare(b)),
+      brands: dedupe(data.brands ?? []),
+      countries: dedupe(data.countries ?? []),
+      suppliers: dedupe(data.suppliers ?? []),
     };
   } catch {
     return EMPTY_FACETS;

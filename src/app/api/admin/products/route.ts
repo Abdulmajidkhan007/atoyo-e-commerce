@@ -13,6 +13,8 @@ export const runtime = "nodejs";
 const productSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(4000).default(""),
+  /** Do'kon kodi / artikul (ixtiyoriy). */
+  sku: z.string().max(60).default(""),
   // Kategoriya/material admin qo'shgan yangi turlar ham bo'lishi mumkin
   // (metadata/taxonomy) - shuning uchun ro'yxat emas, slug tekshiriladi.
   category: z.string().min(1).max(60),
@@ -63,8 +65,9 @@ export async function POST(request: Request) {
     slug: `${slugify(d.name)}-${ref.id.slice(0, 6)}`,
     name: d.name.trim(),
     nameSearchIndex: d.name.trim().toLowerCase(),
-    nameTokens: buildNameTokens(d.name, d.brand),
+    nameTokens: buildNameTokens(d.name, d.brand, d.sku),
     description: d.description.trim(),
+    sku: d.sku.trim(),
     category: d.category,
     brand: d.brand.trim(),
     manufacturerCountry: d.manufacturerCountry.trim(),

@@ -81,7 +81,10 @@ export default async function ProductPage({ params }: ProductPageParams) {
             <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{product.name}</h1>
             <FavoriteButton product={product} />
           </div>
-          <p className="text-sm text-navy-300">{product.brand} • {product.manufacturerCountry}</p>
+          <p className="text-sm text-navy-300">
+            {[product.brand, product.manufacturerCountry].filter(Boolean).join(" • ")}
+            {product.sku ? ` • Kod: ${product.sku}` : ""}
+          </p>
 
           {(product.ratingCount ?? 0) > 0 && (
             <p className="flex items-center gap-2 text-sm text-navy-300">

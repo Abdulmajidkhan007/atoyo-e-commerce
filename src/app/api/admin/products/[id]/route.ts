@@ -12,6 +12,7 @@ export const runtime = "nodejs";
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(4000).optional(),
+  sku: z.string().max(60).optional(),
   // Admin qo'shgan yangi turlar ham bo'lishi mumkin (metadata/taxonomy).
   category: z.string().min(1).max(60).optional(),
   material: z.string().min(1).max(60).optional(),
@@ -62,6 +63,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.category !== undefined) updates.category = d.category;
   if (d.material !== undefined) updates.material = d.material;
   if (d.unit !== undefined) updates.unit = d.unit;
+  if (d.sku !== undefined) updates.sku = d.sku.trim();
   if (d.brand !== undefined) updates.brand = d.brand.trim();
   if (d.manufacturerCountry !== undefined) updates.manufacturerCountry = d.manufacturerCountry.trim();
   if (d.supplier !== undefined) updates.supplier = d.supplier.trim();

@@ -5,6 +5,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
+import { getRecentIntakes } from "@/lib/products/intake-history";
 import type { StockIntake } from "@/types/intake";
 
 export const runtime = "nodejs";
@@ -24,6 +25,14 @@ const intakeSchema = z.object({
     .min(1)
     .max(100),
 });
+
+/** Oxirgi kirimlar - kirim sahifasidagi "so'nggi kirimlar" ro'yxati uchun. */
+export async function GET() {
+  const admin = await requirePermission("products");
+  if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  return NextResponse.json({ intakes: await getRecentIntakes(10) });
+}
 
 /**
  * MAHSULOT KIRIMI: mavjud mahsulotlarga yangi partiya keldi - zaxira
@@ -67,11 +76,15 @@ export async function POST(request: Request) {
     id: intakeRef.id,
     adminUid: admin.uid,
     adminEmail: admin.email ?? null,
+    adminName: admin.displayName ?? admin.email ?? null,
+    source: "panel",
+    kind: "restock",
     items: parsed.data.items.map((item, i) => {
-      const data = snaps[i]?.data() as { name?: string; stock?: number } | undefined;
+      const data = snaps[i]?.data() as { name?: string; stock?: number; unit?: string } | undefined;
       return {
         productId: item.productId,
         name: data?.name ?? item.productId,
+        unit: data?.unit ?? "dona",
         qty: item.qty,
         stockBefore: data?.stock ?? 0,
         price: item.price ?? null,

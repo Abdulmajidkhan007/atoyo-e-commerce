@@ -49,6 +49,7 @@ Kalit so'zlar erkin yoziladi, katta-kichik harf farq qilmaydi:
 | Materiali | `material`, `materiali`, `xomashyo`, `материал` |
 | Kategoriyasi | `kategoriya`, `turkum`, `bo'lim`, `category`, `категория` |
 | Sotish turi | `sotish turi`, `o'lchov`, `birlik`, `unit`, `turi` |
+| Kodi (artikul) | `kod`, `kodi`, `artikul`, `sku`, `code` — ixtiyoriy, kod bo'yicha qidirish ishlaydi |
 
 Material nomlari: `polipropilen (ppr)`, `metalloplastik`, `po'lat`, `mis`,
 `latun`, `cho'yan`, `pvx`. Ruscha/inglizcha yozilsa ham tanidi.
@@ -81,8 +82,10 @@ Ixtiyoriy qatorlar ham darhol yozilsa bo'ladi: `Brend:`, `Davlat:`,
    holat bilan tekshirib chiqadi.
 3. **Video** yuborilsa u mahsulot sahifasida ham, kanal albomida ham
    ko'rinadi (20 MB gacha, 3 tagacha).
-4. Kirim **tarixga** yoziladi (`/admin/katalog/kirim/tarix`): kim, qachon,
-   kimdan, nechta.
+4. Kirim **tarixga** yoziladi: `/admin/katalog/kirim` sahifasining pastida
+   so'nggi kirimlar, to'liq ro'yxat esa `/admin/katalog/kirim/tarix` da —
+   har birida **qayerdan** (✈️ Telegram yoki 🖥 admin panel), **kim**,
+   **qachon**, nechta va kimdan kelgani ko'rinadi.
 
 Majburiy maydon yetishmasa mahsulot **yaratilmaydi**: bot nima
 yetishmayotganini va namunani yozib beradi, rasmni izohi bilan qayta
@@ -105,6 +108,7 @@ sarlavha** (ustun nomlari). Ikkinchi varaqda ustunlar izohi bor.
 
 | Ustun | Majburiy | Izoh |
 |---|---|---|
+| `sku` | ❌ | Do'kon kodi / artikul (`HS897`). Kod bo'yicha qidirishda ishlaydi |
 | `id` | ❌ | Bo'sh — yangi mahsulot. To'ldirilgan — o'sha ID li mahsulot **yangilanadi** (ID larni CSV eksportidan oling). |
 | `name` | ✅ | Nomi |
 | `description` | ❌ | Tavsif |

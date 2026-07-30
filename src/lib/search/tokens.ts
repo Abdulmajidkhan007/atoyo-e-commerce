@@ -6,8 +6,9 @@
  *
  * Client ham, server ham ishlatadi - shuning uchun "server-only" YO'Q.
  */
-export function buildNameTokens(name: string, brand?: string): string[] {
-  const source = `${name} ${brand ?? ""}`.toLowerCase();
+export function buildNameTokens(name: string, brand?: string, sku?: string): string[] {
+  // Kod (artikul) ham tokenlarga tushadi - "HS897" deb qidirilsa topiladi.
+  const source = `${name} ${brand ?? ""} ${sku ?? ""}`.toLowerCase();
   const words = source
     .split(/[^a-zA-Z0-9а-яА-ЯёЁўЎқҚғҒҳҲ'ʼ/.-]+/u)
     .map((w) => w.trim())

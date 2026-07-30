@@ -199,11 +199,15 @@ async function recordIntakeHistory(product: Product, userId: number, adminName: 
   const intake: StockIntake = {
     id: ref.id,
     adminUid: `tg:${userId}`,
-    adminEmail: adminName || null,
+    adminEmail: null,
+    adminName: adminName || `Telegram #${userId}`,
+    source: "telegram",
+    kind: "new",
     items: [
       {
         productId: product.id,
         name: product.name,
+        unit: product.unit,
         qty: product.stock,
         stockBefore: 0,
         price: product.price,
@@ -366,8 +370,9 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
       .replace(/\s+/g, "-")}-${ref.id.slice(0, 6)}`,
     name: parsed.name,
     nameSearchIndex: parsed.name.toLowerCase(),
-    nameTokens: buildNameTokens(parsed.name, parsed.brand),
+    nameTokens: buildNameTokens(parsed.name, parsed.brand, parsed.sku),
     description: parsed.description,
+    sku: parsed.sku,
     category: parsed.category!,
     brand: parsed.brand,
     manufacturerCountry: parsed.manufacturerCountry,
@@ -435,6 +440,7 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
   const summary = [
     `✅ <b>Katalogga qo'shildi:</b> ${escapeHtml(saved.name)}`,
     `ID: <code>${saved.id}</code>`,
+    saved.sku ? `#️⃣ Kodi: ${escapeHtml(saved.sku)}` : "",
     `🏷 ${labelOf(taxonomy.categories, saved.category)} | 🧱 ${labelOf(taxonomy.materials, saved.material)}`,
     `💰 ${formatSom(saved.price)} / ${unitLabel} | 📦 ${saved.stock} ${unitLabel}`,
     `🚚 Kimdan: ${escapeHtml(saved.supplier ?? "")}`,

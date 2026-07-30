@@ -393,6 +393,7 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
   const unit = labelOf(BUILTIN_UNITS, product.unit) || product.unit || DEFAULT_UNIT;
   const lines = [
     `<b>${product.name}</b>`,
+    product.sku ? `#️⃣ ${product.sku}` : "",
     product.brand ? `${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
     `💰 <b>${formatSom(price)}</b> / ${unit}${price < product.price ? ` <s>${formatSom(product.price)}</s>` : ""}`,
     (product.ratingCount ?? 0) > 0

@@ -3,6 +3,7 @@ import type { Product } from "@/types/product";
 /** Eksport/import ustunlari - tartibi shu faylda yagona manba. */
 export const CSV_COLUMNS = [
   "id",
+  "sku",
   "name",
   "description",
   "category",
@@ -34,6 +35,7 @@ export function productsToCsv(products: Product[]): string {
   const rows = products.map((p) =>
     [
       p.id,
+      p.sku ?? "",
       p.name,
       p.description,
       p.category,

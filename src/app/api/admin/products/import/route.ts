@@ -7,29 +7,10 @@ import { registerFacets } from "@/lib/products/facets";
 import { parseCsv } from "@/lib/products/csv";
 import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
 import { logAction } from "@/lib/telegram/action-log";
+import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
 export const runtime = "nodejs";
-
-const CATEGORIES: ProductCategory[] = [
-  "pipes",
-  "fittings",
-  "faucets",
-  "shower-systems",
-  "boilers",
-  "radiators",
-  "pumps",
-  "sanitary-ware",
-];
-const MATERIALS: ProductMaterial[] = [
-  "polypropylene",
-  "metal-plastic",
-  "steel",
-  "copper",
-  "brass",
-  "cast-iron",
-  "pvc",
-];
 
 /**
  * Import ikki ko'rinishda keladi:
@@ -125,6 +106,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Bir martada 5000 tagacha qator import qilinadi." }, { status: 400 });
   }
 
+  // Kategoriya/material/sotish turi ro'yxatlari: standart + admin qo'shganlari.
+  const taxonomy = await getTaxonomy();
+  const categorySlugs = new Set(taxonomy.categories.map((item) => item.slug));
+  const materialSlugs = new Set(taxonomy.materials.map((item) => item.slug));
+  const unitSlugs = new Set(taxonomy.units.map((item) => item.slug));
+
   const db = getAdminDb();
   const now = Date.now();
   const errors: string[] = [];
@@ -152,12 +139,12 @@ export async function POST(request: Request) {
       continue;
     }
     const category = (row.category ?? "").trim() as ProductCategory;
-    if (!CATEGORIES.includes(category)) {
+    if (!categorySlugs.has(category)) {
       errors.push(`${lineNo}-qator: kategoriya noto'g'ri (${row.category ?? ""})`);
       continue;
     }
     const material = (row.material ?? "").trim() as ProductMaterial;
-    if (!MATERIALS.includes(material)) {
+    if (!materialSlugs.has(material)) {
       errors.push(`${lineNo}-qator: material noto'g'ri (${row.material ?? ""})`);
       continue;
     }
@@ -183,12 +170,20 @@ export async function POST(request: Request) {
     const ref = id ? db.collection("products").doc(id) : db.collection("products").doc();
     const isUpdate = Boolean(id);
 
-    const unit = (row.unit ?? "").trim() || DEFAULT_UNIT;
+    const unitValue = (row.unit ?? "").trim();
+    if (unitValue && !unitSlugs.has(unitValue)) {
+      errors.push(`${lineNo}-qator: sotish turi noto'g'ri (${unitValue})`);
+      continue;
+    }
+    const unit = unitValue || DEFAULT_UNIT;
+
+    const sku = (row.sku ?? "").trim();
 
     const base = {
       name,
+      sku,
       nameSearchIndex: name.toLowerCase(),
-      nameTokens: buildNameTokens(name, brand),
+      nameTokens: buildNameTokens(name, brand, sku),
       description: (row.description ?? "").trim(),
       category,
       material,
