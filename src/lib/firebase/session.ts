@@ -112,7 +112,18 @@ export async function requirePermission(key: PermissionKey): Promise<AppUser | n
   return hasPermission(user, key) ? user : null;
 }
 
-/** Faqat loyiha egasi bajara oladigan amallar (rol/huquq boshqaruvi). */
+/**
+ * Rol/huquq boshqaruvi: loyiha egasi yoki egasi "roles" huquqini bergan
+ * admin. Egasining o'zini hech kim o'zgartira olmaydi (route ichida
+ * alohida tekshiriladi).
+ */
+export async function requireRoleManager(): Promise<AppUser | null> {
+  const user = await getCurrentAppUser();
+  if (isOwner(user)) return user;
+  return hasPermission(user, "roles") ? user : null;
+}
+
+/** Faqat loyiha egasi bajara oladigan amallar. */
 export async function requireOwner(): Promise<AppUser | null> {
   const user = await getCurrentAppUser();
   return isOwner(user) ? user : null;

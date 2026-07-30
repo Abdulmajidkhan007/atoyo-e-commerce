@@ -67,12 +67,24 @@ export const BUILTIN_TAXONOMY: Taxonomy = {
   units: BUILTIN_UNITS,
 };
 
-/** Standart va qo'shimcha ro'yxatlarni birlashtiradi (takrorlanmasdan). */
-export function mergeTaxonomy(custom: Partial<Taxonomy> | undefined): Taxonomy {
+/** Firestore'dagi hujjat: qo'shimcha turlar + yashirilgan standartlar. */
+export interface StoredTaxonomy extends Partial<Taxonomy> {
+  hidden_categories?: string[];
+  hidden_materials?: string[];
+  hidden_units?: string[];
+}
+
+/**
+ * Standart va qo'shimcha ro'yxatlarni birlashtiradi:
+ *   • bir xil slug qayta qo'shilmaydi;
+ *   • saqlangan nom standartdan ustun turadi (qayta nomlash shunday ishlaydi);
+ *   • o'chirilgan standart turlar ro'yxatdan chiqariladi.
+ */
+export function mergeTaxonomy(stored: StoredTaxonomy | undefined): Taxonomy {
   return {
-    categories: merge(BUILTIN_CATEGORIES, custom?.categories),
-    materials: merge(BUILTIN_MATERIALS, custom?.materials),
-    units: merge(BUILTIN_UNITS, custom?.units),
+    categories: merge(BUILTIN_CATEGORIES, stored?.categories, stored?.hidden_categories),
+    materials: merge(BUILTIN_MATERIALS, stored?.materials, stored?.hidden_materials),
+    units: merge(BUILTIN_UNITS, stored?.units, stored?.hidden_units),
   };
 }
 
@@ -89,10 +101,21 @@ export function slugify(label: string): string {
   );
 }
 
-function merge(builtin: TaxonomyItem[], custom: TaxonomyItem[] | undefined): TaxonomyItem[] {
-  const seen = new Set(builtin.map((item) => item.slug));
-  const extra = (custom ?? []).filter((item) => item?.slug && !seen.has(item.slug));
-  return [...builtin, ...extra];
+function merge(
+  builtin: TaxonomyItem[],
+  custom: TaxonomyItem[] | undefined,
+  hidden: string[] | undefined
+): TaxonomyItem[] {
+  const hiddenSet = new Set(hidden ?? []);
+  const overrides = new Map((custom ?? []).filter((i) => i?.slug).map((i) => [i.slug, i.label]));
+
+  const base = builtin
+    .filter((item) => !hiddenSet.has(item.slug))
+    .map((item) => ({ slug: item.slug, label: overrides.get(item.slug) ?? item.label }));
+
+  const builtinSlugs = new Set(builtin.map((item) => item.slug));
+  const extra = (custom ?? []).filter((item) => item?.slug && !builtinSlugs.has(item.slug));
+  return [...base, ...extra];
 }
 
 /** Slug bo'yicha ko'rinadigan nom (topilmasa slugning o'zi). */

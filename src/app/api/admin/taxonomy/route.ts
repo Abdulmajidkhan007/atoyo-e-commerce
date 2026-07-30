@@ -25,6 +25,12 @@ const addSchema = z.object({
   label: z.string().min(2).max(60),
 });
 
+const renameSchema = z.object({
+  kind: z.enum(["categories", "materials", "units"]),
+  slug: z.string().min(1).max(60),
+  label: z.string().min(2).max(60),
+});
+
 const deleteSchema = z.object({
   kind: z.enum(["categories", "materials", "units"]),
   slug: z.string().min(1).max(60),
@@ -74,7 +80,42 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true, item: { slug, label } });
 }
 
-/** Admin qo'shgan turni o'chirish (standartlar o'chirilmaydi). */
+/**
+ * Tur nomini tahrirlash. Slug o'zgarmaydi (mahsulotlarda o'sha slug
+ * saqlangan), faqat ko'rinadigan nom yangilanadi - shuning uchun
+ * standart turlarni ham qayta nomlash xavfsiz.
+ */
+export async function PATCH(request: Request) {
+  const admin = await requirePermission("products");
+  if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  const parsed = renameSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+
+  const { kind, slug, label } = parsed.data;
+  const clean = label.trim();
+  const db = getAdminDb();
+  const snap = await db.doc("metadata/taxonomy").get();
+  const custom = ((snap.data() ?? {})[kind] ?? []) as TaxonomyItem[];
+
+  const isBuiltin = BUILTIN[kind].some((item) => item.slug === slug);
+  const existing = custom.find((item) => item.slug === slug);
+
+  if (!isBuiltin && !existing) {
+    return NextResponse.json({ error: "Bunday tur topilmadi." }, { status: 404 });
+  }
+
+  // Standart turning nomi ham `metadata/taxonomy` da saqlanadi va
+  // birlashtirishda kod ichidagisidan ustun turadi.
+  const next = existing
+    ? custom.map((item) => (item.slug === slug ? { slug, label: clean } : item))
+    : [...custom, { slug, label: clean }];
+
+  await db.doc("metadata/taxonomy").set({ [kind]: next }, { merge: true });
+  return NextResponse.json({ ok: true, item: { slug, label: clean } });
+}
+
+/** Turni o'chirish (mahsulotlarda ishlatilmayotgan bo'lsa). */
 export async function DELETE(request: Request) {
   const admin = await requirePermission("products");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
@@ -83,9 +124,6 @@ export async function DELETE(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
 
   const { kind, slug } = parsed.data;
-  if (BUILTIN[kind].some((item) => item.slug === slug)) {
-    return NextResponse.json({ error: "Standart turni o'chirib bo'lmaydi." }, { status: 400 });
-  }
 
   // Ishlatilayotgan turni o'chirish mahsulotlarni "nomsiz" qoldiradi.
   const field = kind === "categories" ? "category" : kind === "materials" ? "material" : "unit";
@@ -97,11 +135,17 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const snap = await getAdminDb().doc("metadata/taxonomy").get();
-  const current = ((snap.data() ?? {})[kind] ?? []) as TaxonomyItem[];
-  await getAdminDb()
-    .doc("metadata/taxonomy")
-    .set({ [kind]: current.filter((item) => item.slug !== slug) }, { merge: true });
+  const db = getAdminDb();
+  const snap = await db.doc("metadata/taxonomy").get();
+  const data = (snap.data() ?? {}) as Record<string, unknown>;
+  const current = ((data[kind] ?? []) as TaxonomyItem[]).filter((item) => item.slug !== slug);
 
+  // Standart turni "yashirilgan" ro'yxatiga qo'shamiz - kod ichidagi
+  // ro'yxatdan o'chirib bo'lmaydi, lekin ko'rinmaydigan qila olamiz.
+  const hiddenKey = `hidden_${kind}`;
+  const hidden = new Set((data[hiddenKey] ?? []) as string[]);
+  if (BUILTIN[kind].some((item) => item.slug === slug)) hidden.add(slug);
+
+  await db.doc("metadata/taxonomy").set({ [kind]: current, [hiddenKey]: [...hidden] }, { merge: true });
   return NextResponse.json({ ok: true });
 }

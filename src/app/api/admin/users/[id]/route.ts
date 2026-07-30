@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
-import { requireOwner } from "@/lib/firebase/session";
+import { requireOwner, requireRoleManager } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
 import {
   PERMISSION_KEYS,
@@ -23,16 +23,18 @@ const updateSchema = z.object({
 });
 
 /**
- * FOYDALANUVCHI ROLI VA HUQUQLARI - faqat loyiha egasi (owner) uchun.
+ * FOYDALANUVCHI ROLI VA HUQUQLARI.
  *
- * Bu amal ilgari admin panelda to'g'ridan-to'g'ri client Firestore
- * yozuvi bilan bajarilardi; endi server tomonda va owner tekshiruvi
- * bilan - shu sabab admin boshqa adminni (yoki ownerni) o'zgartira olmaydi.
+ * Loyiha egasi, shuningdek egasi "Rollar va huquqlar" huquqini bergan
+ * admin bajaradi. Egasining o'zining roli hech qachon o'zgartirilmaydi.
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const owner = await requireOwner();
+  const owner = await requireRoleManager();
   if (!owner) {
-    return NextResponse.json({ error: "Bu amalni faqat loyiha egasi bajara oladi." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Bu amal uchun \"Rollar va huquqlar\" huquqi kerak." },
+      { status: 403 }
+    );
   }
 
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));

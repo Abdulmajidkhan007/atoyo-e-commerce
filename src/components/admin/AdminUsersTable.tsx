@@ -20,12 +20,30 @@ import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import {
   PERMISSION_KEYS,
   PERMISSION_LABELS,
+  PERMISSION_HINTS,
   DEFAULT_ADMIN_PERMISSIONS,
+  allPermissions,
   isOwner,
   type AdminPermissions,
   type PermissionKey,
 } from "@/lib/permissions";
 import type { AppUser } from "@/types/user";
+
+/** Serverdan keladigan qo'shimcha maydonlar (buyurtma statistikasi). */
+interface EnrichedUser extends AppUser {
+  ordersCount?: number;
+  totalSpent?: number;
+  lastOrderAt?: number | null;
+  source?: "telegram" | "site";
+}
+
+/** Sana - locale'ga bog'liq bo'lmasin uchun qo'lda formatlanadi. */
+function formatDate(ms?: number | null): string {
+  if (!ms) return "—";
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
 
 interface UsersPage {
   users: AppUser[];
@@ -163,7 +181,8 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
     <div>
       {!viewerIsOwner && (
         <Alert severity="info" className="!mb-4">
-          Rol va huquqlarni faqat loyiha egasi o&apos;zgartira oladi.
+          Rol va huquqlarni loyiha egasi yoki &quot;Rollar va huquqlar&quot; huquqi berilgan admin
+          o&apos;zgartira oladi.
         </Alert>
       )}
       {error && <Alert severity="error" className="!mb-4">{error}</Alert>}
@@ -173,6 +192,9 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
           <thead className="bg-navy-50 text-navy-300 dark:bg-navy-900">
             <tr>
               <th className="px-4 py-2 font-medium">Foydalanuvchi</th>
+              <th className="px-4 py-2 font-medium">Aloqa</th>
+              <th className="px-4 py-2 font-medium">Ro&apos;yxatdan</th>
+              <th className="px-4 py-2 font-medium">Buyurtmalar</th>
               <th className="px-4 py-2 font-medium">Rol</th>
               {viewerIsOwner && <th className="px-4 py-2 font-medium">Amal</th>}
             </tr>
@@ -180,7 +202,7 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
           <tbody className="bg-white dark:bg-navy-700">
             {!isLoading && users.length === 0 && (
               <tr>
-                <td colSpan={viewerIsOwner ? 3 : 2} className="px-4 py-6 text-center text-navy-300">
+                <td colSpan={viewerIsOwner ? 6 : 5} className="px-4 py-6 text-center text-navy-300">
                   Foydalanuvchilar topilmadi.
                 </td>
               </tr>
@@ -194,10 +216,40 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
                     <Avatar src={user.photoURL ?? undefined} sx={{ width: 28, height: 28 }}>
                       {user.displayName?.[0] ?? user.email?.[0] ?? "U"}
                     </Avatar>
-                    <div>
-                      <p className="text-navy-900 dark:text-white">{user.displayName ?? "Nomsiz"}</p>
-                      <p className="text-xs text-navy-300">{user.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-navy-900 dark:text-white">
+                        {user.displayName?.trim() || user.email?.split("@")[0] || "Nomsiz"}
+                      </p>
+                      <p className="text-xs text-navy-300">
+                        {(user as EnrichedUser).source === "telegram" ? "✈️ Telegram" : "🌐 Sayt"}
+                        {user.telegramUsername ? ` · @${user.telegramUsername}` : ""}
+                      </p>
                     </div>
+                  </td>
+
+                  <td className="px-4 py-2 text-xs">
+                    <p className="text-navy-500 dark:text-navy-100">{user.email ?? "—"}</p>
+                    <p className="text-navy-300">{user.phoneNumber ?? "—"}</p>
+                  </td>
+
+                  <td className="px-4 py-2 text-xs text-navy-500 dark:text-navy-100">
+                    {formatDate(user.createdAt)}
+                  </td>
+
+                  <td className="px-4 py-2 text-xs">
+                    <p className="text-navy-900 dark:text-white">
+                      {(user as EnrichedUser).ordersCount ?? 0} ta
+                    </p>
+                    {((user as EnrichedUser).totalSpent ?? 0) > 0 && (
+                      <p className="text-navy-300">
+                        {((user as EnrichedUser).totalSpent ?? 0).toLocaleString("uz-UZ")} so&apos;m
+                      </p>
+                    )}
+                    {(user as EnrichedUser).lastOrderAt ? (
+                      <p className="text-navy-300">
+                        oxirgi: {formatDate((user as EnrichedUser).lastOrderAt)}
+                      </p>
+                    ) : null}
                   </td>
                   <td className="px-4 py-2">
                     <Chip
@@ -258,19 +310,36 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
       <Dialog open={permTarget !== null} onClose={() => setPermTarget(null)} maxWidth="xs" fullWidth>
         <DialogTitle>Admin huquqlari</DialogTitle>
         <DialogContent>
-          <p className="mb-3 text-sm text-navy-300">{permTarget?.email}</p>
+          <p className="mb-1 text-sm text-navy-900 dark:text-white">
+            {permTarget?.displayName ?? permTarget?.email}
+          </p>
+          <p className="mb-3 text-xs text-navy-300">{permTarget?.email ?? permTarget?.phoneNumber}</p>
+
+          <div className="mb-2 flex gap-2">
+            <Button size="small" onClick={() => setPermDraft(allPermissions())}>
+              Hammasini yoqish
+            </Button>
+            <Button size="small" onClick={() => setPermDraft({})}>
+              Hammasini o&apos;chirish
+            </Button>
+          </div>
+
           <div className="flex flex-col">
             {PERMISSION_KEYS.map((key: PermissionKey) => (
-              <FormControlLabel
-                key={key}
-                control={
-                  <Switch
-                    checked={permDraft[key] === true}
-                    onChange={(e) => setPermDraft((prev) => ({ ...prev, [key]: e.target.checked }))}
-                  />
-                }
-                label={PERMISSION_LABELS[key]}
-              />
+              <div key={key} className="border-b border-navy-50 py-1 last:border-0 dark:border-navy-600">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={permDraft[key] === true}
+                      onChange={(e) => setPermDraft((prev) => ({ ...prev, [key]: e.target.checked }))}
+                    />
+                  }
+                  label={PERMISSION_LABELS[key]}
+                />
+                {PERMISSION_HINTS[key] && (
+                  <p className="ml-11 text-xs text-navy-300">{PERMISSION_HINTS[key]}</p>
+                )}
+              </div>
             ))}
           </div>
         </DialogContent>

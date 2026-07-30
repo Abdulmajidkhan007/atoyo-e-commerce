@@ -1,6 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { BUILTIN_TAXONOMY, mergeTaxonomy, type Taxonomy } from "./taxonomy";
+import { BUILTIN_TAXONOMY, mergeTaxonomy, type StoredTaxonomy, type Taxonomy } from "./taxonomy";
 
 /**
  * Kategoriya / material / sotish turi ro'yxatlarini Firestore'dan
@@ -10,7 +10,7 @@ import { BUILTIN_TAXONOMY, mergeTaxonomy, type Taxonomy } from "./taxonomy";
 export async function getTaxonomy(): Promise<Taxonomy> {
   try {
     const snap = await getAdminDb().doc("metadata/taxonomy").get();
-    return mergeTaxonomy((snap.data() ?? {}) as Partial<Taxonomy>);
+    return mergeTaxonomy((snap.data() ?? {}) as StoredTaxonomy);
   } catch {
     return BUILTIN_TAXONOMY;
   }

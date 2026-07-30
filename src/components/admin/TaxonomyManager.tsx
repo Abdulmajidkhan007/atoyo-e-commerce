@@ -1,16 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, Button, Chip, CircularProgress, TextField } from "@mui/material";
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  TextField,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import type { Taxonomy, TaxonomyKind } from "@/lib/products/taxonomy";
 
 /**
  * KATEGORIYA / MATERIAL / SOTISH TURI ro'yxatlari.
  *
- * Standart turlar kodda keladi va o'chirilmaydi (kulrang chip),
- * admin qo'shganlarini o'chirish mumkin - agar ular hech qaysi
- * mahsulotda ishlatilmayotgan bo'lsa (buni server tekshiradi).
+ * Har bir turni qayta nomlash va o'chirish mumkin. Qayta nomlashda
+ * ichki kalit (slug) o'zgarmaydi, shuning uchun mahsulotlar buzilmaydi.
+ * O'chirishga esa server faqat o'sha tur hech qaysi mahsulotda
+ * ishlatilmayotgan bo'lsa ruxsat beradi.
  */
 
 const SECTIONS: { kind: TaxonomyKind; title: string; hint: string; placeholder: string }[] = [
@@ -40,6 +53,10 @@ export function TaxonomyManager() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<TaxonomyKind | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  /** Qayta nomlash oynasi. */
+  const [editing, setEditing] = useState<{ kind: TaxonomyKind; slug: string; label: string } | null>(
+    null
+  );
 
   const load = async () => {
     const res = await fetch("/api/admin/taxonomy");
@@ -85,6 +102,28 @@ export function TaxonomyManager() {
       setMessage({ type: "success", text: `"${label}" qo'shildi.` });
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Qo'shilmadi." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const rename = async () => {
+    if (!editing || editing.label.trim().length < 2) return;
+    setBusy(editing.kind);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/taxonomy", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: editing.kind, slug: editing.slug, label: editing.label.trim() }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Tahrirlanmadi.");
+      setEditing(null);
+      await load();
+      setMessage({ type: "success", text: "Nomi yangilandi." });
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Tahrirlanmadi." });
     } finally {
       setBusy(null);
     }
@@ -136,21 +175,34 @@ export function TaxonomyManager() {
               <p className="mt-1 text-xs text-navy-300">{section.hint}</p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <ul className="flex flex-col divide-y divide-navy-100 dark:divide-navy-500">
               {items.map((item) => (
-                <Chip
-                  key={item.slug}
-                  label={item.label}
-                  variant={builtin.has(item.slug) ? "outlined" : "filled"}
-                  onDelete={
-                    builtin.has(item.slug)
-                      ? undefined
-                      : () => remove(section.kind, item.slug, item.label)
-                  }
-                  disabled={busy === section.kind}
-                />
+                <li key={item.slug} className="flex items-center gap-2 py-1.5">
+                  <span className="flex-1 text-sm text-navy-900 dark:text-white">
+                    {item.label}
+                    {builtin.has(item.slug) && (
+                      <span className="ml-2 text-xs text-navy-300">standart</span>
+                    )}
+                  </span>
+                  <IconButton
+                    size="small"
+                    aria-label="Tahrirlash"
+                    disabled={busy === section.kind}
+                    onClick={() => setEditing({ kind: section.kind, slug: item.slug, label: item.label })}
+                  >
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    aria-label="O'chirish"
+                    disabled={busy === section.kind}
+                    onClick={() => remove(section.kind, item.slug, item.label)}
+                  >
+                    <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+                  </IconButton>
+                </li>
               ))}
-            </div>
+            </ul>
 
             <div className="flex items-center gap-2">
               <TextField
@@ -180,6 +232,39 @@ export function TaxonomyManager() {
           </div>
         );
       })}
+      {/* Qayta nomlash oynasi */}
+      <Dialog open={editing !== null} onClose={() => setEditing(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Nomini o&apos;zgartirish</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Yangi nom"
+            value={editing?.label ?? ""}
+            onChange={(e) => setEditing((prev) => (prev ? { ...prev, label: e.target.value } : prev))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void rename();
+              }
+            }}
+            fullWidth
+          />
+          <p className="mt-2 text-xs text-navy-300">
+            Faqat ko&apos;rinadigan nom o&apos;zgaradi — mahsulotlar shu turda qolaveradi.
+          </p>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditing(null)}>Bekor qilish</Button>
+          <Button
+            variant="contained"
+            onClick={rename}
+            disabled={busy !== null || (editing?.label.trim().length ?? 0) < 2}
+          >
+            Saqlash
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }
