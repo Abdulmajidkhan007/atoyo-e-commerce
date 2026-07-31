@@ -2,6 +2,7 @@ import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
 import { announceProduct, announceModeFor } from "./channel";
+import { nextProductCode, findProductIdByCode } from "@/lib/products/product-code";
 import { sendChatMessage } from "./bot";
 import { startNewProductFlow, startEditProductFlow, cancelAdminSession } from "./admin-session";
 import { sendBroadcast } from "@/lib/broadcast";
@@ -42,15 +43,15 @@ const HELP_TEXT = [
   "",
   "<b>➕ Mahsulot qo'shish/tahrirlash (tugmali):</b>",
   "<code>/yangi</code> — yangi mahsulotni bosqichma-bosqich qo'shish",
-  "<code>/tahrir ID</code> — mahsulotni tugmalar orqali tahrirlash",
+  "<code>/tahrir 12</code> — mahsulotni tugmalar orqali tahrirlash (12 — mahsulot raqami)",
   "<code>/bekor</code> — joriy amalni bekor qilish",
   "",
   "<b>⚡ Tezkor buyruqlar:</b>",
-  "<code>/top nomi</code> — mahsulot qidirish (ID olish)",
-  "<code>/narx ID summa</code> — narxni o'zgartirish",
-  "<code>/zaxira ID son</code> — zaxirani o'rnatish",
-  "<code>/uchir ID</code> — katalogdan yashirish",
-  "<code>/tikla ID</code> — qaytarish",
+  "<code>/top nomi</code> — mahsulot qidirish (raqamini olish)",
+  "<code>/narx 12 50000</code> — narxni o'zgartirish",
+  "<code>/zaxira 12 25</code> — zaxirani o'rnatish",
+  "<code>/uchir 12</code> — katalogdan yashirish",
+  "<code>/tikla 12</code> — qaytarish",
   "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
   "<code>/stat</code> — umumiy statistika",
   "<code>/elon Matn...</code> — barcha foydalanuvchilarga e'lon (Telegram + Email)",
@@ -60,8 +61,22 @@ function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
-async function findProduct(idOrQuery: string): Promise<Product | null> {
-  const byId = await getAdminDb().collection("products").doc(idOrQuery).get();
+/**
+ * Mahsulotni topadi. Buyruqlarda odatda QISQA RAQAM yoziladi
+ * (`/narx 12 50000`), lekin eski uzun hujjat ID si ham ishlayveradi.
+ */
+async function findProduct(idOrCode: string): Promise<Product | null> {
+  const trimmed = idOrCode.trim().replace(/^#|^№/, "");
+
+  if (/^\d+$/.test(trimmed)) {
+    const id = await findProductIdByCode(Number(trimmed));
+    if (id) {
+      const snap = await getAdminDb().collection("products").doc(id).get();
+      if (snap.exists) return { id: snap.id, ...snap.data() } as Product;
+    }
+  }
+
+  const byId = await getAdminDb().collection("products").doc(trimmed).get();
   if (byId.exists) return { id: byId.id, ...byId.data() } as Product;
   return null;
 }
@@ -136,7 +151,7 @@ export async function handleAdminCommand(params: {
         }
         const lines = snapshot.docs.map((d) => {
           const p = d.data() as Product;
-          return `${p.name}\n  ID: <code>${d.id}</code> | ${formatSom(p.price)} | zaxira: ${p.stock}${p.isActive ? "" : " | 🚫 yashirin"}`;
+          return `${p.name}\n  🆔 <b>${p.code ?? d.id}</b> | ${formatSom(p.price)} | zaxira: ${p.stock}${p.isActive ? "" : " | 🚫 yashirin"}`;
         });
         await reply(`🔎 Topildi:\n\n${lines.join("\n\n")}`);
         return;
@@ -147,12 +162,12 @@ export async function handleAdminCommand(params: {
         const [id, valueRaw] = argsText.split(/\s+/);
         const value = Number(valueRaw);
         if (!id || Number.isNaN(value) || value < 0) {
-          await reply(`Foydalanish: <code>${command} MAHSULOT_ID ${command === "/narx" ? "50000" : "25"}</code>`);
+          await reply(`Foydalanish: <code>${command} 12 ${command === "/narx" ? "50000" : "25"}</code> (12 — mahsulot raqami)`);
           return;
         }
         const product = await findProduct(id);
         if (!product) {
-          await reply("Mahsulot topilmadi. ID ni <code>/top nomi</code> bilan oling.");
+          await reply("Mahsulot topilmadi. Raqamini <code>/top nomi</code> bilan oling.");
           return;
         }
         const field = command === "/narx" ? "price" : "stock";
@@ -206,6 +221,8 @@ export async function handleAdminCommand(params: {
         const ref = getAdminDb().collection("products").doc();
         const product: Product = {
           id: ref.id,
+          // Odamlar uchun qisqa tartib raqami (1, 2, 3...).
+          code: await nextProductCode(),
           slug: `${name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-")}-${ref.id.slice(0, 6)}`,
           name,
           nameSearchIndex: name.toLowerCase(),
@@ -229,21 +246,21 @@ export async function handleAdminCommand(params: {
         };
         await ref.set(product);
         await announceProduct(product, "new");
-        await reply(`✅ Qo'shildi: <b>${name}</b>\nID: <code>${ref.id}</code> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo-uz.netlify.app/admin/katalog`);
+        await reply(`✅ Qo'shildi: <b>${name}</b>\n🆔 ID: <b>${product.code}</b> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo-uz.netlify.app/admin/katalog`);
         return;
       }
 
       case "/tahrir": {
         const [id, ...pairs] = argsText.split(/\s+/);
         if (!id) {
-          await reply("Foydalanish: <code>/tahrir MAHSULOT_ID</code> — tugmali tahrirlash.\nID ni <code>/top nomi</code> bilan oling.");
+          await reply("Foydalanish: <code>/tahrir 12</code> — tugmali tahrirlash.\nRaqamini <code>/top nomi</code> bilan oling.");
           return;
         }
         // Faqat ID berilsa - interaktiv (tugmali) tahrirlash menyusi.
         if (pairs.length === 0) {
           if (userId) {
             const started = await startEditProductFlow(chatId, threadId, userId, id);
-            if (!started) await reply("Mahsulot topilmadi. ID ni tekshiring.");
+            if (!started) await reply("Mahsulot topilmadi. Raqamini tekshiring.");
           } else {
             await reply("Interaktiv rejim uchun foydalanuvchi aniqlanmadi.");
           }
@@ -286,7 +303,7 @@ export async function handleAdminCommand(params: {
       case "/tikla": {
         const id = argsText.split(/\s+/)[0];
         if (!id) {
-          await reply(`Foydalanish: <code>${command} MAHSULOT_ID</code>`);
+          await reply(`Foydalanish: <code>${command} 12</code> (12 — mahsulot raqami)`);
           return;
         }
         const product = await findProduct(id);

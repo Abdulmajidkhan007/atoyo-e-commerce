@@ -10,6 +10,7 @@ import { logAction } from "./action-log";
 import { startOptionalFieldsFlow } from "./admin-session";
 import { INTAKE_FIELD_LABELS, INTAKE_TEMPLATE, parseIntakeCaption, guessCategory } from "./intake-parser";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { nextProductCode } from "@/lib/products/product-code";
 import { labelOf } from "@/lib/products/taxonomy";
 import type { Product } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
@@ -366,6 +367,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
   const ref = db.collection("products").doc();
   const product: Product = {
     id: ref.id,
+    // Odamlar uchun qisqa tartib raqami (1, 2, 3...).
+    code: await nextProductCode(),
     slug: `${parsed.name
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, "")
@@ -435,7 +438,7 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
       console.error("Kirim tarixini yozishda xato:", error)
     ),
     logAction(
-      `📥 Telegram kirim: ${parsed.name} — ${parsed.stock} ${unitLabel}, ${formatSom(parsed.price!)} (${parsed.supplier})`
+      `📥 Telegram kirim: №${product.code} — ${parsed.name}, ${parsed.stock} ${unitLabel}, ${formatSom(parsed.price!)} (${parsed.supplier})`
     ),
   ]);
 
@@ -444,7 +447,7 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
 
   const summary = [
     `📝 <b>Chernovik tayyor:</b> ${escapeHtml(saved.name)}`,
-    `ID: <code>${saved.id}</code>`,
+    `🆔 ID: <b>${saved.code ?? "-"}</b>`,
     saved.sku ? `#️⃣ Kodi: ${escapeHtml(saved.sku)}` : "",
     `🏷 ${labelOf(taxonomy.categories, saved.category)} | 🧱 ${labelOf(taxonomy.materials, saved.material)}`,
     `💰 ${formatSom(saved.price)} / ${unitLabel} | 📦 ${saved.stock} ${unitLabel}`,

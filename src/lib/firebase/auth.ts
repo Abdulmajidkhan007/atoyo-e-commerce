@@ -38,13 +38,14 @@ async function ensureUserDocument(user: User): Promise<void> {
 }
 
 /** ID tokenni serverga yuborib, Proxy/Server Component tekshira oladigan httpOnly session cookie o'rnatadi (14 kun amal qiladi). */
-async function syncSessionCookie(user: User): Promise<void> {
+async function syncSessionCookie(user: User): Promise<boolean> {
   const idToken = await user.getIdToken();
-  await fetch("/api/auth/session", {
+  const res = await fetch("/api/auth/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
   });
+  return res.ok;
 }
 
 export async function signInWithGoogle() {
@@ -79,10 +80,10 @@ export async function resetPassword(email: string): Promise<void> {
  * (userId=null) saqlanardi. Muhim amaldan oldin shu funksiya chaqirilib
  * cookie qayta tiklanadi (best-effort).
  */
-export async function ensureSessionCookie(): Promise<void> {
+export async function ensureSessionCookie(): Promise<boolean> {
   const user = getFirebaseAuth().currentUser;
-  if (!user) return;
-  await syncSessionCookie(user).catch(() => {});
+  if (!user) return false;
+  return syncSessionCookie(user).catch(() => false);
 }
 
 export async function signOutUser() {

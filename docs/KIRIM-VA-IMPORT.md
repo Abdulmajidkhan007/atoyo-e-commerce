@@ -241,3 +241,27 @@ Footerdagi hamma narsa admin paneldan yoziladi:
 
 Bo'sh qoldirilgan qism postda umuman ko'rinmaydi. Footer blog
 e'lonlariga ham qo'shiladi.
+
+---
+
+## 6. Mahsulot raqami (№)
+
+Firestore hujjat ID si tasodifiy harflardan iborat (`Xk3mQ2vL...`) — uni
+telefonda o'qish ham, botga yozish ham qiyin. Shuning uchun har bir
+mahsulotga qo'shimcha **tartib raqami** beriladi: 1, 2, 3, ...
+
+- Guruhga keladigan xabarlarda: `📦 Yangi mahsulot: №12 — PPR quvur 25mm`.
+- Bot buyruqlarida shu raqam yoziladi: `/narx 12 50000`, `/zaxira 12 25`,
+  `/tahrir 12`, `/uchir 12`. Eski uzun ID ham ishlayveradi.
+- Admin panelda katalog jadvalining birinchi ustuni — **№**.
+- `sku` (do'kon kodi / artikul) bu bilan aralashmaydi: u sizning ichki
+  kodingiz, № esa saytning tartib raqami.
+
+**Eski mahsulotlarga raqam berish:** admin panel → Katalog → «Raqam va
+qidiruv indeksini yangilash». Eng eski mahsulotdan boshlab 1, 2, 3...
+beriladi, keyingi yangi mahsulotlar shu yerdan davom etadi. Tugma qayta
+bosilsa faqat raqami yo'qlariga beriladi (mavjud raqamlar o'zgarmaydi).
+
+> Hujjat ID sining o'zi o'zgartirilmaydi — unga buyurtmalar, kirim
+> tarixi va rasm papkalari bog'langan. Raqam uning yonida turadi va
+> hamma ko'rinadigan joyda ID o'rniga ishlatiladi.

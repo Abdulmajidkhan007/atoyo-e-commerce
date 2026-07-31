@@ -4,7 +4,9 @@ import { sendChatMessage, answerCallbackQuery, downloadTelegramFile } from "./bo
 import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { announceProduct, announceModeFor } from "./channel";
+import { nextProductCode, findProductIdByCode } from "@/lib/products/product-code";
 import { registerFacets } from "@/lib/products/facets";
+import { logAction } from "./action-log";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { DEFAULT_UNIT, labelOf, type TaxonomyItem } from "@/lib/products/taxonomy";
 import { parseDate } from "./intake-parser";
@@ -241,6 +243,8 @@ async function finalizeNewProduct(userId: number, session: AdminSession, photoFi
     manufacturerCountry: d.manufacturerCountry ?? "",
     material: (d.material as ProductMaterial) ?? "brass",
     unit: d.unit ?? DEFAULT_UNIT,
+    // Odamlar uchun qisqa tartib raqami (1, 2, 3...).
+    code: await nextProductCode(),
     dimensions: {},
     price: d.price ?? 0,
     discountPrice: null,
@@ -280,7 +284,7 @@ async function finalizeNewProduct(userId: number, session: AdminSession, photoFi
     session.chatId,
     [
       `✅ <b>Qo'shildi:</b> ${product.name}`,
-      `ID: <code>${ref.id}</code>`,
+      `🆔 ID: <b>${product.code}</b>`,
       `Kategoriya: ${labelOf((await getTaxonomy()).categories, product.category)}`,
       `Narx: ${formatSom(product.price)} | Zaxira: ${product.stock} dona`,
       product.brand ? `Brend: ${product.brand}` : "",
@@ -378,7 +382,7 @@ async function sendEditMenu(session: AdminSession, product: Product): Promise<vo
     session.chatId,
     [
       `✏️ <b>Tahrirlash:</b> ${product.name}`,
-      `ID: <code>${product.id}</code>`,
+      `🆔 ID: <b>${product.code ?? "-"}</b>`,
       `Narx: ${formatSom(product.price)} | Zaxira: ${product.stock} dona`,
       product.isActive ? "" : "🚫 Yashirin",
       "",
@@ -425,8 +429,12 @@ export async function startEditProductFlow(
   chatId: number,
   threadId: number | undefined,
   userId: number,
-  productId: string
+  productIdOrCode: string
 ): Promise<boolean> {
+  // Adminlar odatda qisqa raqam yozadi (`/tahrir 12`), lekin uzun hujjat
+  // ID si ham qabul qilinadi.
+  const trimmed = productIdOrCode.trim().replace(/^#|^№/, "");
+  const productId = /^\d+$/.test(trimmed) ? (await findProductIdByCode(Number(trimmed))) ?? trimmed : trimmed;
   const snap = await getAdminDb().collection("products").doc(productId).get();
   if (!snap.exists) return false;
   const product = { id: snap.id, ...snap.data() } as Product;
@@ -692,6 +700,7 @@ export async function handleAdminSessionCallback(params: {
     // qilinadi. Allaqachon nashr qilingan mahsulot uchun esa postdagi
     // ma'lumot oxirgi holat bilan jimgina yangilanadi.
     let published = false;
+    let publishedCode: number | undefined;
     if (session.productId) {
       const ref = getAdminDb().collection("products").doc(session.productId);
       const snap = await ref.get();
@@ -701,6 +710,10 @@ export async function handleAdminSessionCallback(params: {
           await ref.update({ isDraft: false, isActive: true, updatedAt: Date.now() });
           product = { ...product, isDraft: false, isActive: true };
           published = true;
+          publishedCode = product.code;
+          await logAction(
+            `📦 Yangi mahsulot (Telegram kirimi): №${product.code} — ${product.name}, ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} ${product.unit}`
+          );
         }
         await announceProduct(product, published ? "new" : "refresh").catch((error) =>
           console.error("Kanalga e'lon (yakun) xatosi:", error)
@@ -711,7 +724,7 @@ export async function handleAdminSessionCallback(params: {
     await sendChatMessage(
       session.chatId,
       published
-        ? "✅ <b>Mahsulot katalogga qo'shildi</b> va kanalga e'lon qilindi."
+        ? `✅ <b>Mahsulot katalogga qo'shildi</b> va kanalga e'lon qilindi.\n🆔 ID: <b>${publishedCode ?? "-"}</b>`
         : "✅ Tahrirlash yakunlandi.",
       { threadId: session.threadId }
     );

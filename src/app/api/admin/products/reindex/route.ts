@@ -2,31 +2,74 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
+import { bumpProductCodeCounter } from "@/lib/products/product-code";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
 
 /**
- * Bir martalik qidiruv indeksini to'ldirish: nameTokens maydoni bo'lmagan
- * eski mahsulotlarga token yozadi (yangi so'z-qidiruv ular uchun ham
- * ishlashi uchun). Idempotent - qayta bosilsa faqat yetishmayotganlarni
- * to'ldiradi. Faqat admin.
+ * Bir martalik to'ldirish (idempotent, faqat admin):
+ *
+ *   1) `nameTokens` - eski mahsulotlarda so'z bo'yicha qidiruv ishlashi uchun;
+ *   2) `code` - MAHSULOT RAQAMI: eng eski mahsulotdan boshlab 1, 2, 3...
+ *      Hujjat ID si o'zgarmaydi (unga buyurtmalar, kirim tarixi va rasm
+ *      papkalari bog'langan) - raqam uning yoniga qo'shiladi va bundan
+ *      keyin hamma joyda (guruh xabarlari, bot buyruqlari) shu ko'rinadi.
+ *
+ * Qayta bosilsa faqat yetishmayotganini to'ldiradi.
  */
 export async function POST() {
   const admin = await requirePermission("products");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
-  const snapshot = await getAdminDb().collection("products").limit(500).get();
-  const batch = getAdminDb().batch();
-  let updated = 0;
+  const db = getAdminDb();
+  const snapshot = await db.collection("products").limit(500).get();
 
-  for (const doc of snapshot.docs) {
+  // Raqamlar yaratilish tartibida beriladi: eng eski mahsulot - 1-raqam.
+  const docs = [...snapshot.docs].sort(
+    (a, b) => ((a.data() as Product).createdAt ?? 0) - ((b.data() as Product).createdAt ?? 0)
+  );
+
+  // Allaqachon berilgan raqamlar band hisoblanadi.
+  const taken = new Set<number>();
+  for (const doc of docs) {
+    const code = (doc.data() as Product).code;
+    if (typeof code === "number" && code > 0) taken.add(code);
+  }
+
+  let candidate = 1;
+  const takeNextCode = () => {
+    while (taken.has(candidate)) candidate += 1;
+    taken.add(candidate);
+    return candidate;
+  };
+
+  const batch = db.batch();
+  let updated = 0;
+  let codesAdded = 0;
+
+  for (const doc of docs) {
     const p = doc.data() as Product;
-    if (Array.isArray(p.nameTokens) && p.nameTokens.length > 0) continue;
-    batch.update(doc.ref, { nameTokens: buildNameTokens(p.name, p.brand) });
-    updated += 1;
+    const updates: Record<string, unknown> = {};
+
+    if (!Array.isArray(p.nameTokens) || p.nameTokens.length === 0) {
+      updates.nameTokens = buildNameTokens(p.name, p.brand, p.sku);
+    }
+    if (typeof p.code !== "number" || p.code <= 0) {
+      updates.code = takeNextCode();
+      codesAdded += 1;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      batch.update(doc.ref, updates);
+      updated += 1;
+    }
   }
 
   if (updated > 0) await batch.commit();
-  return NextResponse.json({ ok: true, scanned: snapshot.size, updated });
+  // Hisoblagich mavjud eng katta raqamdan orqada qolmasin.
+  const maxCode = taken.size > 0 ? Math.max(...taken) : 0;
+  if (maxCode > 0) await bumpProductCodeCounter(maxCode);
+
+  return NextResponse.json({ ok: true, scanned: snapshot.size, updated, codesAdded });
 }

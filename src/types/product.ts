@@ -47,6 +47,13 @@ export interface Product {
   /** Mahsulot videolari (Telegram kirimida yuborilgan qisqa videolar). */
   videos?: string[];
   thumbnailUrl: string;
+  /**
+   * Mahsulot tartib raqami (1, 2, 3...). Hujjat ID si tasodifiy
+   * harflardan iborat bo'lgani uchun odamlar uchun mo'ljallangan qisqa
+   * raqam: guruh xabarlarida, kanal postida va bot buyruqlarida shu
+   * ko'rsatiladi (`lib/products/product-code.ts`).
+   */
+  code?: number;
   isActive: boolean;
   /**
    * CHERNOVIK: mahsulot ochilgan, lekin hali katalogga chiqmagan va

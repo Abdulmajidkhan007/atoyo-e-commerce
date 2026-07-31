@@ -8,6 +8,7 @@ import { parseCsv } from "@/lib/products/csv";
 import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
 import { logAction } from "@/lib/telegram/action-log";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { reserveProductCodes } from "@/lib/products/product-code";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -123,6 +124,11 @@ export async function POST(request: Request) {
 
   let batch = db.batch();
   let pending = 0;
+  // Yangi mahsulotlar uchun tartib raqamlari oldindan (bir tranzaksiyada)
+  // ajratiladi - har bir qator uchun alohida so'rov qilinmasin.
+  const newRowCount = rows.filter((row) => !(row.id ?? "").trim()).length;
+  const codes = await reserveProductCodes(newRowCount);
+  let codeIndex = 0;
 
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i]!;
@@ -218,6 +224,7 @@ export async function POST(request: Request) {
       const product: Product = {
         ...base,
         id: ref.id,
+        code: codes[codeIndex++],
         slug: `${slugify(name)}-${ref.id.slice(0, 6)}`,
         discountUntil: null,
         currency: "UZS",

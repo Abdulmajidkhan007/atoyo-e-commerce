@@ -6,6 +6,7 @@ import { buildNameTokens } from "@/lib/search/tokens";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
 import { announceProduct } from "@/lib/telegram/channel";
+import { nextProductCode } from "@/lib/products/product-code";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -69,6 +70,8 @@ export async function POST(request: Request) {
 
   const product: Product = {
     id: ref.id,
+    // Odamlar uchun qisqa tartib raqami (1, 2, 3...).
+    code: await nextProductCode(),
     slug: `${slugify(d.name)}-${ref.id.slice(0, 6)}`,
     name: d.name.trim(),
     nameSearchIndex: d.name.trim().toLowerCase(),
@@ -106,8 +109,8 @@ export async function POST(request: Request) {
   await announceProduct(product, "new");
   await logAction(
     d.isDraft
-      ? `📝 Yangi mahsulot ochildi (${admin.email ?? "admin"}): ${product.name} — chernovik, kirim kutilmoqda`
-      : `📦 Yangi mahsulot (${admin.email ?? "admin"}): ${product.name} — ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`
+      ? `📝 Yangi mahsulot ochildi (${admin.email ?? "admin"}): №${product.code} — ${product.name} (chernovik, kirim kutilmoqda)`
+      : `📦 Yangi mahsulot (${admin.email ?? "admin"}): №${product.code} — ${product.name}, ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`
   );
   return NextResponse.json({ product }, { status: 201 });
 }

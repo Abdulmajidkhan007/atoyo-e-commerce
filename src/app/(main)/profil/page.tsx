@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, Button, Chip } from "@mui/material";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { subscribeToUserOrders } from "@/lib/firebase/firestore";
-import { signOutUser } from "@/lib/firebase/auth";
+import { signOutUser, ensureSessionCookie } from "@/lib/firebase/auth";
+import { isStaff } from "@/lib/permissions";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import type { Order, OrderStatus } from "@/types/order";
@@ -49,10 +50,46 @@ export default function ProfilePage() {
     }
   };
 
-  // Admin uchun profil sahifasi emas - to'g'ridan-to'g'ri boshqaruv paneli.
-  const isAdmin = profile?.role === "admin";
+  /**
+   * XODIM (owner yoki admin) uchun profil sahifasi emas - boshqaruv
+   * paneli. `isStaff` ishlatilishi muhim: loyiha egasining roli "owner"
+   * (yoki hujjatida hali "user" turgan bo'lishi ham mumkin - u emaili
+   * bo'yicha aniqlanadi), shuning uchun `role === "admin"` tekshiruvi
+   * uni o'tkazib yuborardi.
+   *
+   * Ikkinchi nozik joy: /admin ni Proxy `__session` cookie bo'yicha
+   * qo'riqlaydi. Cookie faqat kirish paytida o'rnatiladi va 14 kundan
+   * keyin eskiradi - eskirgan bo'lsa /admin jimgina bosh sahifaga
+   * qaytarardi. Shu sabab o'tishdan oldin cookie yangilanadi.
+   */
+  const isAdmin = isStaff(profile);
+  const [isOpening, setIsOpening] = useState(false);
+  /** Cookie tiklanmadi - qaytadan kirish kerak. */
+  const [needsRelogin, setNeedsRelogin] = useState(false);
+
+  const openAdminPanel = useCallback(async () => {
+    setIsOpening(true);
+    if (await ensureSessionCookie()) {
+      router.replace("/admin");
+      return;
+    }
+    setNeedsRelogin(true);
+    setIsOpening(false);
+  }, [router]);
+
   useEffect(() => {
-    if (isAdmin) router.replace("/admin");
+    if (!isAdmin) return;
+    let active = true;
+    ensureSessionCookie()
+      .catch(() => false)
+      .then((ok) => {
+        if (!active) return;
+        if (ok) router.replace("/admin");
+        else setNeedsRelogin(true);
+      });
+    return () => {
+      active = false;
+    };
   }, [isAdmin, router]);
 
   useEffect(() => {
@@ -70,7 +107,32 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile || isAdmin) {
+  // Xodim: avtomatik o'tish ishlamay qolsa (masalan cookie tiklanmasa)
+  // hech bo'lmasa tugma ko'rinib tursin - "loading" da qotib qolmasin.
+  if (isAdmin) {
+    return (
+      <section className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="mb-4 text-navy-300">
+          {needsRelogin
+            ? "Sessiya eskirgan — boshqaruv paneli uchun qaytadan kiring."
+            : isOpening
+              ? "Boshqaruv paneliga o'tilmoqda..."
+              : "Siz boshqaruv paneliga kira olasiz."}
+        </p>
+        {needsRelogin ? (
+          <Button component={Link} href="/kirish" variant="contained">
+            Qaytadan kirish
+          </Button>
+        ) : (
+          <Button onClick={openAdminPanel} variant="contained" disabled={isOpening}>
+            Boshqaruv paneli
+          </Button>
+        )}
+      </section>
+    );
+  }
+
+  if (!profile) {
     return <section className="mx-auto max-w-5xl px-4 py-16 text-center text-navy-300">{dict.common.loading}</section>;
   }
 

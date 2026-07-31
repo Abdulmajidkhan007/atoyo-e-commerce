@@ -26,15 +26,20 @@ export function ProductTable() {
   const [reindexResult, setReindexResult] = useState<string | null>(null);
   const [isReindexing, setIsReindexing] = useState(false);
 
-  // Bir martalik: eski mahsulotlarga qidiruv tokenlarini yozadi (yangi
-  // "so'z nomning istalgan joyida" qidiruvi ular uchun ham ishlashi uchun).
+  // Bir martalik: eski mahsulotlarga qidiruv tokenlarini va MAHSULOT
+  // RAQAMINI (1, 2, 3...) yozadi - raqami yo'q eskilari eng eskisidan
+  // boshlab raqamlanadi.
   const handleReindex = async () => {
     setIsReindexing(true);
     setReindexResult(null);
     try {
       const res = await fetch("/api/admin/products/reindex", { method: "POST" });
       const data = await res.json();
-      setReindexResult(res.ok ? `✅ ${data.updated} ta mahsulot indekslandi` : "Xatolik yuz berdi");
+      setReindexResult(
+        res.ok
+          ? `✅ ${data.updated} ta mahsulot yangilandi (${data.codesAdded ?? 0} tasiga raqam berildi)`
+          : "Xatolik yuz berdi"
+      );
     } catch {
       setReindexResult("Xatolik yuz berdi");
     } finally {
@@ -115,7 +120,7 @@ export function ProductTable() {
         <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Mahsulot nomi bo'yicha qidirish..." className="max-w-sm" />
         <Button variant="outlined" onClick={() => setIsBulkDialogOpen(true)}>Bulk narx yangilash</Button>
         <Button variant="outlined" onClick={handleReindex} disabled={isReindexing}>
-          {isReindexing ? <CircularProgress size={18} /> : "Qidiruv indeksini yangilash"}
+          {isReindexing ? <CircularProgress size={18} /> : "Raqam va qidiruv indeksini yangilash"}
         </Button>
         {reindexResult && <span className="text-sm text-navy-300">{reindexResult}</span>}
         <Button variant="contained" startIcon={<AddIcon />} className="!ml-auto" component={NextLink} href="/admin/katalog/kirim">
@@ -127,6 +132,7 @@ export function ProductTable() {
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-navy-50 text-navy-300 dark:bg-navy-900">
             <tr>
+              <th className="px-4 py-2 font-medium">№</th>
               <th className="px-4 py-2 font-medium">Mahsulot</th>
               <th className="px-4 py-2 font-medium">Narx</th>
               <th className="px-4 py-2 font-medium">Zaxira</th>
@@ -136,6 +142,8 @@ export function ProductTable() {
           <tbody className="bg-white dark:bg-navy-700">
             {products.map((product) => (
               <tr key={product.id} className="border-t border-navy-100 dark:border-navy-500">
+                {/* Mahsulot raqami - guruh xabarlarida va bot buyruqlarida shu ishlatiladi. */}
+                <td className="px-4 py-2 text-navy-300">{product.code ?? "—"}</td>
                 <td className="flex items-center gap-2 px-4 py-2">
                   {product.thumbnailUrl && (
                     <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-md bg-navy-50 dark:bg-navy-900">
@@ -179,12 +187,21 @@ export function ProductTable() {
                   {savingFieldKey === `${product.id}-stock` && <CircularProgress size={14} className="ml-2" />}
                 </td>
                 <td className="px-4 py-2">
-                  <IconButton size="small" aria-label="Tahrirlash" component={NextLink} href={`/admin/katalog/${product.id}/tahrir`}>
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" aria-label="O'chirish" onClick={() => handleDelete(product.id)}>
-                    <DeleteOutlineIcon fontSize="small" className="text-red-400" />
-                  </IconButton>
+                  {/* Tahrirlash va o'chirish orasida bo'shliq - telefonda
+                      xato bosib yubormaslik uchun. */}
+                  <div className="flex items-center gap-3">
+                    <IconButton
+                      size="small"
+                      aria-label="Tahrirlash"
+                      component={NextLink}
+                      href={`/admin/katalog/${product.id}/tahrir`}
+                    >
+                      <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" aria-label="O'chirish" onClick={() => handleDelete(product.id)}>
+                      <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+                    </IconButton>
+                  </div>
                 </td>
               </tr>
             ))}
