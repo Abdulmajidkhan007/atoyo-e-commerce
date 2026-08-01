@@ -179,10 +179,27 @@ ham ishlayveradi). Keyin `apphosting.yaml` dagi `NEXT_PUBLIC_SITE_URL`
 ni qisqasiga o'zgartiramiz va Telegram webhook'ini ham o'shanga
 o'tkazasiz.
 
-> Agar rewrite 403/404 bersa — Cloud Run xizmati (`atoyo-e-commerce`)
-> tashqi chaqiruvni qabul qilmayotgan bo'ladi. Google Cloud konsoli →
-> Cloud Run → `atoyo-e-commerce` → **Networking** → Ingress: *All*, va
-> **Security** → "Allow unauthenticated invocations".
+**"Error: Forbidden — your client does not have permission to get URL /"**
+degani: Cloud Run xizmati Firebase Hosting'dan kelgan so'rovni rad
+etyapti (App Hosting uni yopiq holda yaratadi). Cloud Shell'da ikkita
+buyruq bilan ochiladi:
+
+```bash
+gcloud run services update atoyo-e-commerce \
+  --region=us-east4 --project=atoyo-uz --ingress=all
+
+gcloud run services add-iam-policy-binding atoyo-e-commerce \
+  --region=us-east4 --project=atoyo-uz \
+  --member=allUsers --role=roles/run.invoker
+```
+
+Birinchisi tashqaridan so'rov qabul qilishga, ikkinchisi esa
+autentifikatsiyasiz chaqirishga ruxsat beradi. Bu xavfsizlikni
+pasaytirmaydi: sayt allaqachon `…hosted.app` orqali ochiq turibdi.
+
+Sozlama xizmat darajasida saqlanadi, ya'ni keyingi rollout'lar uni
+o'chirmaydi. Agar biror payt yana 403 chiqsa - shu ikki buyruqni
+qaytadan bajaring.
 
 O'z domeningiz (masalan `atoyo.uz`) bo'lsa — App Hosting → Domains →
 **Add custom domain** orqali ulanadi (DNS yozuvlari ko'rsatiladi).
