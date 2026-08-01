@@ -1,0 +1,70 @@
+# FIREBASE APP HOSTING sozlamasi (Netlify o'rniga).
+#
+# App Hosting Next.js'ni to'liq qo'llaydi: SSR, API route'lar, middleware,
+# ImageResponse (OG rasm) — hammasi ishlaydi. GitHub'ga push qilinganda
+# avtomatik build bo'ladi (Netlify'dagi kabi).
+#
+# MUHIM: Firebase Admin SDK uchun bu yerda MAXFIY KALIT KERAK EMAS —
+# App Hosting Google Cloud ichida ishlaydi va xizmat akkaunti muhitning
+# o'zida bo'ladi (`src/lib/firebase/admin.ts` shuni o'zi aniqlaydi).
+#
+# Maxfiy qiymatlar (bot tokeni, SMTP paroli, to'lov kalitlari) Secret
+# Manager'ga qo'yiladi:
+#     firebase apphosting:secrets:set TELEGRAM_BOT_TOKEN
+# Ochiq (NEXT_PUBLIC_*) qiymatlar shu yerda `value:` bilan turaveradi.
+
+runConfig:
+  # Kichik do'kon uchun yetarli; yuk oshsa maxInstances ko'tariladi.
+  minInstances: 0
+  maxInstances: 3
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # ---- Ochiq (brauzerga ham tushadigan) qiymatlar ----
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://atoyo-uz.web.app
+    availability: [BUILD, RUNTIME]
+
+  - variable: ALLOWED_ORIGINS
+    value: atoyo-uz.web.app
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: ""
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: ""
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: ""
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: ""
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: ""
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: ""
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
+    value: ""
+    availability: [BUILD, RUNTIME]
+
+  # ---- Maxfiy qiymatlar (Secret Manager) ----
+  # Har birini bir marta o'rnating:
+  #   firebase apphosting:secrets:set <NOMI>
+  - variable: TELEGRAM_BOT_TOKEN
+    secret: TELEGRAM_BOT_TOKEN
+    availability: [RUNTIME]
+  - variable: TELEGRAM_CHAT_ID
+    secret: TELEGRAM_CHAT_ID
+    availability: [RUNTIME]
+  - variable: TELEGRAM_WEBHOOK_SECRET
+    secret: TELEGRAM_WEBHOOK_SECRET
+    availability: [RUNTIME]
+  - variable: TELEGRAM_CHANNEL_ID
+    secret: TELEGRAM_CHANNEL_ID
+    availability: [RUNTIME]

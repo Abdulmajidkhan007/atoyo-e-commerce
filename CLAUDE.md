@@ -12,6 +12,10 @@ Telegram bot. UI tili — o'zbekcha. Dizayn: Deep Navy/Slate + Aqua `#00D2C4`.
 - **Deploy = git push.** Netlify GitHub'dan avtomatik build qiladi. Bu
   sandbox'dan **to'g'ridan-to'g'ri (zip) deploy QILINMAYDI** — tarmoq siyosati
   `*.netlify.app` upload hostlarini 403 bilan bloklaydi.
+- Muqobil hosting — **Firebase App Hosting** (`apphosting.yaml` tayyor,
+  tartib `docs/DEPLOY.md` da). U yerda Admin SDK kaliti kerak emas:
+  `lib/firebase/admin.ts` Google Cloud ichida ADC'ga o'zi tushadi.
+  GitHub Pages TO'G'RI KELMAYDI — u faqat statik, SSR/API yo'q.
 - Netlify env'lari **non-secret** bo'lishi shart — `is_secret` belgilangan
   o'zgaruvchilar function runtime'ga yetib bormaydi (500/401 sabab bo'ladi).
 

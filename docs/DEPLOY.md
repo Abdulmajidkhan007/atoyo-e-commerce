@@ -1,0 +1,114 @@
+# Saytni qayerga joylash mumkin
+
+Sayt — **Next.js (SSR)**: server tomonda ishlaydigan sahifalar, API
+route'lar (Telegram webhook, buyurtma, admin API), Firebase Admin SDK va
+`next/og` bilan rasm generatsiyasi bor. Shuning uchun hosting **Node.js
+serverini** ko'tara olishi shart.
+
+| Variant | Ishlaydimi | Izoh |
+|---|---|---|
+| **Firebase App Hosting** | ✅ | Bir xil Firebase loyihasi; Admin SDK uchun kalit ham kerak emas. Blaze (karta) rejimi kerak, lekin bepul limiti bor |
+| Netlify | ✅ | Hozirgi joy |
+| Vercel | ✅ | Eng tez ko'chadi; bepul (Hobby) tarifi **notijorat** loyihalar uchun — do'kon uchun Pro (20 $/oy) talab qilinadi |
+| **GitHub Pages** | ❌ | Faqat statik fayllar. API route, admin panel, Telegram webhook, buyurtma — hech biri ishlamaydi |
+| Firebase Hosting (eskisi, "static") | ⚠️ | O'zi statik; SSR uchun baribir Cloud Functions/App Hosting kerak |
+
+Ya'ni **GitHub Pages bu loyiha uchun to'g'ri kelmaydi** — u serverni
+umuman ishlatmaydi. Eng mos variant — **Firebase App Hosting**.
+
+---
+
+## Firebase App Hosting'ga ko'chirish
+
+Repozitoriyda `apphosting.yaml` tayyor turibdi.
+
+### 1. Blaze rejimini yoqing
+
+Firebase konsoli → ⚙️ → **Usage and billing** → **Modify plan** →
+*Blaze (pay as you go)*. Karta biriktiriladi, lekin App Hosting'ning
+bepul limiti bor (kichik do'kon odatda undan chiqmaydi); xohlasangiz
+byudjet ogohlantirishini qo'yib qo'ying.
+
+> Blaze — Storage (rasm yuklash) uchun ham kerak edi, ya'ni baribir
+> yoqilishi kutilayotgan qadam.
+
+### 2. Backend yarating
+
+Firebase konsoli → **Build → App Hosting → Get started**:
+
+- GitHub akkauntini ulang, `Abdulmajidkhan007/atoyo-e-commerce`
+  repozitoriysini va **`claude/plumbing-ecommerce-nextjs-jxpmh5`**
+  branchini tanlang;
+- region: `europe-west4` (yoki yaqinrog'i);
+- backend nomi: `atoyo`.
+
+Yoki terminaldan:
+
+```bash
+npm i -g firebase-tools
+firebase login
+firebase apphosting:backends:create --project <PROJECT_ID>
+```
+
+### 3. Maxfiy kalitlarni qo'ying
+
+```bash
+firebase apphosting:secrets:set TELEGRAM_BOT_TOKEN
+firebase apphosting:secrets:set TELEGRAM_CHAT_ID
+firebase apphosting:secrets:set TELEGRAM_WEBHOOK_SECRET
+firebase apphosting:secrets:set TELEGRAM_CHANNEL_ID
+```
+
+SMTP yoki Payme/Click ishlatilsa — o'shalarni ham qo'shing va
+`apphosting.yaml` ga `secret:` qatorlarini yozing.
+
+`apphosting.yaml` dagi bo'sh `NEXT_PUBLIC_FIREBASE_*` qiymatlarini
+Firebase konsolidagi web-app sozlamalaridan nusxalab to'ldiring —
+ular maxfiy emas.
+
+**Firebase Admin kalitlari (`FIREBASE_ADMIN_*`) kerak emas**: App Hosting
+Google Cloud ichida ishlaydi va xizmat akkaunti muhitning o'zida bo'ladi
+(`src/lib/firebase/admin.ts` shuni avtomatik ishlatadi).
+
+### 4. Domen va sozlamalarni yangilang
+
+Deploy tugagach sayt `https://<backend>--<project>.web.app` da ochiladi.
+Keyin:
+
+1. `apphosting.yaml` dagi `NEXT_PUBLIC_SITE_URL` va `ALLOWED_ORIGINS` ni
+   shu manzilga moslang (o'z domeningiz bo'lsa — o'shanga);
+2. Firebase konsoli → Authentication → Settings → **Authorized domains**
+   ro'yxatiga yangi domenni qo'shing (aks holda Google bilan kirish
+   ishlamaydi);
+3. Telegram webhook'ini yangi manzilga o'tkazing — admin panel →
+   Sozlamalar → «Webhook'ni qayta o'rnatish», yoki:
+
+```bash
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<yangi-domen>/api/telegram-webhook&secret_token=<SECRET>"
+```
+
+### 5. Firestore qoidalari va indekslari
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,storage --project <PROJECT_ID>
+```
+
+(Bu buyruq sandboxdan ishlamaydi — lokal kompyuteringizdan bajaring.)
+
+---
+
+## Netlify'da qolish
+
+Netlify'ning bepul tarifi (100 GB trafik, 300 build-daqiqa/oy) kichik
+do'kon uchun yetadi. Agar hisob "to'lov kerak" deb tursa, avval
+tekshiring:
+
+- **Billing → Usage** — qaysi limitdan oshgani (odatda build-daqiqalar);
+- keraksiz avtomatik build'larni kamaytiring: har push'da build bo'lmasin
+  desangiz Netlify → Site settings → Build & deploy → **Stop builds**
+  yoki faqat bitta branchni kuzatishga qo'ying;
+- limit oyning boshida yangilanadi — shoshilinch bo'lmasa kutish ham
+  variant.
+
+Ikkala joyda parallel turishi ham mumkin: kod bir xil, `netlify.toml`
+ham, `apphosting.yaml` ham repozitoriyda qoladi.

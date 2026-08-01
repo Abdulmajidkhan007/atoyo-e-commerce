@@ -1,5 +1,5 @@
 import "server-only";
-import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+import { applicationDefault, cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage, type Storage } from "firebase-admin/storage";
@@ -30,14 +30,32 @@ function getAdminApp(): App {
   const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error(
-      "Firebase Admin credentiallari topilmadi. .env faylida FIREBASE_ADMIN_* o'zgaruvchilarini tekshiring."
-    );
+  // 1) Xizmat akkaunti kaliti env'da bo'lsa - o'shani ishlatamiz
+  //    (Netlify, lokal ishlab chiqish, boshqa hostinglar).
+  if (projectId && clientEmail && privateKey) {
+    cachedApp = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+    return cachedApp;
   }
 
-  cachedApp = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
-  return cachedApp;
+  // 2) Google Cloud ichida (Firebase App Hosting / Cloud Run / Cloud
+  //    Functions) kalit umuman kerak emas: xizmat akkaunti muhitning
+  //    o'zida bo'ladi (Application Default Credentials). Shu sabab
+  //    maxfiy kalitni env'ga qo'yish shart emas.
+  const adcProjectId =
+    projectId ??
+    process.env.GOOGLE_CLOUD_PROJECT ??
+    process.env.GCLOUD_PROJECT ??
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+  if (process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.K_SERVICE) {
+    cachedApp = initializeApp({ credential: applicationDefault(), projectId: adcProjectId });
+    return cachedApp;
+  }
+
+  throw new Error(
+    "Firebase Admin credentiallari topilmadi. FIREBASE_ADMIN_* o'zgaruvchilarini tekshiring " +
+      "(Google Cloud ichida ishlayotgan bo'lsa ular shart emas)."
+  );
 }
 
 let cachedAuth: Auth | null = null;
