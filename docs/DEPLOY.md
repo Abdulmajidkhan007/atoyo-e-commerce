@@ -50,6 +50,33 @@ firebase login
 firebase apphosting:backends:create --project <PROJECT_ID>
 ```
 
+### 2a. `apphosting.yaml` ni to'ldirish tartibi
+
+Fayl **soddaligicha** turishi kerak — App Hosting uni qat'iy tekshiradi:
+
+- har bir `env` yozuvida **yo `value:`, yo `secret:`** bo'ladi (ikkalasi
+  ham emas), qiymat esa **bo'sh bo'lmasligi** kerak. Bo'sh `value: ""`
+  yozilsa rollout *"Invalid apphosting.yaml"* bilan yiqiladi;
+- `secret:` faqat Secret Manager'da **allaqachon yaratilgan** kalitga
+  havola qila oladi — avval `firebase apphosting:secrets:set ...`,
+  keyin faylga qator qo'shiladi;
+- `availability` ro'yxati faqat `BUILD` va `RUNTIME` dan iborat.
+
+Client SDK qiymatlari (`NEXT_PUBLIC_FIREBASE_*`) **build vaqtida** kerak
+bo'ladi va maxfiy emas (ular baribir brauzer bundle'iga tushadi) —
+shuning uchun ular to'g'ridan-to'g'ri shu faylga yoziladi:
+
+```yaml
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSy...
+    availability:
+      - BUILD
+      - RUNTIME
+```
+
+va shu tartibda `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`,
+`MESSAGING_SENDER_ID`, `APP_ID`.
+
 ### 3. Maxfiy kalitlarni qo'ying
 
 ```bash
@@ -59,8 +86,20 @@ firebase apphosting:secrets:set TELEGRAM_WEBHOOK_SECRET
 firebase apphosting:secrets:set TELEGRAM_CHANNEL_ID
 ```
 
-SMTP yoki Payme/Click ishlatilsa — o'shalarni ham qo'shing va
-`apphosting.yaml` dagi tegishli izohlarni oching.
+Kalit yaratilgandan keyin `apphosting.yaml` ga qo'shiladi:
+
+```yaml
+  - variable: TELEGRAM_BOT_TOKEN
+    secret: TELEGRAM_BOT_TOKEN
+    availability:
+      - RUNTIME
+```
+
+SMTP yoki Payme/Click ishlatilsa — o'shalar ham xuddi shunday.
+
+> Telegram tokeni/guruh ID si Firestore'dagi `secrets/telegram`
+> hujjatida ham turadi va u **env'dan ustunroq**, shuning uchun bot
+> secret'larsiz ham ishlashi mumkin.
 
 ### Qaysi qiymat qayerdan olinadi
 
@@ -83,10 +122,6 @@ SMTP yoki Payme/Click ishlatilsa — o'shalarni ham qo'shing va
 Hozirgi qiymatlarni **Netlify'dan ko'chirib olish** eng oson yo'l:
 Netlify → Site configuration → Environment variables → har birining
 yonidagi "Show" tugmasi.
-
-`apphosting.yaml` dagi bo'sh `NEXT_PUBLIC_FIREBASE_*` qiymatlarini
-Firebase konsolidagi web-app sozlamalaridan nusxalab to'ldiring —
-ular maxfiy emas.
 
 **Firebase Admin kalitlari (`FIREBASE_ADMIN_*`) kerak emas**: App Hosting
 Google Cloud ichida ishlaydi va xizmat akkaunti muhitning o'zida bo'ladi

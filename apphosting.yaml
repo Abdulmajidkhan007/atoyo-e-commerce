@@ -1,20 +1,7 @@
-# FIREBASE APP HOSTING sozlamasi (Netlify o'rniga).
-#
-# App Hosting Next.js'ni to'liq qo'llaydi: SSR, API route'lar, middleware,
-# ImageResponse (OG rasm) — hammasi ishlaydi. GitHub'ga push qilinganda
-# avtomatik build bo'ladi (Netlify'dagi kabi).
-#
-# MUHIM: Firebase Admin SDK uchun bu yerda MAXFIY KALIT KERAK EMAS —
-# App Hosting Google Cloud ichida ishlaydi va xizmat akkaunti muhitning
-# o'zida bo'ladi (`src/lib/firebase/admin.ts` shuni o'zi aniqlaydi).
-#
-# Maxfiy qiymatlar (bot tokeni, SMTP paroli, to'lov kalitlari) Secret
-# Manager'ga qo'yiladi:
-#     firebase apphosting:secrets:set TELEGRAM_BOT_TOKEN
-# Ochiq (NEXT_PUBLIC_*) qiymatlar shu yerda `value:` bilan turaveradi.
+# Firebase App Hosting sozlamasi.
+# Hujjat: https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Kichik do'kon uchun yetarli; yuk oshsa maxInstances ko'tariladi.
   minInstances: 0
   maxInstances: 3
   concurrency: 80
@@ -22,94 +9,30 @@ runConfig:
   memoryMiB: 512
 
 env:
-  # ---- Ochiq (brauzerga ham tushadigan) qiymatlar ----
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://atoyo-uz.web.app
-    availability: [BUILD, RUNTIME]
+    value: https://atoyo-e-commerce--atoyo-uz.us-east4.hosted.app
+    availability:
+      - BUILD
+      - RUNTIME
 
   - variable: ALLOWED_ORIGINS
-    value: atoyo-uz.web.app
-    availability: [BUILD, RUNTIME]
+    value: atoyo-e-commerce--atoyo-uz.us-east4.hosted.app
+    availability:
+      - BUILD
+      - RUNTIME
 
-  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: ""
-    availability: [BUILD, RUNTIME]
-  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: ""
-    availability: [BUILD, RUNTIME]
-  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: ""
-    availability: [BUILD, RUNTIME]
-  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: ""
-    availability: [BUILD, RUNTIME]
-  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: ""
-    availability: [BUILD, RUNTIME]
-  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: ""
-    availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
     value: Atoyo_uz_bot
-    availability: [BUILD, RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
 
-  # ---- Forum topic Thread ID lari (maxfiy emas) ----
-  # Bular Firestore `settings/telegram` da ham turadi va u yerdagisi
-  # ustunroq - bu yerdagilar zaxira qiymat.
   - variable: TELEGRAM_TOPIC_ORDERS_ID
     value: "2"
-    availability: [RUNTIME]
+    availability:
+      - RUNTIME
+
   - variable: TELEGRAM_TOPIC_INTAKE_ID
     value: "151"
-    availability: [RUNTIME]
-
-  # ---- Maxfiy qiymatlar (Secret Manager) ----
-  # Har birini bir marta o'rnating:
-  #   firebase apphosting:secrets:set <NOMI>
-  - variable: TELEGRAM_BOT_TOKEN
-    secret: TELEGRAM_BOT_TOKEN
-    availability: [RUNTIME]
-  - variable: TELEGRAM_CHAT_ID
-    secret: TELEGRAM_CHAT_ID
-    availability: [RUNTIME]
-  - variable: TELEGRAM_WEBHOOK_SECRET
-    secret: TELEGRAM_WEBHOOK_SECRET
-    availability: [RUNTIME]
-  - variable: TELEGRAM_CHANNEL_ID
-    secret: TELEGRAM_CHANNEL_ID
-    availability: [RUNTIME]
-
-  # ---- Ixtiyoriy: email xabarnoma (SMTP) ----
-  # Kerak bo'lsa izohni oching va secret'larni o'rnating.
-  # - variable: SMTP_HOST
-  #   secret: SMTP_HOST
-  #   availability: [RUNTIME]
-  # - variable: SMTP_PORT
-  #   value: "587"
-  #   availability: [RUNTIME]
-  # - variable: SMTP_USER
-  #   secret: SMTP_USER
-  #   availability: [RUNTIME]
-  # - variable: SMTP_PASS
-  #   secret: SMTP_PASS
-  #   availability: [RUNTIME]
-  # - variable: SMTP_FROM
-  #   value: "Atoyo Santexnika <santexnika.atoyo@gmail.com>"
-  #   availability: [RUNTIME]
-
-  # ---- Ixtiyoriy: to'lov tizimlari ----
-  # - variable: PAYME_MERCHANT_ID
-  #   secret: PAYME_MERCHANT_ID
-  #   availability: [RUNTIME]
-  # - variable: PAYME_KEY
-  #   secret: PAYME_KEY
-  #   availability: [RUNTIME]
-  # - variable: CLICK_MERCHANT_ID
-  #   secret: CLICK_MERCHANT_ID
-  #   availability: [RUNTIME]
-  # - variable: CLICK_SERVICE_ID
-  #   secret: CLICK_SERVICE_ID
-  #   availability: [RUNTIME]
-  # - variable: CLICK_SECRET_KEY
-  #   secret: CLICK_SECRET_KEY
-  #   availability: [RUNTIME]
+    availability:
+      - RUNTIME
