@@ -193,6 +193,55 @@ const MATERIAL_LABELS: Record<string, string> = {
 };
 
 /**
+ * KANALDAGI ESKI POSTNI JOYIDA YANGILAYDI (yangi post tashlamaydi).
+ *
+ * Sayt domeni o'zgarganda eski postlardagi "Saytda ko'rish" havolasi
+ * eski manzilga qarab qoladi. Bu funksiya postning matnini va tugmasini
+ * HOZIRGI holat bilan qayta yozadi - postlar joyida qoladi, obunachilarga
+ * takror xabar bormaydi.
+ *
+ * Qaytaradi: `updated` - yangilandi, `unchanged` - o'zgarish yo'q edi,
+ * `skipped` - postga bog'lanmagan mahsulot, `failed` - Telegram rad etdi
+ * (masalan post juda eski yoki o'chirilgan).
+ */
+export async function refreshChannelPost(
+  product: Product
+): Promise<"updated" | "unchanged" | "skipped" | "failed"> {
+  if (!product.channelChatId || !product.channelMessageId) return "skipped";
+
+  const gallery: MediaItem[] = [
+    ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
+    ...(product.videos ?? []).filter(Boolean).map((url) => ({ url, type: "video" as const })),
+  ].slice(0, 10);
+
+  const header: "new" | "updated" = product.channelMode ?? "new";
+  const body = buildProductText(product, header);
+  const footer = buildFooter(await loadFooter());
+  const budget = 850 - footer.length;
+  const text =
+    gallery.length > 1 && body.length > budget ? `${body.slice(0, Math.max(120, budget - 3))}...` : body;
+  const caption = `${text}${footer}`;
+  const buttonUrl = `${siteUrl()}/mahsulot/${product.id}`;
+  const buttonText = "🛒 Saytda ko'rish";
+
+  try {
+    await editMessageCaptionOrText({
+      chatId: product.channelChatId,
+      messageId: product.channelMessageId,
+      hasPhoto: gallery.length > 0,
+      text: gallery.length > 1 ? `${caption}\n\n<a href="${buttonUrl}">${buttonText}</a>` : caption,
+      replyMarkup:
+        gallery.length > 1 ? undefined : { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] },
+    });
+    return "updated";
+  } catch (error) {
+    if (error instanceof Error && /not modified/i.test(error.message)) return "unchanged";
+    console.error(`Kanaldagi postni yangilashda xato (${product.id}):`, error);
+    return "failed";
+  }
+}
+
+/**
  * Yangi yoki tahrirlangan mahsulot e'loni.
  *
  * Mahsulot yangilanganda kanalga YANGI post tashlanmaydi - avvalgi

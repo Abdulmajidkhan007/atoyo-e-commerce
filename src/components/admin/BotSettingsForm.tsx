@@ -27,6 +27,9 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
   /** Webhook'ni qayta o'rnatish holati. */
   const [isHooking, setIsHooking] = useState(false);
   const [hookNote, setHookNote] = useState<string | null>(null);
+  /** Kanaldagi eski postlarni yangilash holati. */
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const challenge = useChallenge();
 
@@ -52,6 +55,35 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
       setHookNote(`❌ ${err instanceof Error ? err.message : "Webhook o'rnatilmadi."}`);
     } finally {
       setIsHooking(false);
+    }
+  };
+
+  /**
+   * Kanaldagi eski postlarni joyida yangilaydi (havola eski domenga
+   * qarab qolgan bo'lsa). Yangi post tashlanmaydi.
+   */
+  const refreshChannelPosts = async () => {
+    setIsRefreshing(true);
+    setRefreshNote(null);
+    try {
+      const res = await fetch("/api/admin/telegram/refresh-channel", { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as {
+        scanned?: number;
+        updated?: number;
+        unchanged?: number;
+        failed?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Yangilanmadi.");
+      setRefreshNote(
+        `✅ ${data.updated ?? 0} ta post yangilandi` +
+          (data.unchanged ? `, ${data.unchanged} tasi allaqachon joyida` : "") +
+          (data.failed ? `, ${data.failed} tasiga Telegram ruxsat bermadi` : "")
+      );
+    } catch (err) {
+      setRefreshNote(`❌ ${err instanceof Error ? err.message : "Yangilanmadi."}`);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -204,6 +236,25 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
         {hookNote && (
           <p className="break-all text-xs text-navy-300">{hookNote}</p>
         )}
+
+        <div className="border-t border-navy-100 pt-3 dark:border-navy-500">
+          <p className="mb-2 text-xs text-navy-300">
+            Kanaldagi <b>eski postlar</b> havolasi ham eski manzilda qolgan bo&apos;lishi mumkin.
+            Bu tugma ularni joyida tahrirlaydi — yangi post tashlanmaydi, obunachilarga
+            takror xabar bormaydi. Postlar ko&apos;p bo&apos;lsa bir necha marta bosing
+            (har safar 40 tasi yangilanadi).
+          </p>
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={refreshChannelPosts}
+            disabled={isRefreshing}
+            className="!w-fit"
+          >
+            {isRefreshing ? <CircularProgress size={20} /> : "Kanal postlarini yangilash"}
+          </Button>
+          {refreshNote && <p className="mt-2 text-xs text-navy-300">{refreshNote}</p>}
+        </div>
       </div>
 
       {errorText && <Alert severity="error">{errorText}</Alert>}
