@@ -139,19 +139,37 @@ export async function POST(request: Request) {
       errors.push(`${lineNo}-qator: nom bo'sh`);
       continue;
     }
+    /**
+     * CHERNOVIK qatorlari (`draft` ustuni 1): mahsulot faqat nomi bilan
+     * ochiladi - narx, kategoriya va material keyin to'ldiriladi, zaxira
+     * esa kirim orqali keladi. Bir vaqtda minglab nomni yaratib olish
+     * uchun shu qulay: katalogga chiqmaydi, kanalga e'lon qilinmaydi.
+     */
+    const isDraftRow = ["1", "true", "ha", "yes", "chernovik"].includes(
+      (row.draft ?? "").trim().toLowerCase()
+    );
+
     const price = toNumber(row.price);
-    if (price === undefined || price < 0) {
+    if (!isDraftRow && (price === undefined || price < 0)) {
       errors.push(`${lineNo}-qator: narx noto'g'ri`);
       continue;
     }
     const category = (row.category ?? "").trim() as ProductCategory;
-    if (!categorySlugs.has(category)) {
+    if (category && !categorySlugs.has(category)) {
       errors.push(`${lineNo}-qator: kategoriya noto'g'ri (${row.category ?? ""})`);
       continue;
     }
+    if (!category && !isDraftRow) {
+      errors.push(`${lineNo}-qator: kategoriya bo'sh`);
+      continue;
+    }
     const material = (row.material ?? "").trim() as ProductMaterial;
-    if (!materialSlugs.has(material)) {
+    if (material && !materialSlugs.has(material)) {
       errors.push(`${lineNo}-qator: material noto'g'ri (${row.material ?? ""})`);
+      continue;
+    }
+    if (!material && !isDraftRow) {
+      errors.push(`${lineNo}-qator: material bo'sh`);
       continue;
     }
 
@@ -197,9 +215,9 @@ export async function POST(request: Request) {
       brand,
       manufacturerCountry: country,
       supplier,
-      price,
+      price: price ?? 0,
       discountPrice: toNumber(row.discountPrice) ?? null,
-      stock: Math.max(0, Math.round(toNumber(row.stock) ?? 0)),
+      stock: isDraftRow ? 0 : Math.max(0, Math.round(toNumber(row.stock) ?? 0)),
       dimensions: {
         ...(diameterMm !== undefined ? { diameterMm } : {}),
         ...(lengthMm !== undefined ? { lengthMm } : {}),
@@ -207,7 +225,8 @@ export async function POST(request: Request) {
       },
       images,
       thumbnailUrl: images[0] ?? "",
-      isActive: (row.isActive ?? "1").trim() !== "0",
+      isActive: isDraftRow ? false : (row.isActive ?? "1").trim() !== "0",
+      isDraft: isDraftRow,
       updatedAt: now,
     };
 

@@ -18,9 +18,19 @@ export const runtime = "nodejs";
  *
  * Qayta bosilsa faqat yetishmayotganini to'ldiradi.
  */
-export async function POST() {
+export async function POST(request: Request) {
   const admin = await requirePermission("products");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  /**
+   * `renumber: true` - HAMMA raqam qaytadan beriladi (1, 2, 3...).
+   * O'chirilgan mahsulotdan qolgan bo'sh raqamlar yopiladi, lekin
+   * mavjud mahsulotlarning raqami o'zgaradi - guruhda avval yozilgan
+   * "№12" boshqa mahsulotni ko'rsatib qolishi mumkin. Shuning uchun bu
+   * alohida so'raladi.
+   */
+  const body = (await request.json().catch(() => ({}))) as { renumber?: boolean };
+  const renumber = body.renumber === true;
 
   const db = getAdminDb();
   const snapshot = await db.collection("products").limit(500).get();
@@ -30,11 +40,14 @@ export async function POST() {
     (a, b) => ((a.data() as Product).createdAt ?? 0) - ((b.data() as Product).createdAt ?? 0)
   );
 
-  // Allaqachon berilgan raqamlar band hisoblanadi.
+  // Allaqachon berilgan raqamlar band hisoblanadi (qayta tartiblashda
+  // esa hech biri band emas - hammasi yangidan beriladi).
   const taken = new Set<number>();
-  for (const doc of docs) {
-    const code = (doc.data() as Product).code;
-    if (typeof code === "number" && code > 0) taken.add(code);
+  if (!renumber) {
+    for (const doc of docs) {
+      const code = (doc.data() as Product).code;
+      if (typeof code === "number" && code > 0) taken.add(code);
+    }
   }
 
   let candidate = 1;
@@ -55,7 +68,13 @@ export async function POST() {
     if (!Array.isArray(p.nameTokens) || p.nameTokens.length === 0) {
       updates.nameTokens = buildNameTokens(p.name, p.brand, p.sku);
     }
-    if (typeof p.code !== "number" || p.code <= 0) {
+    if (renumber) {
+      const next = takeNextCode();
+      if (p.code !== next) {
+        updates.code = next;
+        codesAdded += 1;
+      }
+    } else if (typeof p.code !== "number" || p.code <= 0) {
       updates.code = takeNextCode();
       codesAdded += 1;
     }

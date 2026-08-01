@@ -151,7 +151,31 @@ sarlavha** (ustun nomlari). Ikkinchi varaqda ustunlar izohi bor.
 | `stock` | ❌ | Zaxira soni (bo'sh — 0) |
 | `diameterMm`, `lengthMm`, `weightKg` | ❌ | O'lchamlar |
 | `images` | ❌ | Rasm **havolalari**, bir nechtasi ` \| ` bilan ajratiladi |
+| `draft` | ❌ | `1` — **chernovik**: faqat nom yetarli, katalogga chiqmaydi, kirimda turadi |
 | `isActive` | ❌ | `1` — saytda ko'rinadi, `0` — yashirin |
+
+### Faqat NOMLARNI bittada yaratish (10 000 tagacha)
+
+Narx, kategoriya va materialni keyin to'ldirmoqchi bo'lsangiz —
+`draft` ustuniga `1` yozing va faqat `name` ni to'ldiring:
+
+```csv
+name,draft
+Moyka Basu 50x60,1
+Hammom pardasi 180x200,1
+PPR quvur 32mm,1
+```
+
+Bunday qatorlar **chernovik** mahsulot ochadi:
+
+- saytda ko'rinmaydi, kanalga e'lon qilinmaydi;
+- `/admin/katalog/kirim` qidiruvida «chernovik» belgisi bilan chiqadi;
+- kelgan soni kiritilib kirim saqlanganda katalogga chiqadi.
+
+Narx/kategoriya/material chernovik qatorlarda **bo'sh qolishi mumkin** —
+ularni keyin admin panelda yoki qayta import bilan (`id` ustunini
+to'ldirib) to'ldirasiz. Oddiy (chernovik bo'lmagan) qatorlarda esa
+`name`, `category`, `material`, `price` majburiyligicha qoladi.
 
 ### Excel'da rasm bo'ladimi?
 
@@ -256,6 +280,14 @@ mahsulotga qo'shimcha **tartib raqami** beriladi: 1, 2, 3, ...
 - Admin panelda katalog jadvalining birinchi ustuni — **№**.
 - `sku` (do'kon kodi / artikul) bu bilan aralashmaydi: u sizning ichki
   kodingiz, № esa saytning tartib raqami.
+
+**Raqamlarni qayta tartiblash:** mahsulot o'chirilsa uning raqami bo'sh
+qoladi (masalan 16 o'chsa 15 dan keyin 17 keladi) — bu normal, chunki
+raqam mahsulotning doimiy nishoni. Bo'shliqlar bezovta qilsa Katalog
+sahifasidagi **«Raqamlarni qayta tartiblash»** tugmasi hammasini
+qaytadan 1, 2, 3... qilib beradi. Diqqat: bunda mavjud mahsulotlarning
+raqami o'zgaradi, ya'ni guruhda avval yozilgan "№12" endi boshqa
+mahsulotni ko'rsatishi mumkin.
 
 **Eski mahsulotlarga raqam berish:** admin panel → Katalog → «Raqam va
 qidiruv indeksini yangilash». Eng eski mahsulotdan boshlab 1, 2, 3...

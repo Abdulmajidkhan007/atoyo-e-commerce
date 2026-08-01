@@ -1,3 +1,5 @@
-﻿id,sku,name,description,category,material,unit,brand,manufacturerCountry,supplier,price,discountPrice,stock,diameterMm,lengthMm,weightKg,images,isActive
-,PPR-25,PPR quvur 25mm,Issiq va sovuq suv uchun polipropilen quvur,pipes,polypropylene,metr,Tebo,Turkiya,Akmal aka,45000,,120,25,4000,1.2,,1
-,KR-12,Latun kran 1/2,Yarim dyuymli to'p kran,faucets,brass,dona,Valtec,Italiya,Bek ota,89000,79000,40,15,,0.35,https://example.com/kran-1.jpg | https://example.com/kran-2.jpg,1
+﻿id,sku,name,description,category,material,unit,brand,manufacturerCountry,supplier,price,discountPrice,stock,diameterMm,lengthMm,weightKg,images,draft,isActive
+,PPR-25,PPR quvur 25mm,Issiq va sovuq suv uchun polipropilen quvur,pipes,polypropylene,metr,Tebo,Turkiya,Akmal aka,45000,,120,25,4000,1.2,,,1
+,KR-12,Latun kran 1/2,Yarim dyuymli to'p kran,faucets,brass,dona,Valtec,Italiya,Bek ota,89000,79000,40,15,,0.35,https://example.com/kran-1.jpg | https://example.com/kran-2.jpg,,1
+,,Moyka Basu 50x60,,,,,,,,,,,,,,,1,
+,,Hammom pardasi 180x200,,,,,,,,,,,,,,,1,

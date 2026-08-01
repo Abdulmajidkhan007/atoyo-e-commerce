@@ -29,15 +29,30 @@ export function ProductTable() {
   // Bir martalik: eski mahsulotlarga qidiruv tokenlarini va MAHSULOT
   // RAQAMINI (1, 2, 3...) yozadi - raqami yo'q eskilari eng eskisidan
   // boshlab raqamlanadi.
-  const handleReindex = async () => {
+  const handleReindex = async (renumber = false) => {
+    // Qayta tartiblash mavjud raqamlarni o'zgartiradi - tasdiq so'raymiz.
+    if (
+      renumber &&
+      !confirm(
+        "Hamma mahsulot raqami qaytadan beriladi (1, 2, 3...). " +
+          "Guruhda avval yozilgan raqamlar boshqa mahsulotni ko'rsatib qolishi mumkin. Davom etamizmi?"
+      )
+    ) {
+      return;
+    }
+
     setIsReindexing(true);
     setReindexResult(null);
     try {
-      const res = await fetch("/api/admin/products/reindex", { method: "POST" });
+      const res = await fetch("/api/admin/products/reindex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ renumber }),
+      });
       const data = await res.json();
       setReindexResult(
         res.ok
-          ? `✅ ${data.updated} ta mahsulot yangilandi (${data.codesAdded ?? 0} tasiga raqam berildi)`
+          ? `✅ ${data.updated} ta mahsulot yangilandi (${data.codesAdded ?? 0} tasining raqami ${renumber ? "qayta berildi" : "to'ldirildi"})`
           : "Xatolik yuz berdi"
       );
     } catch {
@@ -119,8 +134,12 @@ export function ProductTable() {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Mahsulot nomi bo'yicha qidirish..." className="max-w-sm" />
         <Button variant="outlined" onClick={() => setIsBulkDialogOpen(true)}>Bulk narx yangilash</Button>
-        <Button variant="outlined" onClick={handleReindex} disabled={isReindexing}>
+        <Button variant="outlined" onClick={() => handleReindex(false)} disabled={isReindexing}>
           {isReindexing ? <CircularProgress size={18} /> : "Raqam va qidiruv indeksini yangilash"}
+        </Button>
+        {/* O'chirilgan mahsulotdan bo'sh raqam qolganda - qayta tartiblash. */}
+        <Button variant="text" onClick={() => handleReindex(true)} disabled={isReindexing}>
+          Raqamlarni qayta tartiblash
         </Button>
         {reindexResult && <span className="text-sm text-navy-300">{reindexResult}</span>}
         <Button variant="contained" startIcon={<AddIcon />} className="!ml-auto" component={NextLink} href="/admin/katalog/kirim">

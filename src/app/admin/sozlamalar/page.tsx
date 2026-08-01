@@ -1,20 +1,28 @@
 import { resolveTopicConfig } from "@/lib/telegram/topics";
+import { describeTelegramSecrets } from "@/lib/telegram/secrets";
+import { getCurrentAppUser } from "@/lib/firebase/session";
+import { isOwner } from "@/lib/permissions";
 import { resolveChannelId } from "@/lib/telegram/channel";
 import { getRequiredChannels } from "@/lib/telegram/required-channels";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { BotSettingsForm } from "@/components/admin/BotSettingsForm";
 import { SiteSettingsForm } from "@/components/admin/SiteSettingsForm";
 import { ChannelFooterForm } from "@/components/admin/ChannelFooterForm";
+import { SecretsForm } from "@/components/admin/SecretsForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
-  const [topicConfig, requiredChannels, siteSettings, channelId] = await Promise.all([
+  const [topicConfig, requiredChannels, siteSettings, channelId, user] = await Promise.all([
     resolveTopicConfig(),
     getRequiredChannels(),
     getSiteSettings(),
     resolveChannelId(),
+    getCurrentAppUser(),
   ]);
+
+  // Maxfiy kalitlar faqat loyiha egasiga - niqoblangan ko'rinishda.
+  const secrets = isOwner(user) ? await describeTelegramSecrets() : null;
 
   return (
     <div className="flex flex-col gap-10">
@@ -54,6 +62,18 @@ export default async function AdminSettingsPage() {
         />
       </section>
 
+      {/* Maxfiy kalitlar - faqat loyiha egasiga ko'rinadi. */}
+      {secrets && (
+        <section>
+          <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">Maxfiy kalitlar</h2>
+          <p className="mb-6 text-sm text-navy-300">
+            Bot tokeni, xodimlar guruhi ID si va webhook siri. Bu yerdagi qiymat hosting
+            sozlamalaridagi (env) qiymatdan <b>ustun turadi</b> — kalitni almashtirish uchun
+            qayta deploy qilish shart emas. Qiymatlar hech qachon to&apos;liq ko&apos;rsatilmaydi.
+          </p>
+          <SecretsForm initial={secrets} />
+        </section>
+      )}
     </div>
   );
 }

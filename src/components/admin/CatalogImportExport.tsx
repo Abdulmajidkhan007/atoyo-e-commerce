@@ -112,6 +112,13 @@ export function CatalogImportExport() {
           qatorlar yangi mahsulot yaratadi. Excel’da rasm bo&apos;lmaydi — <code>images</code> ustuniga
           rasm havolalarini yozing yoki rasmni keyin Telegram/admin panel orqali qo&apos;shing.
         </p>
+        <p className="text-xs text-navy-300">
+          <b>Faqat nomlarni yaratmoqchi bo&apos;lsangiz</b> (narx/kategoriya keyin):{" "}
+          <code>draft</code> ustuniga <code>1</code> qo&apos;ying va faqat <code>name</code> ni
+          to&apos;ldiring. Bunday mahsulotlar <b>chernovik</b> bo&apos;ladi: saytda ko&apos;rinmaydi,
+          kanalga e&apos;lon qilinmaydi va kirim sahifasida turadi — zaxira kelganda katalogga
+          chiqadi.
+        </p>
       </div>
 
       {error && <Alert severity="error">{error}</Alert>}
