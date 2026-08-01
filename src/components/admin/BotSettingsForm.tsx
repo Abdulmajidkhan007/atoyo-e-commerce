@@ -24,11 +24,35 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
   const [channels, setChannels] = useState<RequiredChannel[]>(initialChannels);
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
+  /** Webhook'ni qayta o'rnatish holati. */
+  const [isHooking, setIsHooking] = useState(false);
+  const [hookNote, setHookNote] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const challenge = useChallenge();
 
   const updateChannel = (index: number, field: keyof RequiredChannel, value: string) => {
     setChannels((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)));
+  };
+
+  /**
+   * WEBHOOK'NI QAYTA O'RNATISH. Sayt domeni o'zgarganda (hosting
+   * almashtirilganda) Telegram eski manzilga xabar yuborib turadi va
+   * bot "jim" bo'lib qoladi - shu tugma uni joriy domenga qaytadan
+   * bog'laydi.
+   */
+  const resetWebhook = async () => {
+    setIsHooking(true);
+    setHookNote(null);
+    try {
+      const res = await fetch("/api/admin/telegram/webhook", { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Webhook o'rnatilmadi.");
+      setHookNote(`✅ Webhook o'rnatildi: ${data.url}`);
+    } catch (err) {
+      setHookNote(`❌ ${err instanceof Error ? err.message : "Webhook o'rnatilmadi."}`);
+    } finally {
+      setIsHooking(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,6 +180,30 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
         >
           Kanal qo&apos;shish
         </Button>
+      </div>
+
+      {/* Webhook - sayt domeni o'zgarganda qayta bog'lash kerak. */}
+      <div className="flex flex-col gap-3 rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
+        <div>
+          <h2 className="font-semibold text-navy-900 dark:text-white">Telegram webhook</h2>
+          <p className="mt-1 text-xs text-navy-300">
+            Bot xabarlarni shu saytga yuboradi. Sayt manzili o&apos;zgargan bo&apos;lsa (hosting
+            almashtirilganda) bot jim bo&apos;lib qoladi — shu tugma uni joriy manzilga
+            qaytadan bog&apos;laydi.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outlined"
+          onClick={resetWebhook}
+          disabled={isHooking}
+          className="!w-fit"
+        >
+          {isHooking ? <CircularProgress size={20} /> : "Webhook'ni qayta o'rnatish"}
+        </Button>
+        {hookNote && (
+          <p className="break-all text-xs text-navy-300">{hookNote}</p>
+        )}
       </div>
 
       {errorText && <Alert severity="error">{errorText}</Alert>}
