@@ -1,12 +1,15 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Chip } from "@mui/material";
-import { getProductById } from "@/lib/firebase/admin-products";
+import { getProductById, getRelatedProducts } from "@/lib/firebase/admin-products";
 import { getDictionary } from "@/lib/i18n/server";
 import { isDiscountActive, effectivePrice } from "@/lib/products/pricing";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { labelOf } from "@/lib/products/taxonomy";
+import { hasVariants } from "@/lib/products/variants";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
+import { ProductVariantPicker } from "@/components/product/ProductVariantPicker";
+import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { FavoriteButton } from "@/components/product/FavoriteButton";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductReviews } from "@/components/product/ProductReviews";
@@ -58,6 +61,9 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
   if (!product) notFound();
 
+  // O'xshash mahsulotlar - shu kategoriyadan (sahifaning pastida).
+  const related = await getRelatedProducts(product, 8).catch(() => []);
+
   // Admin qo'shgan kategoriya/sotish turi lug'atda bo'lmasligi mumkin -
   // bunday holda `metadata/taxonomy` dagi nom ishlatiladi.
   const categoryLabel = labelOf(taxonomy.categories, product.category);
@@ -93,13 +99,17 @@ export default async function ProductPage({ params }: ProductPageParams) {
             </p>
           )}
 
-          <div className="flex items-baseline gap-2">
-            {hasDiscount && <span className="text-navy-300 line-through">{formatSom(product.price)}</span>}
-            <span className="text-2xl font-bold text-navy-900 dark:text-white">
-              {formatSom(hasDiscount ? product.discountPrice! : product.price)}
-            </span>
-            <span className="text-sm text-navy-300">/ {unitLabel}</span>
-          </div>
+          {/* Turlari bo'lsa narx tanlangan turga qarab o'zgaradi -
+              shuning uchun narx bloki tanlagich ichida chiqadi. */}
+          {!hasVariants(product) && (
+            <div className="flex items-baseline gap-2">
+              {hasDiscount && <span className="text-navy-300 line-through">{formatSom(product.price)}</span>}
+              <span className="text-2xl font-bold text-navy-900 dark:text-white">
+                {formatSom(hasDiscount ? product.discountPrice! : product.price)}
+              </span>
+              <span className="text-sm text-navy-300">/ {unitLabel}</span>
+            </div>
+          )}
 
           <p className="text-sm text-navy-500 dark:text-navy-100">{product.description}</p>
 
@@ -124,11 +134,17 @@ export default async function ProductPage({ params }: ProductPageParams) {
             )}
           </dl>
 
-          <p className="text-sm text-navy-300">
-            {dict.product.inStock}: <span className="font-medium text-navy-900 dark:text-white">{product.stock} {unitLabel}</span>
-          </p>
+          {hasVariants(product) ? (
+            <ProductVariantPicker product={product} unitLabel={unitLabel} />
+          ) : (
+            <>
+              <p className="text-sm text-navy-300">
+                {dict.product.inStock}: <span className="font-medium text-navy-900 dark:text-white">{product.stock} {unitLabel}</span>
+              </p>
 
-          <AddToCartButton product={product} />
+              <AddToCartButton product={product} />
+            </>
+          )}
         </div>
       </div>
 
@@ -144,6 +160,8 @@ export default async function ProductPage({ params }: ProductPageParams) {
       )}
 
       <ProductReviews productId={product.id} />
+
+      <RelatedProducts products={related} />
     </section>
   );
 }

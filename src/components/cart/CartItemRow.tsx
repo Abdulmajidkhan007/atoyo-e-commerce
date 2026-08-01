@@ -29,6 +29,8 @@ export function CartItemRow({ item }: { item: CartItem }) {
         <Link href={`/mahsulot/${item.productId}`} className="line-clamp-1 text-sm font-medium text-navy-900 hover:text-aqua-600 dark:text-white">
           {item.name}
         </Link>
+        {/* Tanlangan tur (o'lcham/rang) - savatda ham ko'rinib tursin. */}
+        {item.variantLabel && <p className="text-xs text-aqua-600">{item.variantLabel}</p>}
         <p className="text-sm text-navy-300">{formatSom(item.price)}</p>
       </div>
 
@@ -36,7 +38,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
         <IconButton
           size="small"
           aria-label="Sonini kamaytirish"
-          onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity - 1 }))}
+          onClick={() => dispatch(updateQuantity({ productId: item.productId, variantId: item.variantId, quantity: item.quantity - 1 }))}
           disabled={item.quantity <= 1}
         >
           <RemoveIcon fontSize="small" />
@@ -45,7 +47,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
         <IconButton
           size="small"
           aria-label="Sonini oshirish"
-          onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity + 1 }))}
+          onClick={() => dispatch(updateQuantity({ productId: item.productId, variantId: item.variantId, quantity: item.quantity + 1 }))}
           disabled={item.quantity >= item.stock}
         >
           <AddIcon fontSize="small" />
@@ -59,7 +61,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
       <IconButton
         size="small"
         aria-label="Savatdan o'chirish"
-        onClick={() => dispatch(removeItem({ productId: item.productId }))}
+        onClick={() => dispatch(removeItem({ productId: item.productId, variantId: item.variantId }))}
       >
         <DeleteOutlineIcon fontSize="small" className="text-red-400" />
       </IconButton>

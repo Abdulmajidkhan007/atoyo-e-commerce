@@ -7,6 +7,7 @@ import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
 import { getRecentIntakes } from "@/lib/products/intake-history";
 import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
+import { minVariantPrice } from "@/lib/products/variants";
 import type { StockIntake } from "@/types/intake";
 import type { Product } from "@/types/product";
 
@@ -17,6 +18,8 @@ const intakeSchema = z.object({
     .array(
       z.object({
         productId: z.string().min(1),
+        /** Turlari bo'lgan mahsulotda - qaysi turga kirim bo'layotgani. */
+        variantId: z.string().max(300).optional(),
         qty: z.number().int().positive().max(100000),
         /** Ixtiyoriy: kirim bilan birga yangi sotuv narxi. */
         price: z.number().positive().optional(),
@@ -94,7 +97,31 @@ export async function POST(request: Request) {
       updates.isDraft = false;
       updates.isActive = true;
     }
-    if (item.price !== undefined) updates.price = item.price;
+    // Turlari (o'lcham/rang) bo'lgan mahsulotda kirim aynan bitta turga
+    // tushadi: o'sha turning zaxirasi ko'payadi, umumiy `stock` esa
+    // yig'indi bo'lib qolaveradi.
+    const existing = snaps[i]?.data() as Product | undefined;
+    if (existing && (existing.variants?.length ?? 0) > 0) {
+      const variants = [...(existing.variants ?? [])];
+      const index = variants.findIndex((v) => v.id === item.variantId);
+      if (index < 0) {
+        return NextResponse.json(
+          { error: `"${existing.name}" uchun turini tanlang.` },
+          { status: 400 }
+        );
+      }
+      const variant = variants[index]!;
+      variants[index] = {
+        ...variant,
+        stock: variant.stock + item.qty,
+        ...(item.price !== undefined ? { price: item.price } : {}),
+      };
+      updates.variants = variants;
+      // Katalogdagi narx - eng arzon tur (filtr va saralash shu bo'yicha).
+      updates.price = minVariantPrice({ variants }) ?? existing.price;
+    } else if (item.price !== undefined) {
+      updates.price = item.price;
+    }
     if (item.supplier !== undefined && item.supplier.trim()) {
       updates.supplier = item.supplier.trim();
       // Yetkazib beruvchi ro'yxati (bulk narx filtri uchun) to'ldirib boriladi.

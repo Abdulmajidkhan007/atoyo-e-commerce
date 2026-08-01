@@ -9,6 +9,7 @@ import {
 } from "./bot";
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
+import { hasVariants, minVariantPrice, totalVariantStock } from "@/lib/products/variants";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import type { Product } from "@/types/product";
 import type { BlogPost, ChannelPostFooter } from "@/types/content";
@@ -150,9 +151,13 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
   const hasDiscount = isDiscountActive(product);
   // Sotish turi (dona/metr/kg...) - narx va zaxira shu birlikda.
   const unit = labelOf(BUILTIN_UNITS, product.unit) || product.unit || DEFAULT_UNIT;
-  const priceLine = hasDiscount
-    ? `💰 <s>${formatSom(product.price)}</s> <b>${formatSom(effectivePrice(product))}</b> / ${unit}`
-    : `💰 <b>${formatSom(product.price)}</b> / ${unit}`;
+  // Turlari bo'lsa narx "eng arzonidan" ko'rinishida chiqadi.
+  const withVariants = hasVariants(product);
+  const priceLine = withVariants
+    ? `💰 <b>${formatSom(minVariantPrice(product) ?? product.price)}</b> dan / ${unit}`
+    : hasDiscount
+      ? `💰 <s>${formatSom(product.price)}</s> <b>${formatSom(effectivePrice(product))}</b> / ${unit}`
+      : `💰 <b>${formatSom(product.price)}</b> / ${unit}`;
 
   const lines = [
     mode === "new" ? "🆕 <b>Yangi mahsulot!</b>" : "♻️ <b>Mahsulot yangilandi</b>",
@@ -164,7 +169,13 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
     lines.push(`🏷 ${escapeHtml([product.brand, product.manufacturerCountry].filter(Boolean).join(" • "))}`);
   }
   lines.push(priceLine);
-  if (product.stock > 0) lines.push(`📦 Mavjud: ${product.stock} ${unit}`);
+  if (withVariants) {
+    for (const axis of product.variantAxes ?? []) {
+      lines.push(`🔀 ${escapeHtml(axis.label)}: ${escapeHtml(axis.values.join(", "))}`);
+    }
+  }
+  const stock = withVariants ? totalVariantStock(product) : product.stock;
+  if (stock > 0) lines.push(`📦 Mavjud: ${stock} ${unit}`);
   if (product.material) lines.push(`🧱 ${escapeHtml(MATERIAL_LABELS[product.material] ?? product.material)}`);
   if (product.description) lines.push(``, escapeHtml(product.description.slice(0, 400)));
 

@@ -135,6 +135,7 @@ export default function CheckoutPage() {
           phoneNumber: normalizedPhone,
           items: items.map((item) => ({
             productId: item.productId,
+            variantId: item.variantId ?? null,
             name: item.name,
             price: item.price,
             quantity: item.quantity,

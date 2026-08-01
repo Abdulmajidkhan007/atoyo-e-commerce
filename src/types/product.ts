@@ -17,6 +17,40 @@ export interface ProductDimensions {
   weightKg?: number;
 }
 
+/**
+ * TURLAR (variantlar) — bitta mahsulotning o'lchami/rangi/qalinligi
+ * bo'yicha farq qiladigan ko'rinishlari.
+ *
+ * Misol: "Basu moyka" — o'lchami 50x60 / 60x80, qalinligi 0.2mm / 0.3mm.
+ * Bularning har biri uchun alohida mahsulot ochish o'rniga BITTA
+ * mahsulot ochiladi, rasm ham bitta bo'ladi, mijoz esa sahifada turini
+ * tanlaydi va narx o'shanga qarab o'zgaradi.
+ *
+ *   variantAxes - tanlov qatorlari: [{ key:"olcham", label:"O'lcham",
+ *                 values:["50x60","60x80"] }, { key:"qalinlik", ... }]
+ *   variants    - qatorlarning har bir kombinatsiyasi: o'z narxi va
+ *                 zaxirasi bilan.
+ */
+export interface VariantAxis {
+  /** Ichki kalit (masalan "olcham") - o'zgarmaydi. */
+  key: string;
+  /** Ko'rinadigan nom (masalan "O'lcham"). */
+  label: string;
+  values: string[];
+}
+
+export interface ProductVariant {
+  /** Qiymatlardan yasalgan barqaror kalit: "50x60|0.3mm". */
+  id: string;
+  /** { olcham: "50x60", qalinlik: "0.3mm" } */
+  options: Record<string, string>;
+  price: number;
+  discountPrice?: number | null;
+  stock: number;
+  /** Shu turning o'z artikuli (ixtiyoriy). */
+  sku?: string;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -37,6 +71,14 @@ export interface Product {
   /** Mahsulot nima bilan sotiladi: dona / metr / kg ... (standart "dona"). */
   unit: ProductUnit;
   dimensions: ProductDimensions;
+  /**
+   * Turlar (o'lcham/rang/qalinlik...). Bo'sh bo'lsa - oddiy mahsulot:
+   * narx va zaxira `price`/`stock` da. Turlari bo'lsa `price` eng arzon
+   * turning narxi bo'ladi (katalogdagi saralash va filtrlar shu bo'yicha
+   * ishlashi uchun), `stock` esa hamma turlarning yig'indisi.
+   */
+  variantAxes?: VariantAxis[];
+  variants?: ProductVariant[];
   price: number;
   discountPrice?: number | null;
   /** Chegirma amal qilish muddati (epoch millis). Bo'sh - muddatsiz. */

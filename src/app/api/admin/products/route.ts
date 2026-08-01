@@ -34,6 +34,34 @@ const productSchema = z.object({
   weightKg: z.number().nonnegative().optional(),
   images: z.array(z.string().url()).max(10).default([]),
   /**
+   * TURLARI (o'lcham/rang/qalinlik). Berilsa - `price` eng arzon
+   * turdan, `stock` esa turlar yig'indisidan hisoblanadi.
+   */
+  variantAxes: z
+    .array(
+      z.object({
+        key: z.string().min(1).max(40),
+        label: z.string().min(1).max(60),
+        values: z.array(z.string().min(1).max(60)).max(30),
+      })
+    )
+    .max(3)
+    .optional(),
+  variants: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(300),
+        options: z.record(z.string().max(40), z.string().max(60)),
+        price: z.number().nonnegative(),
+        discountPrice: z.number().nonnegative().nullable().optional(),
+        stock: z.number().int().nonnegative(),
+        sku: z.string().max(60).optional(),
+      })
+    )
+    .max(90)
+    .optional(),
+
+  /**
    * CHERNOVIK: "Yangi mahsulot ochish" - mahsulot faqat ta'riflanadi
    * (nom, narx, kategoriya, material, sotish turi, brend, rasm).
    * Katalogga chiqmaydi va kanalga e'lon qilinmaydi - kirim orqali
@@ -84,6 +112,8 @@ export async function POST(request: Request) {
     supplier: d.supplier.trim(),
     material: d.material,
     unit: d.unit,
+    variantAxes: d.variantAxes ?? [],
+    variants: d.variants ?? [],
     dimensions: {
       ...(d.diameterMm !== undefined ? { diameterMm: d.diameterMm } : {}),
       ...(d.lengthMm !== undefined ? { lengthMm: d.lengthMm } : {}),

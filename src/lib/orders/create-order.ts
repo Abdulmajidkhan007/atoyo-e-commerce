@@ -5,6 +5,7 @@ import { sendTopicMessage } from "@/lib/telegram/bot";
 import { formatOrderMessage } from "@/lib/telegram/templates";
 import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
 import { isDiscountActive } from "@/lib/products/pricing";
+import { hasVariants, variantLabel, variantPrice } from "@/lib/products/variants";
 import {
   PROMO_ERROR_MESSAGES,
   deliveryFeeFor,
@@ -12,7 +13,7 @@ import {
   validatePromo,
 } from "@/lib/orders/promo";
 import { getDeliverySettings } from "@/lib/orders/pricing";
-import type { Product } from "@/types/product";
+import type { Product, ProductVariant } from "@/types/product";
 import type { Order, OrderItem, OrderLocation } from "@/types/order";
 import type { PromoCode } from "@/types/promo";
 
@@ -71,6 +72,9 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     const promoSnap = promoRef ? await tx.get(promoRef) : null;
 
     const verifiedItems: OrderItem[] = [];
+    /** Turlari bo'lgan mahsulotlarda zaxira massiv ichida - shu yerda yig'iladi. */
+    const variantUpdates = new Map<string, ProductVariant[]>();
+
     for (let i = 0; i < input.items.length; i += 1) {
       const requested = input.items[i]!;
       const snap = snaps[i]!;
@@ -78,9 +82,38 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
         throw new OrderValidationError(`"${requested.name}" mahsuloti topilmadi.`);
       }
       const product = { id: snap.id, ...snap.data() } as Product;
-      if (!product.isActive) {
+      if (!product.isActive || product.isDraft) {
         throw new OrderValidationError(`"${product.name}" hozir sotuvda yo'q.`);
       }
+
+      // ---- Turlari bo'lgan mahsulot: narx va zaxira TANLANGAN TURdan ----
+      if (hasVariants(product)) {
+        const variants = variantUpdates.get(product.id) ?? [...(product.variants ?? [])];
+        const index = variants.findIndex((v) => v.id === requested.variantId);
+        if (index < 0) {
+          throw new OrderValidationError(`"${product.name}" uchun turini tanlang.`);
+        }
+        const variant = variants[index]!;
+        if (variant.stock < requested.quantity) {
+          throw new OrderValidationError(
+            `"${product.name}" (${variantLabel(product, variant)}) zaxirasi yetarli emas (mavjud: ${variant.stock}).`
+          );
+        }
+        variants[index] = { ...variant, stock: variant.stock - requested.quantity };
+        variantUpdates.set(product.id, variants);
+
+        verifiedItems.push({
+          productId: product.id,
+          variantId: variant.id,
+          variantLabel: variantLabel(product, variant),
+          name: product.name,
+          price: variantPrice(variant),
+          quantity: requested.quantity,
+          thumbnailUrl: product.thumbnailUrl,
+        });
+        continue;
+      }
+
       if (product.stock < requested.quantity) {
         throw new OrderValidationError(
           `"${product.name}" zaxirasi yetarli emas (mavjud: ${product.stock} dona).`
@@ -116,11 +149,29 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     const total = payable + delivery;
 
     // Zaxira/salesCount va statistika - shu tranzaksiyada.
+    //
+    // Bitta mahsulotning bir nechta turi buyurtmada bo'lishi mumkin,
+    // shuning uchun avval mahsulot bo'yicha yig'ib, keyin har biriga
+    // BITTA yozuv qilamiz (massiv ikki marta yozilib qolmasin).
+    const perProduct = new Map<string, { ref: (typeof refs)[number]; qty: number }>();
     for (let i = 0; i < verifiedItems.length; i += 1) {
-      tx.update(refs[i]!, {
-        stock: FieldValue.increment(-verifiedItems[i]!.quantity),
-        salesCount: FieldValue.increment(verifiedItems[i]!.quantity),
-      });
+      const item = verifiedItems[i]!;
+      const entry = perProduct.get(item.productId) ?? { ref: refs[i]!, qty: 0 };
+      entry.qty += item.quantity;
+      perProduct.set(item.productId, entry);
+    }
+
+    for (const [productId, entry] of perProduct) {
+      const updates: Record<string, unknown> = {
+        stock: FieldValue.increment(-entry.qty),
+        salesCount: FieldValue.increment(entry.qty),
+      };
+      // Turlari bo'lsa - o'sha turning zaxirasi ham kamayadi (Firestore
+      // massiv ichida increment qilolmaydi, lekin massivni shu
+      // tranzaksiyada o'qiganmiz - to'liq qayta yozamiz).
+      const variants = variantUpdates.get(productId);
+      if (variants) updates.variants = variants;
+      tx.update(entry.ref, updates);
     }
     if (promoRef && appliedPromo) {
       tx.update(promoRef, { usedCount: FieldValue.increment(1), updatedAt: now });

@@ -26,7 +26,7 @@ export default function CartPage() {
         <div className="grid gap-6 md:grid-cols-3">
           <div className="rounded-xl2 border border-navy-100 bg-white px-4 md:col-span-2 dark:border-navy-500 dark:bg-navy-700">
             {items.map((item) => (
-              <CartItemRow key={item.productId} item={item} />
+              <CartItemRow key={`${item.productId}:${item.variantId ?? ""}`} item={item} />
             ))}
           </div>
 

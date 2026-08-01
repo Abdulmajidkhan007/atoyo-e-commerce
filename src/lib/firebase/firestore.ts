@@ -97,28 +97,48 @@ export async function searchProductsByPrefix(term: string, pageSize = 24): Promi
   );
 
   // Prefiks (nom boshidan) va token (nomning istalgan so'zi) qidiruvlari
-  // parallel yuboriladi, natijalar birlashtiriladi. Token so'rovi
-  // kompozit indeks (isActive + nameTokens) talab qiladi - indeks hali
-  // yaratilmagan bo'lsa jim o'tkazib yuboriladi (prefiks baribir ishlaydi).
-  const firstWord = normalized.split(/\s+/)[0] ?? normalized;
+  // parallel yuboriladi, natijalar birlashtiriladi.
+  //
+  // Token so'rovi HAR BIR so'z bo'yicha ishlaydi (`array-contains-any`):
+  // "8276 dush" deb qidirilsa ham, "dush 8276" deb qidirilsa ham
+  // "Boou dush 8276" topiladi. So'zlarning hammasi mos kelishi (AND)
+  // keyin mijoz tomonda tekshiriladi (lib/search/fuzzy.ts).
+  const words = Array.from(new Set(normalized.split(/\s+/).filter((w) => w.length >= 2))).slice(0, 10);
+  const tokenTerms = words.length > 0 ? words : [normalized];
   const tokenQuery = query(
     collection(getFirebaseDb(), PRODUCTS_COLLECTION),
     where("isActive", "==", true),
-    where("nameTokens", "array-contains", firstWord),
+    where("nameTokens", "array-contains-any", tokenTerms),
     limit(pageSize)
   );
 
   const [prefixSnap, tokenSnap] = await Promise.all([
-    getDocs(q),
+    getDocs(q).catch(() => null),
     getDocs(tokenQuery).catch(() => null),
   ]);
 
+  // Kompozit indeks (isActive + nameTokens) hali yaratilmagan bo'lsa
+  // yuqoridagi so'rov xato beradi - o'shanda indekssiz (faqat nameTokens
+  // bo'yicha) qayta so'raymiz va isActive ni mijoz tomonda filtrlaymiz.
+  const fallbackSnap =
+    tokenSnap === null
+      ? await getDocs(
+          query(
+            collection(getFirebaseDb(), PRODUCTS_COLLECTION),
+            where("nameTokens", "array-contains-any", tokenTerms),
+            limit(pageSize)
+          )
+        ).catch(() => null)
+      : null;
+
   const seen = new Set<string>();
   const results: Product[] = [];
-  for (const d of [...prefixSnap.docs, ...(tokenSnap?.docs ?? [])]) {
+  for (const d of [...(prefixSnap?.docs ?? []), ...(tokenSnap?.docs ?? []), ...(fallbackSnap?.docs ?? [])]) {
     if (seen.has(d.id)) continue;
     seen.add(d.id);
-    results.push({ id: d.id, ...d.data() } as Product);
+    const product = { id: d.id, ...d.data() } as Product;
+    if (product.isActive === false) continue;
+    results.push(product);
   }
   return results.slice(0, pageSize);
 }

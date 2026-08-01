@@ -19,6 +19,7 @@ import { attachLoginCode } from "./telegram-auth";
 import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 import { getFacets } from "@/lib/products/facets";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
+import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { getPublishedPosts, getSiteSettings } from "@/lib/firebase/admin-content";
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
 import type { Product, ProductCategory } from "@/types/product";
@@ -395,7 +396,12 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
     `<b>${product.name}</b>`,
     product.sku ? `#️⃣ ${product.sku}` : "",
     product.brand ? `${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
-    `💰 <b>${formatSom(price)}</b> / ${unit}${price < product.price ? ` <s>${formatSom(product.price)}</s>` : ""}`,
+    hasVariants(product)
+      ? `💰 <b>${formatSom(minVariantPrice(product) ?? price)}</b> dan / ${unit}`
+      : `💰 <b>${formatSom(price)}</b> / ${unit}${price < product.price ? ` <s>${formatSom(product.price)}</s>` : ""}`,
+    hasVariants(product)
+      ? `🔀 ${(product.variantAxes ?? []).map((axis) => `${axis.label}: ${axis.values.join(", ")}`).join(" | ")}`
+      : "",
     (product.ratingCount ?? 0) > 0
       ? `⭐️ ${product.ratingAvg?.toFixed(1)} (${product.ratingCount})`
       : "",
@@ -404,7 +410,13 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
   ].filter(Boolean);
 
   const rows: InlineButton[][] = [];
-  if (product.stock > 0) rows.push([{ text: t.addToCart, callback_data: `a|${product.id}` }]);
+  // Turlari (o'lcham/rang/qalinlik) bo'lgan mahsulotni botdan to'g'ridan
+  // qo'shib bo'lmaydi - avval turi tanlanishi kerak, u saytda tanlanadi.
+  if (hasVariants(product)) {
+    rows.push([{ text: "🔀 Turini tanlash (saytda)", url: `${SITE_URL}/mahsulot/${product.id}` }]);
+  } else if (product.stock > 0) {
+    rows.push([{ text: t.addToCart, callback_data: `a|${product.id}` }]);
+  }
   rows.push([
     { text: isFavorite ? t.favRemove : t.favAdd, callback_data: `fv|${product.id}` },
     { text: t.reviewsBtn, callback_data: `rv|${product.id}` },
@@ -446,6 +458,8 @@ async function addToCart(chatId: number, productId: string, t: BotDict): Promise
   if (!doc.exists) return t.notFound;
   const product = { id: doc.id, ...doc.data() } as Product;
   if (product.stock <= 0) return t.outOfStock;
+  // Turi tanlanishi kerak bo'lgan mahsulot botdan qo'shilmaydi.
+  if (hasVariants(product)) return "🔀 Bu mahsulotning turlari bor — saytdan tanlab qo'shing.";
 
   const session = await getSession(chatId);
   const existing = session.cart.find((i) => i.productId === productId);

@@ -15,14 +15,32 @@ import type { Product } from "@/types/product";
  */
 export function createFuzzySearcher(products: Product[]) {
   const fuse = new Fuse(products, {
-    keys: ["name", "brand"],
+    keys: ["name", "brand", "sku"],
     threshold: 0.35, // 0 = aniq mos kelish, 1 = juda erkin
     ignoreLocation: true,
     minMatchCharLength: 2,
   });
 
   return (term: string): Product[] => {
-    if (!term.trim()) return products;
+    const words = term.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return products;
+
+    /**
+     * 1-BOSQICH: har bir so'z mahsulot ma'lumotida bormi (tartibi muhim
+     * emas). "8276 dush" ham, "dush 8276" ham "Boou dush 8276" ni topadi -
+     * Fuse butun iborani bir butun deb qidirgani uchun bunday teskari
+     * tartibdagi so'rovlarni tashlab yuborardi.
+     */
+    const exact = products.filter((product) => {
+      const haystack = [product.name, product.brand, product.sku, product.code]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return words.every((word) => haystack.includes(word));
+    });
+    if (exact.length > 0) return exact;
+
+    // 2-BOSQICH: aniq mos kelmasa - xatoga chidamli (typo) qidiruv.
     return fuse.search(term).map((result) => result.item);
   };
 }

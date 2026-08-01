@@ -29,6 +29,34 @@ const updateSchema = z.object({
   lengthMm: z.number().nonnegative().nullable().optional(),
   weightKg: z.number().nonnegative().nullable().optional(),
   images: z.array(z.string().url()).max(10).optional(),
+  /**
+   * TURLARI (o'lcham/rang/qalinlik). Berilsa - `price` eng arzon
+   * turdan, `stock` esa turlar yig'indisidan hisoblanadi.
+   */
+  variantAxes: z
+    .array(
+      z.object({
+        key: z.string().min(1).max(40),
+        label: z.string().min(1).max(60),
+        values: z.array(z.string().min(1).max(60)).max(30),
+      })
+    )
+    .max(3)
+    .optional(),
+  variants: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(300),
+        options: z.record(z.string().max(40), z.string().max(60)),
+        price: z.number().nonnegative(),
+        discountPrice: z.number().nonnegative().nullable().optional(),
+        stock: z.number().int().nonnegative(),
+        sku: z.string().max(60).optional(),
+      })
+    )
+    .max(90)
+    .optional(),
+
   isActive: z.boolean().optional(),
   /** `false` - chernovikni nashr qilish (katalogga chiqadi + kanalga e'lon). */
   isDraft: z.boolean().optional(),
@@ -73,6 +101,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.discountPrice !== undefined) updates.discountPrice = d.discountPrice;
   if (d.discountUntil !== undefined) updates.discountUntil = d.discountUntil;
   if (d.stock !== undefined) updates.stock = d.stock;
+  if (d.variantAxes !== undefined) updates.variantAxes = d.variantAxes;
+  if (d.variants !== undefined) updates.variants = d.variants;
   if (d.isActive !== undefined) updates.isActive = d.isActive;
   if (d.isDraft !== undefined) {
     updates.isDraft = d.isDraft;

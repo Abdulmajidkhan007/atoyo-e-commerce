@@ -7,6 +7,7 @@ import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
 import { isDiscountActive } from "@/lib/products/pricing";
+import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { FavoriteButton } from "./FavoriteButton";
 import { StarRating } from "./StarRating";
 import type { Product } from "@/types/product";
@@ -31,6 +32,13 @@ export function ProductCard({ product }: { product: Product }) {
   // Chegirma muddati o'tgan bo'lsa - to'liq narx ko'rsatiladi.
   const hasDiscount = isDiscountActive(product);
   const outOfStock = product.stock <= 0;
+  /** Turlari bo'lsa narx "eng arzonidan" bo'ladi va tur sahifada tanlanadi. */
+  const withVariants = hasVariants(product);
+  const cardPrice = withVariants
+    ? (minVariantPrice(product) ?? product.price)
+    : hasDiscount
+      ? product.discountPrice!
+      : product.price;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl2 border border-navy-100 bg-white transition hover:shadow-lg dark:border-navy-500 dark:bg-navy-700">
@@ -75,34 +83,43 @@ export function ProductCard({ product }: { product: Product }) {
 
         <div className="mt-auto flex items-center justify-between pt-2">
           <div className="flex flex-col">
-            {hasDiscount && (
+            {hasDiscount && !withVariants && (
               <span className="text-xs text-navy-300 line-through">{formatSom(product.price)}</span>
             )}
             <span className="font-bold text-navy-900 dark:text-white">
-              {formatSom(hasDiscount ? product.discountPrice! : product.price)}
+              {formatSom(cardPrice)}
+              {withVariants && <span className="text-xs font-normal text-navy-300"> dan</span>}
             </span>
           </div>
 
-          <Button
-            size="small"
-            variant="contained"
-            color="primary"
-            disabled={outOfStock}
-            onClick={() =>
-              dispatch(
-                addItem({
-                  productId: product.id,
-                  name: product.name,
-                  price: hasDiscount ? product.discountPrice! : product.price,
-                  thumbnailUrl: product.thumbnailUrl,
-                  stock: product.stock,
-                })
-              )
-            }
-            aria-label={`${product.name} savatga qo'shish`}
-          >
-            <AddShoppingCartIcon fontSize="small" />
-          </Button>
+          {/* Turlari bo'lsa savatga to'g'ridan-to'g'ri qo'shilmaydi -
+              avval o'lchami/rangi tanlanishi kerak. */}
+          {withVariants ? (
+            <Button size="small" variant="contained" color="primary" component={Link} href={`/mahsulot/${product.id}`}>
+              Turini tanlash
+            </Button>
+          ) : (
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              disabled={outOfStock}
+              onClick={() =>
+                dispatch(
+                  addItem({
+                    productId: product.id,
+                    name: product.name,
+                    price: hasDiscount ? product.discountPrice! : product.price,
+                    thumbnailUrl: product.thumbnailUrl,
+                    stock: product.stock,
+                  })
+                )
+              }
+              aria-label={`${product.name} savatga qo'shish`}
+            >
+              <AddShoppingCartIcon fontSize="small" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

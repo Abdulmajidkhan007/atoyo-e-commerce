@@ -28,7 +28,9 @@ import {
   type Taxonomy,
   type TaxonomyKind,
 } from "@/lib/products/taxonomy";
-import type { Product } from "@/types/product";
+import { ProductVariantsEditor } from "./ProductVariantsEditor";
+import { minVariantPrice, totalVariantStock } from "@/lib/products/variants";
+import type { Product, ProductVariant, VariantAxis } from "@/types/product";
 
 /**
  * Kategoriya / material / sotish turi ro'yxatlari serverdan olinadi:
@@ -101,6 +103,10 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const [newImages, setNewImages] = useState<NewImage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Turlari (o'lcham/rang/qalinlik) - bo'sh bo'lsa oddiy mahsulot. */
+  const [variantAxes, setVariantAxes] = useState<VariantAxis[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const hasVariantRows = variantAxes.length > 0 && variants.length > 0;
 
   useEffect(() => {
     // Ro'yxatlar admin panelda o'zgarishi mumkin - har ochilganda o'qiymiz.
@@ -140,6 +146,8 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       );
       setExistingImages(product?.images ?? []);
       setNewImages([]);
+      setVariantAxes(product?.variantAxes ?? []);
+      setVariants(product?.variants ?? []);
       setError(null);
     }
     resetForTarget();
@@ -199,7 +207,17 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const handleSave = async () => {
     setError(null);
     // Chernovikda zaxira so'ralmaydi - u kirim orqali keladi.
-    if (!form.name.trim() || !form.price || (!draft && !form.stock)) {
+    // Turlari bo'lsa narx va zaxira har bir tur uchun alohida yoziladi.
+    if (hasVariantRows) {
+      if (!form.name.trim()) {
+        setError("Mahsulot nomini kiriting.");
+        return;
+      }
+      if (variants.some((variant) => variant.price <= 0)) {
+        setError("Har bir turning narxini kiriting.");
+        return;
+      }
+    } else if (!form.name.trim() || !form.price || (!draft && !form.stock)) {
       setError(draft ? "Nomi va narxini kiriting." : "Nomi, narxi va zaxira miqdorini kiriting.");
       return;
     }
@@ -236,11 +254,15 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         brand: form.brand.trim(),
         manufacturerCountry: form.manufacturerCountry.trim(),
         supplier: form.supplier.trim(),
-        price: Number(form.price),
+        // Turlari bo'lsa: umumiy narx - eng arzon tur, zaxira - yig'indi
+        // (katalogdagi filtr va saralash shu maydonlar bilan ishlaydi).
+        price: hasVariantRows ? (minVariantPrice({ variants }) ?? 0) : Number(form.price),
         discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
         // Chegirma muddati kun oxirigacha amal qiladi.
         discountUntil: form.discountUntil ? new Date(`${form.discountUntil}T23:59:59`).getTime() : null,
-        stock: draft ? 0 : Number(form.stock),
+        stock: hasVariantRows ? totalVariantStock({ variants }) : draft ? 0 : Number(form.stock),
+        variantAxes,
+        variants,
         ...(draft ? { isDraft: true } : {}),
         diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
         lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
@@ -362,32 +384,45 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <TextField
-          size="small"
-          type="number"
-          label={`Narx (so'm / ${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit}) *`}
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-        />
-        {draft ? (
-          <TextField
-            size="small"
-            label="Zaxira"
-            value="Kirim orqali qo'shiladi"
-            helperText="Chernovik: zaxira kelganda katalogga chiqadi"
-            disabled
-          />
-        ) : (
+      {/* Turlari bo'lsa narx va zaxira har bir tur uchun alohida yoziladi. */}
+      {!hasVariantRows && (
+        <div className="grid grid-cols-2 gap-3">
           <TextField
             size="small"
             type="number"
-            label={`Zaxira (${taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit}) *`}
-            value={form.stock}
-            onChange={(e) => setForm({ ...form, stock: e.target.value })}
+            label={`Narx (so'm / ${unitLabel}) *`}
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
           />
-        )}
-      </div>
+          {draft ? (
+            <TextField
+              size="small"
+              label="Zaxira"
+              value="Kirim orqali qo'shiladi"
+              helperText="Chernovik: zaxira kelganda katalogga chiqadi"
+              disabled
+            />
+          ) : (
+            <TextField
+              size="small"
+              type="number"
+              label={`Zaxira (${unitLabel}) *`}
+              value={form.stock}
+              onChange={(e) => setForm({ ...form, stock: e.target.value })}
+            />
+          )}
+        </div>
+      )}
+
+      <ProductVariantsEditor
+        axes={variantAxes}
+        variants={variants}
+        unitLabel={unitLabel}
+        onChange={({ axes, variants: nextVariants }) => {
+          setVariantAxes(axes);
+          setVariants(nextVariants);
+        }}
+      />
 
       {/* Qolgan maydonlar ixtiyoriy - forma qisqa bo'lishi uchun yopiq
           turadi va faqat kerak bo'lganda ochiladi. */}

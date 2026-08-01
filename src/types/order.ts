@@ -2,6 +2,10 @@ export type OrderStatus = "pending" | "approved" | "delivering" | "completed" | 
 
 export interface OrderItem {
   productId: string;
+  /** Tanlangan tur (o'lcham/rang/qalinlik) kaliti - turlari bo'lsa. */
+  variantId?: string | null;
+  /** "50x60 • 0.3mm" - chekda va guruh xabarida shu ko'rinadi. */
+  variantLabel?: string | null;
   name: string;
   price: number;
   quantity: number;

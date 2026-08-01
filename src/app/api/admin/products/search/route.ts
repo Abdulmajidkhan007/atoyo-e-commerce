@@ -33,9 +33,12 @@ export async function GET(request: Request) {
   const term = (url.searchParams.get("q") ?? "").trim().toLowerCase();
   if (term.length < 2) return NextResponse.json({ products: [] });
 
+  const words = Array.from(new Set(term.split(/\s+/).filter((w) => w.length >= 2))).slice(0, 10);
+  const tokenTerms = words.length > 0 ? words : [term];
+
   // Nom boshidan (prefiks) va nomning istalgan so'zi (token) bo'yicha.
   // '\uf8ff' - Firestore'da shu prefiksdagi eng oxirgi qiymat.
-  const [byPrefix, byToken] = await Promise.all([
+  const [byPrefix, byToken, byCode] = await Promise.all([
     db
       .collection("products")
       .orderBy("nameSearchIndex")
@@ -46,15 +49,20 @@ export async function GET(request: Request) {
       .catch(() => null),
     db
       .collection("products")
-      .where("nameTokens", "array-contains", term.split(/\s+/)[0] ?? term)
+      // Har bir so'z bo'yicha: "8276 dush" ham, "dush 8276" ham topiladi.
+      .where("nameTokens", "array-contains-any", tokenTerms)
       .limit(10)
       .get()
       .catch(() => null),
+    // Mahsulot raqami bo'yicha (kirimda "12" deb yozilsa).
+    /^\d+$/.test(term)
+      ? db.collection("products").where("code", "==", Number(term)).limit(3).get().catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   const seen = new Set<string>();
   const products: Product[] = [];
-  for (const snap of [byPrefix, byToken]) {
+  for (const snap of [byCode, byPrefix, byToken]) {
     for (const doc of snap?.docs ?? []) {
       if (seen.has(doc.id)) continue;
       seen.add(doc.id);

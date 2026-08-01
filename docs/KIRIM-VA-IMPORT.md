@@ -265,3 +265,68 @@ bosilsa faqat raqami yo'qlariga beriladi (mavjud raqamlar o'zgarmaydi).
 > Hujjat ID sining o'zi o'zgartirilmaydi — unga buyurtmalar, kirim
 > tarixi va rasm papkalari bog'langan. Raqam uning yonida turadi va
 > hamma ko'rinadigan joyda ID o'rniga ishlatiladi.
+
+---
+
+## 7. Turlar (o'lcham, rang, qalinlik) — bitta mahsulot, ko'p ko'rinish
+
+Bir xil mahsulotning o'lchami yoki qalinligi har xil bo'lsa (moyka
+50x60 / 60x80, qalinligi 0.2mm / 0.3mm; hammom pardasi turli
+o'lchamlarda) — **20 ta alohida mahsulot ochish shart emas**. Bitta
+mahsulot ochiladi, rasm bitta bo'ladi, ichida esa turlari turadi.
+
+**Admin panel → mahsulot formasi → «Turlari bormi?»**:
+
+1. Tanlov qatorini yozasiz: nomi (`O'lcham`) va qiymatlari
+   (`50x60, 60x80, 80x100`) — vergul bilan.
+2. Kerak bo'lsa ikkinchi qator (`Qalinlik: 0.2mm, 0.3mm`), uchinchisi
+   (`Rang: qora, kulrang`). 3 tagacha qator.
+3. Pastda hamma kombinatsiya jadval bo'lib chiqadi — har biriga **narx**
+   va **zaxira** yoziladi.
+
+Natijada:
+
+- **Saytda** mahsulot sahifasida tugmalar chiqadi (pitsa ilovalaridagi
+  kabi): o'lchamni bosasiz — narx va "mavjud" soni darhol o'zgaradi.
+  Savatga aynan tanlangan tur tushadi.
+- **Katalogda** narx "eng arzonidan" ko'rinishida chiqadi
+  (`300 000 so'm dan`), tugma esa "Turini tanlash" bo'ladi.
+- **Kanal postida** turlar ro'yxati va "… dan" narx ko'rsatiladi.
+- **Botda** turli mahsulotni to'g'ridan-to'g'ri savatga qo'shib
+  bo'lmaydi — "Turini tanlash (saytda)" tugmasi chiqadi.
+- **Kirimda** qaysi turga tovar kelgani tanlanadi — o'sha turning
+  zaxirasi ko'payadi.
+- **Buyurtmada** narx va zaxira serverda aynan o'sha tur bo'yicha
+  tekshiriladi (mijoz yuborgan narxga ishonilmaydi).
+
+Mahsulotning umumiy `narx`i eng arzon turdan, `zaxira`si esa hamma
+turlarning yig'indisidan olinadi — katalogdagi filtr va saralash shu
+maydonlar bilan ishlaydi.
+
+---
+
+## 8. Bir kishidan ko'p tovar: ro'yxat bilan kirim
+
+`/admin/katalog/kirim` sahifasida:
+
+- **«Kimdan kelgan (butun kirim uchun)»** — bir marta yoziladi, hamma
+  qatorga tushadi.
+- **«Ro'yxat bilan qo'shish»** tugmasi — har bir qator bitta mahsulot:
+
+```
+PPR quvur 25mm | 120 | 45000
+12 | 30
+Boou dush 8276 | 5
+```
+
+  Ya'ni `nomi yoki № | soni | narxi`. Narx ixtiyoriy (yozilmasa eski
+  narx qoladi). Excel/Google Sheets dan ustunlarni ko'chirib qo'ysangiz
+  ham bo'ladi — bitta kirimda 1000 tagacha qator.
+
+  Mahsulot **nomi bo'yicha ham, raqami (№) bo'yicha ham** topiladi.
+  Topilmagan qatorlar hisobotda ko'rsatiladi — ularni «Yangi mahsulot
+  ochish» bilan ochib, keyin qayta qo'shasiz.
+
+Ro'yxat qo'shilgandan keyin ham har bir qatorni tahrirlash mumkin
+(soni, narxi, turi, kimdan kelgani) — "Kirimni saqlash" bosilgunicha
+hammasi chernovik holatida turadi.
