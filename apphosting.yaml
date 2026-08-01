@@ -4,9 +4,11 @@
 runConfig:
   minInstances: 0
   maxInstances: 3
-  concurrency: 80
+  # Next.js SSR + firebase-admin + MUI uchun 512 MiB tor keladi -
+  # konteyner xotiradan yiqilsa brauzer "This page couldn't load" deydi.
+  concurrency: 40
   cpu: 1
-  memoryMiB: 512
+  memoryMiB: 1024
 
 env:
   - variable: NEXT_PUBLIC_SITE_URL
