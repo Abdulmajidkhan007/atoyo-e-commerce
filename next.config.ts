@@ -1,7 +1,45 @@
 import type { NextConfig } from "next";
 
+/**
+ * FIREBASE APP HOSTING'da client SDK sozlamalari.
+ *
+ * App Hosting build muhitiga `FIREBASE_WEBAPP_CONFIG` degan o'zgaruvchini
+ * O'ZI qo'shib beradi (ichida apiKey, authDomain, projectId... bor).
+ * Uni build vaqtida o'qib, `NEXT_PUBLIC_FIREBASE_*` sifatida kodga
+ * joylaymiz - shunda `apphosting.yaml` ga kalitlarni qo'lda ko'chirish
+ * shart bo'lmaydi.
+ *
+ * Boshqa hostinglarda (Netlify, lokal) avvalgidek `.env` dagi
+ * `NEXT_PUBLIC_FIREBASE_*` ishlatiladi - ular ustunroq turadi.
+ */
+function firebaseWebappEnv(): Record<string, string> {
+  let config: Record<string, string> = {};
+  try {
+    const raw = process.env.FIREBASE_WEBAPP_CONFIG;
+    if (raw) config = JSON.parse(raw) as Record<string, string>;
+  } catch {
+    // Format buzilgan bo'lsa - jimgina o'tkazib yuboramiz.
+  }
+
+  const pick = (envName: string, key: string): Record<string, string> => {
+    const value = process.env[envName] ?? config[key];
+    return value ? { [envName]: value } : {};
+  };
+
+  return {
+    ...pick("NEXT_PUBLIC_FIREBASE_API_KEY", "apiKey"),
+    ...pick("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", "authDomain"),
+    ...pick("NEXT_PUBLIC_FIREBASE_PROJECT_ID", "projectId"),
+    ...pick("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", "storageBucket"),
+    ...pick("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", "messagingSenderId"),
+    ...pick("NEXT_PUBLIC_FIREBASE_APP_ID", "appId"),
+  };
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  env: firebaseWebappEnv(),
 
   images: {
     remotePatterns: [

@@ -15,8 +15,11 @@ env:
       - BUILD
       - RUNTIME
 
+  # Server Actions uchun ruxsat etilgan hostlar. Qisqa domen
+  # (atoyo-uz.web.app) Firebase Hosting orqali ulanadi - firebase.json
+  # dagi rewrite shu backendga yo'naltiradi.
   - variable: ALLOWED_ORIGINS
-    value: atoyo-e-commerce--atoyo-uz.us-east4.hosted.app
+    value: atoyo-e-commerce--atoyo-uz.us-east4.hosted.app,atoyo-uz.web.app,atoyo-uz.firebaseapp.com
     availability:
       - BUILD
       - RUNTIME

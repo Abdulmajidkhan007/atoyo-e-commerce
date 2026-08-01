@@ -62,20 +62,13 @@ Fayl **soddaligicha** turishi kerak — App Hosting uni qat'iy tekshiradi:
   keyin faylga qator qo'shiladi;
 - `availability` ro'yxati faqat `BUILD` va `RUNTIME` dan iborat.
 
-Client SDK qiymatlari (`NEXT_PUBLIC_FIREBASE_*`) **build vaqtida** kerak
-bo'ladi va maxfiy emas (ular baribir brauzer bundle'iga tushadi) —
-shuning uchun ular to'g'ridan-to'g'ri shu faylga yoziladi:
-
-```yaml
-  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: AIzaSy...
-    availability:
-      - BUILD
-      - RUNTIME
-```
-
-va shu tartibda `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`,
-`MESSAGING_SENDER_ID`, `APP_ID`.
+Client SDK qiymatlarini (`NEXT_PUBLIC_FIREBASE_*`) **qo'lda yozish
+shart emas**: App Hosting build muhitiga `FIREBASE_WEBAPP_CONFIG`
+o'zgaruvchisini o'zi qo'shadi (ichida `apiKey`, `authDomain`,
+`projectId`, `storageBucket`, `messagingSenderId`, `appId` bor).
+`next.config.ts` uni build vaqtida o'qib, shu qiymatlarni kodga
+joylaydi. Netlify/lokal muhitda esa avvalgidek `.env` dagi
+`NEXT_PUBLIC_FIREBASE_*` ishlatiladi (ular ustunroq).
 
 ### 3. Maxfiy kalitlarni qo'ying
 
@@ -105,12 +98,7 @@ SMTP yoki Payme/Click ishlatilsa — o'shalar ham xuddi shunday.
 
 | O'zgaruvchi | Qayerda | Qayerdan olinadi |
 |---|---|---|
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | `apphosting.yaml` | Firebase konsoli → ⚙️ Project settings → General → Your apps → SDK setup (`apiKey`) |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `apphosting.yaml` | O'sha yerda (`<loyiha>.firebaseapp.com`) |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `apphosting.yaml` | O'sha yerda |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `apphosting.yaml` | O'sha yerda (`<loyiha>.firebasestorage.app`) |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `apphosting.yaml` | O'sha yerda |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | `apphosting.yaml` | O'sha yerda (`1:...:web:...`) |
+| `NEXT_PUBLIC_FIREBASE_*` (6 ta) | ❌ kerak emas | App Hosting `FIREBASE_WEBAPP_CONFIG` ni o'zi beradi, `next.config.ts` o'qib oladi |
 | `NEXT_PUBLIC_SITE_URL`, `ALLOWED_ORIGINS` | `apphosting.yaml` | Deploy tugagach chiqadigan domen |
 | `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` | `apphosting.yaml` | Bot useri (`Atoyo_uz_bot`) |
 | `TELEGRAM_BOT_TOKEN` | Secret Manager | @BotFather → bot → API Token |
@@ -143,6 +131,40 @@ Keyin:
 ```bash
 curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<yangi-domen>/api/telegram-webhook&secret_token=<SECRET>"
 ```
+
+### 4a. Qisqa domen (`atoyo-uz.web.app`)
+
+App Hosting bergan manzil uzun:
+`atoyo-e-commerce--atoyo-uz.us-east4.hosted.app`. Qisqartirishning
+bepul yo'li — Firebase Hosting'ning `web.app` subdomenini shu backendga
+yo'naltirish. `firebase.json` da rewrite tayyor:
+
+```json
+"hosting": {
+  "public": "public",
+  "rewrites": [
+    { "source": "**", "run": { "serviceId": "atoyo-e-commerce", "region": "us-east4" } }
+  ]
+}
+```
+
+Lokal kompyuterdan bir marta:
+
+```bash
+firebase deploy --only hosting --project atoyo-uz
+```
+
+Shundan keyin sayt `https://atoyo-uz.web.app` da ochiladi (uzun manzil
+ham ishlayveradi). Keyin `apphosting.yaml` dagi `NEXT_PUBLIC_SITE_URL`
+ni qisqasiga o'zgartiramiz va Telegram webhook'ini ham o'shanga
+o'tkazasiz.
+
+> Agar rewrite 403 bersa — Cloud Run xizmati (`atoyo-e-commerce`)
+> ochiq chaqirilishga ruxsat bermayotgan bo'ladi: Google Cloud konsoli →
+> Cloud Run → xizmat → Security → "Allow unauthenticated invocations".
+
+O'z domeningiz (masalan `atoyo.uz`) bo'lsa — App Hosting → Domains →
+**Add custom domain** orqali ulanadi (DNS yozuvlari ko'rsatiladi).
 
 ### 5. Firestore qoidalari va indekslari
 
