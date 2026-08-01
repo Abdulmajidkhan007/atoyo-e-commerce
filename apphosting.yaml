@@ -11,8 +11,9 @@ runConfig:
   memoryMiB: 1024
 
 env:
+  # Asosiy domen - qisqasi. Uzun manzil (…hosted.app) ham ishlayveradi.
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://atoyo-e-commerce--atoyo-uz.us-east4.hosted.app
+    value: https://atoyo-uz.web.app
     availability:
       - BUILD
       - RUNTIME
@@ -21,7 +22,7 @@ env:
   # (atoyo-uz.web.app) Firebase Hosting orqali ulanadi - firebase.json
   # dagi rewrite shu backendga yo'naltiradi.
   - variable: ALLOWED_ORIGINS
-    value: atoyo-e-commerce--atoyo-uz.us-east4.hosted.app,atoyo-uz.web.app,atoyo-uz.firebaseapp.com
+    value: atoyo-uz.web.app,atoyo-uz.firebaseapp.com,atoyo-e-commerce--atoyo-uz.us-east4.hosted.app
     availability:
       - BUILD
       - RUNTIME

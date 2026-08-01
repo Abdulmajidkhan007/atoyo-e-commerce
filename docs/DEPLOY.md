@@ -148,7 +148,27 @@ yo'naltirish. `firebase.json` da rewrite tayyor:
 }
 ```
 
-Lokal kompyuterdan bir marta:
+Buni **telefondan ham** qilish mumkin — Google Cloud Shell orqali
+(`console.cloud.google.com` → yuqoridagi `>_` tugmasi). Repozitoriyni
+klonlash ham shart emas, hosting deploy uchun bor-yo'g'i `firebase.json`
+kerak:
+
+```bash
+mkdir -p ~/atoyo-hosting/public && cd ~/atoyo-hosting
+cat > firebase.json <<'JSON'
+{
+  "hosting": {
+    "public": "public",
+    "rewrites": [
+      { "source": "**", "run": { "serviceId": "atoyo-e-commerce", "region": "us-east4" } }
+    ]
+  }
+}
+JSON
+npx -y firebase-tools deploy --only hosting --project atoyo-uz
+```
+
+Lokal kompyuterda repozitoriya bo'lsa, o'sha papkadan:
 
 ```bash
 firebase deploy --only hosting --project atoyo-uz
@@ -159,9 +179,10 @@ ham ishlayveradi). Keyin `apphosting.yaml` dagi `NEXT_PUBLIC_SITE_URL`
 ni qisqasiga o'zgartiramiz va Telegram webhook'ini ham o'shanga
 o'tkazasiz.
 
-> Agar rewrite 403 bersa — Cloud Run xizmati (`atoyo-e-commerce`)
-> ochiq chaqirilishga ruxsat bermayotgan bo'ladi: Google Cloud konsoli →
-> Cloud Run → xizmat → Security → "Allow unauthenticated invocations".
+> Agar rewrite 403/404 bersa — Cloud Run xizmati (`atoyo-e-commerce`)
+> tashqi chaqiruvni qabul qilmayotgan bo'ladi. Google Cloud konsoli →
+> Cloud Run → `atoyo-e-commerce` → **Networking** → Ingress: *All*, va
+> **Security** → "Allow unauthenticated invocations".
 
 O'z domeningiz (masalan `atoyo.uz`) bo'lsa — App Hosting → Domains →
 **Add custom domain** orqali ulanadi (DNS yozuvlari ko'rsatiladi).
