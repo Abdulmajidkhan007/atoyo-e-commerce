@@ -3,6 +3,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { refreshChannelPost } from "@/lib/telegram/channel";
 import { logAction } from "@/lib/telegram/action-log";
+import { getTelegramSecrets } from "@/lib/telegram/secrets";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -24,6 +25,16 @@ const BATCH = 40;
 export async function POST() {
   const admin = await requirePermission("settings");
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  // Bot tokeni bo'lmasa hamma chaqiruv yiqiladi - sababini aniq aytamiz
+  // ("Telegram ruxsat bermadi" degan chalg'ituvchi xabar chiqmasin).
+  const { botToken } = await getTelegramSecrets();
+  if (!botToken) {
+    return NextResponse.json(
+      { error: "Bot tokeni (TELEGRAM_BOT_TOKEN) sozlanmagan — hosting sozlamalariga qo'shing." },
+      { status: 400 }
+    );
+  }
 
   const snapshot = await getAdminDb()
     .collection("products")
