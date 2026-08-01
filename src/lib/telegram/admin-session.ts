@@ -36,7 +36,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   "sanitary-ware": "🚽",
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app";
 
 // Yangi mahsulot oqimi bosqichlari tartibi.
 // Kategoriya, material va sotish turi - majburiy bosqichlar (tugmalar

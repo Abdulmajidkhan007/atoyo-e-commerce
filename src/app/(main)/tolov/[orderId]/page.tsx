@@ -30,7 +30,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ orderI
   if (!snap.exists) notFound();
   const order = { id: snap.id, ...snap.data() } as Order;
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app";
   const isPaid = order.paymentStatus === "paid";
 
   return (

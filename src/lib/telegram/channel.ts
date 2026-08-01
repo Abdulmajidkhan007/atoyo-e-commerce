@@ -17,7 +17,7 @@ import type { BlogPost, ChannelPostFooter } from "@/types/content";
 const SETTINGS_DOC_PATH = "settings/telegram";
 
 function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app").replace(/\/$/, "");
 }
 
 function escapeHtml(text: string): string {

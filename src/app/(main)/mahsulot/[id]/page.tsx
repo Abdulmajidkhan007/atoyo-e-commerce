@@ -23,7 +23,7 @@ interface ProductPageParams {
   params: Promise<{ id: string }>;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app";
 
 export async function generateMetadata({ params }: ProductPageParams): Promise<Metadata> {
   const { id } = await params;

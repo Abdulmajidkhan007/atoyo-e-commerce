@@ -9,9 +9,18 @@ Telegram bot. UI tili — o'zbekcha. Dizayn: Deep Navy/Slate + Aqua `#00D2C4`.
 
 - Ish branch'i: **`claude/plumbing-ecommerce-nextjs-jxpmh5`**. Boshqa branch'ga
   push qilinmaydi (ruxsatsiz).
-- **Deploy = git push.** Netlify GitHub'dan avtomatik build qiladi. Bu
-  sandbox'dan **to'g'ridan-to'g'ri (zip) deploy QILINMAYDI** — tarmoq siyosati
-  `*.netlify.app` upload hostlarini 403 bilan bloklaydi.
+- **Deploy = git push.** Sayt endi **Firebase App Hosting** da:
+  backend `atoyo-e-commerce` (loyiha `atoyo-uz`, region `us-east4`),
+  har push'da avtomatik rollout. Asosiy domen — **https://atoyo-uz.web.app**
+  (Firebase Hosting `firebase.json` dagi rewrite orqali Cloud Run
+  xizmatiga yo'naltiradi; uzun `…hosted.app` manzili ham ishlaydi).
+  Sozlama `apphosting.yaml` da; `NEXT_PUBLIC_FIREBASE_*` kalitlari
+  kerak emas — App Hosting `FIREBASE_WEBAPP_CONFIG` ni o'zi beradi,
+  `next.config.ts` uni o'qiydi.
+- Netlify konfiguratsiyasi (`netlify.toml`) zaxira sifatida qoldi.
+  Sandbox'dan **hech qaysi hostingga to'g'ridan-to'g'ri deploy
+  QILINMAYDI** — tarmoq siyosati `*.netlify.app`, `*.hosted.app` va
+  Google API hostlarini 403 bilan bloklaydi.
 - Muqobil hosting — **Firebase App Hosting** (`apphosting.yaml` tayyor,
   tartib `docs/DEPLOY.md` da). U yerda Admin SDK kaliti kerak emas:
   `lib/firebase/admin.ts` Google Cloud ichida ADC'ga o'zi tushadi.

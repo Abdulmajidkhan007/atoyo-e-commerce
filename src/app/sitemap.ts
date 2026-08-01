@@ -6,7 +6,7 @@ import type { Product } from "@/types/product";
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app";
 
 /**
  * Qidiruv tizimlari uchun sayt xaritasi: statik sahifalar + faol

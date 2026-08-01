@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 const schema = z.object({ email: z.string().email().max(200) });
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.netlify.app").replace(/\/$/, "");
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app").replace(/\/$/, "");
 
 function resetEmailHtml(link: string): string {
   return `

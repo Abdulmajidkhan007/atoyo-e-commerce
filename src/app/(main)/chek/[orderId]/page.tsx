@@ -173,7 +173,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ orderI
           </div>
 
           <p className="mt-6 text-center text-xs" style={{ color: BRAND.muted }}>
-            Xaridingiz uchun rahmat! · atoyo-uz.netlify.app
+            Xaridingiz uchun rahmat! · atoyo-uz.web.app
           </p>
         </div>
       </div>

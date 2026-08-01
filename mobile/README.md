@@ -1,6 +1,6 @@
 # Atoyo Santexnika — mobil ilova (React Native CLI)
 
-Saytning (`atoyo-uz.netlify.app`) mijozlar uchun mo'ljallangan mobil
+Saytning (`atoyo-uz.web.app`) mijozlar uchun mo'ljallangan mobil
 versiyasi. Bir xil Firebase loyihasi va bir xil API bilan ishlaydi:
 saytda ochilgan hisob ilovada ham amal qiladi, savat/buyurtmalar bitta
 bazada.
