@@ -60,7 +60,29 @@ firebase apphosting:secrets:set TELEGRAM_CHANNEL_ID
 ```
 
 SMTP yoki Payme/Click ishlatilsa — o'shalarni ham qo'shing va
-`apphosting.yaml` ga `secret:` qatorlarini yozing.
+`apphosting.yaml` dagi tegishli izohlarni oching.
+
+### Qaysi qiymat qayerdan olinadi
+
+| O'zgaruvchi | Qayerda | Qayerdan olinadi |
+|---|---|---|
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | `apphosting.yaml` | Firebase konsoli → ⚙️ Project settings → General → Your apps → SDK setup (`apiKey`) |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | `apphosting.yaml` | O'sha yerda (`<loyiha>.firebaseapp.com`) |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | `apphosting.yaml` | O'sha yerda |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | `apphosting.yaml` | O'sha yerda (`<loyiha>.firebasestorage.app`) |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `apphosting.yaml` | O'sha yerda |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | `apphosting.yaml` | O'sha yerda (`1:...:web:...`) |
+| `NEXT_PUBLIC_SITE_URL`, `ALLOWED_ORIGINS` | `apphosting.yaml` | Deploy tugagach chiqadigan domen |
+| `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` | `apphosting.yaml` | Bot useri (`Atoyo_uz_bot`) |
+| `TELEGRAM_BOT_TOKEN` | Secret Manager | @BotFather → bot → API Token |
+| `TELEGRAM_CHAT_ID` | Secret Manager | Xodimlar guruhi ID si (`-100...`) |
+| `TELEGRAM_CHANNEL_ID` | Secret Manager | E'lon kanali (`@username` yoki `-100...`) |
+| `TELEGRAM_WEBHOOK_SECRET` | Secret Manager | O'zingiz o'ylab topasiz (uzun tasodifiy matn) |
+| `FIREBASE_ADMIN_*` | ❌ kerak emas | App Hosting'da xizmat akkaunti muhitning o'zida |
+
+Hozirgi qiymatlarni **Netlify'dan ko'chirib olish** eng oson yo'l:
+Netlify → Site configuration → Environment variables → har birining
+yonidagi "Show" tugmasi.
 
 `apphosting.yaml` dagi bo'sh `NEXT_PUBLIC_FIREBASE_*` qiymatlarini
 Firebase konsolidagi web-app sozlamalaridan nusxalab to'ldiring —

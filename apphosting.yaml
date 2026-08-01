@@ -50,8 +50,18 @@ env:
     value: ""
     availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_TELEGRAM_BOT_USERNAME
-    value: ""
+    value: Atoyo_uz_bot
     availability: [BUILD, RUNTIME]
+
+  # ---- Forum topic Thread ID lari (maxfiy emas) ----
+  # Bular Firestore `settings/telegram` da ham turadi va u yerdagisi
+  # ustunroq - bu yerdagilar zaxira qiymat.
+  - variable: TELEGRAM_TOPIC_ORDERS_ID
+    value: "2"
+    availability: [RUNTIME]
+  - variable: TELEGRAM_TOPIC_INTAKE_ID
+    value: "151"
+    availability: [RUNTIME]
 
   # ---- Maxfiy qiymatlar (Secret Manager) ----
   # Har birini bir marta o'rnating:
@@ -68,3 +78,38 @@ env:
   - variable: TELEGRAM_CHANNEL_ID
     secret: TELEGRAM_CHANNEL_ID
     availability: [RUNTIME]
+
+  # ---- Ixtiyoriy: email xabarnoma (SMTP) ----
+  # Kerak bo'lsa izohni oching va secret'larni o'rnating.
+  # - variable: SMTP_HOST
+  #   secret: SMTP_HOST
+  #   availability: [RUNTIME]
+  # - variable: SMTP_PORT
+  #   value: "587"
+  #   availability: [RUNTIME]
+  # - variable: SMTP_USER
+  #   secret: SMTP_USER
+  #   availability: [RUNTIME]
+  # - variable: SMTP_PASS
+  #   secret: SMTP_PASS
+  #   availability: [RUNTIME]
+  # - variable: SMTP_FROM
+  #   value: "Atoyo Santexnika <santexnika.atoyo@gmail.com>"
+  #   availability: [RUNTIME]
+
+  # ---- Ixtiyoriy: to'lov tizimlari ----
+  # - variable: PAYME_MERCHANT_ID
+  #   secret: PAYME_MERCHANT_ID
+  #   availability: [RUNTIME]
+  # - variable: PAYME_KEY
+  #   secret: PAYME_KEY
+  #   availability: [RUNTIME]
+  # - variable: CLICK_MERCHANT_ID
+  #   secret: CLICK_MERCHANT_ID
+  #   availability: [RUNTIME]
+  # - variable: CLICK_SERVICE_ID
+  #   secret: CLICK_SERVICE_ID
+  #   availability: [RUNTIME]
+  # - variable: CLICK_SECRET_KEY
+  #   secret: CLICK_SECRET_KEY
+  #   availability: [RUNTIME]
