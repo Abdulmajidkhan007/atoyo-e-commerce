@@ -2,7 +2,7 @@
 
 "Santexnika & Otopleniye" onlayn do'koni: 10,000+ mahsulot, Telegram bot integratsiyasi va rolga asoslangan admin panel.
 
-**Jonli sayt:** https://atoyo-uz.netlify.app
+**Jonli sayt:** https://atoyo-uz.web.app
 
 ## Texnologiyalar
 
@@ -13,7 +13,7 @@
 | State | Redux Toolkit (+ redux-persist: savat/tema) |
 | Backend | Firebase (Auth, Cloud Firestore, Storage) |
 | Integratsiya | Telegram Bot API (forum topic'lar, inline tugmalar, webhook) |
-| Hosting | Netlify (@netlify/plugin-nextjs) |
+| Hosting | Firebase App Hosting (`apphosting.yaml`) + Firebase Hosting (qisqa domen) |
 
 ## Asosiy imkoniyatlar
 
@@ -58,7 +58,7 @@ node scripts/make-admin.js EMAIL  # foydalanuvchini admin qilish
 Brauzerda oching (qiymatlarni o'zingiznikiga almashtiring):
 
 ```
-https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://atoyo-uz.netlify.app/api/telegram-webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>&allowed_updates=["callback_query"]
+https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://atoyo-uz.web.app/api/telegram-webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>&allowed_updates=["callback_query"]
 ```
 
 ## Loyiha strukturasi
