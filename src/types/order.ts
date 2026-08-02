@@ -54,6 +54,21 @@ export interface Order {
   status: OrderStatus;
   /** Bekor qilinganda zaxira bir marta qaytariladi - ikki marta qaytmasligi uchun bayroq. */
   stockReturned: boolean;
+  /**
+   * QAYTARILGAN qatorlar (qisman qaytarish ham mumkin). Bekor qilishdan
+   * farqi: buyurtma allaqachon berilgan/yetkazilgan, mijoz mahsulotni
+   * qaytardi - zaxira va tushum shu qatorlar bo'yicha tuzatiladi.
+   */
+  returnedItems?: {
+    productId: string;
+    variantId?: string | null;
+    quantity: number;
+    price: number;
+    returnedAt: number;
+  }[];
+  /** Qaytarilgan umumiy summa. */
+  refundAmount?: number;
+  returnReason?: string | null;
   /** Guruhga yuborilgan Telegram xabarining message_id (statusni tugmalar orqali tahrirlash uchun) */
   telegramMessageId: number | null;
   /** Buyurtma Telegram botdan berilgan bo'lsa - mijozning shaxsiy chat ID'si (status o'zgarishini DM qilish uchun) */

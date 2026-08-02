@@ -1,0 +1,52 @@
+name: Zaxira nusxa
+
+# Har kuni 02:00 UTC (Toshkentda 07:00) - Firestore'ning to'liq
+# eksporti Google Cloud Storage'ga. Qo'lda ham ishga tushirsa bo'ladi.
+#
+# Kerak (bir marta sozlanadi):
+#   • FIREBASE_SERVICE_ACCOUNT  - service account JSON (qoidalar deploy
+#     qiladigan bilan bir xil bo'lishi mumkin; unga "Cloud Datastore
+#     Import Export Admin" va bucket'ga yozish huquqi kerak);
+#   • BACKUP_BUCKET secret'i - masalan `atoyo-uz-backups`
+#     (Cloud Storage'da yaratiladi; yaratilmagan bo'lsa ish o'tkazib
+#     yuboriladi va CI qizarmaydi).
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  firestore-export:
+    name: Firestore eksporti
+    runs-on: ubuntu-latest
+    steps:
+      - name: Eksport
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BUCKET: ${{ secrets.BACKUP_BUCKET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SERVICE_ACCOUNT}" ] || [ -z "${BUCKET}" ]; then
+            echo "::notice::FIREBASE_SERVICE_ACCOUNT yoki BACKUP_BUCKET yo'q - zaxira nusxa o'tkazib yuborildi."
+            exit 0
+          fi
+
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa.json"
+
+          STAMP="$(date -u '+%Y-%m-%d-%H%M')"
+          gcloud firestore export "gs://${BUCKET}/firestore/${STAMP}" \
+            --project=atoyo-uz
+
+          echo "Zaxira nusxa tayyor: gs://${BUCKET}/firestore/${STAMP}"
+
+          # Eski nusxalar (30 kundan oldingi) tozalanadi - bucket cheksiz
+          # o'smasin. Xato bo'lsa ish yiqilmaydi.
+          CUTOFF="$(date -u -d '30 days ago' '+%Y-%m-%d')"
+          gsutil ls "gs://${BUCKET}/firestore/" 2>/dev/null | while read -r path; do
+            name="$(basename "${path%/}")"
+            if [[ "$name" < "$CUTOFF" ]]; then
+              echo "Eski nusxa o'chirilyapti: $name"
+              gsutil -m rm -r "$path" || true
+            fi
+          done

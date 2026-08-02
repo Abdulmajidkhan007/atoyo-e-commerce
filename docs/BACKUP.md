@@ -1,4 +1,42 @@
-# Zaxira nusxa (backup) strategiyasi
+# Zaxira nusxa (backup)
+
+## Avtomatik (kunlik)
+
+`.github/workflows/backup.yml` har kuni 02:00 UTC (Toshkentda 07:00)
+Firestore'ning to'liq eksportini Cloud Storage'ga chiqaradi va 30
+kundan eski nusxalarni o'chiradi.
+
+Bir marta sozlash:
+
+1. Cloud Storage'da bucket yarating, masalan `atoyo-uz-backups`
+   (Firebase konsoli -> Storage yoki `gsutil mb gs://atoyo-uz-backups`).
+2. GitHub -> Settings -> Secrets and variables -> Actions:
+   - `FIREBASE_SERVICE_ACCOUNT` - service account JSON (Firestore
+     qoidalarini deploy qiladigan bilan bir xil bo'lishi mumkin);
+   - `BACKUP_BUCKET` - bucket nomi (`gs://` siz).
+3. Service account'ga huquq bering:
+
+```bash
+SA=<service-account-email>
+gcloud projects add-iam-policy-binding atoyo-uz \
+  --member="serviceAccount:$SA" --role=roles/datastore.importExportAdmin
+gsutil iam ch "serviceAccount:$SA:objectAdmin" gs://atoyo-uz-backups
+```
+
+Secret'lar qo'yilmasa ish jimgina o'tkazib yuboriladi (CI qizarmaydi).
+Qo'lda ishga tushirish: Actions -> "Zaxira nusxa" -> Run workflow.
+
+## Tiklash
+
+```bash
+gcloud firestore import gs://atoyo-uz-backups/firestore/<sana> --project=atoyo-uz
+```
+
+> Diqqat: import mavjud hujjatlarni ustiga yozadi. Avval sinov
+> loyihasida tekshirib ko'rish tavsiya etiladi.
+
+---
+
 
 Bu hujjat Atoyo Santexnika loyihasining ma'lumotlarini yo'qotmaslik uchun
 qanday zaxiralash kerakligini tushuntiradi. Barcha amallar Firebase

@@ -40,6 +40,8 @@ export function AdminOrdersTable() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  /** Qaytarish/holat o'zgartirishdagi xato matni. */
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Sana oralig'i epoch millis'ga o'giriladi ("to" kun oxirigacha).
   const dateRange = {
@@ -94,6 +96,42 @@ export function AdminOrdersTable() {
           o.id.toLowerCase().startsWith(search)
       )
     : orders;
+
+  /**
+   * QAYTARISH - butun buyurtma bo'yicha (qisman qaytarish uchun sababga
+   * "1 dona X" deb yozib qo'yish mumkin, keyinchalik qatorlar bo'yicha
+   * oyna qo'shiladi).
+   */
+  const handleReturn = async (order: Order) => {
+    const reason = window.prompt(
+      `#${order.id.slice(0, 8)} — qaytarish sababi (mahsulotlar zaxiraga qaytadi, tushum kamayadi):`,
+      ""
+    );
+    if (reason === null) return;
+
+    setUpdatingOrderId(order.id);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}/return`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Qaytarib bo'lmadi.");
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === order.id
+            ? { ...o, refundAmount: (o.refundAmount ?? 0) + (data.refundAmount ?? 0) }
+            : o
+        )
+      );
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Qaytarib bo'lmadi.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
 
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
     setUpdatingOrderId(orderId);
@@ -171,6 +209,9 @@ export function AdminOrdersTable() {
 
             <p className="mb-3 text-sm text-navy-300">
               {order.items.length} ta mahsulot • {formatSom(order.totalAmount)}
+              {order.refundAmount ? (
+                <span className="text-red-500"> • qaytarilgan: {formatSom(order.refundAmount)}</span>
+              ) : null}
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -190,10 +231,26 @@ export function AdminOrdersTable() {
               <Button size="small" variant="text" component={Link} href={`/chek/${order.id}`} target="_blank">
                 Chek
               </Button>
+
+              {/* Qaytarish: yetkazilgan buyurtmadan mahsulot qaytganda -
+                  zaxira va tushum tuzatiladi (bekor qilish emas). */}
+              <Button
+                size="small"
+                variant="text"
+                color="warning"
+                disabled={updatingOrderId === order.id}
+                onClick={() => handleReturn(order)}
+              >
+                Qaytarish
+              </Button>
             </div>
           </div>
         ))}
       </div>
+
+      {actionError && (
+        <p className="py-2 text-sm text-red-500">{actionError}</p>
+      )}
 
       {isLoading && (
         <div className="flex justify-center py-6">

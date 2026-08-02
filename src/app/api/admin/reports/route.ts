@@ -66,11 +66,13 @@ export async function GET(request: Request) {
     if (order.status === "cancelled") continue;
 
     orders += 1;
-    revenue += order.totalAmount;
+    // Qaytarilgan summa tushumdan chiqariladi.
+    const refund = order.refundAmount ?? 0;
+    revenue += order.totalAmount - refund;
 
     const date = new Date(order.createdAt).toISOString().slice(0, 10);
     const day = byDay.get(date) ?? { date, revenue: 0, profit: 0, orders: 0 };
-    day.revenue += order.totalAmount;
+    day.revenue += order.totalAmount - refund;
     day.orders += 1;
 
     for (const item of order.items) {
