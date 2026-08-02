@@ -37,6 +37,8 @@ const orderSchema = z.object({
   deliveryAddress: z.string().max(500).nullable().optional(),
   paymentMethod: z.enum(["cash", "online"]).default("cash"),
   promoCode: z.string().max(40).nullable().optional(),
+  /** Yetkazish hududi (sozlamalardagi ro'yxatdan). */
+  deliveryZoneId: z.string().max(60).nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -61,6 +63,7 @@ export async function POST(request: Request) {
       deliveryAddress: parsed.data.deliveryAddress ?? null,
       paymentMethod: parsed.data.paymentMethod,
       promoCode: parsed.data.promoCode ?? null,
+      deliveryZoneId: parsed.data.deliveryZoneId ?? null,
       userId: currentUser.uid,
       customerEmail: currentUser.email ?? null,
     });

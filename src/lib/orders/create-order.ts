@@ -40,6 +40,8 @@ export interface NewOrderInput {
   promoCode?: string | null;
   /** Buyurtma Telegram botdan kelgan bo'lsa - mijozning chat ID'si. */
   customerChatId?: number | null;
+  /** Yetkazish hududi (sozlamalardagi ro'yxatdan) - narx shunga qarab. */
+  deliveryZoneId?: string | null;
 }
 
 /**
@@ -156,7 +158,8 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     }
 
     const payable = itemsTotal - discount;
-    const delivery = deliveryFeeFor(deliverySettings, payable);
+    // Hudud tanlangan bo'lsa - o'sha hududning narxi.
+    const delivery = deliveryFeeFor(deliverySettings, payable, input.deliveryZoneId ?? null);
     const total = payable + delivery;
 
     // Zaxira/salesCount va statistika - shu tranzaksiyada.
@@ -219,8 +222,12 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
 
   const { items, subtotal, discountAmount, deliveryFee, totalAmount, promoCode } = totals;
 
+  const zone = (deliverySettings.zones ?? []).find((item) => item.id === input.deliveryZoneId);
+
   const order: Order = {
     id: orderRef.id,
+    deliveryZoneId: input.deliveryZoneId ?? null,
+    deliveryZoneName: zone?.name ?? null,
     userId: input.userId ?? null,
     customerEmail: input.customerEmail ?? null,
     customerName: input.customerName,

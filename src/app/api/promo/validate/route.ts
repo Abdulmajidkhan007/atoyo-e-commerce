@@ -9,6 +9,8 @@ export const runtime = "nodejs";
 const schema = z.object({
   code: z.string().min(1).max(40),
   subtotal: z.number().int().min(0),
+  /** Tanlangan yetkazish hududi - summani to'g'ri ko'rsatish uchun. */
+  deliveryZoneId: z.string().max(60).nullable().optional(),
 });
 
 /**
@@ -35,13 +37,14 @@ export async function POST(request: Request) {
   }
 
   const settings = await getDeliverySettings();
+  const zoneId = parsed.data.deliveryZoneId ?? null;
   const payable = parsed.data.subtotal - result.discount;
 
   return NextResponse.json({
     ok: true,
     code: promo!.code,
     discount: result.discount,
-    deliveryFee: deliveryFeeFor(settings, payable),
-    total: payable + deliveryFeeFor(settings, payable),
+    deliveryFee: deliveryFeeFor(settings, payable, zoneId),
+    total: payable + deliveryFeeFor(settings, payable, zoneId),
   });
 }

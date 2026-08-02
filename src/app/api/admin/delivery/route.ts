@@ -10,6 +10,21 @@ const schema = z.object({
   fee: z.number().int().min(0),
   freeFrom: z.number().int().min(0),
   enabled: z.boolean(),
+  /**
+   * Hududlar (tuman bo'yicha narx). Bo'sh bo'lsa hamma joyga standart
+   * narx qo'llanadi.
+   */
+  zones: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(60),
+        name: z.string().min(1).max(80),
+        fee: z.number().int().min(0),
+        freeFrom: z.number().int().min(0).optional(),
+      })
+    )
+    .max(50)
+    .optional(),
 });
 
 /** Yetkazib berish narxi sozlamalari (admin). */

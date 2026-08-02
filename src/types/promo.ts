@@ -17,6 +17,20 @@ export interface PromoCode {
   updatedAt: number;
 }
 
+/**
+ * YETKAZISH HUDUDI: tuman/mahalla bo'yicha alohida narx.
+ * Ro'yxat bo'sh bo'lsa - hamma joyga standart narx (`fee`) qo'llanadi.
+ */
+export interface DeliveryZone {
+  /** Barqaror kalit (buyurtmada saqlanadi). */
+  id: string;
+  /** "Chilonzor", "Shahar tashqarisi 20 km gacha"... */
+  name: string;
+  fee: number;
+  /** Shu summadan yuqori buyurtmaga shu hududda bepul (0 - umumiy qoida). */
+  freeFrom?: number;
+}
+
 /** Yetkazib berish narxi sozlamalari (Firestore: `settings/delivery`). */
 export interface DeliverySettings {
   /** Standart yetkazib berish narxi (so'm). */
@@ -25,10 +39,13 @@ export interface DeliverySettings {
   freeFrom: number;
   /** O'chirilgan bo'lsa - yetkazish narxi qo'shilmaydi. */
   enabled: boolean;
+  /** Hududlar (tuman bo'yicha narx). Bo'sh bo'lsa standart narx ishlaydi. */
+  zones?: DeliveryZone[];
 }
 
 export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
   fee: 0,
   freeFrom: 0,
   enabled: false,
+  zones: [],
 };

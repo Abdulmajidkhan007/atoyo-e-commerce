@@ -44,7 +44,7 @@ export function PromoManager({
   });
 
   async function createPromo(event: React.FormEvent) {
-    event.preventDefault();
+    event?.preventDefault();
     setSaving(true);
     setMessage(null);
     try {
@@ -95,8 +95,8 @@ export function PromoManager({
     else setMessage({ type: "error", text: "O'chirib bo'lmadi." });
   }
 
-  async function saveDelivery(event: React.FormEvent) {
-    event.preventDefault();
+  async function saveDelivery(event?: React.FormEvent) {
+    event?.preventDefault();
     setSaving(true);
     setMessage(null);
     try {
@@ -150,6 +150,88 @@ export function PromoManager({
             Saqlash
           </Button>
         </form>
+
+        {/* ---- Hududlar: tuman bo'yicha alohida narx ---- */}
+        <div className="mt-5 flex flex-col gap-2 border-t border-navy-100 pt-4 dark:border-navy-500">
+          <h3 className="font-medium text-navy-900 dark:text-white">Hududlar (ixtiyoriy)</h3>
+          <p className="text-xs text-navy-300">
+            Tuman yoki masofa bo&apos;yicha alohida narx. Ro&apos;yxat bo&apos;sh bo&apos;lsa hamma
+            joyga yuqoridagi standart narx qo&apos;llanadi. Mijoz buyurtma berayotganda
+            hududni tanlaydi.
+          </p>
+
+          {(delivery.zones ?? []).map((zone, index) => (
+            <div key={zone.id} className="flex flex-wrap items-center gap-2">
+              <TextField
+                size="small"
+                label="Hudud nomi"
+                value={zone.name}
+                onChange={(e) => {
+                  const zones = [...(delivery.zones ?? [])];
+                  zones[index] = { ...zone, name: e.target.value };
+                  setDelivery({ ...delivery, zones });
+                }}
+              />
+              <TextField
+                size="small"
+                type="number"
+                label="Narx"
+                value={zone.fee}
+                onChange={(e) => {
+                  const zones = [...(delivery.zones ?? [])];
+                  zones[index] = { ...zone, fee: Number(e.target.value) || 0 };
+                  setDelivery({ ...delivery, zones });
+                }}
+                className="!w-32"
+              />
+              <TextField
+                size="small"
+                type="number"
+                label="Shu summadan bepul"
+                value={zone.freeFrom ?? 0}
+                onChange={(e) => {
+                  const zones = [...(delivery.zones ?? [])];
+                  zones[index] = { ...zone, freeFrom: Number(e.target.value) || 0 };
+                  setDelivery({ ...delivery, zones });
+                }}
+                className="!w-44"
+              />
+              <Button
+                size="small"
+                color="error"
+                onClick={() =>
+                  setDelivery({
+                    ...delivery,
+                    zones: (delivery.zones ?? []).filter((_, i) => i !== index),
+                  })
+                }
+              >
+                O&apos;chirish
+              </Button>
+            </div>
+          ))}
+
+          <div className="flex gap-2">
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() =>
+                setDelivery({
+                  ...delivery,
+                  zones: [
+                    ...(delivery.zones ?? []),
+                    { id: `zona-${Date.now().toString(36)}`, name: "", fee: 0, freeFrom: 0 },
+                  ],
+                })
+              }
+            >
+              Hudud qo&apos;shish
+            </Button>
+            <Button size="small" variant="contained" onClick={saveDelivery} disabled={saving}>
+              Hududlarni saqlash
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* ---- Yangi promokod ---- */}

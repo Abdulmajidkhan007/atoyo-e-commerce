@@ -4,6 +4,8 @@ import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { PRODUCTS_TOPIC, sendPushToTopic, sendPushToUser } from "@/lib/notifications/push";
 import { getTelegramSecrets } from "@/lib/telegram/secrets";
+import { isEmailConfigured } from "@/lib/email/mailer";
+import { isSmsConfigured, smsProvider } from "@/lib/sms/sender";
 import type { AppUser } from "@/types/user";
 
 export const runtime = "nodejs";
@@ -75,6 +77,29 @@ export async function POST(request: Request) {
       const { botToken } = await getTelegramSecrets();
       if (!botToken) throw new Error("Bot tokeni sozlanmagan (secrets/telegram yoki env).");
       return "mavjud";
+    })
+  );
+
+  checks.push(
+    await run("Email (SMTP)", async () => {
+      if (!isEmailConfigured()) {
+        throw new Error(
+          "SMTP sozlanmagan - email xabarnomalar va e'lonlar yuborilmaydi. " +
+            "SMTP_HOST, SMTP_USER, SMTP_PASS kerak (Gmail uchun 'App password')."
+        );
+      }
+      return "sozlangan";
+    })
+  );
+
+  checks.push(
+    await run("SMS", async () => {
+      if (!isSmsConfigured()) {
+        throw new Error(
+          "SMS sozlanmagan. Eskiz uchun: SMS_PROVIDER=eskiz, ESKIZ_EMAIL, ESKIZ_PASSWORD."
+        );
+      }
+      return `sozlangan (${smsProvider()})`;
     })
   );
 

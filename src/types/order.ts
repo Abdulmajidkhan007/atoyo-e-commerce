@@ -38,6 +38,9 @@ export interface Order {
   discountAmount?: number;
   /** Yetkazib berish narxi (0 - bepul yoki o'chirilgan). */
   deliveryFee?: number;
+  /** Tanlangan yetkazish hududi (sozlamalardagi ro'yxatdan). */
+  deliveryZoneId?: string | null;
+  deliveryZoneName?: string | null;
   /** Mijoz to'laydigan yakuniy summa: subtotal - discountAmount + deliveryFee. */
   totalAmount: number;
   currency: "UZS";

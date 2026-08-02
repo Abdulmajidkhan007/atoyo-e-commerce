@@ -10,6 +10,7 @@ import {
   CircularProgress,
   RadioGroup,
   FormControlLabel,
+  MenuItem,
   Radio,
 } from "@mui/material";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
@@ -39,6 +40,8 @@ export default function CheckoutPage() {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoChecking, setPromoChecking] = useState(false);
   const [delivery, setDelivery] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+  /** Tanlangan yetkazish hududi (ro'yxat bo'sh bo'lsa - ishlatilmaydi). */
+  const [zoneId, setZoneId] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/delivery")
@@ -48,7 +51,7 @@ export default function CheckoutPage() {
   }, []);
 
   const discountAmount = promo?.discount ?? 0;
-  const deliveryFee = deliveryFeeFor(delivery, subtotal - discountAmount);
+  const deliveryFee = deliveryFeeFor(delivery, subtotal - discountAmount, zoneId || null);
   const totalAmount = subtotal - discountAmount + deliveryFee;
 
   const handleApplyPromo = async () => {
@@ -143,6 +146,7 @@ export default function CheckoutPage() {
           })),
           location,
           deliveryAddress: deliveryAddress.trim() || null,
+          deliveryZoneId: zoneId || null,
           paymentMethod,
           promoCode: promo?.code ?? null,
         }),
@@ -215,6 +219,25 @@ export default function CheckoutPage() {
           multiline
           minRows={2}
         />
+
+        {/* Hududlar sozlangan bo'lsa - mijoz o'z tumanini tanlaydi,
+            yetkazish narxi shunga qarab hisoblanadi. */}
+        {(delivery.zones ?? []).length > 0 && (
+          <TextField
+            select
+            label="Yetkazish hududi"
+            value={zoneId}
+            onChange={(e) => setZoneId(e.target.value)}
+            helperText="Hududga qarab yetkazish narxi o'zgaradi"
+          >
+            <MenuItem value="">Tanlanmagan</MenuItem>
+            {(delivery.zones ?? []).map((zone) => (
+              <MenuItem key={zone.id} value={zone.id}>
+                {zone.name} — {zone.fee > 0 ? formatSom(zone.fee) : "bepul"}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
 
         <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
           <p className="mb-2 text-sm font-medium text-navy-900 dark:text-white">{dict.checkout.paymentTitle}</p>

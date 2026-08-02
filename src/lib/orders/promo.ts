@@ -39,8 +39,19 @@ export function validatePromo(
  * Yetkazib berish narxi. Chegirmadan KEYINGI summa hisobga olinadi -
  * "50 000 so'mdan yuqori bepul" sharti mijoz to'laydigan summaga bog'liq.
  */
-export function deliveryFeeFor(settings: DeliverySettings, payableAmount: number): number {
-  if (!settings.enabled || settings.fee <= 0) return 0;
-  if (settings.freeFrom > 0 && payableAmount >= settings.freeFrom) return 0;
-  return settings.fee;
+export function deliveryFeeFor(
+  settings: DeliverySettings,
+  payableAmount: number,
+  /** Mijoz tanlagan hudud (bo'lmasa - standart narx). */
+  zoneId?: string | null
+): number {
+  if (!settings.enabled) return 0;
+
+  const zone = zoneId ? (settings.zones ?? []).find((item) => item.id === zoneId) : undefined;
+  const fee = zone ? zone.fee : settings.fee;
+  const freeFrom = zone?.freeFrom && zone.freeFrom > 0 ? zone.freeFrom : settings.freeFrom;
+
+  if (fee <= 0) return 0;
+  if (freeFrom > 0 && payableAmount >= freeFrom) return 0;
+  return fee;
 }

@@ -262,6 +262,50 @@ Huquq bir-ikki daqiqada kuchga kiradi (yangi konteynerda). Keyin yana
 «Tekshirish» tugmasini bosing — hamma qator ✅ bo'lishi kerak, so'ng
 «Sinov bildirishnomasi» bilan telefonga xabar kelishini ko'ring.
 
+### 5b. SMS xabarnomalar (ixtiyoriy, tavsiya etiladi)
+
+Mijozda ilova ham, Telegram ham bo'lmasligi mumkin — SMS eng ishonchli
+kanal. Ikki provayder qo'llab-quvvatlanadi; **Eskiz.uz** tavsiya
+etiladi (arzon, hujjatlari sodda, O'zbekistonda keng qo'llanadi).
+
+| O'zgaruvchi | Qiymat |
+|---|---|
+| `SMS_PROVIDER` | `eskiz` |
+| `ESKIZ_EMAIL` | Eskiz kabinetidagi email |
+| `ESKIZ_PASSWORD` | Eskiz paroli |
+| `SMS_SENDER` | `4546` (standart) yoki tasdiqlangan nomingiz |
+
+Play Mobile ishlatilsa: `SMS_PROVIDER=playmobile`, `PLAYMOBILE_LOGIN`,
+`PLAYMOBILE_PASSWORD`, kerak bo'lsa `PLAYMOBILE_URL`.
+
+Parol maxfiy — Secret Manager orqali qo'shiladi:
+
+```bash
+firebase apphosting:secrets:set ESKIZ_PASSWORD
+```
+
+> Reklama SMS matnlari operatorda tasdiqlanishi kerak; buyurtma holati
+> haqidagi (tranzaksion) xabarlar odatda tez tasdiqlanadi.
+
+### 5c. Email (SMTP)
+
+Hozir yangiliklar faqat Telegramga ketyapti — chunki SMTP sozlanmagan.
+Gmail bilan: hisobingizda 2FA yoqilgan bo'lishi kerak, so'ng
+**App password** yaratiladi va:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=santexnika.atoyo@gmail.com
+SMTP_PASS=<app password>
+SMTP_FROM=Atoyo Santexnika <santexnika.atoyo@gmail.com>
+```
+
+Shundan keyin: buyurtma holati xatlari, e'lonlar (admin > Xabar
+yuborish) va blog yangiliklari email orqali ham boradi. Kunlik Gmail
+limiti ~500 xat; undan ko'p kerak bo'lsa Brevo/SendGrid (bepul tarif
+kuniga 100-300 xat) yoki Resend tavsiya etiladi.
+
 ### 6. Google Analytics (ixtiyoriy)
 
 Statistika kerak bo'lsa `apphosting.yaml` ga bitta o'zgaruvchi qo'shiladi:

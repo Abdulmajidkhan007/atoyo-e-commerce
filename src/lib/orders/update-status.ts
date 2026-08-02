@@ -9,6 +9,16 @@ import { sendPushToUser } from "@/lib/notifications/push";
 import type { Order, OrderStatus } from "@/types/order";
 import type { AppUser } from "@/types/user";
 import { recordStockMoves } from "@/lib/inventory/stock-moves";
+import { sendSms, isSmsConfigured } from "@/lib/sms/sender";
+
+/** SMS uchun qisqa, emojisiz matn (operator emojini kesib tashlaydi). */
+const SMS_STATUS_TEXT: Record<OrderStatus, string> = {
+  pending: "qabul qilindi, tez orada bog'lanamiz",
+  approved: "tasdiqlandi",
+  delivering: "yetkazilmoqda",
+  completed: "yakunlandi. Xaridingiz uchun rahmat!",
+  cancelled: "bekor qilindi",
+};
 
 const STATUS_DM_TEXT: Record<OrderStatus, string> = {
   pending: "🕓 kutilmoqda",
@@ -126,6 +136,16 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
       body: `Holati: ${STATUS_DM_TEXT[updatedOrder.status]}`,
       data: { screen: "Buyurtmalarim", orderId: updatedOrder.id },
     });
+  }
+
+  // SMS - eng ishonchli kanal: mijozda ilova ham, Telegram ham
+  // bo'lmasligi mumkin. Sozlanmagan bo'lsa jimgina o'tadi.
+  if (isSmsConfigured() && updatedOrder.phoneNumber) {
+    const shortId = updatedOrder.id.slice(0, 8);
+    await sendSms(
+      updatedOrder.phoneNumber,
+      `Atoyo: buyurtmangiz #${shortId} — ${SMS_STATUS_TEXT[updatedOrder.status]}. Savol: atoyo-uz.web.app`
+    );
   }
 
   return updatedOrder;
