@@ -8,7 +8,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requirePermission("orders");
+  const admin = await requirePermission("orders", request);
   if (!admin) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
   }

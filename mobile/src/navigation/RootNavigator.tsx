@@ -18,6 +18,8 @@ import {BlogScreen} from '../screens/BlogScreen';
 import {BlogPostScreen} from '../screens/BlogPostScreen';
 import {ContactScreen} from '../screens/ContactScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
+import {AdminOrdersScreen} from '../screens/AdminOrdersScreen';
+import {AdminProductsScreen} from '../screens/AdminProductsScreen';
 import type {RootStackParamList, TabParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -123,6 +125,20 @@ export function RootNavigator() {
         name="Sozlamalar"
         component={SettingsScreen}
         options={{header: () => <BrandHeader back title={t.titleSettings} />}}
+      />
+      {/* Xodimlar uchun: buyurtmalar va mahsulotlar boshqaruvi. Ekranlar
+          har doim ro'yxatda turadi, lekin ularga faqat profil
+          sahifasidagi (xodimga ko'rinadigan) tugmalar orqali o'tiladi -
+          server esa har bir amalni huquq bo'yicha qayta tekshiradi. */}
+      <Stack.Screen
+        name="AdminBuyurtmalar"
+        component={AdminOrdersScreen}
+        options={{header: () => <BrandHeader back title="Buyurtmalar" />}}
+      />
+      <Stack.Screen
+        name="AdminMahsulotlar"
+        component={AdminProductsScreen}
+        options={{header: () => <BrandHeader back title="Mahsulotlar" />}}
       />
     </Stack.Navigator>
   );

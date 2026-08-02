@@ -22,6 +22,9 @@ export type RootStackParamList = {
   Maqola: {postId: string};
   Kontakt: undefined;
   Sozlamalar: undefined;
+  /** Faqat xodimlar uchun (profil sahifasidan ochiladi). */
+  AdminBuyurtmalar: undefined;
+  AdminMahsulotlar: undefined;
 };
 
 /** Tab ekranlari stack'ga ham o'ta oladi - shuning uchun composite. */

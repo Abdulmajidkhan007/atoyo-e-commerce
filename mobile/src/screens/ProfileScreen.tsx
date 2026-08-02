@@ -234,9 +234,21 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
           u yerda sayt hisobingiz bilan kirasiz. */}
       {isStaffUser(user) && (
         <>
+          <Text style={styles.section}>🛠 {t.adminPanel}</Text>
           <Button
-            title={t.adminPanel}
-            icon="🛠"
+            title="Buyurtmalar"
+            icon="📋"
+            onPress={() => navigation.navigate('AdminBuyurtmalar')}
+          />
+          <Button
+            title="Mahsulotlar (kirim va tahrir)"
+            icon="📦"
+            onPress={() => navigation.navigate('AdminMahsulotlar')}
+          />
+          <Button
+            title="To'liq panel (brauzerda)"
+            icon="🌐"
+            variant="outline"
             onPress={() => Linking.openURL(`${SITE_URL}/admin`)}
           />
           <Text style={styles.hint}>{t.adminPanelHint}</Text>
@@ -255,6 +267,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
 }
 
 const useStyles = makeStyles(c => ({
+  section: {color: c.text, fontWeight: '800', fontSize: 16, marginTop: spacing.sm},
   screen: {flex: 1, backgroundColor: c.bg},
   title: {fontSize: 22, fontWeight: '800', color: c.text},
   socialRow: {flexDirection: 'row', gap: spacing.sm},

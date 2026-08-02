@@ -32,8 +32,8 @@ const intakeSchema = z.object({
 });
 
 /** Oxirgi kirimlar - kirim sahifasidagi "so'nggi kirimlar" ro'yxati uchun. */
-export async function GET() {
-  const admin = await requirePermission("products");
+export async function GET(request: Request) {
+  const admin = await requirePermission("products", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   return NextResponse.json({ intakes: await getRecentIntakes(10) });
@@ -69,7 +69,7 @@ async function announceIntake(
  * ham yangilanadi. Bir so'rovda butun kirim ro'yxati qabul qilinadi.
  */
 export async function POST(request: Request) {
-  const admin = await requirePermission("products");
+  const admin = await requirePermission("products", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = intakeSchema.safeParse(await request.json().catch(() => null));

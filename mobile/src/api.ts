@@ -1,5 +1,5 @@
 import {getIdToken} from './firebase';
-import type {CartItem, Review} from './types';
+import type {CartItem, Product as AdminProduct, Review} from './types';
 
 /**
  * SAYT API'si. Buyurtma, promokod, sharh va bekor qilish shu yerdan
@@ -83,6 +83,54 @@ export async function submitReview(productId: string, rating: number, comment: s
 
 export async function fetchFacets(): Promise<{brands: string[]; countries: string[]}> {
   return request<{brands: string[]; countries: string[]}>('/api/facets');
+}
+
+// ---------------------------------------------------------------------------
+// ADMIN (xodimlar uchun). Barchasi saytdagi bir xil route'larga boradi va
+// `Authorization: Bearer <ID token>` bilan tekshiriladi.
+// ---------------------------------------------------------------------------
+
+/** Buyurtma statusini o'zgartirish (guruhga xabar ham shu yerdan ketadi). */
+export async function adminSetOrderStatus(orderId: string, status: string) {
+  return request<{ok: true}>(`/api/admin/orders/${orderId}/status`, {
+    method: 'POST',
+    body: JSON.stringify({status}),
+  });
+}
+
+/** Admin qidiruvi - chernoviklarni ham topadi. */
+export async function adminSearchProducts(term: string): Promise<AdminProduct[]> {
+  const data = await request<{products: AdminProduct[]}>(
+    `/api/admin/products/search?q=${encodeURIComponent(term)}`,
+  );
+  return data.products ?? [];
+}
+
+/** Mahsulot kirimi (zaxira qo'shish). */
+export async function adminIntake(items: AdminIntakeItem[]) {
+  return request<{ok: true; updated: number}>('/api/admin/products/intake', {
+    method: 'POST',
+    body: JSON.stringify({items}),
+  });
+}
+
+/** Tez tahrir: narx, zaxira yoki ko'rinishini o'zgartirish. */
+export async function adminUpdateProduct(
+  productId: string,
+  patch: {price?: number; stock?: number; isActive?: boolean},
+) {
+  return request<{product: AdminProduct}>(`/api/admin/products/${productId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
+export interface AdminIntakeItem {
+  productId: string;
+  variantId?: string;
+  qty: number;
+  price?: number;
+  supplier?: string;
 }
 
 /** Kategoriya/material/sotish turi ro'yxatlari (saytdagi bilan bir xil). */

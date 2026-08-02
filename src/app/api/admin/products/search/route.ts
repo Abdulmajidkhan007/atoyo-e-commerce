@@ -17,7 +17,7 @@ export const runtime = "nodejs";
  *   GET /api/admin/products/search?id=...  - bitta mahsulot
  */
 export async function GET(request: Request) {
-  const admin = await requirePermission("products");
+  const admin = await requirePermission("products", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const url = new URL(request.url);

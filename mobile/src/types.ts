@@ -49,6 +49,10 @@ export interface Product {
   thumbnailUrl: string;
   isActive: boolean;
   isDraft?: boolean;
+  /** Mahsulot tartib raqami (saytdagi "№" ustuni). */
+  code?: number;
+  /** Kimdan kelgan (kirim uchun). */
+  supplier?: string;
   variantAxes?: VariantAxis[];
   variants?: ProductVariant[];
   ratingAvg?: number;

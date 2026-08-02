@@ -107,8 +107,16 @@ export async function requireAdminUser(): Promise<AppUser | null> {
  * "products", e'lon yuborish "broadcast"). Owner har doim o'tadi; admin
  * faqat owner bergan ruxsat bo'lsa. Ruxsat bo'lmasa null qaytadi.
  */
-export async function requirePermission(key: PermissionKey): Promise<AppUser | null> {
-  const user = await getCurrentAppUser();
+export async function requirePermission(
+  key: PermissionKey,
+  /**
+   * Mobil ilova cookie yubormaydi - `Authorization: Bearer <idToken>`
+   * sarlavhasi bilan keladi. So'rov berilsa u ham tekshiriladi, ya'ni
+   * bitta route'dan sayt ham, ilova ham foydalana oladi.
+   */
+  request?: Request
+): Promise<AppUser | null> {
+  const user = request ? await getAppUserFromRequest(request) : await getCurrentAppUser();
   return hasPermission(user, key) ? user : null;
 }
 
