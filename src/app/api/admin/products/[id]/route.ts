@@ -86,10 +86,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const existing = snapshot.data() as Product;
   const updates: Record<string, unknown> = { updatedAt: Date.now() };
 
-  if (d.name !== undefined) {
-    updates.name = d.name.trim();
-    updates.nameSearchIndex = d.name.trim().toLowerCase();
-    updates.nameTokens = buildNameTokens(d.name, d.brand);
+  if (d.name !== undefined || d.sku !== undefined || d.brand !== undefined) {
+    // Tokenlar nom + brend + KOD dan yasaladi. Ilgari bu yerda kod
+    // berilmasdi va mahsulot tahrirlanganda "8276" kabi kod bo'yicha
+    // qidiruv ishlamay qolardi.
+    const name = d.name ?? existing.name;
+    updates.name = name.trim();
+    updates.nameSearchIndex = name.trim().toLowerCase();
+    updates.nameTokens = buildNameTokens(name, d.brand ?? existing.brand, d.sku ?? existing.sku);
   }
   if (d.description !== undefined) updates.description = d.description.trim();
   if (d.category !== undefined) updates.category = d.category;

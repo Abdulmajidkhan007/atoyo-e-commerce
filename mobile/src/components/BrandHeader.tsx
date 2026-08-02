@@ -171,12 +171,13 @@ const useStyles = makeStyles(c => ({
   },
   brand: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0},
   logo: {width: 32, height: 32, borderRadius: radius.sm},
-  brandText: {color: c.text, fontSize: 17, fontWeight: '800', flexShrink: 1},
-  actions: {flexDirection: 'row', alignItems: 'center', gap: 2},
-  iconBtn: {width: 34, height: 34, alignItems: 'center', justifyContent: 'center'},
+  brandText: {color: c.text, fontSize: 16, fontWeight: '800', flexShrink: 1},
+  // Ikonkalar bir-biriga yopishib qolmasligi uchun oraliq kengaytirildi.
+  actions: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
+  iconBtn: {width: 30, height: 34, alignItems: 'center', justifyContent: 'center'},
   /** Orqaga: "chevron" ikonkasi teskari qaratiladi. */
   backIcon: {transform: [{rotate: '180deg'}]},
-  localeText: {color: c.muted, fontSize: 9, fontWeight: '700', marginTop: -2},
+  localeText: {color: c.muted, fontSize: 9, fontWeight: '700', marginTop: -1},
   systemDot: {
     position: 'absolute',
     bottom: 4,

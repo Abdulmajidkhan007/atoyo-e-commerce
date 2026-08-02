@@ -65,9 +65,18 @@ export async function POST(request: Request) {
     const p = doc.data() as Product;
     const updates: Record<string, unknown> = {};
 
-    if (!Array.isArray(p.nameTokens) || p.nameTokens.length === 0) {
-      updates.nameTokens = buildNameTokens(p.name, p.brand, p.sku);
-    }
+    // Tokenlar HAR DOIM qayta hisoblanadi: qoida o'zgargan bo'lishi
+    // mumkin (kirillcha->lotincha, kod/artikul qo'shilishi). Faqat
+    // haqiqatan o'zgargan bo'lsa yoziladi.
+    const tokens = buildNameTokens(p.name, p.brand, p.sku);
+    const sameTokens =
+      Array.isArray(p.nameTokens) &&
+      p.nameTokens.length === tokens.length &&
+      tokens.every((token, i) => p.nameTokens![i] === token);
+    if (!sameTokens) updates.nameTokens = tokens;
+    // Nom bo'yicha prefiks qidiruv maydoni ham to'g'ri bo'lsin.
+    const searchIndex = p.name.trim().toLowerCase();
+    if (p.nameSearchIndex !== searchIndex) updates.nameSearchIndex = searchIndex;
     if (renumber) {
       const next = takeNextCode();
       if (p.code !== next) {

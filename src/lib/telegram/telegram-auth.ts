@@ -111,7 +111,14 @@ export async function attachLoginCode(code: string, profile: TelegramProfile): P
 export type ExchangeResult =
   | { state: "pending" }
   | { state: "ready"; token: string }
-  | { state: "invalid" };
+  | { state: "invalid" }
+  /**
+   * Kod joyida edi, lekin SERVER token yasay olmadi. Eng ko'p uchraydigan
+   * sabab: hosting xizmat akkauntida "Service Account Token Creator"
+   * huquqi yo'q (custom token IAM signBlob orqali imzolanadi). Ilgari bu
+   * xato ham "invalid" deb ko'rsatilardi va sabab ko'rinmasdi.
+   */
+  | { state: "error"; message: string };
 
 /**
  * Kodni custom token'ga almashtirish. Faqat bir marta ishlaydi -
@@ -137,7 +144,15 @@ export async function exchangeLoginCode(code: string): Promise<ExchangeResult> {
       return data.uid;
     });
 
-    return { state: "ready", token: await getAdminAuth().createCustomToken(uid) };
+    try {
+      return { state: "ready", token: await getAdminAuth().createCustomToken(uid) };
+    } catch (error) {
+      // Kod "used" bo'lib qolmasin - foydalanuvchi qayta urinib ko'rsin.
+      await ref.update({ status: "ready" }).catch(() => {});
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("Telegram kirish: custom token yasab bo'lmadi:", message);
+      return { state: "error", message };
+    }
   } catch (error) {
     return error instanceof Error && error.message === "pending"
       ? { state: "pending" }

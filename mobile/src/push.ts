@@ -21,6 +21,55 @@ import {useToast} from './components/Toast';
 
 const PRODUCTS_TOPIC = 'products';
 
+export interface PushStatus {
+  /** Bildirishnomaga ruxsat berilganmi. */
+  allowed: boolean;
+  /** Qurilma tokeni olindimi (FCM sozlanganmi). */
+  hasToken: boolean;
+  /** Token serverga yozildimi (kirmagan foydalanuvchida - false). */
+  saved: boolean;
+  /** Nima noto'g'ri ketgani (bo'lsa). */
+  error?: string;
+}
+
+/**
+ * Bildirishnoma zanjirini QAYTA ishga tushiradi va natijani qaytaradi:
+ * ruxsat -> token -> serverga yozish. Sozlamalar ekranidagi tugma shuni
+ * chaqiradi, shunda "kelmayapti" degan holatning sababi ko'rinadi.
+ */
+export async function refreshPushRegistration(signedIn: boolean): Promise<PushStatus> {
+  const allowed = await ensurePermission();
+  if (!allowed) return {allowed: false, hasToken: false, saved: false};
+
+  await messaging().subscribeToTopic(PRODUCTS_TOPIC).catch(() => {});
+
+  let token: string | null = null;
+  try {
+    token = await messaging().getToken();
+  } catch (error) {
+    return {
+      allowed: true,
+      hasToken: false,
+      saved: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+  if (!token) return {allowed: true, hasToken: false, saved: false};
+  if (!signedIn) return {allowed: true, hasToken: true, saved: false};
+
+  try {
+    await savePushToken(token);
+    return {allowed: true, hasToken: true, saved: true};
+  } catch (error) {
+    return {
+      allowed: true,
+      hasToken: true,
+      saved: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 /** Android 13+ da bildirishnoma uchun alohida ruxsat so'raladi. */
 async function ensurePermission(): Promise<boolean> {
   try {

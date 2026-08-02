@@ -21,5 +21,13 @@ export async function POST(request: Request) {
 
   if (result.state === "ready") return NextResponse.json({ token: result.token });
   if (result.state === "pending") return NextResponse.json({ pending: true }, { status: 202 });
+  if (result.state === "error") {
+    // Sabab ko'rsatiladi: admin "Tizim tekshiruvi" bo'limida ham
+    // xuddi shu xatoni ko'radi va nima qilishni biladi.
+    return NextResponse.json(
+      { error: `Serverda kirish tokenini yasab bo'lmadi: ${result.message}` },
+      { status: 500 }
+    );
+  }
   return NextResponse.json({ error: "Kirish havolasi eskirdi. Qaytadan urinib ko'ring." }, { status: 400 });
 }

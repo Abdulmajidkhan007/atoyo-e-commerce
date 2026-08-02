@@ -87,8 +87,13 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
           onWaiting: () => setTgWaiting(true),
           isCancelled: () => cancelledRef.current,
         });
-      } catch {
-        if (!cancelledRef.current) toast.error(t.telegramFailed);
+      } catch (error) {
+        // Server sababni aytadi (masalan huquq yetishmasligi) - shuni
+        // ko'rsatamiz, "ishlamadi" deb qo'ya qolmaymiz.
+        if (!cancelledRef.current) {
+          const message = error instanceof Error ? error.message : '';
+          toast.error(message && message !== 'timeout' ? message : t.telegramFailed);
+        }
       } finally {
         setSocial(null);
         setTgWaiting(false);

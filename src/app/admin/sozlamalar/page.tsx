@@ -9,6 +9,7 @@ import { BotSettingsForm } from "@/components/admin/BotSettingsForm";
 import { SiteSettingsForm } from "@/components/admin/SiteSettingsForm";
 import { ChannelFooterForm } from "@/components/admin/ChannelFooterForm";
 import { SecretsForm } from "@/components/admin/SecretsForm";
+import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,15 @@ export default async function AdminSettingsPage() {
           initialChannels={requiredChannels}
           initialChannelId={channelId ?? ""}
         />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">Tizim tekshiruvi</h2>
+        <p className="mb-6 text-sm text-navy-300">
+          Bildirishnoma kelmayaptimi, Telegram orqali kirish ishlamayaptimi? Shu yerdan har bir
+          bo&apos;g&apos;inni sinab ko&apos;ring — xato matni bilan ko&apos;rsatiladi.
+        </p>
+        <DiagnosticsPanel />
       </section>
 
       {/* Maxfiy kalitlar - faqat loyiha egasiga ko'rinadi. */}

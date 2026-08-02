@@ -227,6 +227,41 @@ firebase deploy --only firestore:rules,firestore:indexes,storage --project <PROJ
 
 (Bu buyruq sandboxdan ishlamaydi — gRPC bloklangan.)
 
+### 5a. Xizmat akkaunti huquqlari (push va Telegram kirish)
+
+App Hosting saytni Cloud Run'da, **xizmat akkaunti** nomidan ishlatadi.
+Standart holatda o'sha akkauntda ikki narsaga huquq yetmaydi:
+
+| Nima ishlamaydi | Sabab | Kerakli rol |
+|---|---|---|
+| «Telegram orqali kirib bo'lmadi» | Firebase custom token IAM `signBlob` orqali imzolanadi | `roles/iam.serviceAccountTokenCreator` (o'ziga) |
+| Push bildirishnoma kelmaydi | FCM xabar yuborish taqiqlangan | `roles/firebase.sdkAdminServiceAgent` yoki `roles/firebasecloudmessaging.admin` |
+
+Tekshirish: admin panel → **Sozlamalar → Tizim tekshiruvi → «Tekshirish»**.
+Qatorlarda ❌ chiqsa, Google Cloud Shell'da (`console.cloud.google.com`,
+yuqoridagi `>_` tugmasi) quyidagini bajaring:
+
+```bash
+PROJECT=atoyo-uz
+SA="$(gcloud run services describe atoyo-e-commerce --region=us-east4 \
+      --project=$PROJECT --format='value(spec.template.spec.serviceAccountName)')"
+echo "Xizmat akkaunti: $SA"
+
+# 1) Telegram orqali kirish (custom token imzolash)
+gcloud iam service-accounts add-iam-policy-binding "$SA" \
+  --project=$PROJECT --member="serviceAccount:$SA" \
+  --role=roles/iam.serviceAccountTokenCreator
+
+# 2) Push bildirishnomalar (FCM)
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:$SA" \
+  --role=roles/firebase.sdkAdminServiceAgent
+```
+
+Huquq bir-ikki daqiqada kuchga kiradi (yangi konteynerda). Keyin yana
+«Tekshirish» tugmasini bosing — hamma qator ✅ bo'lishi kerak, so'ng
+«Sinov bildirishnomasi» bilan telefonga xabar kelishini ko'ring.
+
 ### 6. Google Analytics (ixtiyoriy)
 
 Statistika kerak bo'lsa `apphosting.yaml` ga bitta o'zgaruvchi qo'shiladi:

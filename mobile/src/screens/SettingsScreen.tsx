@@ -5,6 +5,8 @@ import {LOCALE_LABELS, useI18n, type Locale} from '../i18n';
 import {Button, Card, Chip, Field} from '../components/ui';
 import {subscribeToNewsletter} from '../api';
 import {useToast} from '../components/Toast';
+import {refreshPushRegistration, type PushStatus} from '../push';
+import {useAuth} from '../auth';
 
 /**
  * SOZLAMALAR: ko'rinish (yorug'/qorong'i/tizim), til (uz/en/ru) va
@@ -16,8 +18,26 @@ export function SettingsScreen() {
   const toast = useToast();
   const {mode, setMode} = useTheme();
   const {t, locale, setLocale} = useI18n();
+  const {user} = useAuth();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
+  /** Bildirishnoma holati - "kelmayapti" sababini ko'rsatish uchun. */
+  const [push, setPush] = useState<PushStatus | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  const checkPush = async () => {
+    setPushBusy(true);
+    try {
+      const status = await refreshPushRegistration(Boolean(user));
+      setPush(status);
+      if (status.saved) toast.success('Bildirishnomalar yoqilgan.');
+      else if (!status.allowed) toast.error('Bildirishnomaga ruxsat berilmagan.');
+      else if (!user) toast.error('Avval hisobingizga kiring.');
+      else toast.error(status.error ?? 'Tokenni saqlab bo‘lmadi.');
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const themeOptions: {value: ThemeMode; label: string}[] = [
     {value: 'light', label: t.themeLight},
@@ -44,6 +64,28 @@ export function SettingsScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{padding: spacing.lg, gap: spacing.md}}>
+      <Card>
+        <Text style={styles.cardTitle}>Bildirishnomalar</Text>
+        <Text style={styles.hint}>
+          Buyurtma holati o‘zgarganda va yangi mahsulot/chegirma bo‘lganda telefoningizga
+          xabar keladi. Kelmayotgan bo‘lsa shu tugmani bosing.
+        </Text>
+        {push && (
+          <Text style={styles.hint}>
+            {`Ruxsat: ${push.allowed ? 'bor' : 'yo‘q'} · Qurilma tokeni: ${
+              push.hasToken ? 'bor' : 'yo‘q'
+            } · Serverda: ${push.saved ? 'saqlangan' : 'saqlanmagan'}`}
+            {push.error ? `\n${push.error}` : ''}
+          </Text>
+        )}
+        <Button
+          title="Bildirishnomani tekshirish"
+          variant="outline"
+          loading={pushBusy}
+          onPress={checkPush}
+        />
+      </Card>
+
       <Card>
         <Text style={styles.cardTitle}>{t.theme}</Text>
         <View style={styles.chips}>
@@ -93,4 +135,5 @@ const useStyles = makeStyles(c => ({
   cardTitle: {color: c.text, fontWeight: '700', fontSize: 16},
   muted: {color: c.muted, fontSize: 13},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs},
+  hint: {color: c.muted, fontSize: 12, lineHeight: 17},
 }));
