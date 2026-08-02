@@ -9,7 +9,13 @@ import {
 } from "./bot";
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
-import { hasVariants, minVariantPrice, totalVariantStock } from "@/lib/products/variants";
+import {
+  hasVariants,
+  minVariantPrice,
+  totalVariantStock,
+  variantLabel,
+  variantPrice,
+} from "@/lib/products/variants";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import type { Product } from "@/types/product";
 import type { BlogPost, ChannelPostFooter } from "@/types/content";
@@ -146,6 +152,9 @@ export function announceModeFor(before: Product, after: Product): AnnounceMode {
   return "refresh";
 }
 
+/** Kanal postida ko'rsatiladigan turlar soni (post juda uzun bo'lmasligi uchun). */
+const MAX_VARIANT_LINES = 15;
+
 /** Mahsulot e'loni matni (yangi post uchun ham, tahrir uchun ham bir xil). */
 function buildProductText(product: Product, mode: "new" | "updated"): string {
   const hasDiscount = isDiscountActive(product);
@@ -170,8 +179,20 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
   }
   lines.push(priceLine);
   if (withVariants) {
-    for (const axis of product.variantAxes ?? []) {
-      lines.push(`🔀 ${escapeHtml(axis.label)}: ${escapeHtml(axis.values.join(", "))}`);
+    // Har bir turning O'Z NARXI ro'yxat bo'lib chiqadi:
+    //   Razmer:
+    //     • 50x45 — 225 000 so'm
+    //     • 55x45 — 235 000 so'm
+    const axes = product.variantAxes ?? [];
+    lines.push(`🔀 <b>${escapeHtml(axes.map((axis) => axis.label).join(" • "))}:</b>`);
+    const rows = product.variants ?? [];
+    for (const row of rows.slice(0, MAX_VARIANT_LINES)) {
+      const label = variantLabel(product, row) || Object.values(row.options).join(" • ");
+      const note = row.stock > 0 ? "" : " — tugagan";
+      lines.push(`   • ${escapeHtml(label)} — <b>${formatSom(variantPrice(row))}</b>${escapeHtml(note)}`);
+    }
+    if (rows.length > MAX_VARIANT_LINES) {
+      lines.push(`   • ...va yana ${rows.length - MAX_VARIANT_LINES} ta tur (saytda)`);
     }
   }
   const stock = withVariants ? totalVariantStock(product) : product.stock;

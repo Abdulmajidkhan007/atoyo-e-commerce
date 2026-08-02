@@ -2,7 +2,8 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {FlatList, Modal, Pressable, ScrollView, Text, TextInput, View} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
-import {CATEGORY_KEYS, type Product, type ProductCategory} from '../types';
+import {type Product, type ProductCategory} from '../types';
+import {useCategories} from '../categories';
 import {fetchCatalog, searchProducts} from '../firebase';
 import {fetchFacets, fetchTaxonomy} from '../api';
 import {ProductCard} from '../components/ProductCard';
@@ -18,6 +19,8 @@ type Sort = 'newest' | 'price-asc' | 'price-desc';
 export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
   const styles = useStyles();
   const {t} = useI18n();
+  // Kategoriya filtri saytdagi ro'yxatdan (admin qo'shganlari ham).
+  const categories = useCategories();
   const [term, setTerm] = useState(route.params?.q ?? '');
   const [category, setCategory] = useState<ProductCategory | undefined>(route.params?.category);
   const [brand, setBrand] = useState<string | undefined>();
@@ -131,12 +134,12 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
               <Text style={styles.groupLabel}>{t.category}</Text>
               <View style={styles.chips}>
                 <Chip label={t.all} active={!category} onPress={() => setCategory(undefined)} />
-                {CATEGORY_KEYS.map(key => (
+                {categories.map(item => (
                   <Chip
-                    key={key}
-                    label={t.categoryLabels[key]}
-                    active={category === key}
-                    onPress={() => setCategory(category === key ? undefined : key)}
+                    key={item.slug}
+                    label={item.label}
+                    active={category === item.slug}
+                    onPress={() => setCategory(category === item.slug ? undefined : item.slug)}
                   />
                 ))}
               </View>

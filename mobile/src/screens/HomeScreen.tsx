@@ -2,13 +2,15 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {FlatList, Image, Pressable, RefreshControl, Text, TextInput, View} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
-import {CATEGORY_KEYS, type Product, type ProductCategory} from '../types';
+import {type Product} from '../types';
+import {useCategories} from '../categories';
 import {fetchNewProducts} from '../firebase';
 import {ProductCard} from '../components/ProductCard';
 import {Loading} from '../components/ui';
 import type {TabScreenProps} from '../navigation/types';
 
-const CATEGORY_ICONS: Record<ProductCategory, string> = {
+/** Standart kategoriyalar belgisi; yangilariga umumiy belgi qo'yiladi. */
+const CATEGORY_ICONS: Record<string, string> = {
   pipes: '🚿',
   fittings: '🔩',
   faucets: '🚰',
@@ -26,6 +28,8 @@ const CATEGORY_ICONS: Record<ProductCategory, string> = {
 export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
   const styles = useStyles();
   const {t} = useI18n();
+  // Kategoriyalar saytdagi ro'yxatdan - yangilari ham ko'rinadi.
+  const categories = useCategories();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [term, setTerm] = useState('');
@@ -111,13 +115,13 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
 
           <Text style={styles.section}>{t.categories}</Text>
           <View style={styles.categories}>
-            {CATEGORY_KEYS.map(key => (
+            {categories.map(item => (
               <Pressable
-                key={key}
-                onPress={() => navigation.navigate('Katalog', {category: key})}
+                key={item.slug}
+                onPress={() => navigation.navigate('Katalog', {category: item.slug})}
                 style={({pressed}) => [styles.category, pressed && {opacity: 0.85}]}>
-                <Text style={{fontSize: 22}}>{CATEGORY_ICONS[key]}</Text>
-                <Text style={styles.categoryText}>{t.categoryLabels[key]}</Text>
+                <Text style={{fontSize: 22}}>{CATEGORY_ICONS[item.slug] ?? '📦'}</Text>
+                <Text style={styles.categoryText}>{item.label}</Text>
               </Pressable>
             ))}
           </View>

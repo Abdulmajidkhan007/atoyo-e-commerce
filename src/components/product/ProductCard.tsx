@@ -8,20 +8,10 @@ import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
 import { isDiscountActive } from "@/lib/products/pricing";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
+import { useCategoryLabel } from "@/lib/products/useTaxonomy";
 import { FavoriteButton } from "./FavoriteButton";
 import { StarRating } from "./StarRating";
 import type { Product } from "@/types/product";
-
-const CATEGORY_LABELS: Record<Product["category"], string> = {
-  pipes: "Quvurlar",
-  fittings: "Muftalar",
-  faucets: "Kranlar",
-  "shower-systems": "Dush tizimlari",
-  boilers: "Isitish qozonlari",
-  radiators: "Radiatorlar",
-  pumps: "Nasoslar",
-  "sanitary-ware": "Santexnika buyumlari",
-};
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
@@ -29,6 +19,11 @@ function formatSom(amount: number): string {
 
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();
+  // Kategoriya nomi ro'yxatdan olinadi - admin qo'shgan yangi
+  // kategoriyalar ham ko'rinadi (ilgari kodda 8 tasi yozilgan edi).
+  const categoryLabel = useCategoryLabel(product.category);
+  // Brend/davlat bo'sh bo'lsa yolg'iz "•" qolib ketmasligi kerak.
+  const meta = [product.brand, product.manufacturerCountry].filter(Boolean).join(" • ");
   // Chegirma muddati o'tgan bo'lsa - to'liq narx ko'rsatiladi.
   const hasDiscount = isDiscountActive(product);
   const outOfStock = product.stock <= 0;
@@ -66,13 +61,15 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <Chip label={CATEGORY_LABELS[product.category]} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
+        {categoryLabel && (
+          <Chip label={categoryLabel} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
+        )}
 
         <Link href={`/mahsulot/${product.id}`} className="line-clamp-2 text-sm font-medium text-navy-900 hover:text-aqua-600 dark:text-white">
           {product.name}
         </Link>
 
-        <p className="text-xs text-navy-300">{product.brand} • {product.manufacturerCountry}</p>
+        {meta && <p className="text-xs text-navy-300">{meta}</p>}
 
         {(product.ratingCount ?? 0) > 0 && (
           <p className="flex items-center gap-1 text-xs text-navy-300">

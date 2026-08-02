@@ -29,7 +29,7 @@ import {
   type TaxonomyKind,
 } from "@/lib/products/taxonomy";
 import { ProductVariantsEditor } from "./ProductVariantsEditor";
-import { minVariantPrice, totalVariantStock } from "@/lib/products/variants";
+import { minVariantPrice, normalizeVariants, totalVariantStock } from "@/lib/products/variants";
 import type { Product, ProductVariant, VariantAxis } from "@/types/product";
 
 /**
@@ -244,6 +244,10 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
 
       const images = [...existingImages, ...uploadedUrls].slice(0, MAX_IMAGES);
 
+      // Turlar ro'yxati saqlashdan oldin qatorlarga qarab tozalanadi:
+      // yarim yozilgan qiymatlardan qolgan turlar bazaga tushmaydi.
+      const clean = normalizeVariants(variantAxes, variants);
+
       const payload = {
         name: form.name.trim(),
         sku: form.sku.trim(),
@@ -256,13 +260,13 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         supplier: form.supplier.trim(),
         // Turlari bo'lsa: umumiy narx - eng arzon tur, zaxira - yig'indi
         // (katalogdagi filtr va saralash shu maydonlar bilan ishlaydi).
-        price: hasVariantRows ? (minVariantPrice({ variants }) ?? 0) : Number(form.price),
+        price: hasVariantRows ? (minVariantPrice({ variants: clean.variants }) ?? 0) : Number(form.price),
         discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
         // Chegirma muddati kun oxirigacha amal qiladi.
         discountUntil: form.discountUntil ? new Date(`${form.discountUntil}T23:59:59`).getTime() : null,
-        stock: hasVariantRows ? totalVariantStock({ variants }) : draft ? 0 : Number(form.stock),
-        variantAxes,
-        variants,
+        stock: hasVariantRows ? totalVariantStock({ variants: clean.variants }) : draft ? 0 : Number(form.stock),
+        variantAxes: clean.axes,
+        variants: clean.variants,
         ...(draft ? { isDraft: true } : {}),
         diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
         lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,

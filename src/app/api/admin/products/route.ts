@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
+import { normalizeVariants } from "@/lib/products/variants";
 import { announceProduct } from "@/lib/telegram/channel";
 import { nextProductCode } from "@/lib/products/product-code";
 import type { Product } from "@/types/product";
@@ -112,8 +113,8 @@ export async function POST(request: Request) {
     supplier: d.supplier.trim(),
     material: d.material,
     unit: d.unit,
-    variantAxes: d.variantAxes ?? [],
-    variants: d.variants ?? [],
+    // Turlar qatorlarga qarab tozalanadi (mos kelmagan turlar tushmaydi).
+    ...normalizeVariants(d.variantAxes ?? [], d.variants ?? []),
     dimensions: {
       ...(d.diameterMm !== undefined ? { diameterMm: d.diameterMm } : {}),
       ...(d.lengthMm !== undefined ? { lengthMm: d.lengthMm } : {}),

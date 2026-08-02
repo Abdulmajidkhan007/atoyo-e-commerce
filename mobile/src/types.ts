@@ -3,15 +3,12 @@
  * Ikkalasi bitta Firestore bazasidan o'qigani uchun nomlar mos kelishi
  * shart; bu yerda ilovaga kerak bo'lgan maydonlar saqlangan.
  */
-export type ProductCategory =
-  | 'pipes'
-  | 'fittings'
-  | 'faucets'
-  | 'shower-systems'
-  | 'boilers'
-  | 'radiators'
-  | 'pumps'
-  | 'sanitary-ware';
+/**
+ * Kategoriya slug'i. Saytdagi kabi ODDIY MATN: admin panelda yangi
+ * kategoriya ochilsa (metadata/taxonomy) ilova uni ham ko'rsatishi
+ * kerak - shuning uchun qat'iy ro'yxat emas.
+ */
+export type ProductCategory = string;
 
 /**
  * TURLAR (variantlar) - saytdagi `src/types/product.ts` bilan bir xil.

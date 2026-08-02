@@ -206,14 +206,23 @@ export interface AdminIntakeItem {
   supplier?: string;
 }
 
+export interface TaxonomyItem {
+  slug: string;
+  label: string;
+}
+
 /** Kategoriya/material/sotish turi ro'yxatlari (saytdagi bilan bir xil). */
 export async function fetchTaxonomy(): Promise<{
-  materials: {slug: string; label: string}[];
+  categories: TaxonomyItem[];
+  materials: TaxonomyItem[];
 }> {
-  const data = await request<{taxonomy?: {materials?: {slug: string; label: string}[]}}>(
-    '/api/taxonomy',
-  );
-  return {materials: data.taxonomy?.materials ?? []};
+  const data = await request<{
+    taxonomy?: {categories?: TaxonomyItem[]; materials?: TaxonomyItem[]};
+  }>('/api/taxonomy');
+  return {
+    categories: data.taxonomy?.categories ?? [],
+    materials: data.taxonomy?.materials ?? [],
+  };
 }
 
 /** Kontakt formasi - saytdagi bilan bir xil route (xodimlar guruhiga tushadi). */

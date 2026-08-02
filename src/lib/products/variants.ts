@@ -72,6 +72,36 @@ export function totalVariantStock(product: Pick<Product, "variants">): number {
   return (product.variants ?? []).reduce((sum, variant) => sum + Math.max(0, variant.stock), 0);
 }
 
+/**
+ * Turlar ro'yxatini QATORLARGA moslab tozalaydi.
+ *
+ * Tahrirlash paytida har bosishda kombinatsiyalar qayta yasaladi va
+ * eski (yarim yozilgan) qiymatlardan qolgan turlar saqlanib qolishi
+ * mumkin edi - saqlashdan oldin shu funksiya faqat HOZIRGI qatorlarga
+ * mos turlarni qoldiradi, narx/zaxira esa o'z joyida qoladi.
+ */
+export function normalizeVariants(
+  axes: VariantAxis[],
+  variants: ProductVariant[]
+): {axes: VariantAxis[]; variants: ProductVariant[]} {
+  const usable = axes
+    .map((axis) => ({ ...axis, values: axis.values.map((v) => v.trim()).filter(Boolean) }))
+    .filter((axis) => axis.key && axis.label.trim() && axis.values.length > 0);
+
+  if (usable.length === 0) return { axes: [], variants: [] };
+
+  const byId = new Map(variants.map((variant) => [variant.id, variant]));
+  const next = allCombinations(usable).map((options) => {
+    const id = variantIdOf(usable, options);
+    const previous = byId.get(id);
+    return previous
+      ? { ...previous, id, options }
+      : { id, options, price: 0, discountPrice: null, stock: 0 };
+  });
+
+  return { axes: usable, variants: next };
+}
+
 /** Kalit (slug) yasash: "O'lcham" -> "olcham". */
 export function axisKeyOf(label: string): string {
   const map: Record<string, string> = { "'": "", "ʼ": "", "‘": "", "’": "" };

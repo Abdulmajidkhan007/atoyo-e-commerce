@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
+import { normalizeVariants } from "@/lib/products/variants";
 import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
 import type { Product } from "@/types/product";
 
@@ -82,6 +83,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const d = parsed.data;
+  const existing = snapshot.data() as Product;
   const updates: Record<string, unknown> = { updatedAt: Date.now() };
 
   if (d.name !== undefined) {
@@ -101,8 +103,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.discountPrice !== undefined) updates.discountPrice = d.discountPrice;
   if (d.discountUntil !== undefined) updates.discountUntil = d.discountUntil;
   if (d.stock !== undefined) updates.stock = d.stock;
-  if (d.variantAxes !== undefined) updates.variantAxes = d.variantAxes;
-  if (d.variants !== undefined) updates.variants = d.variants;
+  if (d.variantAxes !== undefined || d.variants !== undefined) {
+    const clean = normalizeVariants(
+      d.variantAxes ?? existing.variantAxes ?? [],
+      d.variants ?? existing.variants ?? []
+    );
+    updates.variantAxes = clean.axes;
+    updates.variants = clean.variants;
+  }
   if (d.isActive !== undefined) updates.isActive = d.isActive;
   if (d.isDraft !== undefined) {
     updates.isDraft = d.isDraft;
@@ -115,7 +123,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   // Dimensions maydonlari - nested update.
-  const existing = snapshot.data() as Product;
   if (d.diameterMm !== undefined || d.lengthMm !== undefined || d.weightKg !== undefined) {
     updates.dimensions = {
       ...existing.dimensions,

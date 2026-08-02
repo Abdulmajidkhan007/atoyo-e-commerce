@@ -5,28 +5,8 @@ import { MenuItem, Select, TextField, Button, InputLabel, FormControl } from "@m
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { setFilters, resetFilters } from "@/redux/slices/filterSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { useCategories, useTaxonomy } from "@/lib/products/useTaxonomy";
 import type { ProductCategory, ProductMaterial } from "@/types/product";
-
-const CATEGORY_VALUES: ProductCategory[] = [
-  "pipes",
-  "fittings",
-  "faucets",
-  "shower-systems",
-  "boilers",
-  "radiators",
-  "pumps",
-  "sanitary-ware",
-];
-
-const MATERIAL_OPTIONS: { value: ProductMaterial; label: string }[] = [
-  { value: "polypropylene", label: "Polipropilen" },
-  { value: "metal-plastic", label: "Metalplastik" },
-  { value: "steel", label: "Po'lat" },
-  { value: "copper", label: "Mis" },
-  { value: "brass", label: "Latun" },
-  { value: "cast-iron", label: "Cho'yan" },
-  { value: "pvc", label: "PVX" },
-];
 
 // Brend/davlat ro'yxati DINAMIK: mahsulot qo'shilganda `metadata/facets`
 // hujjatiga yig'iladi (lib/products/facets.ts) va shu yerda /api/facets
@@ -42,6 +22,10 @@ const FALLBACK_COUNTRIES = ["O'zbekiston", "Turkiya", "Germaniya", "Italiya", "X
 export function FilterPanel({ variant = "sidebar" }: { variant?: "sidebar" | "plain" }) {
   const dispatch = useAppDispatch();
   const { dict } = useI18n();
+  // Kategoriya va material ro'yxatlari admin panelidagi bilan bir xil
+  // (`/api/taxonomy`) - yangi qo'shilganlari filtrda ham ko'rinadi.
+  const categoryOptions = useCategories();
+  const materialOptions = useTaxonomy().materials;
   const filters = useAppSelector((s) => s.filters);
   const [minPrice, setMinPrice] = useState(filters.minPrice?.toString() ?? "");
   const [maxPrice, setMaxPrice] = useState(filters.maxPrice?.toString() ?? "");
@@ -109,8 +93,8 @@ export function FilterPanel({ variant = "sidebar" }: { variant?: "sidebar" | "pl
           onChange={(e) => dispatch(setFilters({ category: (e.target.value || undefined) as ProductCategory | undefined }))}
         >
           <MenuItem value="">{dict.filters.all}</MenuItem>
-          {CATEGORY_VALUES.map((value) => (
-            <MenuItem key={value} value={value}>{(dict.categories as Record<string, string>)[value] ?? value}</MenuItem>
+          {categoryOptions.map((item) => (
+            <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
           ))}
         </Select>
       </FormControl>
@@ -124,8 +108,8 @@ export function FilterPanel({ variant = "sidebar" }: { variant?: "sidebar" | "pl
           onChange={(e) => dispatch(setFilters({ material: (e.target.value || undefined) as ProductMaterial | undefined }))}
         >
           <MenuItem value="">{dict.filters.all}</MenuItem>
-          {MATERIAL_OPTIONS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+          {materialOptions.map((item) => (
+            <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
           ))}
         </Select>
       </FormControl>

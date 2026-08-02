@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Button, IconButton, Switch, TextField } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { allCombinations, axisKeyOf, variantIdOf } from "@/lib/products/variants";
+import { axisKeyOf, normalizeVariants } from "@/lib/products/variants";
 import type { ProductVariant, VariantAxis } from "@/types/product";
 
 /**
@@ -28,23 +29,47 @@ interface Props {
 
 export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: Props) {
   const enabled = axes.length > 0;
+  const [fillPrice, setFillPrice] = useState("");
+  const [fillStock, setFillStock] = useState("");
+  const totalStock = variants.reduce((sum, variant) => sum + Math.max(0, variant.stock), 0);
+
+  /** "Hammasiga birdek": bo'sh qoldirilgan maydon o'zgartirilmaydi. */
+  const applyToAll = () => {
+    const price = fillPrice.trim() ? Number(fillPrice) : null;
+    const stock = fillStock.trim() ? Number(fillStock) : null;
+    if (price === null && stock === null) return;
+    onChange({
+      axes,
+      variants: variants.map((variant) => ({
+        ...variant,
+        ...(price !== null && Number.isFinite(price) ? { price } : {}),
+        ...(stock !== null && Number.isFinite(stock) ? { stock: Math.trunc(stock) } : {}),
+      })),
+    });
+  };
 
   /** Qatorlar o'zgarsa kombinatsiyalar qayta yasaladi (eski narx/zaxira saqlanadi). */
   const rebuild = (nextAxes: VariantAxis[]) => {
-    const usable = nextAxes.filter((axis) => axis.values.length > 0);
-    const combos = usable.length > 0 ? allCombinations(usable) : [];
-    const nextVariants = combos.map((options) => {
-      const id = variantIdOf(usable, options);
-      const previous = variants.find((variant) => variant.id === id);
-      return (
-        previous ?? { id, options, price: 0, discountPrice: null, stock: 0 }
-      );
-    });
+    // Turlar ro'yxati HAR DOIM qatorlardan qayta yasaladi - yarim
+    // yozilgan qiymatlardan qolgan eski turlar saqlanib qolmaydi.
+    const { variants: nextVariants } = normalizeVariants(nextAxes, variants);
     onChange({ axes: nextAxes, variants: nextVariants });
   };
 
   const updateAxis = (index: number, patch: Partial<VariantAxis>) => {
-    rebuild(axes.map((axis, i) => (i === index ? { ...axis, ...patch } : axis)));
+    const next = axes.map((axis, i) => (i === index ? { ...axis, ...patch } : axis));
+    // Ikkita qator bir xil nomlansa kalitlari ham bir xil bo'lib qolardi
+    // va turlar aralashib ketardi - kalitlarni yagona qilamiz.
+    const used = new Set<string>();
+    rebuild(
+      next.map((axis) => {
+        const base = axis.key || "tur";
+        let key = base;
+        for (let n = 2; used.has(key); n += 1) key = `${base}-${n}`;
+        used.add(key);
+        return { ...axis, key };
+      })
+    );
   };
 
   const updateVariant = (id: string, patch: Partial<ProductVariant>) => {
@@ -86,7 +111,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
                 onChange={(e) =>
                   updateAxis(index, { label: e.target.value, key: axisKeyOf(e.target.value) })
                 }
-                className="!w-40"
+                className="!w-44"
               />
               <TextField
                 size="small"
@@ -125,44 +150,72 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
           )}
 
           {variants.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[420px] text-left text-sm">
-                <thead className="text-navy-300">
-                  <tr>
-                    <th className="py-1 font-medium">Turi</th>
-                    <th className="py-1 font-medium">Narx (so&apos;m / {unitLabel})</th>
-                    <th className="py-1 font-medium">Zaxira</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {variants.map((variant) => (
-                    <tr key={variant.id} className="border-t border-navy-100 dark:border-navy-500">
-                      <td className="py-1.5 pr-2 text-navy-900 dark:text-white">
-                        {Object.values(variant.options).join(" • ")}
-                      </td>
-                      <td className="py-1.5 pr-2">
-                        <TextField
-                          size="small"
-                          type="number"
-                          value={variant.price || ""}
-                          onChange={(e) => updateVariant(variant.id, { price: Number(e.target.value) || 0 })}
-                          slotProps={{ input: { className: "w-32" } }}
-                        />
-                      </td>
-                      <td className="py-1.5">
-                        <TextField
-                          size="small"
-                          type="number"
-                          value={variant.stock || ""}
-                          onChange={(e) => updateVariant(variant.id, { stock: Number(e.target.value) || 0 })}
-                          slotProps={{ input: { className: "w-24" } }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="mt-2 text-xs text-navy-300">
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-navy-300">
+                Har bir turning narxi va zaxirasi alohida — masalan 50×45 uchun 225 000,
+                55×45 uchun 235 000 so&apos;m.
+              </p>
+
+              {/* Hammasi bir xil bo'lsa bittalab yozib chiqish shart emas. */}
+              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-navy-50 p-2 dark:bg-navy-800">
+                <span className="text-xs text-navy-300">Hammasiga birdek:</span>
+                <TextField
+                  size="small"
+                  type="number"
+                  label={`Narx (${unitLabel})`}
+                  value={fillPrice}
+                  onChange={(e) => setFillPrice(e.target.value)}
+                  className="!w-36"
+                />
+                <TextField
+                  size="small"
+                  type="number"
+                  label="Zaxira"
+                  value={fillStock}
+                  onChange={(e) => setFillStock(e.target.value)}
+                  className="!w-28"
+                />
+                <Button type="button" size="small" variant="outlined" onClick={applyToAll}>
+                  Qo&apos;yish
+                </Button>
+              </div>
+
+              {totalStock <= 0 && (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                  Diqqat: hamma turlarning zaxirasi 0 — mahsulot katalogda
+                  &laquo;Tugagan&raquo; bo&apos;lib turadi. Har bir o&apos;lchamning nechtaligini
+                  yozing (yuqoridagi &laquo;Hammasiga birdek&raquo; ham yordam beradi).
+                </p>
+              )}
+
+              {variants.map((variant) => (
+                <div
+                  key={variant.id}
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-navy-100 p-2 dark:border-navy-500"
+                >
+                  <span className="min-w-28 flex-1 text-sm font-medium text-navy-900 dark:text-white">
+                    {Object.values(variant.options).join(" • ")}
+                  </span>
+                  <TextField
+                    size="small"
+                    type="number"
+                    label={`Narx (${unitLabel})`}
+                    value={variant.price || ""}
+                    onChange={(e) => updateVariant(variant.id, { price: Number(e.target.value) || 0 })}
+                    className="!w-36"
+                  />
+                  <TextField
+                    size="small"
+                    type="number"
+                    label="Zaxira"
+                    value={variant.stock || ""}
+                    onChange={(e) => updateVariant(variant.id, { stock: Number(e.target.value) || 0 })}
+                    className="!w-28"
+                  />
+                </div>
+              ))}
+
+              <p className="text-xs text-navy-300">
                 Mahsulotning umumiy narxi eng arzon turdan, zaxirasi esa hamma turlarning
                 yig&apos;indisidan olinadi.
               </p>
