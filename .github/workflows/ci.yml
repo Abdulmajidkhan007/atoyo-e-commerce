@@ -14,7 +14,7 @@ concurrency:
 jobs:
   # ---------------------------------------------------------------------
   # 1) TEKSHIRUV (~1-3 daq): sayt va ilova uchun typecheck + lint.
-  #    Loyihada test framework yo'q - tekshiruv = typecheck + lint + build.
+  #    Tekshiruv = typecheck + lint + testlar (vitest) + build.
   # ---------------------------------------------------------------------
   quality:
     name: Tekshiruv (typecheck + lint)
@@ -35,6 +35,9 @@ jobs:
 
       - name: Sayt - lint
         run: npx eslint .
+
+      - name: Sayt - testlar
+        run: npm test
 
       - name: Sayt - build
         run: npm run build

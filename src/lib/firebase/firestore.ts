@@ -14,6 +14,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirebaseDb } from "./client";
+import { searchTermVariants } from "@/lib/search/tokens";
 import type { Product, ProductFilterParams } from "@/types/product";
 import type { Order, OrderStatus } from "@/types/order";
 
@@ -103,8 +104,9 @@ export async function searchProductsByPrefix(term: string, pageSize = 24): Promi
   // "8276 dush" deb qidirilsa ham, "dush 8276" deb qidirilsa ham
   // "Boou dush 8276" topiladi. So'zlarning hammasi mos kelishi (AND)
   // keyin mijoz tomonda tekshiriladi (lib/search/fuzzy.ts).
-  const words = Array.from(new Set(normalized.split(/\s+/).filter((w) => w.length >= 2))).slice(0, 10);
-  const tokenTerms = words.length > 0 ? words : [normalized];
+  // So'zlar asl va "tekislangan" (kirill->lotin, apostrofsiz) ko'rinishda
+  // yuboriladi - "душ" deb qidirgan odam "Dush" ni ham topadi.
+  const tokenTerms = searchTermVariants(normalized);
   const tokenQuery = query(
     collection(getFirebaseDb(), PRODUCTS_COLLECTION),
     where("isActive", "==", true),

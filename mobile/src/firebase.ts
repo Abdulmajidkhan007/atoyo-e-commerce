@@ -1,6 +1,7 @@
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import type {BlogPost, Order, Product, ProductCategory} from './types';
+import {matchesAllWords, searchTermVariants} from './search';
 
 /**
  * Firebase - @react-native-firebase orqali. Sozlash fayllari:
@@ -99,15 +100,41 @@ function byPrice(items: Product[], filters: CatalogFilters): Product[] {
 export async function searchProducts(term: string, limit = 20): Promise<Product[]> {
   const q = term.trim().toLowerCase();
   if (!q) return [];
-  const snap = await productsCollection()
-    .orderBy('nameSearchIndex')
-    .startAt(q)
-    .endAt(`${q}`)
-    .limit(limit)
-    .get();
-  return snap.docs
-    .map(d => ({id: d.id, ...d.data()}) as Product)
-    .filter(p => p.isActive);
+
+  // Ikki so'rov parallel (saytdagi kabi):
+  //   • nom BOSHIdan mos kelishi (nameSearchIndex),
+  //   • nomning istalgan so'zi (nameTokens) - "8276 dush" ham,
+  //     "dush 8276" ham topiladi; kirillcha yozilsa ham topiladi.
+  const [prefix, tokens] = await Promise.all([
+    productsCollection()
+      .orderBy('nameSearchIndex')
+      .startAt(q)
+      .endAt(`${q}`)
+      .limit(limit)
+      .get()
+      .catch(() => null),
+    productsCollection()
+      .where('nameTokens', 'array-contains-any', searchTermVariants(q))
+      .limit(limit)
+      .get()
+      .catch(() => null),
+  ]);
+
+  const seen = new Set<string>();
+  const results: Product[] = [];
+  for (const doc of [...(prefix?.docs ?? []), ...(tokens?.docs ?? [])]) {
+    if (seen.has(doc.id)) continue;
+    seen.add(doc.id);
+    const product = {id: doc.id, ...doc.data()} as Product;
+    if (!product.isActive) continue;
+    results.push(product);
+  }
+
+  // So'zlarning HAMMASI mos kelganlari oldinda tursin.
+  const strong = results.filter(p =>
+    matchesAllWords([p.name, p.brand, p.code].filter(Boolean).join(' '), q),
+  );
+  return (strong.length > 0 ? strong : results).slice(0, limit);
 }
 
 export async function fetchProduct(id: string): Promise<Product | null> {
