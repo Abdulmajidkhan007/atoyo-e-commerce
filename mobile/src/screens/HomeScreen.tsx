@@ -7,18 +7,22 @@ import {useCategories} from '../categories';
 import {fetchNewProducts} from '../firebase';
 import {ProductCard} from '../components/ProductCard';
 import {Loading} from '../components/ui';
+import {Icon, type IconName} from '../components/Icon';
 import type {TabScreenProps} from '../navigation/types';
 
-/** Standart kategoriyalar belgisi; yangilariga umumiy belgi qo'yiladi. */
-const CATEGORY_ICONS: Record<string, string> = {
-  pipes: '🚿',
-  fittings: '🔩',
-  faucets: '🚰',
-  'shower-systems': '🛁',
-  boilers: '🔥',
-  radiators: '♨️',
-  pumps: '⚙️',
-  'sanitary-ware': '🧼',
+/**
+ * Standart kategoriyalar belgisi - SAYTDAGI bilan bir xil ikonkalar;
+ * yangi kategoriyaga umumiy belgi qo'yiladi.
+ */
+const CATEGORY_ICONS: Record<string, IconName> = {
+  pipes: 'pipes',
+  fittings: 'fittings',
+  faucets: 'faucets',
+  'shower-systems': 'shower',
+  boilers: 'boilers',
+  radiators: 'radiators',
+  pumps: 'pumps',
+  'sanitary-ware': 'bath',
 };
 
 /**
@@ -95,20 +99,20 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
           </View>
 
           <View style={styles.quickRow}>
-            <QuickLink label={t.titleBlog} icon="📰" onPress={() => navigation.navigate('Blog')} />
+            <QuickLink label={t.titleBlog} icon="blog" onPress={() => navigation.navigate('Blog')} />
             <QuickLink
               label={t.titleContact}
-              icon="📞"
+              icon="phone"
               onPress={() => navigation.navigate('Kontakt')}
             />
             <QuickLink
               label={t.titleOrders}
-              icon="📦"
+              icon="orders"
               onPress={() => navigation.navigate('Buyurtmalarim')}
             />
             <QuickLink
               label={t.titleSettings}
-              icon="⚙️"
+              icon="settings"
               onPress={() => navigation.navigate('Sozlamalar')}
             />
           </View>
@@ -120,7 +124,11 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
                 key={item.slug}
                 onPress={() => navigation.navigate('Katalog', {category: item.slug})}
                 style={({pressed}) => [styles.category, pressed && {opacity: 0.85}]}>
-                <Text style={{fontSize: 22}}>{CATEGORY_ICONS[item.slug] ?? '📦'}</Text>
+                <Icon
+                  name={CATEGORY_ICONS[item.slug] ?? 'category'}
+                  size={24}
+                  color={styles.c.accent}
+                />
                 <Text style={styles.categoryText}>{item.label}</Text>
               </Pressable>
             ))}
@@ -145,13 +153,13 @@ function QuickLink({
   onPress,
 }: {
   label: string;
-  icon: string;
+  icon: IconName;
   onPress: () => void;
 }) {
   const styles = useStyles();
   return (
     <Pressable onPress={onPress} style={({pressed}) => [styles.quick, pressed && {opacity: 0.85}]}>
-      <Text style={{fontSize: 18}}>{icon}</Text>
+      <Icon name={icon} size={20} color={styles.c.accent} />
       <Text numberOfLines={1} style={styles.quickText}>
         {label}
       </Text>

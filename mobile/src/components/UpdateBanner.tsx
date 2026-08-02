@@ -3,6 +3,7 @@ import {Linking, Pressable, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
+import {Icon} from './Icon';
 
 /**
  * YANGILANISH ESLATMASI.
@@ -81,7 +82,7 @@ export function UpdateBanner() {
           <Text style={styles.action}>{t.updateDownload}</Text>
         </Pressable>
         <Pressable onPress={() => setDismissed(true)} hitSlop={8}>
-          <Text style={styles.close}>✕</Text>
+          <Icon name="close" size={18} color={styles.c.onBrandMuted} />
         </Pressable>
       </View>
     </View>

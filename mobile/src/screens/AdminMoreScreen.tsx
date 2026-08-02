@@ -16,6 +16,7 @@ import {
 import {useToast} from '../components/Toast';
 import {Button, EmptyState, Loading} from '../components/ui';
 import type {StackScreenProps} from '../navigation/types';
+import {Icon, type IconName} from '../components/Icon';
 
 /**
  * ADMIN: QOLGAN BO'LIMLAR — statistika, blog, promokodlar va
@@ -29,11 +30,11 @@ import type {StackScreenProps} from '../navigation/types';
 
 type Tab = 'stats' | 'blog' | 'promo' | 'users';
 
-const TABS: {key: Tab; label: string}[] = [
-  {key: 'stats', label: '📊 Statistika'},
-  {key: 'blog', label: '📰 Blog'},
-  {key: 'promo', label: '🎟 Promokod'},
-  {key: 'users', label: '👥 Mijozlar'},
+const TABS: {key: Tab; label: string; icon: IconName}[] = [
+  {key: 'stats', label: 'Statistika', icon: 'stats'},
+  {key: 'blog', label: 'Blog', icon: 'blog'},
+  {key: 'promo', label: 'Promokod', icon: 'promo'},
+  {key: 'users', label: 'Mijozlar', icon: 'users'},
 ];
 
 export function AdminMoreScreen(_props: StackScreenProps<'AdminQolgan'>) {
@@ -51,6 +52,11 @@ export function AdminMoreScreen(_props: StackScreenProps<'AdminQolgan'>) {
             key={item.key}
             onPress={() => setTab(item.key)}
             style={[styles.tab, tab === item.key && styles.tabOn]}>
+            <Icon
+              name={item.icon}
+              size={16}
+              color={tab === item.key ? styles.c.onAccent : styles.c.text}
+            />
             <Text style={[styles.tabText, tab === item.key && styles.tabTextOn]}>{item.label}</Text>
           </Pressable>
         ))}
@@ -177,9 +183,14 @@ function BlogTab() {
               {item.excerpt}
             </Text>
           )}
-          <Text style={styles.muted}>
-            {item.isPublished ? '✅ Chop etilgan' : '📝 Chernovik'}
-          </Text>
+          <View style={styles.statusRow}>
+            <Icon
+              name={item.isPublished ? 'checkCircle' : 'draft'}
+              size={16}
+              color={item.isPublished ? styles.c.success : styles.c.muted}
+            />
+            <Text style={styles.muted}>{item.isPublished ? 'Chop etilgan' : 'Chernovik'}</Text>
+          </View>
           <Button
             title={item.isPublished ? 'Chernovikka olish' : 'Chop etish'}
             variant="outline"
@@ -380,6 +391,9 @@ const useStyles = makeStyles(c => ({
   screen: {flex: 1, backgroundColor: c.bg},
   tabs: {gap: spacing.sm, padding: spacing.md},
   tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: 999,
@@ -421,6 +435,7 @@ const useStyles = makeStyles(c => ({
   chipOn: {backgroundColor: c.accent, borderColor: c.accent},
   chipText: {color: c.text, fontSize: 12, fontWeight: '600'},
   chipTextOn: {color: c.onAccent},
+  statusRow: {flexDirection: 'row', alignItems: 'center', gap: 6},
   footNote: {
     color: c.muted,
     fontSize: 12,

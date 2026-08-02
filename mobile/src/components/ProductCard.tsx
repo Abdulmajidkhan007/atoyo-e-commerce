@@ -6,6 +6,7 @@ import {effectivePrice, type Product} from '../types';
 import {useAppDispatch, useAppSelector} from '../store';
 import {toggleFavorite} from '../store/favoritesSlice';
 import {Stars} from './ui';
+import {Icon} from './Icon';
 import {hasVariants, minVariantPrice} from '../variants';
 
 /** Katalog va bosh sahifadagi mahsulot kartochkasi (sayt bilan bir xil). */
@@ -35,7 +36,11 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
           hitSlop={8}
           onPress={() => dispatch(toggleFavorite(product.id))}
           style={styles.heart}>
-          <Text style={{fontSize: 16}}>{isFavorite ? '❤️' : '🤍'}</Text>
+          <Icon
+            name={isFavorite ? 'heartFilled' : 'heart'}
+            size={17}
+            color={isFavorite ? styles.c.danger : styles.c.muted}
+          />
         </Pressable>
         {product.stock <= 0 && (
           <View style={styles.badge}>

@@ -5,6 +5,7 @@ import {useNavigation} from '@react-navigation/native';
 import {makeStyles, radius, spacing, useTheme, type ThemeMode} from '../theme';
 import {useI18n, type Locale} from '../i18n';
 import {useAppSelector} from '../store';
+import {Icon, type IconName} from './Icon';
 
 /**
  * SAYT HEADER'ining ilova varianti: logotip + brend nomi, o'ng tomonda
@@ -19,9 +20,15 @@ const LOCALE_LABELS: Record<Locale, string> = {
 };
 
 const THEME_LABELS: Record<ThemeMode, string> = {
-  light: '☀  Kunduzgi',
-  dark: '☾  Tungi',
-  system: '⚙  Tizim bo‘yicha',
+  light: 'Kunduzgi',
+  dark: 'Tungi',
+  system: 'Tizim bo‘yicha',
+};
+
+const THEME_ICONS: Record<ThemeMode, IconName> = {
+  light: 'sun',
+  dark: 'moon',
+  system: 'auto',
 };
 
 export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
@@ -51,7 +58,7 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
     <View style={[styles.wrap, {paddingTop: insets.top + spacing.xs}]}>
       {back && (
         <Pressable hitSlop={8} onPress={() => navigation.goBack()} style={styles.iconBtn}>
-          <Text style={styles.icon}>‹</Text>
+          <Icon name="chevronRight" size={22} color={styles.c.text} style={styles.backIcon} />
         </Pressable>
       )}
 
@@ -64,16 +71,17 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
 
       <View style={styles.actions}>
         <Pressable hitSlop={6} onPress={() => setMenu('locale')} style={styles.iconBtn}>
+          <Icon name="language" size={20} color={styles.c.text} />
           <Text style={styles.localeText}>{locale.toUpperCase()}</Text>
         </Pressable>
 
         <Pressable hitSlop={6} onPress={() => setMenu('theme')} style={styles.iconBtn}>
-          <Text style={styles.icon}>{isDark ? '☀' : '☾'}</Text>
+          <Icon name={isDark ? 'sun' : 'moon'} size={20} color={styles.c.text} />
           {mode === 'system' && <View style={styles.systemDot} />}
         </Pressable>
 
-        <HeaderBadgeButton glyph="♡" count={favCount} onPress={() => goTo('Sevimlilar')} />
-        <HeaderBadgeButton glyph="🛒" count={cartCount} onPress={() => goTo('Savat')} />
+        <HeaderBadgeButton icon="heart" count={favCount} onPress={() => goTo('Sevimlilar')} />
+        <HeaderBadgeButton icon="cart" count={cartCount} onPress={() => goTo('Savat')} />
       </View>
 
       {/* Til va tema tanlash - tugma ostidan chiqadigan ro'yxat. */}
@@ -92,7 +100,9 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
                   <Text style={[styles.menuText, locale === key && styles.menuTextOn]}>
                     {LOCALE_LABELS[key]}
                   </Text>
-                  {locale === key && <Text style={styles.menuCheck}>✓</Text>}
+                  {locale === key && (
+                    <Icon name="check" size={18} color={styles.c.accent} />
+                  )}
                 </Pressable>
               ))}
 
@@ -105,10 +115,17 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
                     setMode(key);
                     setMenu(null);
                   }}>
-                  <Text style={[styles.menuText, mode === key && styles.menuTextOn]}>
-                    {THEME_LABELS[key]}
-                  </Text>
-                  {mode === key && <Text style={styles.menuCheck}>✓</Text>}
+                  <View style={styles.menuLeft}>
+                    <Icon
+                      name={THEME_ICONS[key]}
+                      size={18}
+                      color={mode === key ? styles.c.accent : styles.c.muted}
+                    />
+                    <Text style={[styles.menuText, mode === key && styles.menuTextOn]}>
+                      {THEME_LABELS[key]}
+                    </Text>
+                  </View>
+                  {mode === key && <Icon name="check" size={18} color={styles.c.accent} />}
                 </Pressable>
               ))}
           </View>
@@ -119,11 +136,11 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
 }
 
 function HeaderBadgeButton({
-  glyph,
+  icon,
   count,
   onPress,
 }: {
-  glyph: string;
+  icon: IconName;
   count: number;
   onPress: () => void;
 }) {
@@ -131,7 +148,7 @@ function HeaderBadgeButton({
 
   return (
     <Pressable hitSlop={6} onPress={onPress} style={styles.iconBtn}>
-      <Text style={styles.icon}>{glyph}</Text>
+      <Icon name={icon} size={21} color={styles.c.text} />
       {count > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text>
@@ -157,8 +174,9 @@ const useStyles = makeStyles(c => ({
   brandText: {color: c.text, fontSize: 17, fontWeight: '800', flexShrink: 1},
   actions: {flexDirection: 'row', alignItems: 'center', gap: 2},
   iconBtn: {width: 34, height: 34, alignItems: 'center', justifyContent: 'center'},
-  icon: {color: c.text, fontSize: 19},
-  localeText: {color: c.muted, fontSize: 12, fontWeight: '700'},
+  /** Orqaga: "chevron" ikonkasi teskari qaratiladi. */
+  backIcon: {transform: [{rotate: '180deg'}]},
+  localeText: {color: c.muted, fontSize: 9, fontWeight: '700', marginTop: -2},
   systemDot: {
     position: 'absolute',
     bottom: 4,
@@ -204,7 +222,7 @@ const useStyles = makeStyles(c => ({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
   },
+  menuLeft: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
   menuText: {color: c.text, fontSize: 15},
   menuTextOn: {color: c.accent, fontWeight: '700'},
-  menuCheck: {color: c.accent, fontSize: 15, fontWeight: '800'},
 }));

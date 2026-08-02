@@ -8,6 +8,7 @@ import {useToast} from '../components/Toast';
 import {EmptyState, Loading} from '../components/ui';
 import type {Order, OrderStatus} from '../types';
 import type {StackScreenProps} from '../navigation/types';
+import {Icon, type IconName} from '../components/Icon';
 
 /**
  * ADMIN: BUYURTMALAR.
@@ -18,19 +19,28 @@ import type {StackScreenProps} from '../navigation/types';
  * va guruhdagi post yangilanishi bir joyda, sayt bilan bir xil bo'ladi.
  */
 
-const FLOW: {status: OrderStatus; label: string; icon: string}[] = [
-  {status: 'approved', label: 'Qabul qilish', icon: '✅'},
-  {status: 'delivering', label: 'Yetkazishda', icon: '🚚'},
-  {status: 'completed', label: 'Yakunlandi', icon: '🎉'},
-  {status: 'cancelled', label: 'Bekor qilish', icon: '❌'},
+const FLOW: {status: OrderStatus; label: string; icon: IconName}[] = [
+  {status: 'approved', label: 'Qabul qilish', icon: 'checkCircle'},
+  {status: 'delivering', label: 'Yetkazishda', icon: 'truck'},
+  {status: 'completed', label: 'Yakunlandi', icon: 'done'},
+  {status: 'cancelled', label: 'Bekor qilish', icon: 'cancel'},
 ];
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: '🕓 Yangi',
-  approved: '✅ Qabul qilindi',
-  delivering: '🚚 Yetkazilmoqda',
-  completed: '🎉 Yakunlandi',
-  cancelled: '❌ Bekor qilindi',
+  pending: 'Yangi',
+  approved: 'Qabul qilindi',
+  delivering: 'Yetkazilmoqda',
+  completed: 'Yakunlandi',
+  cancelled: 'Bekor qilindi',
+};
+
+/** Holat yorlig'i yonidagi ikonka (saytdagi buyurtmalar jadvali kabi). */
+const STATUS_ICONS: Record<OrderStatus, IconName> = {
+  pending: 'clock',
+  approved: 'checkCircle',
+  delivering: 'truck',
+  completed: 'done',
+  cancelled: 'cancel',
 };
 
 export function AdminOrdersScreen(_props: StackScreenProps<'AdminBuyurtmalar'>) {
@@ -98,7 +108,10 @@ export function AdminOrdersScreen(_props: StackScreenProps<'AdminBuyurtmalar'>) 
             <View style={styles.card}>
               <View style={styles.cardHead}>
                 <Text style={styles.customer}>{item.customerName}</Text>
-                <Text style={styles.status}>{STATUS_LABELS[item.status]}</Text>
+                <View style={styles.statusRow}>
+                  <Icon name={STATUS_ICONS[item.status]} size={15} color={styles.c.muted} />
+                  <Text style={styles.status}>{STATUS_LABELS[item.status]}</Text>
+                </View>
               </View>
               <Text style={styles.muted}>{item.phoneNumber}</Text>
               {!!item.deliveryAddress && <Text style={styles.muted}>{item.deliveryAddress}</Text>}
@@ -122,12 +135,17 @@ export function AdminOrdersScreen(_props: StackScreenProps<'AdminBuyurtmalar'>) 
                     disabled={busyId === item.id}
                     onPress={() => setStatus(item.id, step.status)}
                     style={[styles.action, step.status === 'cancelled' && styles.actionDanger]}>
+                    <Icon
+                      name={step.icon}
+                      size={16}
+                      color={step.status === 'cancelled' ? styles.c.danger : styles.c.text}
+                    />
                     <Text
                       style={[
                         styles.actionText,
                         step.status === 'cancelled' && styles.actionTextDanger,
                       ]}>
-                      {step.icon} {step.label}
+                      {step.label}
                     </Text>
                   </Pressable>
                 ))}
@@ -170,6 +188,9 @@ const useStyles = makeStyles(c => ({
   total: {color: c.text, fontWeight: '800', fontSize: 16, marginTop: spacing.xs},
   actions: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm},
   action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 999,
@@ -177,6 +198,7 @@ const useStyles = makeStyles(c => ({
     paddingVertical: 6,
   },
   actionDanger: {borderColor: c.danger},
+  statusRow: {flexDirection: 'row', alignItems: 'center', gap: 5},
   actionText: {color: c.text, fontSize: 12, fontWeight: '600'},
   actionTextDanger: {color: c.danger},
 }));

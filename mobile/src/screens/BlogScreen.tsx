@@ -6,6 +6,7 @@ import {fetchBlogPosts} from '../firebase';
 import type {BlogPost} from '../types';
 import {EmptyState, Loading} from '../components/ui';
 import type {StackScreenProps} from '../navigation/types';
+import {Icon} from '../components/Icon';
 
 /** Blog ro'yxati - saytdagi `/blog` sahifasining ilova varianti. */
 export function BlogScreen({navigation}: StackScreenProps<'Blog'>) {
@@ -51,7 +52,10 @@ export function BlogScreen({navigation}: StackScreenProps<'Blog'>) {
             <Text numberOfLines={3} style={styles.excerpt}>
               {item.excerpt}
             </Text>
-            <Text style={styles.link}>{t.readMore} →</Text>
+            <View style={styles.linkRow}>
+              <Text style={styles.link}>{t.readMore}</Text>
+              <Icon name="arrowRight" size={16} color={styles.c.accent} />
+            </View>
           </View>
         </Pressable>
       )}
@@ -71,5 +75,6 @@ const useStyles = makeStyles(c => ({
   cover: {width: '100%', height: 160, backgroundColor: c.surfaceAlt},
   title: {color: c.text, fontWeight: '700', fontSize: 16},
   excerpt: {color: c.muted, fontSize: 13, lineHeight: 19},
+  linkRow: {flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4},
   link: {color: c.accent, fontSize: 13, fontWeight: '700', marginTop: 2},
 }));

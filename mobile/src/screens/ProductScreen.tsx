@@ -20,6 +20,7 @@ import {
   variantLabel,
   variantPrice,
 } from '../variants';
+import {Icon} from '../components/Icon';
 
 /** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
 export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>) {
@@ -168,7 +169,11 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         <View style={styles.titleRow}>
           <Text style={styles.title}>{product.name}</Text>
           <Pressable hitSlop={10} onPress={() => dispatch(toggleFavorite(product.id))}>
-            <Text style={{fontSize: 22}}>{isFavorite ? '❤️' : '🤍'}</Text>
+            <Icon
+            name={isFavorite ? 'heartFilled' : 'heart'}
+            size={22}
+            color={isFavorite ? styles.c.danger : styles.c.muted}
+          />
           </Pressable>
         </View>
 
@@ -247,11 +252,12 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           <Text style={styles.muted}>{t.yourRating}</Text>
           <View style={{flexDirection: 'row', gap: spacing.xs}}>
             {[1, 2, 3, 4, 5].map(star => (
-              <Pressable key={star} onPress={() => setRating(star)}>
-                <Text
-                  style={{fontSize: 26, color: star <= rating ? styles.c.accent : styles.c.border}}>
-                  ★
-                </Text>
+              <Pressable key={star} hitSlop={4} onPress={() => setRating(star)}>
+                <Icon
+                  name={star <= rating ? 'star' : 'starBorder'}
+                  size={28}
+                  color={star <= rating ? styles.c.accent : styles.c.border}
+                />
               </Pressable>
             ))}
           </View>
@@ -306,7 +312,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
               alt={product.name}
             />
           )}
-          <Text style={styles.zoomClose}>✕</Text>
+          <Icon name="close" size={24} color={styles.c.white} />
         </Pressable>
       </Modal>
     </ScrollView>

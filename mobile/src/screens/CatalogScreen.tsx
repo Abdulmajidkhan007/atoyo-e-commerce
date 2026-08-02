@@ -9,6 +9,7 @@ import {fetchFacets, fetchTaxonomy} from '../api';
 import {ProductCard} from '../components/ProductCard';
 import {Button, Chip, EmptyState, Loading} from '../components/ui';
 import type {TabScreenProps} from '../navigation/types';
+import {Icon} from '../components/Icon';
 
 type Sort = 'newest' | 'price-asc' | 'price-desc';
 
@@ -94,7 +95,7 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
           style={styles.search}
         />
         <Pressable onPress={() => setFilterOpen(true)} style={styles.filterBtn}>
-          <Text style={{fontSize: 18}}>⚙️</Text>
+          <Icon name="filter" size={20} color={styles.c.text} />
           {activeCount > 0 && (
             <View style={styles.filterBadge}>
               <Text style={styles.filterBadgeText}>{activeCount}</Text>

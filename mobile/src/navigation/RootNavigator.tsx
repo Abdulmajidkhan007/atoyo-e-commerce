@@ -1,11 +1,11 @@
 import React from 'react';
-import {Text} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useTheme} from '../theme';
 import {useI18n} from '../i18n';
 import {useAppSelector} from '../store';
 import {BrandHeader} from '../components/BrandHeader';
+import {Icon, type IconName} from '../components/Icon';
 import {HomeScreen} from '../screens/HomeScreen';
 import {CatalogScreen} from '../screens/CatalogScreen';
 import {ProductScreen} from '../screens/ProductScreen';
@@ -25,6 +25,16 @@ import type {RootStackParamList, TabParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+
+/**
+ * Pastki menyu belgisi: aktiv tab urg'u rangida bo'ladi (React Navigation
+ * `color` ni o'zi beradi - saytdagi menyu bilan bir xil xatti-harakat).
+ */
+function tabIcon(name: IconName) {
+  return function TabBarIcon({color}: {color: string}) {
+    return <Icon name={name} size={23} color={color} />;
+  };
+}
 
 /** Pastki menyu: Bosh, Katalog, Savat, Sevimlilar, Profil (sayt kabi). */
 function Tabs() {
@@ -52,19 +62,19 @@ function Tabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{tabBarLabel: t.tabHome, tabBarIcon: () => <Text>🏠</Text>}}
+        options={{tabBarLabel: t.tabHome, tabBarIcon: tabIcon('home')}}
       />
       <Tab.Screen
         name="Katalog"
         component={CatalogScreen}
-        options={{tabBarLabel: t.tabCatalog, tabBarIcon: () => <Text>🛍</Text>}}
+        options={{tabBarLabel: t.tabCatalog, tabBarIcon: tabIcon('catalog')}}
       />
       <Tab.Screen
         name="Savat"
         component={CartScreen}
         options={{
           tabBarLabel: t.tabCart,
-          tabBarIcon: () => <Text>🛒</Text>,
+          tabBarIcon: tabIcon('cart'),
           tabBarBadge: cartCount > 0 ? cartCount : undefined,
         }}
       />
@@ -73,14 +83,14 @@ function Tabs() {
         component={FavoritesScreen}
         options={{
           tabBarLabel: t.tabFavorites,
-          tabBarIcon: () => <Text>❤️</Text>,
+          tabBarIcon: tabIcon('heart'),
           tabBarBadge: favCount > 0 ? favCount : undefined,
         }}
       />
       <Tab.Screen
         name="Profil"
         component={ProfileScreen}
-        options={{tabBarLabel: t.tabProfile, tabBarIcon: () => <Text>👤</Text>}}
+        options={{tabBarLabel: t.tabProfile, tabBarIcon: tabIcon('person')}}
       />
     </Tab.Navigator>
   );

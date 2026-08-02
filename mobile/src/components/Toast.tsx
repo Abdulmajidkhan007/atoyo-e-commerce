@@ -2,6 +2,7 @@ import React, {createContext, useCallback, useContext, useEffect, useMemo, useRe
 import {Animated, Pressable, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {makeStyles, radius, spacing} from '../theme';
+import {Icon} from './Icon';
 
 /**
  * TOAST (xabar chizig'i).
@@ -102,9 +103,11 @@ function ToastBar({
       pointerEvents="box-none"
       style={[styles.wrap, {top: insets.top + spacing.sm, transform: [{translateY: slide}]}]}>
       <Pressable onPress={onClose} style={[styles.bar, tone]}>
-        <Text style={styles.icon}>
-          {item.kind === 'success' ? '✓' : item.kind === 'error' ? '!' : 'i'}
-        </Text>
+        <Icon
+          name={item.kind === 'success' ? 'checkCircle' : item.kind === 'error' ? 'error' : 'info'}
+          size={20}
+          color={styles.c.white}
+        />
         <Text style={styles.text} numberOfLines={3}>
           {item.text}
         </Text>

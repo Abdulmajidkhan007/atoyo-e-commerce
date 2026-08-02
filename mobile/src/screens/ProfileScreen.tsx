@@ -8,6 +8,7 @@ import {SITE_URL} from '../api';
 import {googleSignInAvailable, signInWithGoogle, signInWithTelegram} from '../social-auth';
 import type {TabScreenProps} from '../navigation/types';
 import {useToast} from '../components/Toast';
+import {Icon} from '../components/Icon';
 
 /**
  * Profil: kirmagan bo'lsa - kirish/ro'yxatdan o'tish (Google va Telegram
@@ -105,7 +106,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
           {googleSignInAvailable && (
             <Button
               title={t.withGoogle}
-              icon="G"
+              icon="google"
               variant="outline"
               compact
               loading={social === 'google'}
@@ -115,7 +116,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
           )}
           <Button
             title={t.withTelegram}
-            icon="✈"
+            icon="telegram"
             variant="outline"
             compact
             loading={social === 'telegram'}
@@ -168,7 +169,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
 
         <Button
           title={t.titleSettings}
-          icon="⚙"
+          icon="settings"
           variant="outline"
           onPress={() => navigation.navigate('Sozlamalar')}
         />
@@ -207,25 +208,25 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
 
       <Button
         title={t.myOrders}
-        icon="📦"
+        icon="orders"
         variant="outline"
         onPress={() => navigation.navigate('Buyurtmalarim')}
       />
       <Button
         title={t.titleBlog}
-        icon="📰"
+        icon="blog"
         variant="outline"
         onPress={() => navigation.navigate('Blog')}
       />
       <Button
         title={t.titleContact}
-        icon="📞"
+        icon="phone"
         variant="outline"
         onPress={() => navigation.navigate('Kontakt')}
       />
       <Button
         title={t.titleSettings}
-        icon="⚙"
+        icon="settings"
         variant="outline"
         onPress={() => navigation.navigate('Sozlamalar')}
       />
@@ -234,25 +235,28 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
           u yerda sayt hisobingiz bilan kirasiz. */}
       {isStaffUser(user) && (
         <>
-          <Text style={styles.section}>🛠 {t.adminPanel}</Text>
+          <View style={styles.sectionRow}>
+            <Icon name="build" size={18} color={styles.c.accent} />
+            <Text style={styles.section}>{t.adminPanel}</Text>
+          </View>
           <Button
             title="Buyurtmalar"
-            icon="📋"
+            icon="receipt"
             onPress={() => navigation.navigate('AdminBuyurtmalar')}
           />
           <Button
             title="Mahsulotlar (kirim va tahrir)"
-            icon="📦"
+            icon="orders"
             onPress={() => navigation.navigate('AdminMahsulotlar')}
           />
           <Button
             title="Statistika, blog, promokod, mijozlar"
-            icon="📊"
+            icon="stats"
             onPress={() => navigation.navigate('AdminQolgan')}
           />
           <Button
             title="To'liq panel (brauzerda)"
-            icon="🌐"
+            icon="language"
             variant="outline"
             onPress={() => Linking.openURL(`${SITE_URL}/admin`)}
           />
@@ -262,7 +266,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
 
       <Button
         title={t.openSite}
-        icon="🌐"
+        icon="language"
         variant="outline"
         onPress={() => Linking.openURL(SITE_URL)}
       />
@@ -272,6 +276,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
 }
 
 const useStyles = makeStyles(c => ({
+  sectionRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8},
   section: {color: c.text, fontWeight: '800', fontSize: 16, marginTop: spacing.sm},
   screen: {flex: 1, backgroundColor: c.bg},
   title: {fontSize: 22, fontWeight: '800', color: c.text},

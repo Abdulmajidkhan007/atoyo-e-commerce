@@ -6,6 +6,7 @@ import {useAppDispatch, useAppSelector} from '../store';
 import {clearCart, removeItem, setQuantity} from '../store/cartSlice';
 import {Button, EmptyState} from '../components/ui';
 import type {TabScreenProps} from '../navigation/types';
+import {Icon} from '../components/Icon';
 
 /** Savat: soni +/−, o'chirish va rasmiylashtirishga o'tish. */
 export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
@@ -56,7 +57,7 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
                   onPress={() =>
                     dispatch(setQuantity({productId: item.productId, variantId: item.variantId, quantity: item.quantity - 1}))
                   }>
-                  <Text style={styles.qtyBtnText}>−</Text>
+                  <Icon name="remove" size={16} color={styles.c.text} />
                 </Pressable>
                 <Text style={styles.qty}>{item.quantity}</Text>
                 <Pressable
@@ -64,13 +65,13 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
                   onPress={() =>
                     dispatch(setQuantity({productId: item.productId, variantId: item.variantId, quantity: item.quantity + 1}))
                   }>
-                  <Text style={styles.qtyBtnText}>+</Text>
+                  <Icon name="add" size={16} color={styles.c.text} />
                 </Pressable>
 
                 <Pressable
                   style={{marginLeft: 'auto'}}
                   onPress={() => dispatch(removeItem({productId: item.productId, variantId: item.variantId}))}>
-                  <Text style={{fontSize: 18}}>🗑</Text>
+                  <Icon name="trash" size={20} color={styles.c.danger} />
                 </Pressable>
               </View>
             </View>
@@ -115,7 +116,6 @@ const useStyles = makeStyles(c => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  qtyBtnText: {fontSize: 18, color: c.text},
   qty: {minWidth: 24, textAlign: 'center', color: c.text, fontWeight: '600'},
   footer: {
     borderTopWidth: 1,

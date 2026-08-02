@@ -64,7 +64,7 @@ export function ContactScreen() {
 
       <Button
         title="Telegram"
-        icon="✈"
+        icon="telegram"
         variant="outline"
         onPress={() => Linking.openURL('https://t.me/Atoyo_uz_bot')}
       />

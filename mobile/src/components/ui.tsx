@@ -8,6 +8,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
+import {Icon, type IconName} from './Icon';
 
 /** Ilova bo'ylab takrorlanadigan kichik UI bo'laklari - bir joyda. */
 
@@ -43,8 +44,8 @@ export function Button({
   variant?: 'primary' | 'outline' | 'danger';
   disabled?: boolean;
   loading?: boolean;
-  /** Matndan oldin turadigan belgi (emoji yoki harf). */
-  icon?: string;
+  /** Matndan oldin turadigan ikonka (saytdagi Material belgilari). */
+  icon?: IconName;
   /** Yonma-yon turadigan kichik tugma (Google/Telegram kabi). */
   compact?: boolean;
 }) {
@@ -69,10 +70,10 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : (
-        <Text style={[styles.buttonText, {color: textColor}]}>
-          {icon ? `${icon}  ` : ''}
-          {title}
-        </Text>
+        <View style={styles.buttonRow}>
+          {icon && <Icon name={icon} size={18} color={textColor} />}
+          <Text style={[styles.buttonText, {color: textColor}]}>{title}</Text>
+        </View>
       )}
     </Pressable>
   );
@@ -93,15 +94,21 @@ export function Field(props: TextInputProps & {label: string}) {
   );
 }
 
-/** Yulduzli reyting (faqat ko'rsatish uchun). */
+/** Yulduzli reyting (faqat ko'rsatish uchun) - saytdagi kabi ikonkalar. */
 export function Stars({value, size = 14}: {value: number; size?: number}) {
   const styles = useStyles();
   const rounded = Math.round(value);
   return (
-    <Text style={{fontSize: size, color: styles.c.accent}}>
-      {'★'.repeat(rounded)}
-      <Text style={{color: styles.c.border}}>{'★'.repeat(Math.max(0, 5 - rounded))}</Text>
-    </Text>
+    <View style={{flexDirection: 'row'}}>
+      {[0, 1, 2, 3, 4].map(i => (
+        <Icon
+          key={i}
+          name={i < rounded ? 'star' : 'starBorder'}
+          size={size + 3}
+          color={i < rounded ? styles.c.accent : styles.c.border}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -151,6 +158,7 @@ const useStyles = makeStyles(c => ({
   },
   buttonCompact: {flex: 1, minHeight: 44, paddingHorizontal: spacing.md},
   buttonOutline: {borderWidth: 1, borderColor: c.border},
+  buttonRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
   buttonText: {fontWeight: '700', fontSize: 15},
   label: {color: c.muted, fontSize: 13},
   input: {
