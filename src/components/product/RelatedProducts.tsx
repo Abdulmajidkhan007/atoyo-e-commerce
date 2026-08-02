@@ -8,7 +8,14 @@ import type { Product } from "@/types/product";
  * O'XSHASH MAHSULOTLAR - mahsulot sahifasining pastida.
  * Server komponenti: qo'shimcha JS yubormaydi, shunchaki havolalar.
  */
-export function RelatedProducts({ products }: { products: Product[] }) {
+export function RelatedProducts({
+  products,
+  /** Sarlavha; bo'sh matn berilsa umuman chiqmaydi (almashtiruvchilar bloki). */
+  title = "O'xshash mahsulotlar",
+}: {
+  products: Product[];
+  title?: string;
+}) {
   if (products.length === 0) return null;
 
   const priceOf = (product: Product) => {
@@ -17,8 +24,10 @@ export function RelatedProducts({ products }: { products: Product[] }) {
   };
 
   return (
-    <div className="mt-10 flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-navy-900 dark:text-white">O&apos;xshash mahsulotlar</h2>
+    <div className={title ? "mt-10 flex flex-col gap-4" : "flex flex-col gap-4"}>
+      {title && (
+        <h2 className="text-lg font-semibold text-navy-900 dark:text-white">{title}</h2>
+      )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {products.map((product) => (

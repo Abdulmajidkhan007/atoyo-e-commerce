@@ -64,8 +64,12 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
   if (!product) notFound();
 
-  // O'xshash mahsulotlar - shu kategoriyadan (sahifaning pastida).
+  // O'xshash mahsulotlar: avval MAXSUS KALIT SO'Z bo'yicha
+  // (almashtiriladigan mahsulotlar), keyin shu kategoriyadan.
   const related = await getRelatedProducts(product, 8).catch(() => []);
+  // Mahsulot tugagan bo'lsa - zaxirada bori tepada ko'rsatiladi.
+  const outOfStock = (product.stock ?? 0) <= 0;
+  const replacements = outOfStock ? related.filter((item) => item.stock > 0).slice(0, 4) : [];
 
   // Admin qo'shgan kategoriya/sotish turi lug'atda bo'lmasligi mumkin -
   // bunday holda `metadata/taxonomy` dagi nom ishlatiladi.
@@ -79,6 +83,17 @@ export default async function ProductPage({ params }: ProductPageParams) {
     <section className="mx-auto max-w-5xl px-4 py-8">
       {/* Google uchun: narx, mavjudlik, reyting (rich result). */}
       <JsonLd data={productJsonLd(product, categoryLabel)} />
+
+      {/* Tugagan mahsulot - mijoz bo'sh qaytmasin: shu vazifadagi
+          mavjud mahsulotlar darrov ko'rsatiladi. */}
+      {replacements.length > 0 && (
+        <div className="mb-6 rounded-xl2 border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-900/20">
+          <p className="mb-3 font-medium text-amber-900 dark:text-amber-100">
+            Bu mahsulot hozir tugagan — o&apos;rniga shu vazifadagilar bor:
+          </p>
+          <RelatedProducts products={replacements} title="" />
+        </div>
+      )}
       <div className="grid gap-8 md:grid-cols-2">
         <ProductGallery
           images={product.images.length > 0 ? product.images : product.thumbnailUrl ? [product.thumbnailUrl] : []}

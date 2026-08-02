@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
-import { buildNameTokens } from "@/lib/search/tokens";
+import { buildNameTokens, normalizeKeywords } from "@/lib/search/tokens";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
 import { normalizeVariants } from "@/lib/products/variants";
@@ -18,6 +18,11 @@ const productSchema = z.object({
   description: z.string().max(4000).default(""),
   /** Do'kon kodi / artikul (ixtiyoriy). */
   sku: z.string().max(60).default(""),
+  /**
+   * MAXSUS KALIT SO'ZLAR - o'zaro almashtiriladigan mahsulotlarni
+   * bog'laydi ("rakovina kalta smesitel" kabi). Ixtiyoriy.
+   */
+  keywords: z.array(z.string().max(60)).max(10).default([]),
   // Kategoriya/material admin qo'shgan yangi turlar ham bo'lishi mumkin
   // (metadata/taxonomy) - shuning uchun ro'yxat emas, slug tekshiriladi.
   category: z.string().min(1).max(60),
@@ -61,6 +66,7 @@ const productSchema = z.object({
         discountPrice: z.number().nonnegative().nullable().optional(),
         stock: z.number().int().nonnegative(),
         sku: z.string().max(60).optional(),
+  keywords: z.array(z.string().max(60)).max(10).optional(),
       })
     )
     .max(90)
@@ -108,7 +114,8 @@ export async function POST(request: Request) {
     slug: `${slugify(d.name)}-${ref.id.slice(0, 6)}`,
     name: d.name.trim(),
     nameSearchIndex: d.name.trim().toLowerCase(),
-    nameTokens: buildNameTokens(d.name, d.brand, d.sku),
+    keywords: normalizeKeywords(d.keywords),
+    nameTokens: buildNameTokens(d.name, d.brand, d.sku, normalizeKeywords(d.keywords)),
     description: d.description.trim(),
     sku: d.sku.trim(),
     category: d.category,

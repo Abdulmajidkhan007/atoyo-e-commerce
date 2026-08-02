@@ -132,9 +132,16 @@ export async function searchProducts(term: string, limit = 20): Promise<Product[
 
   // So'zlarning HAMMASI mos kelganlari oldinda tursin.
   const strong = results.filter(p =>
-    matchesAllWords([p.name, p.brand, p.code].filter(Boolean).join(' '), q),
+    matchesAllWords(
+      [p.name, p.brand, p.code, ...(p.keywords ?? [])].filter(Boolean).join(' '),
+      q,
+    ),
   );
-  return (strong.length > 0 ? strong : results).slice(0, limit);
+  // Zaxirada bori oldinda tursin.
+  const ordered = (strong.length > 0 ? strong : results).sort(
+    (a, b) => Number(b.stock > 0) - Number(a.stock > 0),
+  );
+  return ordered.slice(0, limit);
 }
 
 export async function fetchProduct(id: string): Promise<Product | null> {

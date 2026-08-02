@@ -38,9 +38,28 @@ export function normalizeSearchWord(word: string): string {
     .replace(/\s+/g, "");
 }
 
-export function buildNameTokens(name: string, brand?: string, sku?: string): string[] {
+/**
+ * MAXSUS KALIT SO'ZLARNI tozalaydi: kichik harf, ortiqcha bo'shliqsiz,
+ * takrorsiz. "Rakovina Kalta " va "rakovina kalta" bir xil kalit
+ * bo'lishi uchun barchasi bir ko'rinishga keltiriladi.
+ */
+export function normalizeKeywords(input: string[] | string | undefined): string[] {
+  const list = Array.isArray(input) ? input : (input ?? "").split(",");
+  const cleaned = list
+    .map((item) => item.trim().toLowerCase().replace(/\s+/g, " "))
+    .filter((item) => item.length >= 2);
+  return Array.from(new Set(cleaned)).slice(0, 10);
+}
+
+export function buildNameTokens(
+  name: string,
+  brand?: string,
+  sku?: string,
+  /** Maxsus kalitlar ham qidiruvga tushadi. */
+  keywords?: string[]
+): string[] {
   // Kod (artikul) ham tokenlarga tushadi - "HS897" deb qidirilsa topiladi.
-  const source = `${name} ${brand ?? ""} ${sku ?? ""}`.toLowerCase();
+  const source = `${name} ${brand ?? ""} ${sku ?? ""} ${(keywords ?? []).join(" ")}`.toLowerCase();
   const words = source
     .split(/[^a-zA-Z0-9а-яА-ЯёЁўЎқҚғҒҳҲ'ʼ/.-]+/u)
     .map((w) => w.trim())

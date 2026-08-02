@@ -47,6 +47,7 @@ const MAX_IMAGES = 10;
 const EMPTY_FORM = {
   name: "",
   sku: "",
+  keywords: "",
   description: "",
   category: "",
   material: "",
@@ -126,6 +127,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
           ? {
               name: product.name,
               sku: product.sku ?? "",
+              keywords: (product.keywords ?? []).join(", "),
               description: product.description,
               category: product.category,
               material: product.material,
@@ -253,6 +255,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       const payload = {
         name: form.name.trim(),
         sku: form.sku.trim(),
+        keywords: form.keywords.split(",").map((item) => item.trim()).filter(Boolean),
         description: form.description.trim(),
         category: form.category,
         material: form.material,
@@ -310,6 +313,18 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         label="Nomi *"
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
+        fullWidth
+      />
+
+      {/* MAXSUS KALIT SO'Z - o'zaro almashtiriladigan mahsulotlarni
+          bog'laydi. Ixtiyoriy, lekin qidiruv sifati shunga bog'liq. */}
+      <TextField
+        size="small"
+        label="Maxsus kalit so'zlar (vergul bilan)"
+        placeholder="rakovina kalta smesitel, 7013 seriya"
+        value={form.keywords}
+        onChange={(e) => setForm({ ...form, keywords: e.target.value })}
+        helperText="Bir xil vazifadagi mahsulotlarga BIR XIL kalit yozing — mijoz bittasini qidirsa, o'shanga o'xshashlari ham chiqadi va tugab qolganda almashtiruvchisi ko'rsatiladi."
         fullWidth
       />
 

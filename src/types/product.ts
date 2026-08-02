@@ -65,6 +65,14 @@ export interface Product {
   nameSearchIndex: string;
   /** Nom/brend so'zlari (array-contains qidiruvi - so'z nomning istalgan joyida bo'lsa topadi) */
   nameTokens?: string[];
+  /**
+   * MAXSUS KALIT SO'ZLAR - o'zaro ALMASHTIRILADIGAN mahsulotlarni
+   * bog'lab turadi. Masalan "rakovina-kalta-smesitel" kaliti bir necha
+   * brendning bir xil vazifadagi mahsulotlarida bo'lsa, mijoz bittasini
+   * qidirganda (yoki u tugab qolganda) qolganlari ham ko'rsatiladi.
+   * Ixtiyoriy, lekin kirim formasida ko'zga tashlanadigan joyda turadi.
+   */
+  keywords?: string[];
   description: string;
   /** Do'kon kodi / artikul (masalan "HS897") - qidiruvda ham ishlaydi. */
   sku?: string;

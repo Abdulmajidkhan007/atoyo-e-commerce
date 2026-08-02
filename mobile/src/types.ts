@@ -35,6 +35,8 @@ export interface Product {
   name: string;
   description: string;
   category: ProductCategory;
+  /** Maxsus kalit so'zlar - o'zaro almashtiriladigan mahsulotlar. */
+  keywords?: string[];
   brand: string;
   manufacturerCountry: string;
   material: string;

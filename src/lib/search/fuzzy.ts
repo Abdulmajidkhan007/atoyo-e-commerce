@@ -15,7 +15,10 @@ import type { Product } from "@/types/product";
  */
 export function createFuzzySearcher(products: Product[]) {
   const fuse = new Fuse(products, {
-    keys: ["name", "brand", "sku"],
+    // Maxsus kalit so'zlar ham qidiruvga kiradi: "rakovina kalta
+    // smesitel" deb yozilganda shu kalitli mahsulotlarning hammasi
+    // chiqadi (bir-birini almashtiradiganlari).
+    keys: ["name", "brand", "sku", "keywords"],
     threshold: 0.35, // 0 = aniq mos kelish, 1 = juda erkin
     ignoreLocation: true,
     minMatchCharLength: 2,
@@ -31,6 +34,10 @@ export function createFuzzySearcher(products: Product[]) {
      * Fuse butun iborani bir butun deb qidirgani uchun bunday teskari
      * tartibdagi so'rovlarni tashlab yuborardi.
      */
+    /** Zaxirada bori oldinda - mijoz avval sotib olsa bo'ladiganini ko'rsin. */
+    const inStockFirst = (list: Product[]) =>
+      [...list].sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0));
+
     const exact = products.filter((product) => {
       const haystack = [product.name, product.brand, product.sku, product.code]
         .filter(Boolean)
@@ -38,9 +45,9 @@ export function createFuzzySearcher(products: Product[]) {
         .toLowerCase();
       return words.every((word) => haystack.includes(word));
     });
-    if (exact.length > 0) return exact;
+    if (exact.length > 0) return inStockFirst(exact);
 
     // 2-BOSQICH: aniq mos kelmasa - xatoga chidamli (typo) qidiruv.
-    return fuse.search(term).map((result) => result.item);
+    return inStockFirst(fuse.search(term).map((result) => result.item));
   };
 }

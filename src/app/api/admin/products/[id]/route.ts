@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
-import { buildNameTokens } from "@/lib/search/tokens";
+import { buildNameTokens, normalizeKeywords } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
 import { normalizeVariants } from "@/lib/products/variants";
 import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
@@ -15,6 +15,7 @@ const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(4000).optional(),
   sku: z.string().max(60).optional(),
+  keywords: z.array(z.string().max(60)).max(10).optional(),
   // Admin qo'shgan yangi turlar ham bo'lishi mumkin (metadata/taxonomy).
   category: z.string().min(1).max(60).optional(),
   material: z.string().min(1).max(60).optional(),
@@ -56,6 +57,7 @@ const updateSchema = z.object({
         discountPrice: z.number().nonnegative().nullable().optional(),
         stock: z.number().int().nonnegative(),
         sku: z.string().max(60).optional(),
+  keywords: z.array(z.string().max(60)).max(10).optional(),
       })
     )
     .max(90)
@@ -89,14 +91,25 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const existing = snapshot.data() as Product;
   const updates: Record<string, unknown> = { updatedAt: Date.now() };
 
-  if (d.name !== undefined || d.sku !== undefined || d.brand !== undefined) {
+  if (d.keywords !== undefined) updates.keywords = normalizeKeywords(d.keywords);
+  if (
+    d.name !== undefined ||
+    d.sku !== undefined ||
+    d.brand !== undefined ||
+    d.keywords !== undefined
+  ) {
     // Tokenlar nom + brend + KOD dan yasaladi. Ilgari bu yerda kod
     // berilmasdi va mahsulot tahrirlanganda "8276" kabi kod bo'yicha
     // qidiruv ishlamay qolardi.
     const name = d.name ?? existing.name;
     updates.name = name.trim();
     updates.nameSearchIndex = name.trim().toLowerCase();
-    updates.nameTokens = buildNameTokens(name, d.brand ?? existing.brand, d.sku ?? existing.sku);
+    updates.nameTokens = buildNameTokens(
+      name,
+      d.brand ?? existing.brand,
+      d.sku ?? existing.sku,
+      normalizeKeywords(d.keywords ?? existing.keywords)
+    );
   }
   if (d.description !== undefined) updates.description = d.description.trim();
   if (d.category !== undefined) updates.category = d.category;

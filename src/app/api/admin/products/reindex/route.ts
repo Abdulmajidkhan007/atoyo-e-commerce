@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     // Tokenlar HAR DOIM qayta hisoblanadi: qoida o'zgargan bo'lishi
     // mumkin (kirillcha->lotincha, kod/artikul qo'shilishi). Faqat
     // haqiqatan o'zgargan bo'lsa yoziladi.
-    const tokens = buildNameTokens(p.name, p.brand, p.sku);
+    const tokens = buildNameTokens(p.name, p.brand, p.sku, p.keywords);
     const sameTokens =
       Array.isArray(p.nameTokens) &&
       p.nameTokens.length === tokens.length &&
