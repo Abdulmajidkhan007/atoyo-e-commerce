@@ -121,6 +121,23 @@ export function ProductTable() {
     }
   };
 
+  /** Butun katalogni tashqi qidiruv motoriga yuborish. */
+  const handleSearchIndex = async () => {
+    setIsReindexing(true);
+    setReindexResult(null);
+    try {
+      const res = await fetch("/api/admin/products/search-index", { method: "POST" });
+      const data = await res.json();
+      setReindexResult(
+        res.ok ? `Qidiruv motoriga ${data.indexed} ta mahsulot yuborildi.` : data.error
+      );
+    } catch {
+      setReindexResult("Qidiruv motoriga ulanib bo'lmadi.");
+    } finally {
+      setIsReindexing(false);
+    }
+  };
+
   const handleDelete = async (productId: string) => {
     if (!confirm("Mahsulotni o'chirishni tasdiqlaysizmi?")) return;
     const res = await fetch(`/api/admin/products/${productId}`, { method: "DELETE" });
@@ -140,6 +157,12 @@ export function ProductTable() {
         {/* O'chirilgan mahsulotdan bo'sh raqam qolganda - qayta tartiblash. */}
         <Button variant="text" onClick={() => handleReindex(true)} disabled={isReindexing}>
           Raqamlarni qayta tartiblash
+        </Button>
+        {/* Tashqi qidiruv motori (Typesense) sozlangan bo'lsa - butun
+            katalogni unga yuborish. Sozlanmagan bo'lsa tugma sababini
+            aytadi. */}
+        <Button variant="text" onClick={handleSearchIndex} disabled={isReindexing}>
+          Qidiruv motorini to&apos;ldirish
         </Button>
         {reindexResult && <span className="text-sm text-navy-300">{reindexResult}</span>}
         <Button variant="contained" startIcon={<AddIcon />} className="!ml-auto" component={NextLink} href="/admin/katalog/kirim">
