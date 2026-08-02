@@ -1,5 +1,13 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Image, Pressable, ScrollView, Text, View, Modal} from 'react-native';
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {effectivePrice, type Product, type Review} from '../types';
@@ -47,6 +55,8 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   const [related, setRelated] = useState<Product[]>([]);
   /** Galereyada ochiq turgan rasm (to'liq ekran uchun). */
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
+  /** Galereya rasmi ekran kengligida bo'ladi (foiz bilan ishlamaydi). */
+  const {width: windowWidth} = useWindowDimensions();
 
   const loadReviews = useCallback(
     () => fetchReviews(productId).catch((): Review[] => []),
@@ -150,10 +160,10 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           showsHorizontalScrollIndicator={false}
           style={styles.gallery}>
           {gallery.map((url, index) => (
-            <Pressable key={url} onPress={() => setZoomUrl(url)}>
+            <Pressable key={url} onPress={() => setZoomUrl(url)} style={{width: windowWidth}}>
               <Image
                 source={{uri: url}}
-                style={styles.image}
+                style={[styles.image, {width: windowWidth}]}
                 resizeMode="contain"
                 alt={`${product.name} — ${index + 1}`}
               />
@@ -312,7 +322,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
               alt={product.name}
             />
           )}
-          <Icon name="close" size={24} color={styles.c.white} />
+          <Icon name="close" size={26} color={styles.c.white} style={styles.zoomClose} />
         </Pressable>
       </Modal>
     </ScrollView>
@@ -338,14 +348,7 @@ const useStyles = makeStyles(c => ({
     justifyContent: 'center',
   },
   zoomImage: {width: '100%', height: '100%'},
-  zoomClose: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    color: '#fff',
-    fontSize: 26,
-    fontWeight: '700',
-  },
+  zoomClose: {position: 'absolute', top: 40, right: 20},
   variant: {
     borderWidth: 1,
     borderColor: c.border,
@@ -359,7 +362,9 @@ const useStyles = makeStyles(c => ({
   variantTextOn: {color: c.onAccent},
   screen: {flex: 1, backgroundColor: c.bg},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg},
-  image: {width: '100%', height: 280, backgroundColor: c.surfaceAlt},
+  /* Eni ekran kengligiga teng: gorizontal ScrollView ichida foiz
+     ishlamaydi (0 bo'lib qoladi - rasm ko'rinmasdi). */
+  image: {height: 300, backgroundColor: c.surfaceAlt},
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
