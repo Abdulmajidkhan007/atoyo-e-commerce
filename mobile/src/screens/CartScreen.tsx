@@ -30,7 +30,7 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
     <View style={styles.screen}>
       <FlatList
         data={items}
-        keyExtractor={item => item.productId}
+        keyExtractor={item => `${item.productId}:${item.variantId ?? ''}`}
         contentContainerStyle={{padding: spacing.md, gap: spacing.sm}}
         renderItem={({item}) => (
           <View style={styles.row}>
@@ -46,13 +46,15 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
               <Text numberOfLines={2} style={styles.name}>
                 {item.name}
               </Text>
+              {/* Tanlangan tur (o'lcham/rang) - saytdagi savat kabi. */}
+              {!!item.variantLabel && <Text style={styles.variantLabel}>{item.variantLabel}</Text>}
               <Text style={styles.price}>{money(item.price * item.quantity)}</Text>
 
               <View style={styles.qtyRow}>
                 <Pressable
                   style={styles.qtyBtn}
                   onPress={() =>
-                    dispatch(setQuantity({productId: item.productId, quantity: item.quantity - 1}))
+                    dispatch(setQuantity({productId: item.productId, variantId: item.variantId, quantity: item.quantity - 1}))
                   }>
                   <Text style={styles.qtyBtnText}>−</Text>
                 </Pressable>
@@ -60,14 +62,14 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
                 <Pressable
                   style={styles.qtyBtn}
                   onPress={() =>
-                    dispatch(setQuantity({productId: item.productId, quantity: item.quantity + 1}))
+                    dispatch(setQuantity({productId: item.productId, variantId: item.variantId, quantity: item.quantity + 1}))
                   }>
                   <Text style={styles.qtyBtnText}>+</Text>
                 </Pressable>
 
                 <Pressable
                   style={{marginLeft: 'auto'}}
-                  onPress={() => dispatch(removeItem({productId: item.productId}))}>
+                  onPress={() => dispatch(removeItem({productId: item.productId, variantId: item.variantId}))}>
                   <Text style={{fontSize: 18}}>🗑</Text>
                 </Pressable>
               </View>
@@ -89,6 +91,7 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
 }
 
 const useStyles = makeStyles(c => ({
+  variantLabel: {color: c.accent, fontSize: 12, fontWeight: '600'},
   screen: {flex: 1, backgroundColor: c.bg},
   row: {
     flexDirection: 'row',

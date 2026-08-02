@@ -12,6 +12,13 @@ import {Button, Field, Loading, Stars} from '../components/ui';
 import {useAuth} from '../auth';
 import type {StackScreenProps} from '../navigation/types';
 import {useToast} from '../components/Toast';
+import {
+  defaultVariant,
+  findVariant,
+  hasVariants,
+  variantLabel,
+  variantPrice,
+} from '../variants';
 
 /** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
 export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>) {
@@ -28,6 +35,12 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
+  /**
+   * Tanlangan tur qiymatlari. Foydalanuvchi hali tanlamagan bo'lsa -
+   * mahsulot yuklangach birinchi mavjud tur ishlatiladi (effekt ichida
+   * setState qilmaslik uchun holat "picked" bo'lib turadi).
+   */
+  const [picked, setPicked] = useState<Record<string, string> | null>(null);
 
   const loadReviews = useCallback(
     () => fetchReviews(productId).catch((): Review[] => []),
@@ -58,12 +71,27 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
     );
   }
 
-  const price = effectivePrice(product);
+  // TURLARI bo'lgan mahsulotda narx va zaxira tanlangan turdan olinadi.
+  const withVariants = hasVariants(product);
+  const selection = picked ?? defaultVariant(product)?.options ?? {};
+  const setSelection = (
+    updater: (prev: Record<string, string>) => Record<string, string>,
+  ) => setPicked(prev => updater(prev ?? selection));
+  const variant = withVariants ? findVariant(product, selection) : null;
+  const price = withVariants
+    ? variant
+      ? variantPrice(variant)
+      : product.price
+    : effectivePrice(product);
+  const stock = withVariants ? (variant?.stock ?? 0) : product.stock;
 
   const handleAddToCart = () => {
     dispatch(
       addItem({
         productId: product.id,
+        ...(variant
+          ? {variantId: variant.id, variantLabel: variantLabel(product, variant)}
+          : {}),
         name: product.name,
         price,
         quantity: 1,
@@ -126,21 +154,46 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           </View>
         )}
 
+        {/* Tur tanlash tugmalari (o'lcham/rang/qalinlik) */}
+        {withVariants &&
+          (product.variantAxes ?? []).map(axis => (
+            <View key={axis.key} style={{gap: spacing.xs}}>
+              <Text style={styles.muted}>{axis.label}</Text>
+              <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs}}>
+                {axis.values.map(value => {
+                  const selected = selection[axis.key] === value;
+                  return (
+                    <Pressable
+                      key={value}
+                      onPress={() => setSelection(prev => ({...prev, [axis.key]: value}))}
+                      style={[styles.variant, selected && styles.variantOn]}>
+                      <Text style={[styles.variantText, selected && styles.variantTextOn]}>
+                        {value}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+
         <View style={{flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm}}>
-          {price < product.price && <Text style={styles.oldPrice}>{money(product.price)}</Text>}
+          {price < (variant?.price ?? product.price) && (
+            <Text style={styles.oldPrice}>{money(variant?.price ?? product.price)}</Text>
+          )}
           <Text style={styles.price}>{money(price)}</Text>
         </View>
 
         <Text style={styles.muted}>
-          {product.stock > 0 ? t.inStockCount(product.stock) : t.notAvailable}
+          {stock > 0 ? t.inStockCount(stock) : t.notAvailable}
         </Text>
 
         {!!product.description && <Text style={styles.description}>{product.description}</Text>}
 
         <Button
-          title={product.stock > 0 ? t.addToCart : t.outOfStock}
+          title={stock > 0 ? t.addToCart : t.outOfStock}
           onPress={handleAddToCart}
-          disabled={product.stock <= 0}
+          disabled={stock <= 0 || (withVariants && !variant)}
         />
 
         {/* ---- Sharhlar ---- */}
@@ -180,6 +233,17 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
 }
 
 const useStyles = makeStyles(c => ({
+  variant: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    backgroundColor: c.surface,
+  },
+  variantOn: {backgroundColor: c.accent, borderColor: c.accent},
+  variantText: {color: c.text, fontSize: 13, fontWeight: '600'},
+  variantTextOn: {color: c.onAccent},
   screen: {flex: 1, backgroundColor: c.bg},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg},
   image: {width: '100%', height: 280, backgroundColor: c.surfaceAlt},

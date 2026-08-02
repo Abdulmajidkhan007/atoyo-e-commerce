@@ -6,6 +6,7 @@ import {effectivePrice, type Product} from '../types';
 import {useAppDispatch, useAppSelector} from '../store';
 import {toggleFavorite} from '../store/favoritesSlice';
 import {Stars} from './ui';
+import {hasVariants, minVariantPrice} from '../variants';
 
 /** Katalog va bosh sahifadagi mahsulot kartochkasi (sayt bilan bir xil). */
 export function ProductCard({product, onPress}: {product: Product; onPress: () => void}) {
@@ -13,8 +14,11 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
   const {t, money} = useI18n();
   const dispatch = useAppDispatch();
   const isFavorite = useAppSelector(s => s.favorites.ids.includes(product.id));
-  const price = effectivePrice(product);
-  const hasDiscount = price < product.price;
+  // Turlari bo'lgan mahsulotda narx "eng arzonidan" ko'rinishida
+  // chiqadi - tanlash mahsulot sahifasida bo'ladi (saytdagi kabi).
+  const withVariants = hasVariants(product);
+  const price = withVariants ? (minVariantPrice(product) ?? product.price) : effectivePrice(product);
+  const hasDiscount = !withVariants && price < product.price;
 
   return (
     <Pressable onPress={onPress} style={({pressed}) => [styles.card, pressed && {opacity: 0.9}]}>
@@ -50,7 +54,10 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
         {(product.ratingCount ?? 0) > 0 && <Stars value={product.ratingAvg ?? 0} />}
         <View style={styles.priceRow}>
           {hasDiscount && <Text style={styles.oldPrice}>{money(product.price)}</Text>}
-          <Text style={styles.price}>{money(price)}</Text>
+          <Text style={styles.price}>
+            {money(price)}
+            {withVariants ? ' dan' : ''}
+          </Text>
         </View>
       </View>
     </Pressable>

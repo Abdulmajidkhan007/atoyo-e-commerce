@@ -13,6 +13,26 @@ export type ProductCategory =
   | 'pumps'
   | 'sanitary-ware';
 
+/**
+ * TURLAR (variantlar) - saytdagi `src/types/product.ts` bilan bir xil.
+ * Bitta mahsulotning o'lchami/rangi/qalinligi bo'yicha farq qiladigan
+ * ko'rinishlari; har birining o'z narxi va zaxirasi bor.
+ */
+export interface VariantAxis {
+  key: string;
+  label: string;
+  values: string[];
+}
+
+export interface ProductVariant {
+  id: string;
+  options: Record<string, string>;
+  price: number;
+  discountPrice?: number | null;
+  stock: number;
+  sku?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -28,6 +48,9 @@ export interface Product {
   images: string[];
   thumbnailUrl: string;
   isActive: boolean;
+  isDraft?: boolean;
+  variantAxes?: VariantAxis[];
+  variants?: ProductVariant[];
   ratingAvg?: number;
   ratingCount?: number;
   createdAt: number;
@@ -35,6 +58,10 @@ export interface Product {
 
 export interface CartItem {
   productId: string;
+  /** Tanlangan tur kaliti (turlari bo'lgan mahsulotda). */
+  variantId?: string;
+  /** "50x60 • 0.3mm" - savatda va buyurtmada ko'rinadi. */
+  variantLabel?: string;
   name: string;
   price: number;
   quantity: number;
