@@ -25,9 +25,25 @@ function slugify(title: string): string {
   );
 }
 
+/**
+ * Barcha maqolalar (chop etilgani ham, chernovigi ham) - mobil ilovaning
+ * admin bo'limi uchun. Saytda bu ro'yxat server komponentida o'qiladi.
+ */
+export async function GET(request: Request) {
+  const admin = await requirePermission("blog", request);
+  if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  const snap = await getAdminDb().collection("blogPosts").limit(100).get();
+  const posts = snap.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() }))
+    .sort((a, b) => ((b as { createdAt?: number }).createdAt ?? 0) - ((a as { createdAt?: number }).createdAt ?? 0));
+
+  return NextResponse.json({ posts });
+}
+
 /** Yangi blog post yaratish (faqat admin). */
 export async function POST(request: Request) {
-  const admin = await requirePermission("blog");
+  const admin = await requirePermission("blog", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = postSchema.safeParse(await request.json().catch(() => null));

@@ -20,6 +20,7 @@ import {ContactScreen} from '../screens/ContactScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
 import {AdminOrdersScreen} from '../screens/AdminOrdersScreen';
 import {AdminProductsScreen} from '../screens/AdminProductsScreen';
+import {AdminMoreScreen} from '../screens/AdminMoreScreen';
 import type {RootStackParamList, TabParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -139,6 +140,11 @@ export function RootNavigator() {
         name="AdminMahsulotlar"
         component={AdminProductsScreen}
         options={{header: () => <BrandHeader back title="Mahsulotlar" />}}
+      />
+      <Stack.Screen
+        name="AdminQolgan"
+        component={AdminMoreScreen}
+        options={{header: () => <BrandHeader back title="Boshqaruv" />}}
       />
     </Stack.Navigator>
   );

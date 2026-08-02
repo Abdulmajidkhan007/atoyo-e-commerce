@@ -125,6 +125,79 @@ export async function adminUpdateProduct(
   });
 }
 
+/** Dashboard raqamlari va eng ko'p sotilganlar. */
+export async function adminStats(): Promise<{
+  stats: {totalOrders: number; totalRevenue: number};
+  topProducts: {id: string; name: string; code: number | null; salesCount: number; price: number}[];
+}> {
+  return request('/api/admin/stats');
+}
+
+/** Blog: barcha maqolalar (chernoviklar ham). */
+export async function adminBlogPosts(): Promise<AdminBlogPost[]> {
+  const data = await request<{posts: AdminBlogPost[]}>('/api/admin/blog');
+  return data.posts ?? [];
+}
+
+/** Maqolani chop etish / chernovikka qaytarish. */
+export async function adminSetPostPublished(postId: string, isPublished: boolean) {
+  return request<{ok: true}>(`/api/admin/blog/${postId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({isPublished}),
+  });
+}
+
+/** Promokodlar ro'yxati. */
+export async function adminPromoCodes(): Promise<AdminPromo[]> {
+  const data = await request<{promos: AdminPromo[]}>('/api/admin/promo');
+  return data.promos ?? [];
+}
+
+/** Yangi promokod. */
+export async function adminCreatePromo(input: {
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  minOrderAmount?: number;
+}) {
+  return request<{ok: true}>('/api/admin/promo', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/** Foydalanuvchilar ro'yxati (faqat ko'rish). */
+export async function adminUsers(): Promise<AdminUser[]> {
+  const data = await request<{users: AdminUser[]}>('/api/admin/users');
+  return data.users ?? [];
+}
+
+export interface AdminBlogPost {
+  id: string;
+  title: string;
+  excerpt?: string;
+  isPublished: boolean;
+  createdAt?: number;
+}
+
+export interface AdminPromo {
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  usedCount?: number;
+  isActive: boolean;
+}
+
+export interface AdminUser {
+  uid: string;
+  displayName?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  role?: string;
+  ordersCount?: number;
+  totalSpent?: number;
+}
+
 export interface AdminIntakeItem {
   productId: string;
   variantId?: string;

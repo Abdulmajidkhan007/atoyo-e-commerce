@@ -25,6 +25,7 @@ export type RootStackParamList = {
   /** Faqat xodimlar uchun (profil sahifasidan ochiladi). */
   AdminBuyurtmalar: undefined;
   AdminMahsulotlar: undefined;
+  AdminQolgan: undefined;
 };
 
 /** Tab ekranlari stack'ga ham o'ta oladi - shuning uchun composite. */

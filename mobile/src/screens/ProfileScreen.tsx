@@ -246,6 +246,11 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
             onPress={() => navigation.navigate('AdminMahsulotlar')}
           />
           <Button
+            title="Statistika, blog, promokod, mijozlar"
+            icon="📊"
+            onPress={() => navigation.navigate('AdminQolgan')}
+          />
+          <Button
             title="To'liq panel (brauzerda)"
             icon="🌐"
             variant="outline"

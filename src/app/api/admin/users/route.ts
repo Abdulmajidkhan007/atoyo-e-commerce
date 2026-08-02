@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { getCurrentAppUser } from "@/lib/firebase/session";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { hasPermission, isOwner } from "@/lib/permissions";
 import type { AppUser } from "@/types/user";
 
@@ -18,7 +18,8 @@ const PAGE_SIZE = 20;
  * aylanardi. Endi o'qish ham server tomonda.
  */
 export async function GET(request: Request) {
-  const viewer = await getCurrentAppUser();
+  // Ilova cookie emas, Bearer token yuboradi - ikkalasi ham qabul qilinadi.
+  const viewer = await getAppUserFromRequest(request);
   if (!isOwner(viewer) && !hasPermission(viewer, "users")) {
     return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
   }

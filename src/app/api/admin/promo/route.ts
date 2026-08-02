@@ -18,8 +18,8 @@ const promoSchema = z.object({
 });
 
 /** Promokodlar ro'yxati (admin). */
-export async function GET() {
-  const admin = await requirePermission("settings");
+export async function GET(request: Request) {
+  const admin = await requirePermission("settings", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const snap = await getAdminDb().collection("promoCodes").limit(200).get();
@@ -31,7 +31,7 @@ export async function GET() {
 
 /** Yangi promokod yaratish. Kod hujjat ID'si bo'lgani uchun takrorlanmaydi. */
 export async function POST(request: Request) {
-  const admin = await requirePermission("settings");
+  const admin = await requirePermission("settings", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = promoSchema.safeParse(await request.json().catch(() => null));
