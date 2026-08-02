@@ -209,3 +209,43 @@ jobs:
           else
             gh release create latest "$APK" --target "$GITHUB_SHA" --title "Atoyo ilovasi (oxirgi build)" --notes "$NOTES" --latest
           fi
+
+  # ---------------------------------------------------------------------
+  # 3) FIRESTORE QOIDALARI VA INDEKSLARI (~1 daq).
+  #
+  #    `firestore.rules` va `firestore.indexes.json` repoda turadi, lekin
+  #    ilgari ular faqat qo'lda (Cloud Shell orqali) qo'llanardi. Endi
+  #    default branch'ga push bo'lganda avtomatik deploy qilinadi.
+  #
+  #    Kerak: FIREBASE_SERVICE_ACCOUNT secret'i - Firebase konsolida
+  #    Project settings -> Service accounts -> "Generate new private key"
+  #    tugmasi bilan olingan JSON faylning MAZMUNI. Secret qo'yilmagan
+  #    bo'lsa bu ish jimgina o'tkazib yuboriladi (CI qizarmaydi).
+  # ---------------------------------------------------------------------
+  firestore-rules:
+    name: Firestore qoidalari
+    needs: quality
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Qoidalar va indekslarni deploy qilish
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SERVICE_ACCOUNT}" ]; then
+            echo "::notice::FIREBASE_SERVICE_ACCOUNT secret'i yo'q - qoidalar deploy qilinmadi."
+            exit 0
+          fi
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx -y firebase-tools@13 deploy \
+            --only firestore:rules,firestore:indexes,storage \
+            --project atoyo-uz \
+            --non-interactive

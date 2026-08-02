@@ -206,11 +206,26 @@ O'z domeningiz (masalan `atoyo.uz`) bo'lsa — App Hosting → Domains →
 
 ### 5. Firestore qoidalari va indekslari
 
+**Avtomatik (tavsiya).** GitHub Actions har push'da (asosiy branch)
+qoidalar va indekslarni o'zi qo'llaydi. Buning uchun bir marta secret
+qo'shiladi:
+
+1. Firebase konsoli → ⚙️ **Project settings** → **Service accounts** →
+   **Generate new private key** → JSON fayl yuklab olinadi.
+2. GitHub → repozitoriya → **Settings** → **Secrets and variables** →
+   **Actions** → **New repository secret**:
+   - nomi: `FIREBASE_SERVICE_ACCOUNT`
+   - qiymati: yuklab olingan JSON faylning butun mazmuni.
+
+Secret qo'yilmagan bo'lsa CI shu qadamni jimgina o'tkazib yuboradi.
+
+**Qo'lda** (lokal kompyuter yoki Cloud Shell):
+
 ```bash
 firebase deploy --only firestore:rules,firestore:indexes,storage --project <PROJECT_ID>
 ```
 
-(Bu buyruq sandboxdan ishlamaydi — lokal kompyuteringizdan bajaring.)
+(Bu buyruq sandboxdan ishlamaydi — gRPC bloklangan.)
 
 ---
 
