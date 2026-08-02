@@ -31,6 +31,13 @@ export async function fetchNewProducts(limit = 10): Promise<Product[]> {
 export interface CatalogFilters {
   category?: ProductCategory;
   brand?: string;
+  /** Material slug'i (metadata/taxonomy dagi kabi). */
+  material?: string;
+  /** Ishlab chiqarilgan davlat. */
+  country?: string;
+  /** Narx oralig'i (so'mda) - xotirada filtrlanadi, indeks talab qilmaydi. */
+  minPrice?: number;
+  maxPrice?: number;
   sort?: 'newest' | 'price-asc' | 'price-desc';
 }
 
@@ -43,6 +50,8 @@ export async function fetchCatalog(filters: CatalogFilters, limit = PAGE): Promi
   let query = productsCollection().where('isActive', '==', true);
   if (filters.category) query = query.where('category', '==', filters.category);
   if (filters.brand) query = query.where('brand', '==', filters.brand);
+  if (filters.material) query = query.where('material', '==', filters.material);
+  if (filters.country) query = query.where('manufacturerCountry', '==', filters.country);
 
   const sort = filters.sort ?? 'newest';
   try {
@@ -53,7 +62,10 @@ export async function fetchCatalog(filters: CatalogFilters, limit = PAGE): Promi
           ? query.orderBy('price', 'desc')
           : query.orderBy('createdAt', 'desc');
     const snap = await ordered.limit(limit).get();
-    return snap.docs.map(d => ({id: d.id, ...d.data()}) as Product);
+    return byPrice(
+      snap.docs.map(d => ({id: d.id, ...d.data()}) as Product),
+      filters,
+    );
   } catch {
     const snap = await query.limit(100).get();
     const items = snap.docs.map(d => ({id: d.id, ...d.data()}) as Product);
@@ -64,8 +76,23 @@ export async function fetchCatalog(filters: CatalogFilters, limit = PAGE): Promi
           ? b.price - a.price
           : b.createdAt - a.createdAt,
     );
-    return items.slice(0, limit);
+    return byPrice(items, filters).slice(0, limit);
   }
+}
+
+/**
+ * Narx oralig'i xotirada filtrlanadi: Firestore'da diapazon so'rovi
+ * boshqa maydon bo'yicha saralash bilan birga kompozit indeks talab
+ * qiladi, ro'yxat esa baribir cheklangan (bir sahifa).
+ */
+function byPrice(items: Product[], filters: CatalogFilters): Product[] {
+  const min = filters.minPrice ?? 0;
+  const max = filters.maxPrice ?? Number.POSITIVE_INFINITY;
+  if (min <= 0 && max === Number.POSITIVE_INFINITY) return items;
+  return items.filter(item => {
+    const price = item.discountPrice && item.discountPrice > 0 ? item.discountPrice : item.price;
+    return price >= min && price <= max;
+  });
 }
 
 /** Nom bo'yicha qidiruv - saytdagi kabi prefiks indeksi ustidan. */
@@ -86,6 +113,29 @@ export async function searchProducts(term: string, limit = 20): Promise<Product[
 export async function fetchProduct(id: string): Promise<Product | null> {
   const doc = await productsCollection().doc(id).get();
   return doc.exists ? ({id: doc.id, ...doc.data()} as Product) : null;
+}
+
+/**
+ * O'XSHASH MAHSULOTLAR - saytdagi kabi shu kategoriyadan (eng ko'p
+ * sotilgani oldinda), o'zi ro'yxatdan chiqarib tashlanadi.
+ */
+export async function fetchRelatedProducts(product: Product, limit = 8): Promise<Product[]> {
+  const base = productsCollection()
+    .where('isActive', '==', true)
+    .where('category', '==', product.category);
+  try {
+    const snap = await base.orderBy('salesCount', 'desc').limit(limit + 1).get();
+    return snap.docs
+      .map(d => ({id: d.id, ...d.data()}) as Product)
+      .filter(item => item.id !== product.id)
+      .slice(0, limit);
+  } catch {
+    const snap = await base.limit(limit + 1).get();
+    return snap.docs
+      .map(d => ({id: d.id, ...d.data()}) as Product)
+      .filter(item => item.id !== product.id)
+      .slice(0, limit);
+  }
 }
 
 export async function fetchProductsByIds(ids: string[]): Promise<Product[]> {

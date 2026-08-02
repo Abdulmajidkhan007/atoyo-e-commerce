@@ -24,6 +24,12 @@ export interface Dict {
   cancel: string;
   save: string;
   saved: string;
+  material: string;
+  country: string;
+  priceRange: string;
+  priceFrom: string;
+  priceTo: string;
+  similarProducts: string;
   /** Yangi versiya eslatmasi (APK Play Market'siz tarqatilgani uchun). */
   updateAvailable: string;
   updateDownload: string;
@@ -45,6 +51,8 @@ export interface Dict {
   titleSettings: string;
   // Bosh sahifa
   heroTitle: string;
+  heroBadge: string;
+  viewCatalog: string;
   heroText: string;
   categories: string;
   newProducts: string;
@@ -162,6 +170,12 @@ const uz: Dict = {
   cancel: 'Bekor qilish',
   save: 'Saqlash',
   saved: 'Saqlandi',
+  material: 'Material',
+  country: 'Davlat',
+  priceRange: 'Narx oralig‘i',
+  priceFrom: 'dan',
+  priceTo: 'gacha',
+  similarProducts: 'O‘xshash mahsulotlar',
   updateAvailable: 'Ilovaning yangi versiyasi chiqdi.',
   updateDownload: 'Yangilash',
   adminPanel: 'Boshqaruv paneli',
@@ -180,6 +194,8 @@ const uz: Dict = {
   titleContact: 'Bog‘lanish',
   titleSettings: 'Sozlamalar',
   heroTitle: 'Santexnika va Otopleniye uchun ishonchli manzil',
+  heroBadge: '10 000+ mahsulot',
+  viewCatalog: 'Katalogni ko‘rish',
   heroText:
     'Quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari — barchasi bir joyda.',
   categories: 'Kategoriyalar',
@@ -303,6 +319,12 @@ const en: Dict = {
   cancel: 'Cancel',
   save: 'Save',
   saved: 'Saved',
+  material: 'Material',
+  country: 'Country',
+  priceRange: 'Price range',
+  priceFrom: 'from',
+  priceTo: 'to',
+  similarProducts: 'Similar products',
   updateAvailable: 'A new version of the app is available.',
   updateDownload: 'Update',
   adminPanel: 'Admin panel',
@@ -321,6 +343,8 @@ const en: Dict = {
   titleContact: 'Contact',
   titleSettings: 'Settings',
   heroTitle: 'A reliable source for plumbing and heating',
+  heroBadge: '10,000+ products',
+  viewCatalog: 'View catalog',
   heroText: 'Pipes, fittings, faucets, shower systems and boilers — all in one place.',
   categories: 'Categories',
   newProducts: 'New products',
@@ -441,6 +465,12 @@ const ru: Dict = {
   cancel: 'Отмена',
   save: 'Сохранить',
   saved: 'Сохранено',
+  material: 'Материал',
+  country: 'Страна',
+  priceRange: 'Диапазон цен',
+  priceFrom: 'от',
+  priceTo: 'до',
+  similarProducts: 'Похожие товары',
   updateAvailable: 'Вышла новая версия приложения.',
   updateDownload: 'Обновить',
   adminPanel: 'Панель управления',
@@ -459,6 +489,8 @@ const ru: Dict = {
   titleContact: 'Связаться',
   titleSettings: 'Настройки',
   heroTitle: 'Надёжный выбор сантехники и отопления',
+  heroBadge: '10 000+ товаров',
+  viewCatalog: 'Смотреть каталог',
   heroText: 'Трубы, фитинги, смесители, душевые системы и котлы — всё в одном месте.',
   categories: 'Категории',
   newProducts: 'Новые товары',

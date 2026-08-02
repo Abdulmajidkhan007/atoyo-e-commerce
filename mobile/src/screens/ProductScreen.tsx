@@ -1,9 +1,9 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Image, Pressable, ScrollView, Text, View} from 'react-native';
+import {Image, Pressable, ScrollView, Text, View, Modal} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {effectivePrice, type Product, type Review} from '../types';
-import {fetchProduct} from '../firebase';
+import {fetchProduct, fetchRelatedProducts} from '../firebase';
 import {fetchReviews, submitReview} from '../api';
 import {useAppDispatch, useAppSelector} from '../store';
 import {addItem} from '../store/cartSlice';
@@ -14,6 +14,7 @@ import type {StackScreenProps} from '../navigation/types';
 import {useToast} from '../components/Toast';
 import {
   defaultVariant,
+  minVariantPrice,
   findVariant,
   hasVariants,
   variantLabel,
@@ -41,6 +42,10 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
    * setState qilmaslik uchun holat "picked" bo'lib turadi).
    */
   const [picked, setPicked] = useState<Record<string, string> | null>(null);
+  /** O'xshash mahsulotlar - sahifaning pastida (saytdagi kabi). */
+  const [related, setRelated] = useState<Product[]>([]);
+  /** Galereyada ochiq turgan rasm (to'liq ekran uchun). */
+  const [zoomUrl, setZoomUrl] = useState<string | null>(null);
 
   const loadReviews = useCallback(
     () => fetchReviews(productId).catch((): Review[] => []),
@@ -52,7 +57,15 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
     fetchProduct(productId)
       .catch((): Product | null => null)
       .then(item => {
-        if (active) setProduct(item);
+        if (!active) return;
+        setProduct(item);
+        if (item) {
+          fetchRelatedProducts(item)
+            .catch((): Product[] => [])
+            .then(items => {
+              if (active) setRelated(items);
+            });
+        }
       });
     loadReviews().then(items => {
       if (active) setReviews(items);
@@ -72,6 +85,9 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   }
 
   // TURLARI bo'lgan mahsulotda narx va zaxira tanlangan turdan olinadi.
+  const gallery = (product.images ?? []).filter(Boolean);
+  if (gallery.length === 0 && product.thumbnailUrl) gallery.push(product.thumbnailUrl);
+
   const withVariants = hasVariants(product);
   const selection = picked ?? defaultVariant(product)?.options ?? {};
   const setSelection = (
@@ -124,14 +140,29 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{paddingBottom: spacing.xl}}>
-      {product.thumbnailUrl ? (
-        <Image
-          source={{uri: product.thumbnailUrl}}
-          style={styles.image}
-          resizeMode="cover"
-          alt={product.name}
-        />
-      ) : null}
+      {/* GALEREYA: bir nechta rasm bo'lsa yonma-yon suriladi, rasm
+          bosilsa to'liq ekranda ochiladi (saytdagi kabi). */}
+      {gallery.length > 0 && (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.gallery}>
+          {gallery.map((url, index) => (
+            <Pressable key={url} onPress={() => setZoomUrl(url)}>
+              <Image
+                source={{uri: url}}
+                style={styles.image}
+                resizeMode="contain"
+                alt={`${product.name} — ${index + 1}`}
+              />
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {gallery.length > 1 && (
+        <Text style={styles.galleryHint}>{gallery.length} ta rasm — suring</Text>
+      )}
 
       <View style={{padding: spacing.lg, gap: spacing.sm}}>
         <View style={styles.titleRow}>
@@ -227,12 +258,88 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           <Field label={t.yourComment} value={comment} onChangeText={setComment} multiline />
           <Button title={t.send} onPress={handleReview} loading={saving} />
         </View>
+
+        {/* ---- O'xshash mahsulotlar (saytdagi kabi) ---- */}
+        {related.length > 0 && (
+          <>
+            <Text style={styles.section}>{t.similarProducts}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{flexDirection: 'row', gap: spacing.md}}>
+                {related.map(item => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.relatedCard}
+                    onPress={() => navigation.push('Mahsulot', {productId: item.id})}>
+                    <Image
+                      source={{uri: item.thumbnailUrl}}
+                      style={styles.relatedImage}
+                      resizeMode="contain"
+                      alt={item.name}
+                    />
+                    <Text numberOfLines={2} style={styles.relatedName}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.relatedPrice}>
+                      {money(
+                        hasVariants(item)
+                          ? (minVariantPrice(item) ?? item.price)
+                          : effectivePrice(item),
+                      )}
+                      {hasVariants(item) ? ' dan' : ''}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+          </>
+        )}
       </View>
+
+      {/* To'liq ekranda rasm */}
+      <Modal visible={zoomUrl !== null} transparent animationType="fade">
+        <Pressable style={styles.zoomBackdrop} onPress={() => setZoomUrl(null)}>
+          {zoomUrl && (
+            <Image
+              source={{uri: zoomUrl}}
+              style={styles.zoomImage}
+              resizeMode="contain"
+              alt={product.name}
+            />
+          )}
+          <Text style={styles.zoomClose}>✕</Text>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
 
 const useStyles = makeStyles(c => ({
+  gallery: {backgroundColor: c.surfaceAlt},
+  galleryHint: {
+    color: c.muted,
+    fontSize: 12,
+    textAlign: 'center',
+    paddingTop: spacing.xs,
+  },
+  relatedCard: {width: 130, gap: 4},
+  relatedImage: {width: 130, height: 130, borderRadius: radius.sm, backgroundColor: c.surfaceAlt},
+  relatedName: {color: c.text, fontSize: 12},
+  relatedPrice: {color: c.text, fontSize: 13, fontWeight: '700'},
+  zoomBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomImage: {width: '100%', height: '100%'},
+  zoomClose: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: '700',
+  },
   variant: {
     borderWidth: 1,
     borderColor: c.border,

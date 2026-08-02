@@ -4,7 +4,7 @@ import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {CATEGORY_KEYS, type Product, type ProductCategory} from '../types';
 import {fetchCatalog, searchProducts} from '../firebase';
-import {fetchFacets} from '../api';
+import {fetchFacets, fetchTaxonomy} from '../api';
 import {ProductCard} from '../components/ProductCard';
 import {Button, Chip, EmptyState, Loading} from '../components/ui';
 import type {TabScreenProps} from '../navigation/types';
@@ -22,7 +22,13 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
   const [category, setCategory] = useState<ProductCategory | undefined>(route.params?.category);
   const [brand, setBrand] = useState<string | undefined>();
   const [sort, setSort] = useState<Sort>('newest');
+  const [material, setMaterial] = useState<string | undefined>();
+  const [country, setCountry] = useState<string | undefined>();
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [brands, setBrands] = useState<string[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
+  const [materials, setMaterials] = useState<{slug: string; label: string}[]>([]);
   const [products, setProducts] = useState<Product[] | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -36,8 +42,14 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
 
   useEffect(() => {
     fetchFacets()
-      .then(f => setBrands(f.brands ?? []))
+      .then(f => {
+        setBrands(f.brands ?? []);
+        setCountries(f.countries ?? []);
+      })
       .catch(() => setBrands([]));
+    fetchTaxonomy()
+      .then(x => setMaterials(x.materials))
+      .catch(() => setMaterials([]));
   }, []);
 
   const load = useCallback(async () => {
@@ -45,19 +57,28 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
     try {
       const items = term.trim()
         ? await searchProducts(term)
-        : await fetchCatalog({category, brand, sort});
+        : await fetchCatalog({
+            category,
+            brand,
+            material,
+            country,
+            minPrice: Number(minPrice) || undefined,
+            maxPrice: Number(maxPrice) || undefined,
+            sort,
+          });
       setProducts(items);
     } catch {
       setProducts([]);
     }
-  }, [term, category, brand, sort]);
+  }, [term, category, brand, material, country, minPrice, maxPrice, sort]);
 
   useEffect(() => {
     const timer = setTimeout(load, term ? 350 : 0);
     return () => clearTimeout(timer);
   }, [load, term]);
 
-  const activeCount = [category, brand].filter(Boolean).length;
+  const activeCount = [category, brand, material, country, minPrice, maxPrice].filter(Boolean)
+    .length;
 
   return (
     <View style={styles.screen}>
@@ -137,6 +158,61 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
                 </>
               )}
 
+              {materials.length > 0 && (
+                <>
+                  <Text style={styles.groupLabel}>{t.material}</Text>
+                  <View style={styles.chips}>
+                    <Chip label={t.all} active={!material} onPress={() => setMaterial(undefined)} />
+                    {materials.map(m => (
+                      <Chip
+                        key={m.slug}
+                        label={m.label}
+                        active={material === m.slug}
+                        onPress={() => setMaterial(material === m.slug ? undefined : m.slug)}
+                      />
+                    ))}
+                  </View>
+                </>
+              )}
+
+              {countries.length > 0 && (
+                <>
+                  <Text style={styles.groupLabel}>{t.country}</Text>
+                  <View style={styles.chips}>
+                    <Chip label={t.all} active={!country} onPress={() => setCountry(undefined)} />
+                    {countries.map(item => (
+                      <Chip
+                        key={item}
+                        label={item}
+                        active={country === item}
+                        onPress={() => setCountry(country === item ? undefined : item)}
+                      />
+                    ))}
+                  </View>
+                </>
+              )}
+
+              <Text style={styles.groupLabel}>{t.priceRange}</Text>
+              <View style={styles.priceRow}>
+                <TextInput
+                  value={minPrice}
+                  onChangeText={setMinPrice}
+                  placeholder={t.priceFrom}
+                  placeholderTextColor={styles.c.muted}
+                  keyboardType="number-pad"
+                  style={styles.priceInput}
+                />
+                <Text style={styles.groupLabel}>—</Text>
+                <TextInput
+                  value={maxPrice}
+                  onChangeText={setMaxPrice}
+                  placeholder={t.priceTo}
+                  placeholderTextColor={styles.c.muted}
+                  keyboardType="number-pad"
+                  style={styles.priceInput}
+                />
+              </View>
+
               <Text style={styles.groupLabel}>{t.sort}</Text>
               <View style={styles.chips}>
                 <Chip
@@ -165,6 +241,10 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
                 onPress={() => {
                   setCategory(undefined);
                   setBrand(undefined);
+                  setMaterial(undefined);
+                  setCountry(undefined);
+                  setMinPrice('');
+                  setMaxPrice('');
                   setSort('newest');
                 }}
               />
@@ -177,6 +257,17 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
 }
 
 const useStyles = makeStyles(c => ({
+  priceRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
+  priceInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: c.text,
+    backgroundColor: c.surface,
+  },
   screen: {flex: 1, backgroundColor: c.bg},
   searchRow: {flexDirection: 'row', gap: spacing.sm, padding: spacing.sm, alignItems: 'center'},
   search: {

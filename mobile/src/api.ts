@@ -85,6 +85,16 @@ export async function fetchFacets(): Promise<{brands: string[]; countries: strin
   return request<{brands: string[]; countries: string[]}>('/api/facets');
 }
 
+/** Kategoriya/material/sotish turi ro'yxatlari (saytdagi bilan bir xil). */
+export async function fetchTaxonomy(): Promise<{
+  materials: {slug: string; label: string}[];
+}> {
+  const data = await request<{taxonomy?: {materials?: {slug: string; label: string}[]}}>(
+    '/api/taxonomy',
+  );
+  return {materials: data.taxonomy?.materials ?? []};
+}
+
 /** Kontakt formasi - saytdagi bilan bir xil route (xodimlar guruhiga tushadi). */
 export async function sendContactRequest(input: {name: string; phone: string; question: string}) {
   return request<{ok: true}>('/api/contact', {method: 'POST', body: JSON.stringify(input)});

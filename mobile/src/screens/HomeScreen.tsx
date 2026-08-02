@@ -74,10 +74,20 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
             style={styles.search}
           />
 
+          {/* Saytdagi hero bilan bir xil tartib: nishon → sarlavha →
+              matn → "Katalogni ko'rish" tugmasi. */}
           <View style={styles.hero}>
             <Image source={require('../../assets/logo.jpg')} style={styles.logo} alt="Atoyo" />
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>{t.heroBadge}</Text>
+            </View>
             <Text style={styles.heroTitle}>{t.heroTitle}</Text>
             <Text style={styles.heroText}>{t.heroText}</Text>
+            <Pressable
+              onPress={() => navigation.navigate('Katalog', {})}
+              style={({pressed}) => [styles.heroBtn, pressed && {opacity: 0.9}]}>
+              <Text style={styles.heroBtnText}>{t.viewCatalog}</Text>
+            </Pressable>
           </View>
 
           <View style={styles.quickRow}>
@@ -146,6 +156,23 @@ function QuickLink({
 }
 
 const useStyles = makeStyles(c => ({
+  heroBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(196,154,108,0.22)',
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+  },
+  heroBadgeText: {color: c.accent, fontSize: 12, fontWeight: '700'},
+  heroBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: c.accent,
+    borderRadius: 999,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm + 2,
+    marginTop: spacing.sm,
+  },
+  heroBtnText: {color: c.onAccent, fontWeight: '800', fontSize: 15},
   screen: {backgroundColor: c.bg},
   search: {
     margin: spacing.xs,
