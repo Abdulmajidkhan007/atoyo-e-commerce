@@ -8,6 +8,11 @@ export interface OrderItem {
   variantLabel?: string | null;
   name: string;
   price: number;
+  /**
+   * Sotilgan paytdagi TANNARX (nusxa). Keyinchalik mahsulot tannarxi
+   * o'zgarsa ham eski buyurtmaning foydasi o'zgarmaydi.
+   */
+  costPrice?: number | null;
   quantity: number;
   thumbnailUrl: string;
 }

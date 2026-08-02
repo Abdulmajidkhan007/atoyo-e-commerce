@@ -45,6 +45,12 @@ export interface ProductVariant {
   /** { olcham: "50x60", qalinlik: "0.3mm" } */
   options: Record<string, string>;
   price: number;
+  /**
+   * TANNARX - mahsulot bizga qancha tushgan (so'm, bir birlik uchun).
+   * Faqat xodimlarga ko'rinadi; foyda shu asosda hisoblanadi. Kirim
+   * qilinganda avtomatik yangilanadi (oxirgi kelgan narx).
+   */
+  costPrice?: number | null;
   discountPrice?: number | null;
   stock: number;
   /** Shu turning o'z artikuli (ixtiyoriy). */
@@ -80,6 +86,12 @@ export interface Product {
   variantAxes?: VariantAxis[];
   variants?: ProductVariant[];
   price: number;
+  /**
+   * TANNARX - mahsulot bizga qancha tushgan (so'm, bir birlik uchun).
+   * Faqat xodimlarga ko'rinadi; foyda shu asosda hisoblanadi. Kirim
+   * qilinganda avtomatik yangilanadi (oxirgi kelgan narx).
+   */
+  costPrice?: number | null;
   discountPrice?: number | null;
   /** Chegirma amal qilish muddati (epoch millis). Bo'sh - muddatsiz. */
   discountUntil?: number | null;

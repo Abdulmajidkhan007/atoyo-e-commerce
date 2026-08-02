@@ -55,6 +55,7 @@ const EMPTY_FORM = {
   manufacturerCountry: "",
   supplier: "",
   price: "",
+  costPrice: "",
   discountPrice: "",
   discountUntil: "",
   stock: "",
@@ -133,6 +134,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
               manufacturerCountry: product.manufacturerCountry,
               supplier: product.supplier ?? "",
               price: String(product.price),
+              costPrice: product.costPrice ? String(product.costPrice) : "",
               discountPrice: product.discountPrice ? String(product.discountPrice) : "",
               discountUntil: product.discountUntil
                 ? new Date(product.discountUntil).toISOString().slice(0, 10)
@@ -261,6 +263,8 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         // Turlari bo'lsa: umumiy narx - eng arzon tur, zaxira - yig'indi
         // (katalogdagi filtr va saralash shu maydonlar bilan ishlaydi).
         price: hasVariantRows ? (minVariantPrice({ variants: clean.variants }) ?? 0) : Number(form.price),
+        // Tannarx - faqat xodimlarga; foyda hisoboti shunga tayanadi.
+        costPrice: form.costPrice ? Number(form.costPrice) : null,
         discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
         // Chegirma muddati kun oxirigacha amal qiladi.
         discountUntil: form.discountUntil ? new Date(`${form.discountUntil}T23:59:59`).getTime() : null,
@@ -387,6 +391,16 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
           onChange={(e) => setForm({ ...form, manufacturerCountry: e.target.value })}
         />
       </div>
+
+      <TextField
+        size="small"
+        type="number"
+        label={`Tannarx (so'm / ${unitLabel})`}
+        value={form.costPrice}
+        onChange={(e) => setForm({ ...form, costPrice: e.target.value })}
+        helperText="Bizga tushgan narx. Mijozga ko'rinmaydi — foyda hisoboti uchun."
+        fullWidth
+      />
 
       {/* Turlari bo'lsa narx va zaxira har bir tur uchun alohida yoziladi. */}
       {!hasVariantRows && (

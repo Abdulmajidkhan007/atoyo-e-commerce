@@ -23,6 +23,7 @@ const updateSchema = z.object({
   manufacturerCountry: z.string().max(120).optional(),
   supplier: z.string().max(120).optional(),
   price: z.number().nonnegative().optional(),
+  costPrice: z.number().nonnegative().nullable().optional(),
   discountPrice: z.number().nonnegative().nullable().optional(),
   discountUntil: z.number().int().nullable().optional(),
   stock: z.number().int().nonnegative().optional(),
@@ -50,6 +51,7 @@ const updateSchema = z.object({
         id: z.string().min(1).max(300),
         options: z.record(z.string().max(40), z.string().max(60)),
         price: z.number().nonnegative(),
+        costPrice: z.number().nonnegative().nullable().optional(),
         discountPrice: z.number().nonnegative().nullable().optional(),
         stock: z.number().int().nonnegative(),
         sku: z.string().max(60).optional(),
@@ -104,6 +106,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.manufacturerCountry !== undefined) updates.manufacturerCountry = d.manufacturerCountry.trim();
   if (d.supplier !== undefined) updates.supplier = d.supplier.trim();
   if (d.price !== undefined) updates.price = d.price;
+  if (d.costPrice !== undefined) updates.costPrice = d.costPrice;
   if (d.discountPrice !== undefined) updates.discountPrice = d.discountPrice;
   if (d.discountUntil !== undefined) updates.discountUntil = d.discountUntil;
   if (d.stock !== undefined) updates.stock = d.stock;

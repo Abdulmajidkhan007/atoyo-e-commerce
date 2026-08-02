@@ -16,6 +16,7 @@ import { getDeliverySettings } from "@/lib/orders/pricing";
 import type { Product, ProductVariant } from "@/types/product";
 import type { Order, OrderItem, OrderLocation } from "@/types/order";
 import type { PromoCode } from "@/types/promo";
+import { recordStockMoves } from "@/lib/inventory/stock-moves";
 
 /** Buyurtmani qabul qilib bo'lmasa (zaxira yetmasa, mahsulot yo'q) - mijozga
  *  tushunarli sabab qaytarish uchun alohida xato turi. */
@@ -66,12 +67,18 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     ? db.doc(`promoCodes/${normalizePromoCode(input.promoCode)}`)
     : null;
 
+  /** Tranzaksiya davomida yig'iladi, muvaffaqiyatdan keyin yoziladi. */
+  const stockMoves: Parameters<typeof recordStockMoves>[0] = [];
+
   const totals = await db.runTransaction(async (tx) => {
     const refs = input.items.map((i) => db.collection("products").doc(i.productId));
     const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
     const promoSnap = promoRef ? await tx.get(promoRef) : null;
 
     const verifiedItems: OrderItem[] = [];
+    // Ombor tarixi tranzaksiyadan KEYIN yoziladi (tranzaksiya ichida
+    // qo'shimcha yozuv qilmaymiz - u qayta urinishda takrorlanishi mumkin).
+    stockMoves.length = 0;
     /** Turlari bo'lgan mahsulotlarda zaxira massiv ichida - shu yerda yig'iladi. */
     const variantUpdates = new Map<string, ProductVariant[]>();
 
@@ -108,6 +115,9 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
           variantLabel: variantLabel(product, variant),
           name: product.name,
           price: variantPrice(variant),
+          // Foyda hisoboti uchun tannarx nusxasi (turning o'ziniki
+          // bo'lmasa - mahsulotniki).
+          costPrice: variant.costPrice ?? product.costPrice ?? null,
           quantity: requested.quantity,
           thumbnailUrl: product.thumbnailUrl,
         });
@@ -124,6 +134,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
         name: product.name,
         // Narx MIJOZDAN emas, bazadan - chegirma muddati ham tekshiriladi.
         price: isDiscountActive(product) ? product.discountPrice! : product.price,
+        costPrice: product.costPrice ?? null,
         quantity: requested.quantity,
         thumbnailUrl: product.thumbnailUrl,
       });
@@ -162,6 +173,18 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     }
 
     for (const [productId, entry] of perProduct) {
+      const snap = snaps.find((doc) => doc.id === productId);
+      const data = snap?.data() as { name?: string; stock?: number; code?: number } | undefined;
+      stockMoves.push({
+        productId,
+        productName: data?.name ?? productId,
+        productCode: data?.code ?? null,
+        type: "sale" as const,
+        qty: -entry.qty,
+        stockBefore: data?.stock ?? 0,
+        stockAfter: (data?.stock ?? 0) - entry.qty,
+        refId: orderRef.id,
+      });
       const updates: Record<string, unknown> = {
         stock: FieldValue.increment(-entry.qty),
         salesCount: FieldValue.increment(entry.qty),
@@ -191,6 +214,8 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
       promoCode: appliedPromo,
     };
   });
+
+  await recordStockMoves(stockMoves);
 
   const { items, subtotal, discountAmount, deliveryFee, totalAmount, promoCode } = totals;
 

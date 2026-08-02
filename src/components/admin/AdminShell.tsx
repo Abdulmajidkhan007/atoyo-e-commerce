@@ -18,6 +18,8 @@ import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
+import WarehouseOutlinedIcon from "@mui/icons-material/WarehouseOutlined";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { signOutUser } from "@/lib/firebase/auth";
 import { useAppDispatch } from "@/redux/hooks";
@@ -30,6 +32,8 @@ const NAV_ITEMS: { href: string; label: string; Icon: typeof DashboardOutlinedIc
   { href: "/admin/katalog", label: "Katalog", Icon: Inventory2OutlinedIcon, perm: "products" },
   { href: "/admin/katalog/turlar", label: "Turlar", Icon: CategoryOutlinedIcon, perm: "products" },
   { href: "/admin/buyurtmalar", label: "Buyurtmalar", Icon: ReceiptLongOutlinedIcon, perm: "orders" },
+  { href: "/admin/hisobot", label: "Hisobot", Icon: InsightsOutlinedIcon, perm: "analytics" },
+  { href: "/admin/ombor", label: "Ombor", Icon: WarehouseOutlinedIcon, perm: "products" },
   { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar", Icon: GroupOutlinedIcon, perm: "users" },
   { href: "/admin/blog", label: "Blog", Icon: ArticleOutlinedIcon, perm: "blog" },
   { href: "/admin/xabar", label: "Xabar yuborish", Icon: CampaignOutlinedIcon, perm: "broadcast" },

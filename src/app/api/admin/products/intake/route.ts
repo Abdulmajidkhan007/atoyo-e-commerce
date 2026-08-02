@@ -5,6 +5,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
+import { recordStockMoves } from "@/lib/inventory/stock-moves";
 import { getRecentIntakes } from "@/lib/products/intake-history";
 import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
 import { minVariantPrice } from "@/lib/products/variants";
@@ -23,6 +24,8 @@ const intakeSchema = z.object({
         qty: z.number().int().positive().max(100000),
         /** Ixtiyoriy: kirim bilan birga yangi sotuv narxi. */
         price: z.number().positive().optional(),
+        /** Ixtiyoriy: shu partiya qanchaga kelgani (tannarx). */
+        costPrice: z.number().positive().optional(),
         /** Ixtiyoriy: mahsulot kimdan kelgani (yetkazib beruvchi). */
         supplier: z.string().max(120).optional(),
       })
@@ -122,6 +125,8 @@ export async function POST(request: Request) {
     } else if (item.price !== undefined) {
       updates.price = item.price;
     }
+    // Tannarx - oxirgi kelgan partiya narxi bilan yangilanadi.
+    if (item.costPrice !== undefined) updates.costPrice = item.costPrice;
     if (item.supplier !== undefined && item.supplier.trim()) {
       updates.supplier = item.supplier.trim();
       // Yetkazib beruvchi ro'yxati (bulk narx filtri uchun) to'ldirib boriladi.
@@ -158,6 +163,27 @@ export async function POST(request: Request) {
 
   try {
     await batch.commit();
+    // Ombor tarixi: har bir mahsulot uchun alohida qator.
+    await recordStockMoves(
+      parsed.data.items.map((item, i) => {
+        const data = snaps[i]?.data() as { name?: string; stock?: number; code?: number } | undefined;
+        const before = data?.stock ?? 0;
+        return {
+          productId: item.productId,
+          productName: data?.name ?? item.productId,
+          productCode: data?.code ?? null,
+          variantId: item.variantId ?? null,
+          type: "in" as const,
+          qty: item.qty,
+          stockBefore: before,
+          stockAfter: before + item.qty,
+          refId: intakeRef.id,
+          note: item.supplier?.trim() || null,
+          adminUid: admin.uid,
+          adminName: admin.displayName ?? admin.email ?? null,
+        };
+      })
+    );
     await announceIntake(refs, snaps);
     await logAction(`📥 Kirim (${admin.email ?? "admin"}): ${parsed.data.items.length} ta mahsulot zaxirasi yangilandi`);
     return NextResponse.json({ ok: true, updated: parsed.data.items.length });

@@ -8,6 +8,7 @@ import { sendOrderStatusEmail } from "@/lib/email/mailer";
 import { sendPushToUser } from "@/lib/notifications/push";
 import type { Order, OrderStatus } from "@/types/order";
 import type { AppUser } from "@/types/user";
+import { recordStockMoves } from "@/lib/inventory/stock-moves";
 
 const STATUS_DM_TEXT: Record<OrderStatus, string> = {
   pending: "🕓 kutilmoqda",
@@ -61,6 +62,22 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
     batch.update(orderRef, { status, updatedAt: updatedOrder.updatedAt, stockReturned: true });
     await batch.commit();
     updatedOrder.stockReturned = true;
+
+    // Ombor tarixi: zaxira qaytgani yozib qo'yiladi.
+    await recordStockMoves(
+      current.items.map((item) => ({
+        productId: item.productId,
+        productName: item.name,
+        variantId: item.variantId ?? null,
+        variantLabel: item.variantLabel ?? null,
+        type: "return" as const,
+        qty: item.quantity,
+        stockBefore: 0,
+        stockAfter: 0,
+        refId: current.id,
+        note: "Buyurtma bekor qilindi",
+      }))
+    );
   } else {
     await orderRef.update({ status: updatedOrder.status, updatedAt: updatedOrder.updatedAt });
   }
