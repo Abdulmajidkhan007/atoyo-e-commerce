@@ -76,6 +76,17 @@ npx tsc --noEmit && npx eslint <o'zgargan fayllar> && npm run build
 Test framework yo'q — tekshiruv = typecheck + lint + build (+ kerak bo'lsa
 `npm run start` bilan runtime tekshiruv).
 
+## Hujjatlarni yangilab turish (MAJBURIY)
+
+Loyihaga yangi imkoniyat qo'shilsa yoki mavjudi sezilarli o'zgarsa,
+**o'sha commitning o'zida** quyidagilar yangilanadi:
+
+- `docs/REBUILD-PROMPT.md` — loyihaning to'liq holati (boshqa AI ga
+  beriladigan topshiriq). Foydalanuvchi buni doim yangi holatda
+  bo'lishini so'ragan;
+- `docs/DEPLOY.md` — yangi env/secret yoki sozlash qadami paydo bo'lsa;
+- `CLAUDE.md` — arxitektura qoidasi yoki ish tartibi o'zgarsa.
+
 ## Commit konvensiyasi
 
 ```

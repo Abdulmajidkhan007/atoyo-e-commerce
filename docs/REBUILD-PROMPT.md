@@ -68,6 +68,47 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   tushadi), yangiliklarga obuna, sitemap va robots, uch til (uz/ru/en),
   yorug'/qorong'i tema, mobil pastki menyu.
 
+## 1a. HISOBOT, OMBOR VA QAYTARISH
+
+- **Tannarx (`costPrice`)** — mahsulotda va har bir turda; kirimda
+  oxirgi partiya narxi bilan yangilanadi. Buyurtma qatoriga sotilgan
+  paytdagi tannarx NUSXASI tushadi (keyin narx o'zgarsa hisobot
+  buzilmasin).
+- **Hisobot** (`/admin/hisobot`): davr tanlanadi (bugun / 7 / 30 / 90
+  kun yoki sana oralig'i) → tushum, foyda (sotuv − tannarx),
+  buyurtmalar soni, o'rtacha chek, kunlik ustunlar, eng ko'p daromad
+  keltirgan 20 mahsulot. Bekor qilinganlar hisobga olinmaydi,
+  qaytarilgan summa tushumdan chiqariladi; tannarxi yozilgan qatorlar
+  ulushi ham ko'rsatiladi.
+- **Ombor** (`/admin/ombor`): `stockMoves` jurnali — kirim, sotuv,
+  qaytish, chiqim, sanoq. Har yozuvda oldingi/keyingi qoldiq, izoh,
+  kim qilgani. Qo'lda: chiqim (singan/yo'qolgan) va inventarizatsiya
+  (haqiqiy qoldiqqa tenglashtirish).
+- **Qaytarish** (`POST /api/admin/orders/<id>/return`): yetkazilgan
+  buyurtmadan mahsulot qaytganda zaxira qaytadi, sotuv soni va tushum
+  kamayadi, ombor jurnaliga yoziladi, mijozga push va SMS boradi.
+  Qisman qaytarish ham mumkin; buyurtmadagidan ko'pini qaytarib
+  bo'lmaydi.
+
+## 1b. XABAR KANALLARI
+
+Bir hodisa — bir nechta kanal, hammasi best-effort (biri ishlamasa
+qolganlari ishlaydi va asosiy amal to'xtamaydi):
+
+| Hodisa | Telegram | Push | Email | SMS |
+|---|---|---|---|---|
+| Buyurtma holati o'zgardi | ✅ DM | ✅ | ✅ | ✅ |
+| Qaytarish qabul qilindi | — | ✅ | — | ✅ |
+| Yangi mahsulot / chegirma | ✅ kanal | ✅ topic | — | — |
+| E'lon (admin > Xabar) | ✅ | — | ✅ | — |
+
+- **Push** — FCM; qurilma tokeni `users/{uid}.pushTokens` da, umumiy
+  e'lonlar `products` mavzusi orqali.
+- **SMS** — Eskiz.uz yoki Play Mobile (env orqali tanlanadi).
+- **Email** — SMTP (nodemailer).
+- Har biri sozlanmagan bo'lsa jimgina o'tkazib yuboriladi; admin
+  panelda **Tizim tekshiruvi** har bir kanalning holatini ko'rsatadi.
+
 ## 2. ADMIN PANEL (saytda)
 
 Faqat xodimlarga. Kirish — session cookie; **rol tekshiruvi Node
@@ -91,8 +132,12 @@ tekshiradi.
   yuborish, sozlamalar, foydalanuvchilar, rollar).
 - **Sozlamalar:** sayt ma'lumotlari (kontakt, ijtimoiy tarmoq), kanal
   posti footeri, bot topic ID lari, majburiy obuna kanallari, maxfiy
-  kalitlar (Firestore'da, env'dan ustun), **tizim tekshiruvi** (Firestore,
-  custom token, FCM, bot tokeni + sinov bildirishnomasi).
+  kalitlar (Firestore'da, env'dan ustun), **tizim tekshiruvi**
+  (Firestore, custom token, FCM, bot tokeni, SMTP, SMS + sinov
+  bildirishnomasi).
+- **Yetkazib berish:** standart narx va "shu summadan bepul", hamda
+  **hududlar** ro'yxati (tuman → o'z narxi). Mijoz checkout'da hududni
+  tanlaydi, narx shunga qarab hisoblanadi.
 - **Muhim qoida:** admin yozuvlari **faqat server API route'lari
   orqali** (Admin SDK bilan) — client Firestore yozuvlari cookie
   rejimida ishlamaydi.
@@ -167,6 +212,7 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - `metadata/taxonomy` — admin qo'shgan kategoriya/material/sotish turi
   (standartlari kodda, birlashtiriladi); `metadata/facets` — brend va
   davlat ro'yxati.
+- `stockMoves` — ombor harakatlari (kirim/sotuv/qaytish/chiqim/sanoq).
 - `settings/*` — sayt, yetkazish, telegram topic; `secrets/telegram` —
   bot tokeni va h.k. (env'dan ustun).
 - `promoCodes`, `blogPosts`, `reviews`, `stats/summary`, `tgLogins`,
@@ -191,11 +237,32 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 8. Tekshiruv: `tsc --noEmit`, `eslint`, `vitest`, `next build`; ilova
    uchun alohida typecheck/lint va RN codegen tekshiruvi.
 
+## 6a. IXTIYORIY TASHQI XIZMATLAR
+
+Hammasi env orqali yoqiladi; sozlanmasa tizim avvalgidek ishlayveradi:
+
+- **Typesense** — 10 000+ mahsulot uchun tezkor, typo'ga chidamli
+  qidiruv. Mahsulot yozilganda indeks o'zi yangilanadi; `/api/search`
+  motor bo'lsa undan, bo'lmasa Firestore'dan qidiradi.
+- **SMS** (Eskiz/Play Mobile), **SMTP** (email), **GA4** (analitika),
+  **Payme/Click** (to'lov).
+
+## 6b. CI VA ZAXIRA NUSXA
+
+- Har push'da: typecheck, lint, unit testlar (vitest), sayt build,
+  ilova typecheck/lint/codegen, Android APK yig'ilib `latest`
+  release'ga yuklanadi.
+- Asosiy branchga push'da Firestore qoidalari va indekslari deploy
+  qilinadi (service account secret'i bo'lsa).
+- Har kuni Firestore Cloud Storage'ga eksport qilinadi, 30 kundan
+  eski nusxalar tozalanadi.
+
 ## 7. HOZIRCHA QILINMAGANI (siz ham keyin qilasiz)
 
 - Payme/Click to'lovi: kod yozilgan, merchant kalitlari kutilyapti.
 - iOS build (Mac + Xcode kerak).
-- To'liq offline rejim, Algolia/Typesense darajasidagi qidiruv.
+- Play Store uchun o'z keystore va AAB.
+- To'liq offline rejim.
 
 ---
 
