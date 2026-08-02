@@ -4,6 +4,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Share,
   Text,
   useWindowDimensions,
   View,
@@ -12,7 +13,7 @@ import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {effectivePrice, type Product, type Review} from '../types';
 import {fetchProduct, fetchRelatedProducts} from '../firebase';
-import {fetchReviews, submitReview} from '../api';
+import {fetchReviews, submitReview, SITE_URL} from '../api';
 import {useAppDispatch, useAppSelector} from '../store';
 import {addItem} from '../store/cartSlice';
 import {toggleFavorite} from '../store/favoritesSlice';
@@ -178,6 +179,16 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
       <View style={{padding: spacing.lg, gap: spacing.sm}}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>{product.name}</Text>
+          {/* Ulashish - Telegram/WhatsApp orqali havola yuborish. */}
+          <Pressable
+            hitSlop={10}
+            onPress={() =>
+              Share.share({
+                message: `${product.name} — ${SITE_URL}/mahsulot/${product.id}`,
+              }).catch(() => {})
+            }>
+            <Icon name="share" size={21} color={styles.c.muted} />
+          </Pressable>
           <Pressable hitSlop={10} onPress={() => dispatch(toggleFavorite(product.id))}>
             <Icon
             name={isFavorite ? 'heartFilled' : 'heart'}

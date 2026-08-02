@@ -14,6 +14,9 @@ import { FavoriteButton } from "@/components/product/FavoriteButton";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { StarRating } from "@/components/product/StarRating";
+import { ShareButton } from "@/components/product/ShareButton";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { productJsonLd } from "@/lib/seo/json-ld";
 
 function formatSom(amount: number): string {
   return `${amount.toLocaleString("uz-UZ")} so'm`;
@@ -74,6 +77,8 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">
+      {/* Google uchun: narx, mavjudlik, reyting (rich result). */}
+      <JsonLd data={productJsonLd(product, categoryLabel)} />
       <div className="grid gap-8 md:grid-cols-2">
         <ProductGallery
           images={product.images.length > 0 ? product.images : product.thumbnailUrl ? [product.thumbnailUrl] : []}
@@ -85,7 +90,10 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{product.name}</h1>
-            <FavoriteButton product={product} />
+            <div className="flex shrink-0 items-center">
+              <ShareButton title={product.name} text={`${product.name} — Atoyo Santexnika`} />
+              <FavoriteButton product={product} />
+            </div>
           </div>
           <p className="text-sm text-navy-300">
             {[product.brand, product.manufacturerCountry].filter(Boolean).join(" • ")}

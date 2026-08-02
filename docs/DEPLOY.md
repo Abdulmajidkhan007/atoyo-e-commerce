@@ -227,6 +227,20 @@ firebase deploy --only firestore:rules,firestore:indexes,storage --project <PROJ
 
 (Bu buyruq sandboxdan ishlamaydi — gRPC bloklangan.)
 
+### 6. Google Analytics (ixtiyoriy)
+
+Statistika kerak bo'lsa `apphosting.yaml` ga bitta o'zgaruvchi qo'shiladi:
+
+```yaml
+  - variable: NEXT_PUBLIC_GA_ID
+    value: G-XXXXXXXXXX
+    availability:
+      - BUILD
+      - RUNTIME
+```
+
+Qo'yilmagan bo'lsa sayt hech qanday tashqi kuzatuv skriptini yuklamaydi.
+
 ---
 
 ## Netlify'da qolish
