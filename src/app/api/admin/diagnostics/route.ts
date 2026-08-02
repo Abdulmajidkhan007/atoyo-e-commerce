@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getMessaging } from "firebase-admin/messaging";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
-import { PRODUCTS_TOPIC, sendPushToUser } from "@/lib/notifications/push";
+import { PRODUCTS_TOPIC, sendPushToTopic, sendPushToUser } from "@/lib/notifications/push";
 import { getTelegramSecrets } from "@/lib/telegram/secrets";
 import type { AppUser } from "@/types/user";
 
@@ -97,12 +97,25 @@ export async function POST(request: Request) {
 }
 
 /**
- * SINOV BILDIRISHNOMASI - adminning o'z qurilmalariga haqiqiy push.
- * Ilovada bildirishnoma chiqsa, zanjir to'liq ishlayapti.
+ * SINOV BILDIRISHNOMASI.
+ *
+ *   • `?target=topic` - ilova o'rnatilgan HAMMA qurilmaga (`products`
+ *     mavzusi). Hisobga kirish shart emas - bildirishnomaga ruxsat
+ *     berilgan bo'lsa yetadi. Zanjirni tekshirishning eng oson yo'li.
+ *   • standart - adminning o'z qurilmalariga (token bo'yicha).
  */
 export async function PUT(request: Request) {
   const admin = await requirePermission("settings", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  if (new URL(request.url).searchParams.get("target") === "topic") {
+    await sendPushToTopic(PRODUCTS_TOPIC, {
+      title: "Atoyo — sinov",
+      body: "Bildirishnomalar ishlayapti ✅",
+      data: { screen: "Home" },
+    });
+    return NextResponse.json({ ok: true, target: "topic" });
+  }
 
   const snap = await getAdminDb().collection("users").doc(admin.uid).get();
   const tokens = (snap.data() as AppUser | undefined)?.pushTokens ?? [];

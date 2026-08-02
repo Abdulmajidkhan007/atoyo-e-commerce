@@ -18,7 +18,7 @@ interface Check {
  */
 export function DiagnosticsPanel() {
   const [checks, setChecks] = useState<Check[] | null>(null);
-  const [busy, setBusy] = useState<"run" | "push" | null>(null);
+  const [busy, setBusy] = useState<"run" | "push" | "topic" | null>(null);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
   const runChecks = async () => {
@@ -36,16 +36,22 @@ export function DiagnosticsPanel() {
     }
   };
 
-  const sendTestPush = async () => {
-    setBusy("push");
+  const sendTestPush = async (target: "me" | "topic") => {
+    setBusy(target === "topic" ? "topic" : "push");
     setMessage(null);
     try {
-      const res = await fetch("/api/admin/diagnostics", { method: "PUT" });
+      const res = await fetch(
+        target === "topic" ? "/api/admin/diagnostics?target=topic" : "/api/admin/diagnostics",
+        { method: "PUT" }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Yuborib bo'lmadi.");
       setMessage({
         kind: "ok",
-        text: `Sinov bildirishnomasi ${data.devices} ta qurilmaga yuborildi. Telefoningizni tekshiring.`,
+        text:
+          target === "topic"
+            ? "Sinov bildirishnomasi ilova o'rnatilgan hamma qurilmaga yuborildi. Telefoningizni tekshiring."
+            : `Sinov bildirishnomasi ${data.devices} ta qurilmangizga yuborildi.`,
       });
     } catch (error) {
       setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
@@ -60,8 +66,11 @@ export function DiagnosticsPanel() {
         <Button variant="contained" onClick={runChecks} disabled={busy !== null}>
           {busy === "run" ? <CircularProgress size={20} /> : "Tekshirish"}
         </Button>
-        <Button variant="outlined" onClick={sendTestPush} disabled={busy !== null}>
-          {busy === "push" ? <CircularProgress size={20} /> : "Sinov bildirishnomasi"}
+        <Button variant="outlined" onClick={() => sendTestPush("topic")} disabled={busy !== null}>
+          {busy === "topic" ? <CircularProgress size={20} /> : "Sinov — hamma qurilmaga"}
+        </Button>
+        <Button variant="outlined" onClick={() => sendTestPush("me")} disabled={busy !== null}>
+          {busy === "push" ? <CircularProgress size={20} /> : "Sinov — menga"}
         </Button>
       </div>
 
