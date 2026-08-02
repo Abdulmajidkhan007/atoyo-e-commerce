@@ -108,11 +108,27 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
     }
   }
 
-  // Buyurtma bot orqali berilgan bo'lsa, mijozga shaxsiy xabar yuboriladi.
-  if (updatedOrder.customerChatId) {
+  // Mijozga Telegram DM.
+  //
+  // Buyurtma bot orqali berilgan bo'lsa - chat ID buyurtmada turadi.
+  // Sayt yoki ilovadan berilgan bo'lsa ham, mijoz hisobini Telegram
+  // bilan bog'lagan bo'lsa (`users/{uid}.telegramId`) xabar shu yerga
+  // boradi - SMS sozlanmagan paytda eng ishonchli kanal shu.
+  const telegramChatId =
+    updatedOrder.customerChatId ??
+    (updatedOrder.userId
+      ? await getAdminDb()
+          .collection("users")
+          .doc(updatedOrder.userId)
+          .get()
+          .then((snap) => (snap.data() as AppUser | undefined)?.telegramId ?? null)
+          .catch(() => null)
+      : null);
+
+  if (telegramChatId) {
     try {
       await sendChatMessage(
-        updatedOrder.customerChatId,
+        telegramChatId,
         `📦 Buyurtmangiz <b>#${updatedOrder.id.slice(0, 8)}</b> holati: <b>${STATUS_DM_TEXT[updatedOrder.status]}</b>`
       );
     } catch (error) {
