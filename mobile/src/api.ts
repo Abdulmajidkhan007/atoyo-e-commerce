@@ -225,6 +225,25 @@ export async function fetchTaxonomy(): Promise<{
   };
 }
 
+/**
+ * PUSH TOKEN - qurilma tokenini saqlash/o'chirish. Server uni
+ * `users/{uid}.pushTokens` da saqlaydi va buyurtma holati o'zgarganda
+ * shu qurilmalarga bildirishnoma yuboradi.
+ */
+export async function savePushToken(token: string) {
+  return request<{ok: true}>('/api/profile/push-token', {
+    method: 'POST',
+    body: JSON.stringify({token}),
+  });
+}
+
+export async function deletePushToken(token: string) {
+  return request<{ok: true}>('/api/profile/push-token', {
+    method: 'DELETE',
+    body: JSON.stringify({token}),
+  });
+}
+
 /** Kontakt formasi - saytdagi bilan bir xil route (xodimlar guruhiga tushadi). */
 export async function sendContactRequest(input: {name: string; phone: string; question: string}) {
   return request<{ok: true}>('/api/contact', {method: 'POST', body: JSON.stringify(input)});

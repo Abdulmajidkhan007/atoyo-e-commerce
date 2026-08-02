@@ -22,6 +22,7 @@ const LIBS = [
   '@react-native-firebase/firestore',
   '@react-native-google-signin/google-signin',
   'react-native-svg',
+  '@react-native-firebase/messaging',
 ];
 
 const cli = 'node_modules/@react-native/codegen/lib/cli/combine/combine-js-to-schema-cli.js';

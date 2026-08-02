@@ -16,5 +16,10 @@ export interface AppUser {
   /** Telegram orqali kirgan bo'lsa - Telegram foydalanuvchi ID va useri. */
   telegramId?: number;
   telegramUsername?: string;
+  /**
+   * Mobil ilova qurilmalarining FCM tokenlari (push bildirishnoma uchun).
+   * Bir odamda bir nechta qurilma bo'lishi mumkin.
+   */
+  pushTokens?: string[];
   createdAt: number;
 }

@@ -28,6 +28,8 @@ interface ToastApi {
   show: (text: string, kind?: ToastKind) => void;
   success: (text: string) => void;
   error: (text: string) => void;
+  /** Oddiy xabar (push bildirishnoma ilova ochiq turganda). */
+  info: (text: string) => void;
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -69,6 +71,7 @@ export function ToastProvider({children}: {children: React.ReactNode}) {
     show,
     success: (text: string) => show(text, 'success'),
     error: (text: string) => show(text, 'error'),
+    info: (text: string) => show(text, 'info'),
   };
 
   return (
@@ -122,7 +125,7 @@ function ToastBar({
  */
 export function useToast(): ToastApi {
   const ctx = useContext(ToastContext);
-  return ctx ?? {show: () => {}, success: () => {}, error: () => {}};
+  return ctx ?? {show: () => {}, success: () => {}, error: () => {}, info: () => {}};
 }
 
 const useStyles = makeStyles(c => ({

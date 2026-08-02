@@ -17,6 +17,7 @@ import {
   variantPrice,
 } from "@/lib/products/variants";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { sendPushToTopic, PRODUCTS_TOPIC } from "@/lib/notifications/push";
 import type { Product } from "@/types/product";
 import type { BlogPost, ChannelPostFooter } from "@/types/content";
 
@@ -278,6 +279,20 @@ export async function announceProduct(product: Product, mode: AnnounceMode = "ne
 
   // Sarlavha: `refresh` bo'lsa postdagi avvalgi sarlavha saqlanadi.
   const header: "new" | "updated" = mode === "refresh" ? product.channelMode ?? "new" : mode;
+
+  // Mobil ilovaga push: faqat HAQIQIY yangilik bo'lganda (yangi mahsulot
+  // yoki narx/chegirma o'zgarishi). `refresh` - postni jimgina yangilash,
+  // undan bildirishnoma chiqmaydi.
+  if (mode !== "refresh") {
+    const hasDiscountNow = isDiscountActive(product);
+    await sendPushToTopic(PRODUCTS_TOPIC, {
+      title: mode === "new" ? "Yangi mahsulot" : hasDiscountNow ? "Chegirma!" : "Narx yangilandi",
+      body: `${product.name} — ${formatSom(
+        hasVariants(product) ? (minVariantPrice(product) ?? product.price) : effectivePrice(product)
+      )}${hasVariants(product) ? " dan" : ""}`,
+      data: { screen: "Mahsulot", productId: product.id },
+    });
+  }
 
   // Rasmlar + videolar bitta albomga (Telegram aralash albomga ruxsat beradi).
   const gallery: MediaItem[] = [

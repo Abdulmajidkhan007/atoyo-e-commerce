@@ -5,6 +5,7 @@ import { editTopicMessageText, sendChatMessage } from "@/lib/telegram/bot";
 import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
 import { formatOrderMessage } from "@/lib/telegram/templates";
 import { sendOrderStatusEmail } from "@/lib/email/mailer";
+import { sendPushToUser } from "@/lib/notifications/push";
 import type { Order, OrderStatus } from "@/types/order";
 import type { AppUser } from "@/types/user";
 
@@ -93,7 +94,7 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
   }
 
   // Sayt orqali berilgan buyurtmada mijoz emailiga xabarnoma (best-effort;
-  // SMTP sozlanmagan bo'lsa mailer o'zi jim o'tadi).
+  // SMTP sozlanmagan bo'lsa mailer o'zi jim o'tadi) va mobil ilovaga push.
   if (updatedOrder.userId) {
     try {
       const userSnap = await getAdminDb().collection("users").doc(updatedOrder.userId).get();
@@ -102,6 +103,12 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
     } catch (error) {
       console.error("Email xabarnoma xatosi:", error);
     }
+
+    await sendPushToUser(updatedOrder.userId, {
+      title: `Buyurtma #${updatedOrder.id.slice(0, 8)}`,
+      body: `Holati: ${STATUS_DM_TEXT[updatedOrder.status]}`,
+      data: { screen: "Buyurtmalarim", orderId: updatedOrder.id },
+    });
   }
 
   return updatedOrder;

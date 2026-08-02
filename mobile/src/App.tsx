@@ -11,6 +11,7 @@ import {ThemeProvider, useTheme} from './theme';
 import {LocaleProvider} from './i18n';
 import {ToastProvider} from './components/Toast';
 import {UpdateBanner} from './components/UpdateBanner';
+import {usePushNotifications} from './push';
 
 /**
  * Navigatsiya temasi ilova temasidan olinadi - shunda ekran orqasi,
@@ -39,12 +40,21 @@ function ThemedApp() {
         backgroundColor={palette.chrome}
       />
       <NavigationContainer theme={navTheme}>
+        {/* Push bildirishnomalar navigatsiya ichida - xabar bosilganda
+            kerakli ekranni ocha olishi uchun. */}
+        <PushGate />
         <RootNavigator />
         {/* Yangi versiya chiqqan bo'lsa - tepada eslatma. */}
         <UpdateBanner />
       </NavigationContainer>
     </>
   );
+}
+
+/** Push bildirishnomalarni yoqadi (o'zi hech narsa chizmaydi). */
+function PushGate() {
+  usePushNotifications();
+  return null;
 }
 
 export default function App() {
