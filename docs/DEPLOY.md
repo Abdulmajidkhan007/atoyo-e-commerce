@@ -306,6 +306,30 @@ yuborish) va blog yangiliklari email orqali ham boradi. Kunlik Gmail
 limiti ~500 xat; undan ko'p kerak bo'lsa Brevo/SendGrid (bepul tarif
 kuniga 100-300 xat) yoki Resend tavsiya etiladi.
 
+### 5d. Tezkor qidiruv (Typesense, ixtiyoriy)
+
+10 000+ mahsulotda Firestore qidiruvi sekinlashadi va xato yozilgan
+so'zni topmaydi. Typesense aynan shu ish uchun: bir necha millisekund,
+typo'ga chidamli, ahamiyatlilik bo'yicha saralaydi.
+
+Ikki yo'l:
+
+- **Typesense Cloud** — eng kichik tarif ~20-25 $/oy, sozlash 5 daqiqa;
+- **O'zi hostlangan** (Docker, bepul) — 1 GB RAM li VPS yetadi.
+
+Env (kalit maxfiy — Secret Manager orqali):
+
+```
+TYPESENSE_HOST=xxx.a1.typesense.net
+TYPESENSE_API_KEY=<admin kalit>
+TYPESENSE_COLLECTION=products     # ixtiyoriy
+```
+
+Sozlangandan keyin: admin panel → Katalog → **«Qidiruv indeksini
+to'ldirish»** (yoki `POST /api/admin/products/search-index`). Keyin
+mahsulot yaratilganda/tahrirlanganda indeks o'zi yangilanadi.
+Sozlanmasa sayt avvalgi Firestore qidiruvida ishlayveradi.
+
 ### 6. Google Analytics (ixtiyoriy)
 
 Statistika kerak bo'lsa `apphosting.yaml` ga bitta o'zgaruvchi qo'shiladi:

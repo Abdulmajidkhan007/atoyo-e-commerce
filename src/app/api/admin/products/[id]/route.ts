@@ -6,6 +6,7 @@ import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
 import { normalizeVariants } from "@/lib/products/variants";
 import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
+import { indexProduct, removeFromIndex } from "@/lib/search/engine";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -142,6 +143,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   await ref.update(updates);
   await registerFacets({ brand: d.brand, country: d.manufacturerCountry, supplier: d.supplier });
   const updated = { ...existing, ...updates, id } as Product;
+  await indexProduct(updated);
   // Kanaldagi post har doim yangi holat bilan yangilanadi, lekin
   // "♻️ Mahsulot yangilandi" sarlavhasi faqat narx/chegirma o'zgarganda
   // yoki tugagan mahsulot qayta kelganda chiqadi. Chernovik nashr
@@ -160,5 +162,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   const { id } = await params;
   await getAdminDb().collection("products").doc(id).delete();
+  await removeFromIndex(id);
   return NextResponse.json({ ok: true });
 }

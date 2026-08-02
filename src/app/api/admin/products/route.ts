@@ -7,6 +7,7 @@ import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
 import { normalizeVariants } from "@/lib/products/variants";
 import { announceProduct } from "@/lib/telegram/channel";
+import { indexProduct } from "@/lib/search/engine";
 import { nextProductCode } from "@/lib/products/product-code";
 import type { Product } from "@/types/product";
 
@@ -139,6 +140,8 @@ export async function POST(request: Request) {
   };
 
   await ref.set(product);
+  // Tashqi qidiruv motori (sozlangan bo'lsa) - best-effort.
+  await indexProduct(product);
   await registerFacets({ brand: product.brand, country: product.manufacturerCountry, supplier: product.supplier });
   // Chernovik e'lon qilinmaydi (announceProduct ham uni o'tkazib yuboradi).
   await announceProduct(product, "new");

@@ -43,12 +43,27 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
 
       try {
         if (trimmedSearch) {
-          // Tezkor server-side prefiks qidiruv, so'ng mijoz tomonda
-          // typo-tolerant qayta saralash (lib/search/fuzzy.ts).
-          const prefixResults = await searchProductsByPrefix(trimmedSearch, SEARCH_WINDOW_SIZE);
+          // 1) Tashqi qidiruv motori (Typesense) sozlangan bo'lsa - o'sha.
+          //    Sozlanmagan bo'lsa javob `engine: false` bo'ladi.
+          const engineResults = await fetch(
+            `/api/search?q=${encodeURIComponent(trimmedSearch)}&limit=${SEARCH_WINDOW_SIZE}`
+          )
+            .then((res) => (res.ok ? res.json() : null))
+            .catch(() => null);
+
           if (cancelled) return;
-          setProducts(createFuzzySearcher(prefixResults)(trimmedSearch));
-          setHasMore(false);
+
+          if (engineResults?.engine && Array.isArray(engineResults.products)) {
+            setProducts(engineResults.products as Product[]);
+            setHasMore(false);
+          } else {
+            // 2) Firestore: prefiks + token qidiruvi, so'ng mijoz tomonda
+            //    typo-tolerant qayta saralash (lib/search/fuzzy.ts).
+            const prefixResults = await searchProductsByPrefix(trimmedSearch, SEARCH_WINDOW_SIZE);
+            if (cancelled) return;
+            setProducts(createFuzzySearcher(prefixResults)(trimmedSearch));
+            setHasMore(false);
+          }
         } else {
           const page = await getProductsPage(filters, PAGE_SIZE, null);
           if (cancelled) return;
