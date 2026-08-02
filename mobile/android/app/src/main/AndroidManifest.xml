@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ da bildirishnoma uchun ruxsat (ilova o'zi so'raydi). -->
@@ -13,11 +14,14 @@
       android:theme="@style/AppTheme"
       android:supportsRtl="true">
 
-      <!-- Push bildirishnomalar uchun standart kanal va belgi
-           (server payload'ida ham channelId="atoyo"). -->
+      <!-- Push bildirishnomalar uchun standart kanal (server payload'ida
+           ham channelId="atoyo"). `tools:replace` SHART: RNFirebase
+           kutubxonasi ham shu meta-data ni BO'SH qiymat bilan e'lon
+           qiladi va manifestlar birlashtirilganda to'qnashuv chiqadi. -->
       <meta-data
         android:name="com.google.firebase.messaging.default_notification_channel_id"
-        android:value="atoyo" />
+        android:value="atoyo"
+        tools:replace="android:value" />
 
       <activity
         android:name=".MainActivity"
