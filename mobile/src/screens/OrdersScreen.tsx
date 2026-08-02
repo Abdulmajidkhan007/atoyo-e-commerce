@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, FlatList, Linking, Text, View} from 'react-native';
+import {FlatList, Linking, Text, View} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import type {Order} from '../types';
@@ -7,10 +7,12 @@ import {subscribeToMyOrders} from '../firebase';
 import {cancelOrder, receiptUrl} from '../api';
 import {Button, EmptyState, Loading} from '../components/ui';
 import {useAuth} from '../auth';
+import {useToast} from '../components/Toast';
 
 /** Buyurtmalarim - real vaqtda yangilanadi (status o'zgarishi darhol ko'rinadi). */
 export function OrdersScreen() {
   const styles = useStyles();
+  const toast = useToast();
   const {t, money, locale} = useI18n();
   const {user} = useAuth();
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -30,7 +32,7 @@ export function OrdersScreen() {
     try {
       await cancelOrder(order.id);
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.error);
+      toast.error(error instanceof Error ? error.message : t.error);
     } finally {
       setBusyId(null);
     }

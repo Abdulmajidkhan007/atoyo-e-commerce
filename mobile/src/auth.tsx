@@ -9,6 +9,20 @@ export interface AppUserProfile {
   displayName: string | null;
   phoneNumber?: string | null;
   homeAddress?: string | null;
+  /** "user" | "admin" | "owner" - admin panelga kirish tugmasi shunga qarab. */
+  role?: string | null;
+}
+
+/** Xodimmi (admin yoki loyiha egasi)? Sayt bilan bir xil qoida. */
+const OWNER_EMAIL = 'santexnika.atoyo@gmail.com';
+
+export function isStaffUser(user: AppUserProfile | null): boolean {
+  if (!user) return false;
+  return (
+    user.role === 'admin' ||
+    user.role === 'owner' ||
+    user.email?.toLowerCase() === OWNER_EMAIL
+  );
 }
 
 interface AuthValue {
@@ -55,6 +69,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
               displayName: data.displayName ?? fbUser.displayName,
               phoneNumber: data.phoneNumber ?? null,
               homeAddress: data.homeAddress ?? null,
+              role: data.role ?? 'user',
             });
             setLoading(false);
           },

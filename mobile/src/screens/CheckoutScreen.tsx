@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Alert, ScrollView, Text, View, Pressable} from 'react-native';
+import {ScrollView, Text, View, Pressable} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {useAppDispatch, useAppSelector} from '../store';
@@ -14,6 +14,7 @@ import {
 } from '../api';
 import {useAuth} from '../auth';
 import type {StackScreenProps} from '../navigation/types';
+import {useToast} from '../components/Toast';
 
 /**
  * Buyurtmani rasmiylashtirish. Hisob faqat ko'rsatish uchun - yakuniy
@@ -21,6 +22,7 @@ import type {StackScreenProps} from '../navigation/types';
  */
 export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
   const styles = useStyles();
+  const toast = useToast();
   const {t, money} = useI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector(s => s.cart.items);
@@ -54,22 +56,22 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
       setPromo({code: result.code, discount: result.discount});
     } catch (error) {
       setPromo(null);
-      Alert.alert(t.promo, error instanceof Error ? error.message : t.error);
+      toast.error(error instanceof Error ? error.message : t.error);
     }
   };
 
   const submit = async () => {
     if (!user) {
-      Alert.alert(t.titleCheckout, t.loginToOrder);
+      toast.error(t.loginToOrder);
       navigation.navigate('Tabs', {screen: 'Profil'});
       return;
     }
     if (name.trim().length < 2) {
-      Alert.alert(t.fullName, t.nameTooShort);
+      toast.error(t.nameTooShort);
       return;
     }
     if (phone.replace(/\D/g, '').length < 9) {
-      Alert.alert(t.phone, t.phoneInvalid);
+      toast.error(t.phoneInvalid);
       return;
     }
 
@@ -85,10 +87,10 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
         promoCode: promo?.code ?? null,
       });
       dispatch(clearCart());
-      Alert.alert(t.orderAccepted, t.orderNumber(orderId.slice(0, 8)));
+      toast.success(t.orderNumber(orderId.slice(0, 8)));
       navigation.navigate('Buyurtmalarim');
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.orderFailed);
+      toast.error(error instanceof Error ? error.message : t.orderFailed);
     } finally {
       setBusy(false);
     }

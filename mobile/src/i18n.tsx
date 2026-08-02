@@ -24,6 +24,11 @@ export interface Dict {
   cancel: string;
   save: string;
   saved: string;
+  /** Yangi versiya eslatmasi (APK Play Market'siz tarqatilgani uchun). */
+  updateAvailable: string;
+  updateDownload: string;
+  adminPanel: string;
+  adminPanelHint: string;
   send: string;
   all: string;
   // Tab / sarlavhalar
@@ -157,6 +162,10 @@ const uz: Dict = {
   cancel: 'Bekor qilish',
   save: 'Saqlash',
   saved: 'Saqlandi',
+  updateAvailable: 'Ilovaning yangi versiyasi chiqdi.',
+  updateDownload: 'Yangilash',
+  adminPanel: 'Boshqaruv paneli',
+  adminPanelHint: 'Admin panel brauzerda ochiladi',
   send: 'Yuborish',
   all: 'Barchasi',
   tabHome: 'Bosh',
@@ -294,6 +303,10 @@ const en: Dict = {
   cancel: 'Cancel',
   save: 'Save',
   saved: 'Saved',
+  updateAvailable: 'A new version of the app is available.',
+  updateDownload: 'Update',
+  adminPanel: 'Admin panel',
+  adminPanelHint: 'Opens in the browser',
   send: 'Send',
   all: 'All',
   tabHome: 'Home',
@@ -428,6 +441,10 @@ const ru: Dict = {
   cancel: 'Отмена',
   save: 'Сохранить',
   saved: 'Сохранено',
+  updateAvailable: 'Вышла новая версия приложения.',
+  updateDownload: 'Обновить',
+  adminPanel: 'Панель управления',
+  adminPanelHint: 'Откроется в браузере',
   send: 'Отправить',
   all: 'Все',
   tabHome: 'Главная',

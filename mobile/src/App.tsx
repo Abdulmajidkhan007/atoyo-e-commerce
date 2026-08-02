@@ -9,6 +9,8 @@ import {AuthProvider} from './auth';
 import {RootNavigator} from './navigation/RootNavigator';
 import {ThemeProvider, useTheme} from './theme';
 import {LocaleProvider} from './i18n';
+import {ToastProvider} from './components/Toast';
+import {UpdateBanner} from './components/UpdateBanner';
 
 /**
  * Navigatsiya temasi ilova temasidan olinadi - shunda ekran orqasi,
@@ -38,6 +40,8 @@ function ThemedApp() {
       />
       <NavigationContainer theme={navTheme}>
         <RootNavigator />
+        {/* Yangi versiya chiqqan bo'lsa - tepada eslatma. */}
+        <UpdateBanner />
       </NavigationContainer>
     </>
   );
@@ -51,7 +55,9 @@ export default function App() {
           <ThemeProvider>
             <LocaleProvider>
               <SafeAreaProvider>
-                <ThemedApp />
+                <ToastProvider>
+                  <ThemedApp />
+                </ToastProvider>
               </SafeAreaProvider>
             </LocaleProvider>
           </ThemeProvider>

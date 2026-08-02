@@ -1,10 +1,11 @@
 import React, {useState} from 'react';
-import {Alert, Linking, ScrollView, Text} from 'react-native';
+import {Linking, ScrollView, Text} from 'react-native';
 import {makeStyles, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {Button, Card, Field} from '../components/ui';
 import {sendContactRequest} from '../api';
 import {useAuth} from '../auth';
+import {useToast} from '../components/Toast';
 
 /**
  * Bog'lanish formasi - saytdagi `/kontakt` bilan bir xil route'ga
@@ -12,6 +13,7 @@ import {useAuth} from '../auth';
  */
 export function ContactScreen() {
   const styles = useStyles();
+  const toast = useToast();
   const {t} = useI18n();
   const {user} = useAuth();
 
@@ -22,11 +24,11 @@ export function ContactScreen() {
 
   const submit = async () => {
     if (name.trim().length < 2) {
-      Alert.alert(t.fullName, t.nameTooShort);
+      toast.error(t.nameTooShort);
       return;
     }
     if (phone.replace(/\D/g, '').length < 9) {
-      Alert.alert(t.phone, t.phoneInvalid);
+      toast.error(t.phoneInvalid);
       return;
     }
     if (question.trim().length < 3) return;
@@ -35,9 +37,9 @@ export function ContactScreen() {
     try {
       await sendContactRequest({name: name.trim(), phone: phone.trim(), question: question.trim()});
       setQuestion('');
-      Alert.alert(t.titleContact, t.contactSent);
+      toast.success(t.contactSent);
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.contactFailed);
+      toast.error(error instanceof Error ? error.message : t.contactFailed);
     } finally {
       setBusy(false);
     }

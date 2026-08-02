@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NewsletterForm } from "./NewsletterForm";
+import { AppDownloadCard } from "./AppDownloadCard";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { getDictionary } from "@/lib/i18n/server";
 import type { SocialLink } from "@/types/content";
@@ -59,7 +60,10 @@ export async function Footer() {
           <p>{dict.footer.address}: {settings.address}</p>
         </div>
 
-        <NewsletterForm />
+        <div className="flex flex-col gap-6 md:max-w-xs">
+          <NewsletterForm />
+          <AppDownloadCard />
+        </div>
       </div>
 
       <p className="border-t border-navy-500/40 px-4 py-4 text-center text-xs text-navy-300">

@@ -1,12 +1,13 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Alert, Linking, ScrollView, Text, View} from 'react-native';
+import {Linking, ScrollView, Text, View} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {Button, Field, Loading} from '../components/ui';
-import {useAuth} from '../auth';
+import {useAuth, isStaffUser} from '../auth';
 import {SITE_URL} from '../api';
 import {googleSignInAvailable, signInWithGoogle, signInWithTelegram} from '../social-auth';
 import type {TabScreenProps} from '../navigation/types';
+import {useToast} from '../components/Toast';
 
 /**
  * Profil: kirmagan bo'lsa - kirish/ro'yxatdan o'tish (Google va Telegram
@@ -15,6 +16,7 @@ import type {TabScreenProps} from '../navigation/types';
  */
 export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
   const styles = useStyles();
+  const toast = useToast();
   const {t} = useI18n();
   const {user, loading, signIn, register, signOut, resetPassword, saveProfile} = useAuth();
 
@@ -57,7 +59,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
         if (mode === 'login') await signIn(email, password);
         else await register(name.trim() || t.customer, email, password);
       } catch (error) {
-        Alert.alert(t.error, error instanceof Error ? error.message : t.loginFailed);
+        toast.error(error instanceof Error ? error.message : t.loginFailed);
       } finally {
         setBusy(false);
       }
@@ -70,10 +72,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
       } catch (error) {
         // Foydalanuvchi o'zi bekor qilgan bo'lsa - jim turamiz.
         if (error instanceof Error && error.message !== 'cancelled') {
-          Alert.alert(
-            t.error,
-            error.message === 'google-not-configured' ? t.googleUnavailable : t.loginFailed,
-          );
+          toast.error(error.message === 'google-not-configured' ? t.googleUnavailable : t.loginFailed);
         }
       } finally {
         setSocial(null);
@@ -88,7 +87,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
           isCancelled: () => cancelledRef.current,
         });
       } catch {
-        if (!cancelledRef.current) Alert.alert(t.error, t.telegramFailed);
+        if (!cancelledRef.current) toast.error(t.telegramFailed);
       } finally {
         setSocial(null);
         setTgWaiting(false);
@@ -158,11 +157,11 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
             variant="outline"
             onPress={async () => {
               if (!email.trim()) {
-                Alert.alert(t.email, t.enterEmailFirst);
+                toast.error(t.enterEmailFirst);
                 return;
               }
               await resetPassword(email).catch(() => {});
-              Alert.alert(t.saved, t.resetSent);
+              toast.success(t.resetSent);
             }}
           />
         )}
@@ -186,9 +185,9 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
         phoneNumber: phone.trim(),
         homeAddress: address.trim(),
       });
-      Alert.alert(t.saved, t.saved);
+      toast.success(t.saved);
     } catch {
-      Alert.alert(t.error, t.error);
+      toast.error(t.error);
     } finally {
       setBusy(false);
     }
@@ -230,6 +229,20 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
         variant="outline"
         onPress={() => navigation.navigate('Sozlamalar')}
       />
+      {/* XODIMLAR uchun: boshqaruv paneli. Panel serverdagi sessiya
+          cookie'si bilan ishlaydi, shuning uchun brauzerda ochiladi -
+          u yerda sayt hisobingiz bilan kirasiz. */}
+      {isStaffUser(user) && (
+        <>
+          <Button
+            title={t.adminPanel}
+            icon="🛠"
+            onPress={() => Linking.openURL(`${SITE_URL}/admin`)}
+          />
+          <Text style={styles.hint}>{t.adminPanelHint}</Text>
+        </>
+      )}
+
       <Button
         title={t.openSite}
         icon="🌐"

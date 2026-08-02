@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {Alert, ScrollView, Text, View} from 'react-native';
+import {ScrollView, Text, View} from 'react-native';
 import {makeStyles, spacing, useTheme, type ThemeMode} from '../theme';
 import {LOCALE_LABELS, useI18n, type Locale} from '../i18n';
 import {Button, Card, Chip, Field} from '../components/ui';
 import {subscribeToNewsletter} from '../api';
+import {useToast} from '../components/Toast';
 
 /**
  * SOZLAMALAR: ko'rinish (yorug'/qorong'i/tizim), til (uz/en/ru) va
@@ -12,6 +13,7 @@ import {subscribeToNewsletter} from '../api';
  */
 export function SettingsScreen() {
   const styles = useStyles();
+  const toast = useToast();
   const {mode, setMode} = useTheme();
   const {t, locale, setLocale} = useI18n();
   const [email, setEmail] = useState('');
@@ -25,16 +27,16 @@ export function SettingsScreen() {
 
   const subscribe = async () => {
     if (!email.trim()) {
-      Alert.alert(t.email, t.enterEmailFirst);
+      toast.error(t.enterEmailFirst);
       return;
     }
     setBusy(true);
     try {
       await subscribeToNewsletter(email.trim());
       setEmail('');
-      Alert.alert(t.newsletter, t.subscribed);
+      toast.success(t.subscribed);
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.error);
+      toast.error(error instanceof Error ? error.message : t.error);
     } finally {
       setBusy(false);
     }

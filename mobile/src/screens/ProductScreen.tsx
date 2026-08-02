@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Alert, Image, Pressable, ScrollView, Text, View} from 'react-native';
+import {Image, Pressable, ScrollView, Text, View} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {effectivePrice, type Product, type Review} from '../types';
@@ -11,11 +11,13 @@ import {toggleFavorite} from '../store/favoritesSlice';
 import {Button, Field, Loading, Stars} from '../components/ui';
 import {useAuth} from '../auth';
 import type {StackScreenProps} from '../navigation/types';
+import {useToast} from '../components/Toast';
 
 /** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
 export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>) {
   const {productId} = route.params;
   const styles = useStyles();
+  const toast = useToast();
   const {t, money} = useI18n();
   const dispatch = useAppDispatch();
   const {user} = useAuth();
@@ -68,12 +70,12 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         thumbnailUrl: product.thumbnailUrl,
       }),
     );
-    Alert.alert(t.tabCart, t.addedToCart);
+    toast.success(t.addedToCart);
   };
 
   const handleReview = async () => {
     if (!user) {
-      Alert.alert(t.reviews, t.loginToReview);
+      toast.error(t.loginToReview);
       navigation.navigate('Tabs', {screen: 'Profil'});
       return;
     }
@@ -84,9 +86,9 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
       await submitReview(product.id, rating, comment.trim());
       setComment('');
       setReviews(await loadReviews());
-      Alert.alert(t.reviewThanks, t.reviewSaved);
+      toast.success(t.reviewSaved);
     } catch (error) {
-      Alert.alert(t.error, error instanceof Error ? error.message : t.error);
+      toast.error(error instanceof Error ? error.message : t.error);
     } finally {
       setSaving(false);
     }
