@@ -414,6 +414,28 @@ Ro'yxatda yo'q usul tugmasi saytda chizilmaydi. Nima kerak bo'ladi:
 WhatsApp va WeChat Firebase Auth'da **yo'q** — ular uchun `phone`
 (SMS kod) yoki mavjud Telegram kirishi ishlatiladi.
 
+### 5g. To'lov va karta saqlash (merchant kalitlari kelganda)
+
+```yaml
+  - variable: PAYME_MERCHANT_ID     # kassa ID
+    value: "..."
+    availability: [BUILD, RUNTIME]
+  - variable: PAYME_KEY             # Merchant API paroli (webhook)
+    secret: PAYME_KEY
+    availability: [RUNTIME]
+  - variable: PAYME_SUBSCRIBE_KEY   # Subscribe API kaliti (karta saqlash)
+    secret: PAYME_SUBSCRIBE_KEY
+    availability: [RUNTIME]
+```
+
+`PAYME_SUBSCRIBE_KEY` qo'yilgach profil sahifasida "Kartalarim"
+bo'limi paydo bo'ladi: karta raqami + amal muddati → SMS kod →
+saqlangan token. Karta raqami bizda saqlanmaydi.
+
+**Birinchi ish:** Payme test kabinetida (test.paycom.uz) bitta kartani
+qo'shib, kod bilan tasdiqlab, bitta buyurtmani to'lab ko'ring — bu
+integratsiya kalitlar yo'qligi sababli hali jonli sinovdan o'tmagan.
+
 ### 6. Google Analytics (ixtiyoriy)
 
 Statistika kerak bo'lsa `apphosting.yaml` ga bitta o'zgaruvchi qo'shiladi:

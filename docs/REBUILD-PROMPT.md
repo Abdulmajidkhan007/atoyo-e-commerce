@@ -153,6 +153,32 @@ Mahsulot tahrirlash formasida ikki tugma (kalitlar bo'lsa ko'rinadi):
   ketadi — mijoz suratdagi narsani oladi. Rasmlar Storage'ga yozilib
   mahsulot galereyasiga qo'shiladi.
 
+## 1e. LOYIHA TO'LOVLARI VA MIJOZ KARTALARI
+
+**Admin > To'lovlar** (`/admin/tolovlar`) — loyihani ushlab turish
+xarajatlari: Firebase, AI kalitlari, domen, SMS, Play Store.
+
+- Har bir xarajat: nomi, kimga to'lanadi, summa (USD yoki so'm),
+  davriylik (bir martalik/oylik/choraklik/yillik), keyingi to'lov
+  sanasi, to'lov sahifasi havolasi.
+- Ko'rsatkichlar: oylik o'rtacha, yillik, 30 kun ichida to'lanadigan,
+  shu oyda to'langan. USD kursi admin tomonidan kiritiladi
+  (`settings/finance`).
+- «To'landi» bosilganda tarixga yozuv tushadi va keyingi sana
+  davriylikka qarab siljiydi.
+- Muddati o'tgan yoki 7 kun ichida keladigan to'lovlar xodimlar
+  guruhiga (actions topic) eslatma bo'lib tushadi — kuniga bir marta.
+- MUHIM: Google/Anthropic hisobini API orqali to'lab bo'lmaydi (bunday
+  API yo'q) — sahifa muddat va tarixni yuritadi, to'lovning o'zi
+  xizmat sahifasida bajariladi.
+
+**Mijoz kartalari** (Payme Subscribe API, `PAYME_SUBSCRIBE_KEY`):
+`cards.create` → `cards.get_verify_code` → `cards.verify`, keyin
+`receipts.create` + `receipts.pay`. Karta RAQAMI saqlanmaydi —
+Firestore'da faqat token va niqoblangan raqam (`users/{uid}/cards`,
+qoidalarda mijozga ham yopiq). Kalitlar yo'q bo'lsa profildagi
+"Kartalarim" bo'limi umuman ko'rinmaydi.
+
 ## 2. ADMIN PANEL (saytda)
 
 Faqat xodimlarga. Kirish — session cookie; **rol tekshiruvi Node
@@ -311,7 +337,8 @@ Hammasi env orqali yoqiladi; sozlanmasa tizim avvalgidek ishlayveradi:
 
 ## 7. HOZIRCHA QILINMAGANI (siz ham keyin qilasiz)
 
-- Payme/Click to'lovi: kod yozilgan, merchant kalitlari kutilyapti.
+- Payme/Click to'lovi va karta saqlash: kod yozilgan, merchant
+  kalitlari kutilyapti (kalit kelgach test kabinetida sinaladi).
 - iOS build (Mac + Xcode kerak).
 - Play Store uchun o'z keystore va AAB.
 - To'liq offline rejim.

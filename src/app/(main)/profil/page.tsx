@@ -10,6 +10,7 @@ import { signOutUser, ensureSessionCookie } from "@/lib/firebase/auth";
 import { isStaff } from "@/lib/permissions";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { SavedCards } from "@/components/profile/SavedCards";
 import type { Order, OrderStatus } from "@/types/order";
 
 const STATUS_COLORS: Record<OrderStatus, "default" | "success" | "info" | "warning" | "error"> = {
@@ -157,6 +158,9 @@ export default function ProfilePage() {
           <Button onClick={handleSignOut} variant="text" size="small" color="error">{dict.common.logout}</Button>
         </div>
       </div>
+
+      {/* Saqlangan kartalar - to'lov tizimi ulanganda ko'rinadi. */}
+      <SavedCards />
 
       <h2 className="mb-4 text-lg font-semibold text-navy-900 dark:text-white">{dict.profile.ordersTitle}</h2>
 

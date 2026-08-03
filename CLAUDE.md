@@ -160,6 +160,6 @@ sharhni esa saytning API'si orqali yuboradi (`Authorization: Bearer
 ## Qolgan/kutilayotgan ishlar
 
 - Ko'p tillik uz/en/ru (boshlanmagan).
-- Admin "to'lovlar/xarajatlar" sahifasi (Firebase hisoblari, muddatlar).
-- Payme/Click to'lov integratsiyasi (foydalanuvchi merchant kalitlari kerak).
+- Payme/Click to'lovi va karta saqlash: kod tayyor, merchant kalitlari
+  kelgach test kabinetida sinaladi.
 - To'liq "hamma narsa Telegramda" pariteti; profil rasm/email/parol tahrirlash.

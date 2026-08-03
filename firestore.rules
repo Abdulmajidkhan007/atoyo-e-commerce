@@ -45,6 +45,27 @@ service cloud.firestore {
         request.resource.data.get('permissions', {}) == resource.data.get('permissions', {});
     }
 
+    // SAQLANGAN KARTA TOKENLARI - mijozning o'ziga ham ochilmaydi.
+    // Token bilan to'lov qilish mumkin, shuning uchun u faqat server
+    // (Admin SDK) qo'lida qoladi.
+    match /users/{userId}/cards/{cardId} {
+      allow read, write: if false;
+    }
+
+    // Loyiha xarajatlari va to'lovlar tarixi - faqat server (admin panel
+    // ham /api/admin/expenses orqali o'qiydi).
+    match /expenses/{expenseId} {
+      allow read, write: if false;
+    }
+    match /expensePayments/{paymentId} {
+      allow read, write: if false;
+    }
+
+    // Ombor harakatlari (kirim/sotuv/chiqim/sanoq) - faqat server.
+    match /stockMoves/{moveId} {
+      allow read, write: if false;
+    }
+
     // Buyurtmalar - foydalanuvchi faqat o'z buyurtmasini yaratishi va
     // ko'rishi mumkin; statusni faqat admin/bot (server, Admin SDK orqali,
     // bu qoidalarni chetlab o'tadi) o'zgartira oladi.
