@@ -22,6 +22,14 @@ interface StyleOption {
   label: string;
 }
 
+/**
+ * Bitta rasmning taxminiy narxi (Gemini image, 2026-yil holati).
+ * Panelda ko'rsatiladi - admin tugmani bosishdan oldin qancha pul
+ * ketishini bilib turadi.
+ */
+const PRICE_PER_IMAGE_USD = 0.039;
+const USD_TO_UZS = 12600;
+
 export interface AiSuggestion {
   name: string;
   description: string;
@@ -42,7 +50,8 @@ interface Props {
 
 export function AiImagePanel({ productId, hasImage, onSuggestion, onImages }: Props) {
   const [config, setConfig] = useState<{ analyze: boolean; generate: boolean; styles: StyleOption[] } | null>(null);
-  const [selected, setSelected] = useState<string[]>(["studio", "lifestyle"]);
+  // Standart - bitta uslub: har bosish pul ketishini bildiradi.
+  const [selected, setSelected] = useState<string[]>(["studio"]);
   const [extra, setExtra] = useState("");
   const [busy, setBusy] = useState<"analyze" | "generate" | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
@@ -154,6 +163,14 @@ export function AiImagePanel({ productId, hasImage, onSuggestion, onImages }: Pr
           <p className="text-xs text-navy-400 dark:text-navy-200">
             Generatsiya asl rasmdagi mahsulotni o&apos;zgartirmaydi — faqat fon, rakurs va muhit yangilanadi.
           </p>
+
+          {/* Xarajat oldindan ko'rinadi - hisobda pul kam bo'lsa muhim. */}
+          {selected.length > 0 && (
+            <p className="text-xs font-medium text-navy-500 dark:text-navy-100">
+              Taxminiy narx: {selected.length} × {Math.round(PRICE_PER_IMAGE_USD * USD_TO_UZS)} so&apos;m ={" "}
+              {Math.round(selected.length * PRICE_PER_IMAGE_USD * USD_TO_UZS).toLocaleString("ru-RU")} so&apos;m
+            </p>
+          )}
         </>
       )}
 
