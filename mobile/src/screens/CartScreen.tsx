@@ -5,11 +5,11 @@ import {useI18n} from '../i18n';
 import {useAppDispatch, useAppSelector} from '../store';
 import {clearCart, removeItem, setQuantity} from '../store/cartSlice';
 import {Button, EmptyState} from '../components/ui';
-import type {TabScreenProps} from '../navigation/types';
+import type {StackScreenProps} from '../navigation/types';
 import {Icon} from '../components/Icon';
 
 /** Savat: soni +/−, o'chirish va rasmiylashtirishga o'tish. */
-export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
+export function CartScreen({navigation}: StackScreenProps<'Savat'>) {
   const styles = useStyles();
   const {t, money} = useI18n();
   const dispatch = useAppDispatch();
@@ -21,7 +21,7 @@ export function CartScreen({navigation}: TabScreenProps<'Savat'>) {
       <View style={styles.screen}>
         <EmptyState text={t.cartEmpty} />
         <View style={{padding: spacing.lg}}>
-          <Button title={t.goToCatalog} onPress={() => navigation.navigate('Katalog', {})} />
+          <Button title={t.goToCatalog} onPress={() => navigation.navigate('Tabs', {screen: 'Katalog'})} />
         </View>
       </View>
     );

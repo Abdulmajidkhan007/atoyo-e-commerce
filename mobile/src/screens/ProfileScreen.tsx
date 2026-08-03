@@ -9,11 +9,15 @@ import {googleSignInAvailable, signInWithGoogle, signInWithTelegram} from '../so
 import type {TabScreenProps} from '../navigation/types';
 import {useToast} from '../components/Toast';
 import {Icon} from '../components/Icon';
+import {SettingsSections} from '../components/SettingsSections';
 
 /**
  * Profil: kirmagan bo'lsa - kirish/ro'yxatdan o'tish (Google va Telegram
  * bilan ham, saytdagi kabi), kirgan bo'lsa - ma'lumotlarni tahrirlash,
- * buyurtmalar, sozlamalar va chiqish.
+ * SOZLAMALAR (tema, shrift, til, bildirishnoma, obuna) va chiqish.
+ *
+ * Blog/Kontakt endi pastki menyuda, savat/sevimlilar/buyurtmalarim esa
+ * tepadagi "☰" oynasida - shuning uchun bu yerda ularning tugmasi yo'q.
  */
 export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
   const styles = useStyles();
@@ -172,12 +176,7 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
           />
         )}
 
-        <Button
-          title={t.titleSettings}
-          icon="settings"
-          variant="outline"
-          onPress={() => navigation.navigate('Sozlamalar')}
-        />
+        <SettingsSections />
       </ScrollView>
     );
   }
@@ -211,36 +210,9 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
       <Field label={t.homeAddress} value={address} onChangeText={setAddress} multiline />
       <Button title={t.save} onPress={save} loading={busy} />
 
-      <Button
-        title={t.myOrders}
-        icon="orders"
-        variant="outline"
-        onPress={() => navigation.navigate('Buyurtmalarim')}
-      />
-      <Button
-        title={t.titleBlog}
-        icon="blog"
-        variant="outline"
-        onPress={() => navigation.navigate('Blog')}
-      />
-      <Button
-        title={t.titleAssistant}
-        icon="assistant"
-        variant="outline"
-        onPress={() => navigation.navigate('Yordamchi')}
-      />
-      <Button
-        title={t.titleContact}
-        icon="phone"
-        variant="outline"
-        onPress={() => navigation.navigate('Kontakt')}
-      />
-      <Button
-        title={t.titleSettings}
-        icon="settings"
-        variant="outline"
-        onPress={() => navigation.navigate('Sozlamalar')}
-      />
+      {/* Sozlamalar shu yerda - alohida sahifaga o'tish shart emas. */}
+      <SettingsSections />
+
       {/* XODIMLAR uchun: boshqaruv paneli. Panel serverdagi sessiya
           cookie'si bilan ishlaydi, shuning uchun brauzerda ochiladi -
           u yerda sayt hisobingiz bilan kirasiz. */}

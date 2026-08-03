@@ -1,16 +1,28 @@
 import React, {useState} from 'react';
-import {Image, Modal, Pressable, Text, View} from 'react-native';
+import {Image, Modal, Pressable, ScrollView, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
-import {makeStyles, radius, spacing, useTheme, type ThemeMode} from '../theme';
+import {
+  makeStyles,
+  radius,
+  spacing,
+  useTheme,
+  type FontScaleMode,
+  type ThemeMode,
+} from '../theme';
 import {useI18n, type Locale} from '../i18n';
 import {useAppSelector} from '../store';
 import {Icon, type IconName} from './Icon';
 
 /**
- * SAYT HEADER'ining ilova varianti: logotip + brend nomi, o'ng tomonda
- * til va tema tugmalari, sevimlilar va savat (belgi bilan).
- * Sayt (`components/layout/Header.tsx`) bilan bir xil tartib va ranglar.
+ * ILOVA HEADER'i.
+ *
+ * O'ng tomonda faqat IKKI tugma qoladi: tema almashtirish va "☰".
+ * Qolgani (sevimlilar, savat, buyurtmalar, yordamchi, til, shrift
+ * o'lchami) ☰ ostidagi kichik oynada - u ekranni to'sib qo'ymaydi,
+ * balandligi ichidagi ro'yxatga qarab o'sadi.
+ *
+ * Yopish ikki xil: tashqi tomonga bosish yoki ☰ o'rniga chiqqan ✕.
  */
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -19,40 +31,44 @@ const LOCALE_LABELS: Record<Locale, string> = {
   ru: 'Русский',
 };
 
-const THEME_LABELS: Record<ThemeMode, string> = {
-  light: 'Kunduzgi',
-  dark: 'Tungi',
-  system: 'Tizim bo‘yicha',
-};
-
-const THEME_ICONS: Record<ThemeMode, IconName> = {
-  light: 'sun',
-  dark: 'moon',
-  system: 'auto',
-};
+const THEME_ORDER: ThemeMode[] = ['light', 'dark', 'system'];
 
 export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
-  const {isDark, mode, setMode} = useTheme();
+  const {isDark, mode, setMode, fontScaleMode, setFontScaleMode} = useTheme();
   const {t, locale, setLocale} = useI18n();
   const navigation = useNavigation();
-  /** Til yoki tema ro'yxati ochiqmi. */
-  const [menu, setMenu] = useState<'locale' | 'theme' | null>(null);
+  const [open, setOpen] = useState(false);
 
   /**
    * Tab ekraniga o'tish. `navigate('Tabs', {screen})` YOZILMAYDI - bu
    * header ham tab navigatorining sarlavhasi, ham stack'niki bo'lib
-   * ishlaydi va tab ichida bunday chaqiruv jimgina hech narsa qilmaydi
-   * (savat/sevimlilar tugmalari shu sabab "bosilmayotgandek" edi).
+   * ishlaydi va tab ichida bunday chaqiruv jimgina hech narsa qilmaydi.
    * Ekran nomining o'zi berilsa amal navigatorlar bo'ylab ko'tariladi.
    */
   const goTo = (screen: string) => {
+    setOpen(false);
     (navigation as unknown as {navigate: (name: string) => void}).navigate(screen);
   };
 
   const cartCount = useAppSelector(s => s.cart.items.reduce((sum, i) => sum + i.quantity, 0));
   const favCount = useAppSelector(s => s.favorites.ids.length);
+  const menuCount = cartCount + favCount;
+
+  /** Tema tugmasi bosilganda: kunduzgi -> tungi -> tizim -> ... */
+  const cycleTheme = () => {
+    const index = THEME_ORDER.indexOf(mode);
+    setMode(THEME_ORDER[(index + 1) % THEME_ORDER.length] ?? 'system');
+  };
+
+  const fontOptions: {value: FontScaleMode; label: string}[] = [
+    {value: 'system', label: t.fontSystem},
+    {value: 'small', label: t.fontSmall},
+    {value: 'normal', label: t.fontNormal},
+    {value: 'large', label: t.fontLarge},
+    {value: 'xlarge', label: t.fontXLarge},
+  ];
 
   return (
     <View style={[styles.wrap, {paddingTop: insets.top + spacing.xs}]}>
@@ -70,88 +86,105 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
       </Pressable>
 
       <View style={styles.actions}>
-        <Pressable hitSlop={6} onPress={() => setMenu('locale')} style={styles.iconBtn}>
-          <Icon name="language" size={20} color={styles.c.text} />
-          <Text style={styles.localeText}>{locale.toUpperCase()}</Text>
-        </Pressable>
-
-        <Pressable hitSlop={6} onPress={() => setMenu('theme')} style={styles.iconBtn}>
+        {/* Tema - eng ko'p ishlatiladigan tugma, shuning uchun tashqarida. */}
+        <Pressable hitSlop={6} onPress={cycleTheme} style={styles.iconBtn}>
           <Icon name={isDark ? 'sun' : 'moon'} size={20} color={styles.c.text} />
           {mode === 'system' && <View style={styles.systemDot} />}
         </Pressable>
 
-        <HeaderBadgeButton icon="heart" count={favCount} onPress={() => goTo('Sevimlilar')} />
-        <HeaderBadgeButton icon="cart" count={cartCount} onPress={() => goTo('Savat')} />
+        <Pressable
+          hitSlop={6}
+          onPress={() => setOpen(value => !value)}
+          style={styles.iconBtn}
+          accessibilityLabel={open ? t.close : t.menu}>
+          <Icon name={open ? 'close' : 'menu'} size={22} color={styles.c.text} />
+          {!open && menuCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{menuCount > 99 ? '99+' : menuCount}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
-      {/* Til va tema tanlash - tugma ostidan chiqadigan ro'yxat. */}
-      <Modal visible={menu !== null} transparent animationType="fade">
-        <Pressable style={styles.menuBackdrop} onPress={() => setMenu(null)}>
-          <View style={[styles.menu, {top: insets.top + 48}]}>
-            {menu === 'locale' &&
-              (Object.keys(LOCALE_LABELS) as Locale[]).map(key => (
-                <Pressable
-                  key={key}
-                  style={styles.menuItem}
-                  onPress={() => {
-                    setLocale(key);
-                    setMenu(null);
-                  }}>
-                  <Text style={[styles.menuText, locale === key && styles.menuTextOn]}>
-                    {LOCALE_LABELS[key]}
-                  </Text>
-                  {locale === key && (
-                    <Icon name="check" size={18} color={styles.c.accent} />
-                  )}
-                </Pressable>
-              ))}
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        {/* Tashqi tomonga bosilsa yopiladi. */}
+        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+          {/* Ichkariga bosilganda yopilmasligi uchun alohida Pressable. */}
+          <Pressable style={[styles.sheet, {top: insets.top + 44}]} onPress={() => {}}>
+            <ScrollView bounces={false}>
+              <MenuRow
+                icon="heart"
+                label={t.tabFavorites}
+                count={favCount}
+                onPress={() => goTo('Sevimlilar')}
+              />
+              <MenuRow icon="cart" label={t.tabCart} count={cartCount} onPress={() => goTo('Savat')} />
+              <MenuRow icon="orders" label={t.myOrders} onPress={() => goTo('Buyurtmalarim')} />
+              <MenuRow icon="assistant" label={t.titleAssistant} onPress={() => goTo('Yordamchi')} />
 
-            {menu === 'theme' &&
-              (Object.keys(THEME_LABELS) as ThemeMode[]).map(key => (
-                <Pressable
-                  key={key}
-                  style={styles.menuItem}
-                  onPress={() => {
-                    setMode(key);
-                    setMenu(null);
-                  }}>
-                  <View style={styles.menuLeft}>
-                    <Icon
-                      name={THEME_ICONS[key]}
-                      size={18}
-                      color={mode === key ? styles.c.accent : styles.c.muted}
-                    />
-                    <Text style={[styles.menuText, mode === key && styles.menuTextOn]}>
-                      {THEME_LABELS[key]}
+              <View style={styles.divider} />
+
+              <Text style={styles.groupTitle}>{t.language}</Text>
+              <View style={styles.chips}>
+                {(Object.keys(LOCALE_LABELS) as Locale[]).map(code => (
+                  <Pressable
+                    key={code}
+                    onPress={() => setLocale(code)}
+                    style={[styles.chip, locale === code && styles.chipOn]}>
+                    <Text style={[styles.chipText, locale === code && styles.chipTextOn]}>
+                      {LOCALE_LABELS[code]}
                     </Text>
-                  </View>
-                  {mode === key && <Icon name="check" size={18} color={styles.c.accent} />}
-                </Pressable>
-              ))}
-          </View>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={styles.groupTitle}>{t.fontSizeTitle}</Text>
+              <View style={styles.chips}>
+                {fontOptions.map(option => (
+                  <Pressable
+                    key={option.value}
+                    onPress={() => setFontScaleMode(option.value)}
+                    style={[styles.chip, fontScaleMode === option.value && styles.chipOn]}>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        fontScaleMode === option.value && styles.chipTextOn,
+                      ]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
   );
 }
 
-function HeaderBadgeButton({
+function MenuRow({
   icon,
+  label,
   count,
   onPress,
 }: {
   icon: IconName;
-  count: number;
+  label: string;
+  count?: number;
   onPress: () => void;
 }) {
   const styles = useStyles();
 
   return (
-    <Pressable hitSlop={6} onPress={onPress} style={styles.iconBtn}>
-      <Icon name={icon} size={21} color={styles.c.text} />
-      {count > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text>
+    <Pressable style={styles.menuItem} onPress={onPress}>
+      <View style={styles.menuLeft}>
+        <Icon name={icon} size={19} color={styles.c.accent} />
+        <Text style={styles.menuText}>{label}</Text>
+      </View>
+      {typeof count === 'number' && count > 0 && (
+        <View style={styles.countPill}>
+          <Text style={styles.countText}>{count > 99 ? '99+' : count}</Text>
         </View>
       )}
     </Pressable>
@@ -172,12 +205,10 @@ const useStyles = makeStyles(c => ({
   brand: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0},
   logo: {width: 32, height: 32, borderRadius: radius.sm},
   brandText: {color: c.text, fontSize: 16, fontWeight: '800', flexShrink: 1},
-  // Ikonkalar bir-biriga yopishib qolmasligi uchun oraliq kengaytirildi.
   actions: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
-  iconBtn: {width: 30, height: 34, alignItems: 'center', justifyContent: 'center'},
+  iconBtn: {width: 32, height: 34, alignItems: 'center', justifyContent: 'center'},
   /** Orqaga: "chevron" ikonkasi teskari qaratiladi. */
   backIcon: {transform: [{rotate: '180deg'}]},
-  localeText: {color: c.muted, fontSize: 9, fontWeight: '700', marginTop: -1},
   systemDot: {
     position: 'absolute',
     bottom: 4,
@@ -188,7 +219,7 @@ const useStyles = makeStyles(c => ({
   },
   badge: {
     position: 'absolute',
-    right: 0,
+    right: -2,
     top: 1,
     minWidth: 16,
     height: 16,
@@ -199,16 +230,21 @@ const useStyles = makeStyles(c => ({
     justifyContent: 'center',
   },
   badgeText: {fontSize: 10, fontWeight: '700', color: c.onAccent},
-  menuBackdrop: {flex: 1, backgroundColor: 'rgba(0,0,0,0.25)'},
-  menu: {
+  backdrop: {flex: 1, backgroundColor: 'rgba(0,0,0,0.25)'},
+  /**
+   * Oyna balandligi ichidagi ro'yxatga qarab o'sadi; ekranning yarmidan
+   * oshsa ichi aylanadi.
+   */
+  sheet: {
     position: 'absolute',
     right: spacing.md,
-    minWidth: 190,
+    maxHeight: '70%',
+    minWidth: 230,
     backgroundColor: c.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: c.border,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.2,
@@ -225,5 +261,39 @@ const useStyles = makeStyles(c => ({
   },
   menuLeft: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
   menuText: {color: c.text, fontSize: 15},
-  menuTextOn: {color: c.accent, fontWeight: '700'},
+  countPill: {
+    minWidth: 20,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+    backgroundColor: c.accent,
+    alignItems: 'center',
+  },
+  countText: {color: c.onAccent, fontSize: 11, fontWeight: '700'},
+  divider: {height: 1, backgroundColor: c.border, marginVertical: spacing.xs},
+  groupTitle: {
+    color: c.muted,
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  chipOn: {backgroundColor: c.accent, borderColor: c.accent},
+  chipText: {color: c.text, fontSize: 13},
+  chipTextOn: {color: c.onAccent, fontWeight: '700'},
 }));

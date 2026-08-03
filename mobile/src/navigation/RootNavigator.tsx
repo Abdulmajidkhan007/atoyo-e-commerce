@@ -80,23 +80,17 @@ function Tabs() {
         component={CatalogScreen}
         options={{tabBarLabel: t.tabCatalog, tabBarIcon: tabIcon('catalog')}}
       />
+      {/* Savat va sevimlilar tepadagi menyuga ko'chdi - pastda esa
+          eng ko'p ochiladigan bo'limlar turadi. */}
       <Tab.Screen
-        name="Savat"
-        component={CartScreen}
-        options={{
-          tabBarLabel: t.tabCart,
-          tabBarIcon: tabIcon('cart'),
-          tabBarBadge: cartCount > 0 ? cartCount : undefined,
-        }}
+        name="Blog"
+        component={BlogScreen}
+        options={{tabBarLabel: t.titleBlog, tabBarIcon: tabIcon('blog')}}
       />
       <Tab.Screen
-        name="Sevimlilar"
-        component={FavoritesScreen}
-        options={{
-          tabBarLabel: t.tabFavorites,
-          tabBarIcon: tabIcon('heart'),
-          tabBarBadge: favCount > 0 ? favCount : undefined,
-        }}
+        name="Kontakt"
+        component={ContactScreen}
+        options={{tabBarLabel: t.titleContact, tabBarIcon: tabIcon('phone')}}
       />
       <Tab.Screen
         name="Profil"
@@ -129,19 +123,19 @@ export function RootNavigator() {
         options={{header: () => <BrandHeader back title={t.titleOrders} />}}
       />
       <Stack.Screen
-        name="Blog"
-        component={BlogScreen}
-        options={{header: () => <BrandHeader back title={t.titleBlog} />}}
-      />
-      <Stack.Screen
         name="Maqola"
         component={BlogPostScreen}
         options={{header: () => <BrandHeader back title={t.titleBlog} />}}
       />
       <Stack.Screen
-        name="Kontakt"
-        component={ContactScreen}
-        options={{header: () => <BrandHeader back title={t.titleContact} />}}
+        name="Savat"
+        component={CartScreen}
+        options={{header: () => <BrandHeader back title={t.tabCart} />}}
+      />
+      <Stack.Screen
+        name="Sevimlilar"
+        component={FavoritesScreen}
+        options={{header: () => <BrandHeader back title={t.tabFavorites} />}}
       />
       <Stack.Screen
         name="Yordamchi"

@@ -216,7 +216,10 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           (product.variantAxes ?? []).map(axis => (
             <View key={axis.key} style={{gap: spacing.xs}}>
               <Text style={styles.muted}>{axis.label}</Text>
-              <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs}}>
+              {/* Variantlar bitta ramka ichida (segment tanlagich):
+                  tanlangani ramka ichida rang bilan ajraladi. Pastki-chap
+                  burchak to'g'ri - saytdagi shakl bilan bir xil. */}
+              <View style={styles.variantGroup}>
                 {axis.values.map(value => {
                   const selected = selection[axis.key] === value;
                   return (
@@ -360,15 +363,24 @@ const useStyles = makeStyles(c => ({
   },
   zoomImage: {width: '100%', height: '100%'},
   zoomClose: {position: 'absolute', top: 40, right: 20},
-  variant: {
+  variantGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    padding: 4,
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 999,
+    borderBottomLeftRadius: 0,
+  },
+  variant: {
+    borderRadius: 999,
     paddingVertical: 6,
     paddingHorizontal: 14,
-    backgroundColor: c.surface,
   },
-  variantOn: {backgroundColor: c.accent, borderColor: c.accent},
+  variantOn: {backgroundColor: c.accent},
   variantText: {color: c.text, fontSize: 13, fontWeight: '600'},
   variantTextOn: {color: c.onAccent},
   screen: {flex: 1, backgroundColor: c.bg},

@@ -7,8 +7,8 @@ import type {ProductCategory} from '../types';
 export type TabParamList = {
   Home: undefined;
   Katalog: {category?: ProductCategory; q?: string} | undefined;
-  Savat: undefined;
-  Sevimlilar: undefined;
+  Blog: undefined;
+  Kontakt: undefined;
   Profil: undefined;
 };
 
@@ -18,10 +18,11 @@ export type RootStackParamList = {
   Mahsulot: {productId: string};
   Buyurtma: undefined;
   Buyurtmalarim: undefined;
-  Blog: undefined;
   Maqola: {postId: string};
-  Kontakt: undefined;
   Yordamchi: undefined;
+  /** Savat va sevimlilar endi pastki menyuda emas - tepadagi menyuda. */
+  Savat: undefined;
+  Sevimlilar: undefined;
   Sozlamalar: undefined;
   /** Faqat xodimlar uchun (profil sahifasidan ochiladi). */
   AdminBuyurtmalar: undefined;

@@ -5,11 +5,11 @@ import {useI18n} from '../i18n';
 import {fetchBlogPosts} from '../firebase';
 import type {BlogPost} from '../types';
 import {EmptyState, Loading} from '../components/ui';
-import type {StackScreenProps} from '../navigation/types';
+import type {TabScreenProps} from '../navigation/types';
 import {Icon} from '../components/Icon';
 
 /** Blog ro'yxati - saytdagi `/blog` sahifasining ilova varianti. */
-export function BlogScreen({navigation}: StackScreenProps<'Blog'>) {
+export function BlogScreen({navigation}: TabScreenProps<'Blog'>) {
   const styles = useStyles();
   const {t} = useI18n();
   const [posts, setPosts] = useState<BlogPost[] | null>(null);

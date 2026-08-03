@@ -39,7 +39,11 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
       {axes.map((axis) => (
         <div key={axis.key} className="flex flex-col gap-1.5">
           <span className="text-sm text-navy-300">{axis.label}</span>
-          <div className="flex flex-wrap gap-2">
+          {/* Variantlar bitta "o'rab turuvchi" ramka ichida; tanlangani
+              ramka ichida rang bilan ajralib turadi (segment tanlagich).
+              Pastki-chap burchak to'g'ri qoldirilgan - shakl brenddagi
+              "qirqilgan burchak" uslubiga mos keladi. */}
+          <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-1 rounded-full rounded-bl-none border border-navy-100 p-1 dark:border-navy-500">
             {axis.values.map((value) => {
               const isSelected = selection[axis.key] === value;
               const available = isValueAvailable(axis.key, value);
@@ -48,11 +52,14 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
                   key={value}
                   type="button"
                   onClick={() => setSelection((prev) => ({ ...prev, [axis.key]: value }))}
+                  aria-pressed={isSelected}
                   className={[
-                    "rounded-full border px-4 py-1.5 text-sm transition",
+                    "rounded-full px-4 py-1.5 text-sm transition",
+                    // Tanlangan variant ostidagi rangli "yostiq" - shu
+                    // tugmaning orqasiga o'tadi.
                     isSelected
-                      ? "border-aqua-500 bg-aqua-500 font-semibold text-white"
-                      : "border-navy-100 text-navy-900 hover:border-aqua-500 dark:border-navy-500 dark:text-white",
+                      ? "bg-aqua-500 font-semibold text-white shadow-sm"
+                      : "text-navy-900 hover:bg-aqua-500/15 dark:text-white",
                     available ? "" : "opacity-50",
                   ].join(" ")}
                 >

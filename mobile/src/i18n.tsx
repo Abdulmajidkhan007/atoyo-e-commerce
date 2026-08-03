@@ -64,6 +64,8 @@ export interface Dict {
   fontNormal: string;
   fontLarge: string;
   fontXLarge: string;
+  menu: string;
+  close: string;
   // Bosh sahifa
   heroTitle: string;
   heroBadge: string;
@@ -225,6 +227,8 @@ const uz: Dict = {
   fontNormal: 'Standart',
   fontLarge: 'Katta',
   fontXLarge: 'Juda katta',
+  menu: 'Menyu',
+  close: 'Yopish',
   heroTitle: 'Santexnika va Otopleniye uchun ishonchli manzil',
   heroBadge: '10 000+ mahsulot',
   viewCatalog: 'Katalogni ko‘rish',
@@ -391,6 +395,8 @@ const en: Dict = {
   fontNormal: 'Normal',
   fontLarge: 'Large',
   fontXLarge: 'Extra large',
+  menu: 'Menu',
+  close: 'Close',
   heroTitle: 'A reliable source for plumbing and heating',
   heroBadge: '10,000+ products',
   viewCatalog: 'View catalog',
@@ -554,6 +560,8 @@ const ru: Dict = {
   fontNormal: 'Обычный',
   fontLarge: 'Крупный',
   fontXLarge: 'Очень крупный',
+  menu: 'Меню',
+  close: 'Закрыть',
   heroTitle: 'Надёжный выбор сантехники и отопления',
   heroBadge: '10 000+ товаров',
   viewCatalog: 'Смотреть каталог',

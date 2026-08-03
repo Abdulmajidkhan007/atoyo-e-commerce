@@ -267,6 +267,15 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - **Admin uchun ham:** buyurtmalar (real-vaqtda, holat tugmalari),
   mahsulot qidirish/kirim/tez tahrir, statistika, blog, promokod,
   mijozlar.
+- **Navigatsiya:** pastki menyu — Bosh, Katalog, Blog, Kontakt, Profil.
+  Header'da faqat tema tugmasi va "☰": savat, sevimlilar,
+  buyurtmalarim, yordamchi, til va shrift o'lchami shu oynada
+  (tashqariga bosilsa yoki ✕ bosilsa yopiladi, balandligi ichidagi
+  ro'yxatga qarab o'sadi). Profil sahifasida alohida tugmalar yo'q —
+  sozlamalar bo'limlari o'sha yerda chiziladi.
+- **Mahsulot turlari** (o'lcham/qalinlik) segment tanlagich ko'rinishida:
+  variantlar bitta ramka ichida, tanlangani ramka ichida rang bilan
+  ajraladi (sayt va ilovada bir xil).
 - **Shrift o'lchami sozlamada** (Sozlamalar > Shrift o'lchami):
   tizim bo'yicha / kichik / standart / katta / juda katta. Telefon
   sozlamasidagi katta shrift menyu yozuvlarini qirqib qo'yardi
