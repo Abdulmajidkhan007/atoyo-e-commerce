@@ -42,3 +42,42 @@ env:
     value: "151"
     availability:
       - RUNTIME
+
+  # ---------------------------------------------------------------
+  # AI YORDAMCHI (Claude). Kalit Secret Manager'da bo'lgandan KEYIN
+  # quyidagi blokdagi "#" belgilarini olib tashlang:
+  #
+  #   gcloud secrets create ANTHROPIC_API_KEY --replication-policy=automatic --project=atoyo-uz
+  #   printf 'sk-ant-...' | gcloud secrets versions add ANTHROPIC_API_KEY --data-file=- --project=atoyo-uz
+  #   firebase apphosting:secrets:grantaccess ANTHROPIC_API_KEY --backend atoyo-e-commerce --project atoyo-uz
+  # ---------------------------------------------------------------
+  # - variable: ANTHROPIC_API_KEY
+  #   secret: ANTHROPIC_API_KEY
+  #   availability:
+  #     - RUNTIME
+
+  # Arzon model (1 savol ~40 so'm). Olib tashlansa - claude-opus-5.
+  - variable: AI_MODEL
+    value: claude-haiku-4-5
+    availability:
+      - RUNTIME
+
+  # ---------------------------------------------------------------
+  # AI RASM (Gemini "Nano Banana"). Kalit yaratilgandan keyin oching:
+  #
+  #   gcloud secrets create GEMINI_API_KEY --replication-policy=automatic --project=atoyo-uz
+  #   printf 'AIza...' | gcloud secrets versions add GEMINI_API_KEY --data-file=- --project=atoyo-uz
+  #   firebase apphosting:secrets:grantaccess GEMINI_API_KEY --backend atoyo-e-commerce --project atoyo-uz
+  # ---------------------------------------------------------------
+  # - variable: GEMINI_API_KEY
+  #   secret: GEMINI_API_KEY
+  #   availability:
+  #     - RUNTIME
+
+  # Kirish yo'llari. Faqat Firebase konsolida YOQILGANini yozing.
+  # To'liq ro'yxat: google,telegram,apple,microsoft,facebook,phone
+  - variable: NEXT_PUBLIC_AUTH_PROVIDERS
+    value: "google,telegram"
+    availability:
+      - BUILD
+      - RUNTIME

@@ -29,6 +29,17 @@ interface Props {
 
 export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: Props) {
   const enabled = axes.length > 0;
+  /**
+   * YOZILAYOTGAN MATN (qator raqami bo'yicha).
+   *
+   * Maydon qiymati `values.join(", ")` dan chiqarilsa, vergul qo'yilishi
+   * bilan bo'sh element tashlab yuborilardi va vergul ekranda
+   * ko'rinmasdan yo'qolardi - ya'ni ikkinchi o'lchamni yozib bo'lmasdi.
+   * Shuning uchun yozish paytida MATNNING O'ZI ko'rsatiladi, qiymatlar
+   * esa fonda ajratib boriladi; maydondan chiqilganda matn tozalangan
+   * ko'rinishga qaytadi.
+   */
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [fillPrice, setFillPrice] = useState("");
   const [fillStock, setFillStock] = useState("");
   const totalStock = variants.reduce((sum, variant) => sum + Math.max(0, variant.stock), 0);
@@ -54,6 +65,12 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
     // yozilgan qiymatlardan qolgan eski turlar saqlanib qolmaydi.
     const { variants: nextVariants } = normalizeVariants(nextAxes, variants);
     onChange({ axes: nextAxes, variants: nextVariants });
+  };
+
+  /** Qator qo'shilsa/o'chirilsa yozilayotgan matnlar boshqa qatorga tushmasligi uchun. */
+  const rebuildRows = (nextAxes: VariantAxis[]) => {
+    setDrafts({});
+    rebuild(nextAxes);
   };
 
   const updateAxis = (index: number, patch: Partial<VariantAxis>) => {
@@ -93,7 +110,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
           checked={enabled}
           onChange={(e) =>
             e.target.checked
-              ? rebuild([{ key: "olcham", label: "O'lcham", values: [] }])
+              ? rebuildRows([{ key: "olcham", label: "O'lcham", values: [] }])
               : onChange({ axes: [], variants: [] })
           }
         />
@@ -117,20 +134,30 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
                 size="small"
                 label="Qiymatlari (vergul bilan)"
                 placeholder="50x60, 60x80, 80x100"
-                value={axis.values.join(", ")}
-                onChange={(e) =>
+                value={drafts[index] ?? axis.values.join(", ")}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setDrafts((prev) => ({ ...prev, [index]: raw }));
                   updateAxis(index, {
-                    values: e.target.value
+                    values: raw
                       .split(",")
                       .map((value) => value.trim())
                       .filter(Boolean),
+                  });
+                }}
+                onBlur={() =>
+                  setDrafts((prev) => {
+                    const next = { ...prev };
+                    delete next[index];
+                    return next;
                   })
                 }
                 fullWidth
+                helperText="Har bir qiymat vergul bilan ajratiladi"
               />
               <IconButton
                 aria-label="O'chirish"
-                onClick={() => rebuild(axes.filter((_, i) => i !== index))}
+                onClick={() => rebuildRows(axes.filter((_, i) => i !== index))}
               >
                 <DeleteOutlineIcon className="text-red-400" />
               </IconButton>
@@ -143,7 +170,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
               size="small"
               startIcon={<AddIcon />}
               className="!w-fit"
-              onClick={() => rebuild([...axes, { key: "", label: "", values: [] }])}
+              onClick={() => rebuildRows([...axes, { key: "", label: "", values: [] }])}
             >
               Yana qator qo&apos;shish
             </Button>
