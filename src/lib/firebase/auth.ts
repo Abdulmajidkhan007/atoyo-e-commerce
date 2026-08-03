@@ -1,5 +1,10 @@
 import {
   GoogleAuthProvider,
+  FacebookAuthProvider,
+  OAuthProvider,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  type ConfirmationResult,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -46,6 +51,73 @@ async function syncSessionCookie(user: User): Promise<boolean> {
     body: JSON.stringify({ idToken }),
   });
   return res.ok;
+}
+
+/**
+ * QO'SHIMCHA KIRISH YO'LLARI.
+ *
+ * Firebase Auth qaysi provayderlarni qo'llab-quvvatlasa - shular:
+ * Google, Apple (iCloud), Microsoft, Facebook, telefon (SMS kod).
+ * WhatsApp va WeChat Firebase'da YO'Q - ular uchun eng yaqin yo'l
+ * telefon raqami (SMS) yoki Telegram orqali kirish.
+ *
+ * Har bir provayder Firebase konsolida alohida yoqilishi kerak, shuning
+ * uchun tugmalar `NEXT_PUBLIC_AUTH_PROVIDERS` ro'yxatiga qarab
+ * ko'rsatiladi (yoqilmagan tugma ko'rinmaydi - mijoz ishlamaydigan
+ * tugmani bosmaydi).
+ */
+export type SocialProvider = "google" | "apple" | "microsoft" | "facebook";
+
+function providerFor(name: SocialProvider) {
+  switch (name) {
+    case "apple": {
+      // Apple ismni faqat BIRINCHI kirishda beradi - shuning uchun
+      // scope'lar so'raladi va hisob hujjati o'sha zahoti yoziladi.
+      const provider = new OAuthProvider("apple.com");
+      provider.addScope("email");
+      provider.addScope("name");
+      return provider;
+    }
+    case "microsoft":
+      return new OAuthProvider("microsoft.com");
+    case "facebook": {
+      const provider = new FacebookAuthProvider();
+      provider.addScope("email");
+      return provider;
+    }
+    default:
+      return googleProvider;
+  }
+}
+
+/** Ijtimoiy provayder orqali kirish (Google/Apple/Microsoft/Facebook). */
+export async function signInWithProvider(name: SocialProvider) {
+  const credential = await signInWithPopup(getFirebaseAuth(), providerFor(name));
+  await ensureUserDocument(credential.user);
+  await syncSessionCookie(credential.user);
+  return credential.user;
+}
+
+/**
+ * TELEFON ORQALI KIRISH - 1-qadam: raqamga SMS kod yuboriladi.
+ * Firebase ko'rinmas reCAPTCHA talab qiladi; tekshiruvchi bir marta
+ * yaratilib, `window` da saqlanadi (qayta urinishda qayta ishlatiladi).
+ */
+export async function startPhoneLogin(phone: string, containerId: string): Promise<ConfirmationResult> {
+  const auth = getFirebaseAuth();
+  const holder = window as unknown as { __atoyoRecaptcha?: RecaptchaVerifier };
+  if (!holder.__atoyoRecaptcha) {
+    holder.__atoyoRecaptcha = new RecaptchaVerifier(auth, containerId, { size: "invisible" });
+  }
+  return signInWithPhoneNumber(auth, phone, holder.__atoyoRecaptcha);
+}
+
+/** TELEFON ORQALI KIRISH - 2-qadam: SMS kodni tasdiqlash. */
+export async function confirmPhoneLogin(confirmation: ConfirmationResult, code: string) {
+  const credential = await confirmation.confirm(code);
+  await ensureUserDocument(credential.user);
+  await syncSessionCookie(credential.user);
+  return credential.user;
 }
 
 export async function signInWithGoogle() {

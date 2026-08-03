@@ -21,6 +21,7 @@ export type RootStackParamList = {
   Blog: undefined;
   Maqola: {postId: string};
   Kontakt: undefined;
+  Yordamchi: undefined;
   Sozlamalar: undefined;
   /** Faqat xodimlar uchun (profil sahifasidan ochiladi). */
   AdminBuyurtmalar: undefined;

@@ -330,6 +330,90 @@ to'ldirish»** (yoki `POST /api/admin/products/search-index`). Keyin
 mahsulot yaratilganda/tahrirlanganda indeks o'zi yangilanadi.
 Sozlanmasa sayt avvalgi Firestore qidiruvida ishlayveradi.
 
+### 5e. AI yordamchi va AI rasm (ixtiyoriy)
+
+Ikkita mustaqil imkoniyat, ikkita alohida kalit. Kalit qo'yilmasa
+tegishli tugma umuman ko'rinmaydi — sayt/ilova/bot avvalgidek ishlaydi.
+
+**1) Yordamchi (sayt, ilova, bot).** Anthropic (Claude) kaliti:
+
+1. https://console.anthropic.com → **API Keys** → *Create Key*;
+2. Hisobga balans qo'ying (Billing → *Add credits*, minimal 5 $);
+3. Kalitni Secret Manager'ga qo'ying va `apphosting.yaml` ga ulang:
+
+```bash
+gcloud secrets create ANTHROPIC_API_KEY --replication-policy=automatic --project=atoyo-uz
+printf 'sk-ant-...' | gcloud secrets versions add ANTHROPIC_API_KEY --data-file=- --project=atoyo-uz
+```
+
+```yaml
+  - variable: ANTHROPIC_API_KEY
+    secret: ANTHROPIC_API_KEY
+    availability:
+      - RUNTIME
+  # Ixtiyoriy: arzonroq model (standart - claude-opus-5)
+  - variable: AI_MODEL
+    value: claude-haiku-4-5
+    availability:
+      - RUNTIME
+```
+
+Taxminiy xarajat: bitta savol-javob ~2 000 kirish + ~300 chiqish token.
+Opus 5 da ~0,017 $ (~210 so'm), Haiku 4.5 da ~0,003 $ (~40 so'm).
+Kuniga 100 savol = oyiga ~50 $ (Opus) yoki ~9 $ (Haiku). Himoya:
+har IP uchun soatiga 30 savol + mavzudan tashqari savollar modelga
+umuman bormaydi.
+
+**2) AI rasm (Nano Banana / Gemini image).** Rasm generatsiyasi uchun:
+
+1. https://aistudio.google.com/apikey → *Create API key* (atoyo-uz loyihasida);
+2. Billing yoqilgan bo'lishi kerak (bepul tarif limitlari kichik);
+
+```bash
+gcloud secrets create GEMINI_API_KEY --replication-policy=automatic --project=atoyo-uz
+printf 'AIza...' | gcloud secrets versions add GEMINI_API_KEY --data-file=- --project=atoyo-uz
+```
+
+```yaml
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+    availability:
+      - RUNTIME
+  # Ixtiyoriy: sifatlisi (qimmatroq) - gemini-3-pro-image-preview
+  - variable: GEMINI_IMAGE_MODEL
+    value: gemini-2.5-flash-image
+    availability:
+      - RUNTIME
+```
+
+Narx: bitta rasm ~0,039 $ (~480 so'm). 5 ta rasm ≈ 0,2 $ (~2 400 so'm).
+
+### 5f. Qo'shimcha kirish yo'llari (Apple/Microsoft/Facebook/telefon)
+
+Har bir provayder avval **Firebase konsolida** yoqiladi
+(Authentication → Sign-in method), keyin `apphosting.yaml` dagi
+ro'yxatga qo'shiladi:
+
+```yaml
+  - variable: NEXT_PUBLIC_AUTH_PROVIDERS
+    value: "google,telegram,apple,microsoft,facebook,phone"
+    availability:
+      - BUILD
+      - RUNTIME
+```
+
+Ro'yxatda yo'q usul tugmasi saytda chizilmaydi. Nima kerak bo'ladi:
+
+| Usul | Talab |
+|---|---|
+| `apple` | Apple Developer Program (99 $/yil), Services ID + kalit |
+| `microsoft` | Azure Portal → App registration (bepul), Client ID + Secret |
+| `facebook` | Facebook for Developers → App (bepul), App ID + Secret |
+| `phone` | Firebase'da Phone yoqiladi + domen ruxsati (SMS ~0,01-0,06 $) |
+
+WhatsApp va WeChat Firebase Auth'da **yo'q** — ular uchun `phone`
+(SMS kod) yoki mavjud Telegram kirishi ishlatiladi.
+
 ### 6. Google Analytics (ixtiyoriy)
 
 Statistika kerak bo'lsa `apphosting.yaml` ga bitta o'zgaruvchi qo'shiladi:

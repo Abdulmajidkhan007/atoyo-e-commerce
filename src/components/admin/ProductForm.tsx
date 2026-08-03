@@ -29,6 +29,7 @@ import {
   type TaxonomyKind,
 } from "@/lib/products/taxonomy";
 import { ProductVariantsEditor } from "./ProductVariantsEditor";
+import { AiImagePanel } from "./AiImagePanel";
 import { minVariantPrice, normalizeVariants, totalVariantStock } from "@/lib/products/variants";
 import type { Product, ProductVariant, VariantAxis } from "@/types/product";
 
@@ -551,6 +552,27 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* AI yordami - faqat saqlangan mahsulotda (rasm serverda turishi kerak). */}
+      {product && (
+        <AiImagePanel
+          productId={product.id}
+          hasImage={existingImages.length > 0}
+          onSuggestion={(suggestion) =>
+            setForm((prev) => ({
+              ...prev,
+              name: suggestion.name || prev.name,
+              description: suggestion.description || prev.description,
+              // Kalit so'zlar qo'shiladi (bor yozuv o'chib ketmaydi).
+              keywords: Array.from(
+                new Set([...prev.keywords.split(",").map((k) => k.trim()).filter(Boolean), ...suggestion.keywords])
+              ).join(", "),
+              brand: prev.brand || suggestion.brand,
+            }))
+          }
+          onImages={(urls) => setExistingImages((prev) => [...prev, ...urls].slice(0, MAX_IMAGES))}
+        />
+      )}
 
       {/* Rasmlar galereyasi (1-10 ta) */}
       <div>

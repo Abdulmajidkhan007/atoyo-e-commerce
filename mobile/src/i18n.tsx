@@ -49,6 +49,11 @@ export interface Dict {
   titleBlog: string;
   titleContact: string;
   titleSettings: string;
+  titleAssistant: string;
+  assistantIntro: string;
+  assistantPlaceholder: string;
+  assistantOff: string;
+  assistantError: string;
   // Bosh sahifa
   heroTitle: string;
   heroBadge: string;
@@ -193,6 +198,12 @@ const uz: Dict = {
   titleBlog: 'Blog',
   titleContact: 'Bog‘lanish',
   titleSettings: 'Sozlamalar',
+  titleAssistant: 'Yordamchi',
+  assistantIntro:
+    'Assalomu alaykum! Men Atoyo yordamchisiman. Mahsulot, narx, yetkazib berish yoki buyurtma bo‘yicha savolingizni yozing.',
+  assistantPlaceholder: 'Savolingizni yozing...',
+  assistantOff: 'Yordamchi hozircha yoqilmagan. Operator bilan bog‘laning.',
+  assistantError: 'Yordamchi javob bera olmadi. Keyinroq urinib ko‘ring.',
   heroTitle: 'Santexnika va Otopleniye uchun ishonchli manzil',
   heroBadge: '10 000+ mahsulot',
   viewCatalog: 'Katalogni ko‘rish',
@@ -342,6 +353,12 @@ const en: Dict = {
   titleBlog: 'Blog',
   titleContact: 'Contact',
   titleSettings: 'Settings',
+  titleAssistant: 'Assistant',
+  assistantIntro:
+    'Hello! I am the Atoyo assistant. Ask me about products, prices, delivery or orders.',
+  assistantPlaceholder: 'Type your question...',
+  assistantOff: 'The assistant is not enabled yet. Please contact an operator.',
+  assistantError: 'The assistant could not answer. Please try again later.',
   heroTitle: 'A reliable source for plumbing and heating',
   heroBadge: '10,000+ products',
   viewCatalog: 'View catalog',
@@ -488,6 +505,12 @@ const ru: Dict = {
   titleBlog: 'Блог',
   titleContact: 'Связаться',
   titleSettings: 'Настройки',
+  titleAssistant: 'Помощник',
+  assistantIntro:
+    'Здравствуйте! Я помощник Atoyo. Спросите о товарах, ценах, доставке или заказе.',
+  assistantPlaceholder: 'Напишите вопрос...',
+  assistantOff: 'Помощник пока не подключён. Свяжитесь с оператором.',
+  assistantError: 'Помощник не смог ответить. Попробуйте позже.',
   heroTitle: 'Надёжный выбор сантехники и отопления',
   heroBadge: '10 000+ товаров',
   viewCatalog: 'Смотреть каталог',

@@ -4,10 +4,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, TextField, Divider, Alert, CircularProgress } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
-import { signInWithGoogle, signInWithEmail, registerWithEmail, resetPassword } from "@/lib/firebase/auth";
+import AppleIcon from "@mui/icons-material/Apple";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import WindowIcon from "@mui/icons-material/Window";
+import PhoneIphoneIcon from "@mui/icons-material/PhoneIphone";
+import {
+  signInWithEmail,
+  registerWithEmail,
+  resetPassword,
+  signInWithProvider,
+  startPhoneLogin,
+  confirmPhoneLogin,
+  type SocialProvider,
+} from "@/lib/firebase/auth";
+import type { ConfirmationResult } from "firebase/auth";
+import { AUTH_METHOD_LABELS, enabledAuthMethods } from "@/lib/firebase/auth-providers";
 import { TelegramLoginButton } from "./TelegramLoginButton";
 import { useTelegramLogin } from "./useTelegramLogin";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+
+/** Provayder belgilari (Microsoft uchun MUI'da alohida logotip yo'q - "Window"). */
+const PROVIDER_ICONS: Record<SocialProvider, React.ReactNode> = {
+  google: <GoogleIcon />,
+  apple: <AppleIcon />,
+  microsoft: <WindowIcon />,
+  facebook: <FacebookIcon />,
+};
 
 export function LoginForm() {
   const router = useRouter();
@@ -17,6 +39,12 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { tgBusy, tgError, tgWaiting, startTelegramLogin } = useTelegramLogin();
+  // Qaysi kirish yo'llari yoqilgan (NEXT_PUBLIC_AUTH_PROVIDERS).
+  const methods = enabledAuthMethods();
+  const socialMethods = methods.filter((method): method is SocialProvider => method !== "telegram" && method !== "phone");
+  const [phone, setPhone] = useState("");
+  const [smsCode, setSmsCode] = useState("");
+  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -91,14 +119,37 @@ export function LoginForm() {
     );
   }
 
-  const handleGoogleSignIn = async () => {
+  const handleSocialSignIn = async (provider: SocialProvider) => {
     setError(null);
     setIsSubmitting(true);
     try {
-      await signInWithGoogle();
+      await signInWithProvider(provider);
       router.push("/");
     } catch {
       setError(dict.auth.error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /** Telefon: 1-qadam - SMS kod yuborish, 2-qadam - kodni tasdiqlash. */
+  const handlePhoneSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setInfo(null);
+    setIsSubmitting(true);
+    try {
+      if (!confirmation) {
+        const digits = phone.replace(/[^\d+]/g, "");
+        const e164 = digits.startsWith("+") ? digits : `+${digits.replace(/^998/, "998")}`;
+        setConfirmation(await startPhoneLogin(e164, "atoyo-recaptcha"));
+        setInfo(dict.auth.phoneCodeSent);
+      } else {
+        await confirmPhoneLogin(confirmation, smsCode.trim());
+        router.push("/");
+      }
+    } catch {
+      setError(dict.auth.phoneInvalid);
     } finally {
       setIsSubmitting(false);
     }
@@ -132,23 +183,53 @@ export function LoginForm() {
           (to'liq kenglikda emas). Telegram oqimi bot orqali - domen
           sozlashga bog'liq emas. */}
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button
-          onClick={handleGoogleSignIn}
-          variant="outlined"
-          size="medium"
-          startIcon={<GoogleIcon />}
-          disabled={isSubmitting || tgBusy}
-          className="!normal-case"
-        >
-          Google
-        </Button>
+        {socialMethods.map((provider) => (
+          <Button
+            key={provider}
+            onClick={() => handleSocialSignIn(provider)}
+            variant="outlined"
+            size="medium"
+            startIcon={PROVIDER_ICONS[provider]}
+            disabled={isSubmitting || tgBusy}
+            className="!normal-case"
+          >
+            {AUTH_METHOD_LABELS[provider]}
+          </Button>
+        ))}
 
-        <TelegramLoginButton
-          onClick={startTelegramLogin}
-          disabled={isSubmitting || tgBusy}
-          label={dict.auth.telegram}
-        />
+        {methods.includes("telegram") && (
+          <TelegramLoginButton
+            onClick={startTelegramLogin}
+            disabled={isSubmitting || tgBusy}
+            label={dict.auth.telegram}
+          />
+        )}
       </div>
+
+      {/* Telefon orqali kirish - Firebase SMS kodi (WhatsApp/WeChat
+          Firebase'da yo'q, eng yaqin muqobil shu). */}
+      {methods.includes("phone") && (
+        <form onSubmit={handlePhoneSubmit} className="flex flex-col gap-2 rounded-xl2 border border-navy-100 p-3 dark:border-navy-500">
+          <div className="flex items-center gap-2 text-sm font-medium text-navy-700 dark:text-navy-100">
+            <PhoneIphoneIcon fontSize="small" /> {dict.auth.phoneLogin}
+          </div>
+          <div className="flex gap-2">
+            <TextField
+              size="small"
+              fullWidth
+              label={confirmation ? dict.auth.phoneCode : dict.auth.phoneNumber}
+              value={confirmation ? smsCode : phone}
+              onChange={(e) => (confirmation ? setSmsCode(e.target.value) : setPhone(e.target.value))}
+              placeholder={confirmation ? "123456" : "+998 90 123 45 67"}
+            />
+            <Button type="submit" variant="outlined" disabled={isSubmitting} className="!normal-case whitespace-nowrap">
+              {confirmation ? dict.auth.phoneConfirm : dict.auth.phoneSendCode}
+            </Button>
+          </div>
+          {/* Ko'rinmas reCAPTCHA shu yerga o'rnatiladi. */}
+          <div id="atoyo-recaptcha" />
+        </form>
+      )}
 
       {tgError && <Alert severity="error">{dict.auth.telegramError}</Alert>}
       {tgWaiting && <Alert severity="info">{dict.auth.telegramWaiting}</Alert>}

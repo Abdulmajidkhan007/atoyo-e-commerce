@@ -260,6 +260,47 @@ export function receiptUrl(orderId: string): string {
 }
 
 /**
+ * AI YORDAMCHI (sayt bilan bir xil `/api/assistant`). Auth talab
+ * qilinmaydi - shuning uchun oddiy fetch. Yordamchi yoqilmagan bo'lsa
+ * server 503 qaytaradi, ekran esa buni foydalanuvchiga aytadi.
+ */
+export interface AssistantProduct {
+  id: string;
+  name: string;
+  price: number;
+  discountPrice: number | null;
+  stock: number;
+}
+
+export async function assistantEnabled(): Promise<boolean> {
+  try {
+    const response = await fetch(`${SITE_URL}/api/assistant`);
+    const data = (await response.json()) as {enabled?: boolean};
+    return Boolean(data.enabled);
+  } catch {
+    return false;
+  }
+}
+
+export async function askAssistant(input: {
+  question: string;
+  history: {role: 'user' | 'assistant'; content: string}[];
+}): Promise<{answer: string; products: AssistantProduct[]}> {
+  const response = await fetch(`${SITE_URL}/api/assistant`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({...input, channel: 'app'}),
+  });
+  const data = (await response.json().catch(() => ({}))) as {
+    answer?: string;
+    products?: AssistantProduct[];
+    error?: string;
+  };
+  if (!response.ok || !data.answer) throw new Error(data.error ?? 'Yordamchi javob bera olmadi.');
+  return {answer: data.answer, products: data.products ?? []};
+}
+
+/**
  * TELEGRAM ORQALI KIRISH (deep link). Bu ikki route auth talab
  * qilmaydi - shuning uchun `request` emas, to'g'ridan-to'g'ri fetch.
  */

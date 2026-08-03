@@ -117,6 +117,26 @@ foydalanuvchi so'raganda.
 - Env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (xodimlar guruhi),
   `TELEGRAM_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL` (OG rasm URL'lari uchun).
 
+## AI qatlami (`src/lib/ai/`)
+
+- `config.ts` — Anthropic klienti (`ANTHROPIC_API_KEY`, model
+  `AI_MODEL`, standart `claude-opus-5`). Kalit yo'q bo'lsa yordamchi
+  o'chiq: `/api/assistant` 503 qaytaradi, tugmalar chizilmaydi.
+- `guard.ts` — mavzu chegarasi va jailbreak naqshlari (client ham
+  ishlatishi mumkin, "server-only" YO'Q). Yangi himoya qo'shilsa
+  `guard.test.ts` ga test yoziladi.
+- `context.ts` — do'kon ma'lumotlari (5 daq. kesh) + savolga mos
+  mahsulotlar. **Narx/zaxira faqat shu yerdan** keladi — modeldan
+  emas.
+- `assistant.ts` — system prompt + Anthropic chaqiruvi. Uchala kanal
+  (sayt/ilova/bot) shu funksiyani chaqiradi; mantiq takrorlanmaydi.
+- `images.ts` — Claude vision bilan rasm tahlili va Gemini
+  ("Nano Banana", `GEMINI_API_KEY`) bilan rasm generatsiyasi. Prompt
+  har doim "mahsulot o'zgarmasin" cheklovi bilan ketadi.
+
+Kirish yo'llari (`NEXT_PUBLIC_AUTH_PROVIDERS`) — Firebase konsolida
+yoqilgan provayderlargina ro'yxatga qo'shiladi.
+
 ## Mobil ilova (`mobile/`)
 
 React Native CLI (bare, RN 0.76) — **faqat mijozlar uchun**. Sayt bilan
@@ -136,5 +156,6 @@ sharhni esa saytning API'si orqali yuboradi (`Authorization: Bearer
 ## Qolgan/kutilayotgan ishlar
 
 - Ko'p tillik uz/en/ru (boshlanmagan).
+- Admin "to'lovlar/xarajatlar" sahifasi (Firebase hisoblari, muddatlar).
 - Payme/Click to'lov integratsiyasi (foydalanuvchi merchant kalitlari kerak).
 - To'liq "hamma narsa Telegramda" pariteti; profil rasm/email/parol tahrirlash.

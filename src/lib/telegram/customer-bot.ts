@@ -22,6 +22,8 @@ import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { getPublishedPosts, getSiteSettings } from "@/lib/firebase/admin-content";
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
+import { askAssistant } from "@/lib/ai/assistant";
+import { isAiConfigured } from "@/lib/ai/config";
 import type { Product, ProductCategory } from "@/types/product";
 import type { Order, OrderItem } from "@/types/order";
 import type { BlogPost } from "@/types/content";
@@ -52,7 +54,8 @@ type SessionState =
   | "awaiting_profile_name"
   | "awaiting_profile_address"
   | "awaiting_promo"
-  | "awaiting_review_text";
+  | "awaiting_review_text"
+  | "awaiting_assistant";
 
 /** Katalog filtri (saytdagi FilterPanel bilan bir xil mantiq). */
 interface BotFilters {
@@ -76,6 +79,8 @@ interface BotSession {
   /** Sharh yozish oqimi: qaysi mahsulotga va nechta yulduz. */
   reviewProductId?: string;
   reviewRating?: number;
+  /** Yordamchi bilan suhbat tarixi (faqat oxirgi bir nechta xabar). */
+  assistantHistory?: { role: "user" | "assistant"; content: string }[];
   updatedAt: number;
 }
 
@@ -224,6 +229,7 @@ function mainMenuKeyboard(t: BotDict): { inline_keyboard: InlineButton[][] } {
       [{ text: t.cart, callback_data: "crt" }, { text: t.favorites, callback_data: "fav" }],
       [{ text: t.myOrders, callback_data: "ords" }, { text: t.profile, callback_data: "prof" }],
       [{ text: t.blog, callback_data: "blog|0" }, { text: t.contact, callback_data: "info" }],
+      [{ text: t.assistant, callback_data: "ai" }],
       [{ text: t.language, callback_data: "lng" }],
     ],
   };
@@ -686,6 +692,73 @@ async function finishOrder(
 // QIDIRUV va BUYURTMALAR TARIXI
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// AI YORDAMCHI (sayt va ilova bilan bir xil "miya" - `lib/ai/assistant.ts`)
+// ---------------------------------------------------------------------------
+
+/** Model javobi HTML rejimida yuboriladi - belgilar qochiriladi. */
+function escapeAssistantHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Yordamchi rejimini yoqadi (tugma yoki /yordamchi). */
+async function startAssistant(chatId: number, session: BotSession, t: BotDict): Promise<void> {
+  if (!isAiConfigured()) {
+    await sendChatMessage(chatId, t.assistantOff);
+    return;
+  }
+  session.state = "awaiting_assistant";
+  session.assistantHistory = [];
+  await saveSession(chatId, session);
+  await sendChatMessage(chatId, t.assistantIntro);
+}
+
+/** Mijoz savoliga yordamchi javobi + suhbat tarixini yangilash. */
+async function replyWithAssistant(
+  chatId: number,
+  session: BotSession,
+  text: string,
+  t: BotDict
+): Promise<void> {
+  if (!isAiConfigured()) {
+    session.state = "idle";
+    await saveSession(chatId, session);
+    await sendChatMessage(chatId, t.assistantOff);
+    return;
+  }
+
+  await sendChatMessage(chatId, t.assistantThinking);
+
+  try {
+    const reply = await askAssistant({
+      question: text,
+      history: session.assistantHistory ?? [],
+      channel: "telegram",
+    });
+
+    // Tarix faqat oxirgi 8 xabar - Firestore hujjati ham, so'rov ham
+    // kichik qoladi.
+    session.assistantHistory = [
+      ...(session.assistantHistory ?? []),
+      { role: "user" as const, content: text.slice(0, 600) },
+      { role: "assistant" as const, content: reply.answer.slice(0, 1000) },
+    ].slice(-8);
+    await saveSession(chatId, session);
+
+    const buttons: InlineButton[][] = reply.products.slice(0, 3).map((product) => [
+      { text: product.name.slice(0, 60), callback_data: `p|${product.id}` },
+    ]);
+    buttons.push([{ text: t.backToMenu, callback_data: "m|home" }]);
+
+    await sendChatMessage(chatId, escapeAssistantHtml(reply.answer), {
+      replyMarkup: { inline_keyboard: buttons },
+    });
+  } catch (error) {
+    console.error("Bot yordamchisi xatosi:", error);
+    await sendChatMessage(chatId, t.assistantError);
+  }
+}
+
 async function runSearch(chatId: number, term: string, t: BotDict): Promise<void> {
   const q = term.trim().toLowerCase();
   const firstWord = q.split(/\s+/)[0] ?? q;
@@ -1095,6 +1168,12 @@ export async function handleCustomerMessage(params: {
       return;
     }
 
+    // ---- AI yordamchi bilan suhbat (chiqish - /start yoki menyu) ----
+    if (session.state === "awaiting_assistant" && !command.startsWith("/")) {
+      await replyWithAssistant(chatId, session, text, t);
+      return;
+    }
+
     if (session.state === "awaiting_search" && !command.startsWith("/")) {
       session.state = "idle";
       await saveSession(chatId, session);
@@ -1174,6 +1253,10 @@ export async function handleCustomerMessage(params: {
       await showMyOrders(chatId, t);
       return;
     }
+    if (command === "/yordamchi" || command === "/assistant" || command === "/ai") {
+      await startAssistant(chatId, session, t);
+      return;
+    }
     if (command === "/til" || command === "/lang") {
       await showLanguageMenu(chatId, t);
       return;
@@ -1198,6 +1281,12 @@ export async function handleCustomerMessage(params: {
     }
 
     if (command === "/start" || command.startsWith("/start ")) {
+      // Yordamchi rejimida bo'lsa - /start undan chiqaradi.
+      if (session.state !== "idle") {
+        session.state = "idle";
+        session.assistantHistory = [];
+        await saveSession(chatId, session);
+      }
       await sendGreeting(chatId, t);
       return;
     }
@@ -1298,6 +1387,11 @@ export async function handleCustomerCallback(params: {
       if (session.state === "awaiting_payment") {
         await finishOrder(chatId, userId, arg1 === "online" ? "online" : "cash", t);
       }
+      return;
+    }
+    case "ai": {
+      await answerCallbackQuery(callbackQueryId);
+      await startAssistant(chatId, session, t);
       return;
     }
     case "srch": {

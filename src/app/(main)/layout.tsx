@@ -4,6 +4,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { LocaleProvider } from "@/lib/i18n/LocaleContext";
 import { getLocale } from "@/lib/i18n/server";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { AssistantWidget } from "@/components/ai/AssistantWidget";
 import { organizationJsonLd } from "@/lib/seo/json-ld";
 
 // Footer admin tomonidan tahrirlanadigan sayt sozlamalarini (kontakt,
@@ -24,6 +25,8 @@ export default async function MainLayout({ children }: { children: React.ReactNo
         <main className="flex-1 pb-16 md:pb-0">{children}</main>
         <Footer />
         <MobileBottomNav />
+        {/* AI yordamchi - kalit sozlangan bo'lsagina ko'rinadi. */}
+        <AssistantWidget />
       </div>
     </LocaleProvider>
   );

@@ -165,6 +165,13 @@ export interface Dictionary {
     telegram: string;
     telegramError: string;
     telegramWaiting: string;
+    phoneLogin: string;
+    phoneNumber: string;
+    phoneSendCode: string;
+    phoneCode: string;
+    phoneCodeSent: string;
+    phoneInvalid: string;
+    phoneConfirm: string;
   };
   product: {
     inStock: string;
@@ -381,6 +388,13 @@ const uz: Dictionary = {
     telegram: "Telegram orqali kirish",
     telegramError: "Telegram orqali kirib bo'lmadi. Qaytadan urinib ko'ring.",
     telegramWaiting: "Telegram ochildi. Botda \"Start\" tugmasini bosing - keyin shu sahifa o'zi davom etadi.",
+    phoneLogin: "Telefon orqali kirish",
+    phoneNumber: "Telefon raqam",
+    phoneSendCode: "Kod yuborish",
+    phoneCode: "SMS kod",
+    phoneCodeSent: "Kod SMS orqali yuborildi.",
+    phoneInvalid: "Telefon raqam yoki kod noto'g'ri.",
+    phoneConfirm: "Tasdiqlash",
   },
   product: {
     inStock: "Zaxirada",
@@ -596,6 +610,13 @@ const en: Dictionary = {
     telegram: "Sign in with Telegram",
     telegramError: "Could not sign in with Telegram. Please try again.",
     telegramWaiting: "Telegram is open. Press \"Start\" in the bot - this page will continue by itself.",
+    phoneLogin: "Sign in with phone",
+    phoneNumber: "Phone number",
+    phoneSendCode: "Send code",
+    phoneCode: "SMS code",
+    phoneCodeSent: "The code was sent by SMS.",
+    phoneInvalid: "The phone number or code is incorrect.",
+    phoneConfirm: "Confirm",
   },
   product: {
     inStock: "In stock",
@@ -811,6 +832,13 @@ const ru: Dictionary = {
     telegram: "Войти через Telegram",
     telegramError: "Не удалось войти через Telegram. Попробуйте снова.",
     telegramWaiting: "Telegram открыт. Нажмите \"Start\" в боте - страница продолжит сама.",
+    phoneLogin: "Вход по телефону",
+    phoneNumber: "Номер телефона",
+    phoneSendCode: "Отправить код",
+    phoneCode: "SMS-код",
+    phoneCodeSent: "Код отправлен по SMS.",
+    phoneInvalid: "Неверный номер или код.",
+    phoneConfirm: "Подтвердить",
   },
   product: {
     inStock: "В наличии",

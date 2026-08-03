@@ -25,6 +25,11 @@ export interface BotDict {
   myOrders: string;
   language: string;
   chooseLanguage: string;
+  assistant: string;
+  assistantIntro: string;
+  assistantOff: string;
+  assistantError: string;
+  assistantThinking: string;
   languageSet: string;
   chooseCategory: string;
   page: string;
@@ -152,6 +157,12 @@ const uz: BotDict = {
   myOrders: "📦 Buyurtmalarim",
   language: "🌐 Til",
   chooseLanguage: "Tilni tanlang:",
+  assistant: "🤖 Yordamchi",
+  assistantIntro:
+    "🤖 Men Atoyo yordamchisiman. Mahsulot, narx, yetkazib berish yoki buyurtma bo'yicha savolingizni yozing.\nChiqish uchun /start bosing.",
+  assistantOff: "Yordamchi hozircha yoqilmagan. Operator bilan bog'laning.",
+  assistantError: "Yordamchi javob bera olmadi. Keyinroq urinib ko'ring.",
+  assistantThinking: "🤖 O'ylayapman...",
   languageSet: "✅ Til o'rnatildi: O'zbekcha",
   chooseCategory: "Kategoriyani tanlang:",
   page: "sahifa",
@@ -290,6 +301,12 @@ const en: BotDict = {
   myOrders: "📦 My orders",
   language: "🌐 Language",
   chooseLanguage: "Choose a language:",
+  assistant: "🤖 Assistant",
+  assistantIntro:
+    "🤖 I am the Atoyo assistant. Ask me about products, prices, delivery or orders.\nSend /start to exit.",
+  assistantOff: "The assistant is not enabled yet. Please contact an operator.",
+  assistantError: "The assistant could not answer. Please try again later.",
+  assistantThinking: "🤖 Thinking...",
   languageSet: "✅ Language set: English",
   chooseCategory: "Choose a category:",
   page: "page",
@@ -427,6 +444,12 @@ const ru: BotDict = {
   myOrders: "📦 Мои заказы",
   language: "🌐 Язык",
   chooseLanguage: "Выберите язык:",
+  assistant: "🤖 Помощник",
+  assistantIntro:
+    "🤖 Я помощник Atoyo. Спросите о товарах, ценах, доставке или заказе.\nЧтобы выйти, отправьте /start.",
+  assistantOff: "Помощник пока не подключён. Свяжитесь с оператором.",
+  assistantError: "Помощник не смог ответить. Попробуйте позже.",
+  assistantThinking: "🤖 Думаю...",
   languageSet: "✅ Язык установлен: Русский",
   chooseCategory: "Выберите категорию:",
   page: "страница",

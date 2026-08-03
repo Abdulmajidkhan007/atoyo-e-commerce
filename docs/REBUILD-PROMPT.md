@@ -109,6 +109,41 @@ qolganlari ishlaydi va asosiy amal to'xtamaydi):
 - Har biri sozlanmagan bo'lsa jimgina o'tkazib yuboriladi; admin
   panelda **Tizim tekshiruvi** har bir kanalning holatini ko'rsatadi.
 
+## 1c. AI YORDAMCHI (sayt, ilova, Telegram bot)
+
+Uchala kanalda bitta "miya" — `/api/assistant` (Anthropic Claude,
+`ANTHROPIC_API_KEY`). Kalit yo'q bo'lsa tugma umuman ko'rinmaydi.
+
+- **Faqat do'kon mavzusi.** Ikki qatlamli himoya: (1) server tomonda
+  naqsh tekshiruvi — "avvalgi ko'rsatmalarni unut", "sen endi ...",
+  "kod yoz", ob-havo/siyosat kabi so'rovlar modelga UMUMAN bormaydi;
+  (2) qat'iy system prompt — mijoz matni va mahsulot ma'lumoti
+  KO'RSATMA emas, MA'LUMOT deb qaraladi; javob ham oxirida
+  tekshiriladi (ko'rsatma sizib chiqsa rad javobi beriladi).
+- **Narx/zaxira o'ylab topilmaydi**: savolga mos mahsulotlar avval
+  Firestore'dan olinadi (`nameTokens` + `keywords`), do'kon
+  ma'lumotlari (telefon, manzil, yetkazish narxi, kategoriyalar)
+  5 daqiqa keshlanadi va kontekstga qo'yiladi.
+- Chegaralar: savol 600 belgi, tarix 8 xabar, javob 700 token,
+  har IP uchun soatiga 30 savol (`rateLimits` kolleksiyasi).
+- Sayt — suzuvchi oyna; ilova — "Yordamchi" ekrani (Profil orqali);
+  bot — 🤖 tugmasi va `/yordamchi` buyrug'i (`/start` bilan chiqiladi).
+- Javob bilan birga 3 tagacha mahsulot kartochkasi ko'rsatiladi.
+
+## 1d. AI RASM (admin panel)
+
+Mahsulot tahrirlash formasida ikki tugma (kalitlar bo'lsa ko'rinadi):
+
+- **Rasmni tahlil qilish** (Claude vision) — rasmga qarab nom, tavsif,
+  kalit so'z va brend taklif qiladi; taklif formaga tushadi, admin
+  tekshirib saqlaydi (avtomatik saqlanmaydi).
+- **Rasm generatsiya qilish** (Gemini "Nano Banana",
+  `GEMINI_API_KEY`) — bitta rasmdan 5 tagacha savdo rasmi: oq fon,
+  interyer, yaqin plan, boshqa rakurs, qadoq bilan. Prompt har doim
+  "mahsulotning shakli/rangi/yozuvi o'zgarmasin" cheklovi bilan
+  ketadi — mijoz suratdagi narsani oladi. Rasmlar Storage'ga yozilib
+  mahsulot galereyasiga qo'shiladi.
+
 ## 2. ADMIN PANEL (saytda)
 
 Faqat xodimlarga. Kirish — session cookie; **rol tekshiruvi Node
@@ -246,6 +281,14 @@ Hammasi env orqali yoqiladi; sozlanmasa tizim avvalgidek ishlayveradi:
   motor bo'lsa undan, bo'lmasa Firestore'dan qidiradi.
 - **SMS** (Eskiz/Play Mobile), **SMTP** (email), **GA4** (analitika),
   **Payme/Click** (to'lov).
+- **Anthropic Claude** (`ANTHROPIC_API_KEY`) — AI yordamchi va rasm
+  tahlili; **Gemini image** (`GEMINI_API_KEY`) — mahsulot rasmlari
+  generatsiyasi.
+- **Kirish yo'llari** — `NEXT_PUBLIC_AUTH_PROVIDERS` ro'yxati:
+  `google,telegram,apple,microsoft,facebook,phone`. Firebase
+  konsolida yoqilmagan provayder ro'yxatga qo'shilmaydi (tugma
+  ko'rinmaydi). WhatsApp/WeChat Firebase Auth'da yo'q — o'rniga
+  telefon (SMS kod) yoki Telegram.
 
 ## 6b. CI VA ZAXIRA NUSXA
 

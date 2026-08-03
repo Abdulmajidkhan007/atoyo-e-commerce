@@ -224,6 +224,12 @@ export function ProfileScreen({navigation}: TabScreenProps<'Profil'>) {
         onPress={() => navigation.navigate('Blog')}
       />
       <Button
+        title={t.titleAssistant}
+        icon="assistant"
+        variant="outline"
+        onPress={() => navigation.navigate('Yordamchi')}
+      />
+      <Button
         title={t.titleContact}
         icon="phone"
         variant="outline"

@@ -17,6 +17,7 @@ import {ProfileScreen} from '../screens/ProfileScreen';
 import {BlogScreen} from '../screens/BlogScreen';
 import {BlogPostScreen} from '../screens/BlogPostScreen';
 import {ContactScreen} from '../screens/ContactScreen';
+import {AssistantScreen} from '../screens/AssistantScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
 import {AdminOrdersScreen} from '../screens/AdminOrdersScreen';
 import {AdminProductsScreen} from '../screens/AdminProductsScreen';
@@ -131,6 +132,11 @@ export function RootNavigator() {
         name="Kontakt"
         component={ContactScreen}
         options={{header: () => <BrandHeader back title={t.titleContact} />}}
+      />
+      <Stack.Screen
+        name="Yordamchi"
+        component={AssistantScreen}
+        options={{header: () => <BrandHeader back title={t.titleAssistant} />}}
       />
       <Stack.Screen
         name="Sozlamalar"
