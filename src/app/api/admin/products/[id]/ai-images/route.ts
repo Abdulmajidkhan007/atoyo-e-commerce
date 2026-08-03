@@ -8,6 +8,7 @@ import {
   analyzeProductImage,
   generateProductImages,
   isImageAiConfigured,
+  listImageModels,
   IMAGE_STYLES,
   type ImageStyle,
 } from "@/lib/ai/images";
@@ -77,14 +78,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "GEMINI_API_KEY sozlanmagan." }, { status: 503 });
     }
 
-    const { images, failed } = await generateProductImages({
+    const { images, failed, errors } = await generateProductImages({
       sourceUrl,
       styles: parsed.data.styles,
       extraPrompt: parsed.data.extraPrompt,
     });
 
     if (images.length === 0) {
-      return NextResponse.json({ error: "Rasm generatsiya qilinmadi. Keyinroq urinib ko'ring." }, { status: 502 });
+      // Admin uchun HAQIQIY sabab ko'rsatiladi - "keyinroq urinib
+      // ko'ring" degan xabar bilan muammoni topib bo'lmaydi. Model
+      // nomi mos kelmagan bo'lsa kalitga ochiq modellar ro'yxati ham
+      // qo'shiladi.
+      const reason = errors[0] ?? "Noma'lum xato.";
+      const models = /404|not found|is not found|NOT_FOUND/i.test(reason) ? await listImageModels() : [];
+      return NextResponse.json(
+        {
+          error: models.length > 0 ? `${reason} Mavjud modellar: ${models.join(", ")}` : reason,
+        },
+        { status: 502 }
+      );
     }
 
     const urls: string[] = [];

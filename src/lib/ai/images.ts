@@ -17,8 +17,27 @@ import { AI_MODEL, getAnthropic, isAiConfigured } from "./config";
  * aks holda mijoz suratdagi narsani olmaydi (bu qonuniy muammo ham).
  */
 
-const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL?.trim() || "gemini-2.5-flash-image";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+
+/**
+ * MODEL NOMI. Google rasm modelini vaqti-vaqti bilan qayta nomlaydi
+ * (preview -> barqaror), shuning uchun bitta nomga tayanib qolmaymiz:
+ * ro'yxatdagi nomlar navbat bilan sinaladi va ishlagani eslab qolinadi.
+ * `GEMINI_IMAGE_MODEL` berilsa - u birinchi bo'ladi.
+ */
+const MODEL_CANDIDATES = Array.from(
+  new Set(
+    [
+      process.env.GEMINI_IMAGE_MODEL?.trim(),
+      "gemini-2.5-flash-image",
+      "gemini-2.5-flash-image-preview",
+      "gemini-3-pro-image-preview",
+    ].filter((name): name is string => Boolean(name))
+  )
+);
+
+/** Shu seansda ishlagani aniqlangan model. */
+let workingModel: string | null = null;
 
 export function isImageAiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY?.trim());
@@ -80,11 +99,13 @@ async function fetchSourceImage(url: string): Promise<{ base64: string; mimeType
  * alohida ushlaydi, shunda bitta uslub tushib qolsa ham qolganlari
  * saqlanadi.
  */
-async function generateOne(source: { base64: string; mimeType: string }, prompt: string): Promise<GeneratedImage> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey) throw new Error("GEMINI_API_KEY sozlanmagan.");
-
-  const response = await fetch(`${GEMINI_URL}/${GEMINI_MODEL}:generateContent`, {
+async function callModel(
+  model: string,
+  source: { base64: string; mimeType: string },
+  prompt: string,
+  apiKey: string
+): Promise<GeneratedImage> {
+  const response = await fetch(`${GEMINI_URL}/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
@@ -102,15 +123,28 @@ async function generateOne(source: { base64: string; mimeType: string }, prompt:
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(`Gemini xatosi (${response.status}): ${detail.slice(0, 200)}`);
+    const error = new Error(`Gemini (${model}) xatosi ${response.status}: ${extractMessage(detail)}`);
+    // 404 - model nomi boshqacha; chaqiruvchi keyingi nomni sinaydi.
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
   }
 
   const data = (await response.json()) as {
-    candidates?: { content?: { parts?: { inlineData?: { data?: string; mimeType?: string } }[] } }[];
+    candidates?: {
+      finishReason?: string;
+      content?: { parts?: { inlineData?: { data?: string; mimeType?: string } }[] };
+    }[];
   };
 
   const part = data.candidates?.[0]?.content?.parts?.find((item) => item.inlineData?.data);
-  if (!part?.inlineData?.data) throw new Error("Model rasm qaytarmadi.");
+  if (!part?.inlineData?.data) {
+    const reason = data.candidates?.[0]?.finishReason;
+    throw new Error(
+      reason
+        ? `Model rasm qaytarmadi (sabab: ${reason}). Boshqa uslub yoki izoh bilan urinib ko'ring.`
+        : "Model rasm qaytarmadi."
+    );
+  }
 
   return {
     buffer: Buffer.from(part.inlineData.data, "base64"),
@@ -118,15 +152,68 @@ async function generateOne(source: { base64: string; mimeType: string }, prompt:
   };
 }
 
+/** Google xato javobidan o'qiladigan xabarni ajratib oladi. */
+function extractMessage(body: string): string {
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string } };
+    return parsed.error?.message?.slice(0, 300) ?? body.slice(0, 200);
+  } catch {
+    return body.slice(0, 200);
+  }
+}
+
+async function generateOne(source: { base64: string; mimeType: string }, prompt: string): Promise<GeneratedImage> {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) throw new Error("GEMINI_API_KEY sozlanmagan.");
+
+  const models = workingModel ? [workingModel] : MODEL_CANDIDATES;
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      const image = await callModel(model, source, prompt, apiKey);
+      workingModel = model;
+      return image;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const status = (lastError as Error & { status?: number }).status;
+      // Model topilmadi (404) yoki bu kalitga ochiq emas (403) bo'lsa
+      // keyingi nomni sinaymiz; boshqa xatolarda takrorlash befoyda.
+      if (status !== 404 && status !== 403) break;
+    }
+  }
+
+  throw lastError ?? new Error("Gemini javob bermadi.");
+}
+
+/** Kalitga ochiq rasm modellari (xatolikni tushuntirish uchun). */
+export async function listImageModels(): Promise<string[]> {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) return [];
+  try {
+    const response = await fetch(`${GEMINI_URL}?pageSize=200`, {
+      headers: { "x-goog-api-key": apiKey },
+    });
+    if (!response.ok) return [];
+    const data = (await response.json()) as { models?: { name?: string }[] };
+    return (data.models ?? [])
+      .map((model) => (model.name ?? "").replace(/^models\//, ""))
+      .filter((name) => name.includes("image"));
+  } catch {
+    return [];
+  }
+}
+
 /** Bir nechta uslubda rasm yasaydi; muvaffaqiyatsizlari jimgina tushib qoladi. */
 export async function generateProductImages(params: {
   sourceUrl: string;
   styles: ImageStyle[];
   extraPrompt?: string;
-}): Promise<{ images: GeneratedImage[]; failed: ImageStyle[] }> {
+}): Promise<{ images: GeneratedImage[]; failed: ImageStyle[]; errors: string[] }> {
   const source = await fetchSourceImage(params.sourceUrl);
   const images: GeneratedImage[] = [];
   const failed: ImageStyle[] = [];
+  const errors: string[] = [];
 
   // Ketma-ket - Gemini bir vaqtda ko'p so'rovga limit qo'yadi va
   // xarajat ham nazoratda bo'ladi.
@@ -139,10 +226,12 @@ export async function generateProductImages(params: {
     } catch (error) {
       console.error(`AI rasm (${style}) xatosi:`, error);
       failed.push(style);
+      const message = error instanceof Error ? error.message : String(error);
+      if (!errors.includes(message)) errors.push(message);
     }
   }
 
-  return { images, failed };
+  return { images, failed, errors };
 }
 
 /** Claude vision faqat shu turlarni qabul qiladi. */
