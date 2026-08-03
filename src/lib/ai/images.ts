@@ -154,12 +154,36 @@ async function callModel(
 
 /** Google xato javobidan o'qiladigan xabarni ajratib oladi. */
 function extractMessage(body: string): string {
+  let message = body.slice(0, 200);
   try {
     const parsed = JSON.parse(body) as { error?: { message?: string } };
-    return parsed.error?.message?.slice(0, 300) ?? body.slice(0, 200);
+    message = parsed.error?.message?.slice(0, 300) ?? message;
   } catch {
-    return body.slice(0, 200);
+    /* JSON emas - matnning o'zi qoladi */
   }
+  const hint = uzbekHint(message);
+  return hint ? `${message}\n\n${hint}` : message;
+}
+
+/**
+ * Eng ko'p uchraydigan sabablar uchun o'zbekcha maslahat. Xato matni
+ * inglizcha keladi va do'kon xodimi undan nima qilishni bilmaydi -
+ * shuning uchun yoniga aniq qadam yoziladi.
+ */
+function uzbekHint(message: string): string | null {
+  if (/prepayment credits|depleted|billing account.*(closed|disabled)|insufficient funds/i.test(message)) {
+    return "➜ Google hisobidagi oldindan to'langan kredit tugagan. console.cloud.google.com/billing sahifasida hisobni to'ldiring (5-10 $ bir necha yuz rasmga yetadi).";
+  }
+  if (/API key not valid|API_KEY_INVALID|invalid api key/i.test(message)) {
+    return "➜ Kalit noto'g'ri. Secret Manager'da GEMINI_API_KEY ga yangi versiya qo'shing (bo'sh joysiz yopishtiring).";
+  }
+  if (/has not been used in project|SERVICE_DISABLED|is disabled/i.test(message)) {
+    return "➜ generativelanguage.googleapis.com API yoqilmagan. Google Cloud konsolida uni yoqing.";
+  }
+  if (/quota|rate limit|RESOURCE_EXHAUSTED/i.test(message)) {
+    return "➜ Limit tugadi. Bir necha daqiqadan keyin urinib ko'ring yoki tarifni oshiring.";
+  }
+  return null;
 }
 
 async function generateOne(source: { base64: string; mimeType: string }, prompt: string): Promise<GeneratedImage> {
