@@ -30,6 +30,9 @@ export interface BotDict {
   assistantOff: string;
   assistantError: string;
   assistantThinking: string;
+  photoSearching: string;
+  photoFound: string;
+  photoNoMatch: string;
   languageSet: string;
   chooseCategory: string;
   page: string;
@@ -163,6 +166,9 @@ const uz: BotDict = {
   assistantOff: "Yordamchi hozircha yoqilmagan. Operator bilan bog'laning.",
   assistantError: "Yordamchi javob bera olmadi. Keyinroq urinib ko'ring.",
   assistantThinking: "🤖 O'ylayapman...",
+  photoSearching: "🔎 Rasmni ko'ryapman...",
+  photoFound: "Katalogdan o'xshashlari:",
+  photoNoMatch: "Afsuski, katalogdan mos mahsulot topilmadi. Nomini yozib qidirib ko'ring.",
   languageSet: "✅ Til o'rnatildi: O'zbekcha",
   chooseCategory: "Kategoriyani tanlang:",
   page: "sahifa",
@@ -307,6 +313,9 @@ const en: BotDict = {
   assistantOff: "The assistant is not enabled yet. Please contact an operator.",
   assistantError: "The assistant could not answer. Please try again later.",
   assistantThinking: "🤖 Thinking...",
+  photoSearching: "🔎 Looking at the photo...",
+  photoFound: "Similar items from our catalog:",
+  photoNoMatch: "Sorry, nothing similar was found. Try searching by name.",
   languageSet: "✅ Language set: English",
   chooseCategory: "Choose a category:",
   page: "page",
@@ -450,6 +459,9 @@ const ru: BotDict = {
   assistantOff: "Помощник пока не подключён. Свяжитесь с оператором.",
   assistantError: "Помощник не смог ответить. Попробуйте позже.",
   assistantThinking: "🤖 Думаю...",
+  photoSearching: "🔎 Смотрю на фото...",
+  photoFound: "Похожие товары из каталога:",
+  photoNoMatch: "К сожалению, похожий товар не найден. Попробуйте поиск по названию.",
   languageSet: "✅ Язык установлен: Русский",
   chooseCategory: "Выберите категорию:",
   page: "страница",

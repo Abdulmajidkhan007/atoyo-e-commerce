@@ -7,6 +7,7 @@ import { CircularProgress, IconButton, TextField } from "@mui/material";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
 
@@ -28,6 +29,8 @@ const GREETING =
   "Assalomu alaykum! Men Atoyo yordamchisiman. Mahsulot, narx, yetkazib berish yoki buyurtma bo'yicha savolingizni yozing.";
 
 const SUGGESTIONS = ["Issiq suv uchun qaysi quvur?", "Yetkazib berish qancha?", "Buyurtmani qanday beraman?"];
+
+const PHOTO_HINT = "📷 tugmasi orqali mahsulot suratini yuborsangiz, o'xshashini katalogdan topib beraman.";
 
 function formatPrice(value: number): string {
   return `${Math.round(value).toLocaleString("ru-RU").replace(/ /g, " ")} so'm`;
@@ -53,6 +56,7 @@ export function AssistantWidget() {
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([{ role: "assistant", content: GREETING }]);
   const listRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,6 +142,68 @@ export function AssistantWidget() {
     }
   };
 
+  /**
+   * RASM BO'YICHA QIDIRUV: mijoz surat tanlaydi, server uni tahlil
+   * qilib katalogdan o'xshashini topadi.
+   */
+  const searchByPhoto = async (file: File) => {
+    if (busy) return;
+    if (file.size > 4 * 1024 * 1024) {
+      setMessages((prev) => [...prev, { role: "assistant", content: "Rasm juda katta (4MB gacha)." }]);
+      return;
+    }
+
+    setMessages((prev) => [...prev, { role: "user", content: "📷 Rasm yuborildi" }]);
+    setBusy(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Rasm o'qilmadi"));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/search/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      const data = (await res.json()) as {
+        description?: string;
+        products?: { id: string; name: string; price: number; effectivePrice: number; stock: number }[];
+        error?: string;
+      };
+
+      if (!res.ok) throw new Error(data.error ?? "Rasmni tahlil qilib bo'lmadi.");
+
+      const found = data.products ?? [];
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            found.length > 0
+              ? `${data.description ?? ""}\n\nKatalogdan o'xshashlari:`.trim()
+              : `${data.description ?? ""}\n\nAfsuski, katalogdan mos mahsulot topilmadi. Nomini yozib ham qidirib ko'ring.`.trim(),
+          products: found.slice(0, 3).map((product) => ({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            discountPrice: product.effectivePrice < product.price ? product.effectivePrice : null,
+            stock: product.stock,
+          })),
+        },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: error instanceof Error ? error.message : "Xatolik yuz berdi." },
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!enabled) return null;
 
   return (
@@ -209,6 +275,10 @@ export function AssistantWidget() {
             )}
 
             {messages.length === 1 && (
+              <p className="pt-1 text-xs text-navy-300">{PHOTO_HINT}</p>
+            )}
+
+            {messages.length === 1 && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {SUGGESTIONS.map((item) => (
                   <button
@@ -231,6 +301,26 @@ export function AssistantWidget() {
             }}
             className="flex items-center gap-2 border-t border-navy-100 p-2 dark:border-navy-500"
           >
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void searchByPhoto(file);
+              }}
+            />
+            <IconButton
+              onClick={() => fileRef.current?.click()}
+              disabled={busy}
+              aria-label="Rasm bilan qidirish"
+              title="Rasm bilan qidirish"
+            >
+              <PhotoCameraOutlinedIcon />
+            </IconButton>
+
             <TextField
               size="small"
               fullWidth

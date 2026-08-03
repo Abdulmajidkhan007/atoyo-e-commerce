@@ -282,6 +282,37 @@ export async function assistantEnabled(): Promise<boolean> {
   }
 }
 
+/**
+ * RASM BO'YICHA QIDIRUV - surat yuboriladi, katalogdan o'xshash
+ * mahsulotlar qaytadi (sayt bilan bir xil `/api/search/image`).
+ */
+export interface ImageSearchHit {
+  id: string;
+  name: string;
+  price: number;
+  effectivePrice: number;
+  stock: number;
+}
+
+export async function searchByImage(input: {
+  base64: string;
+  mimeType: string;
+  hint?: string;
+}): Promise<{description: string; products: ImageSearchHit[]}> {
+  const response = await fetch(`${SITE_URL}/api/search/image`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({image: input.base64, mimeType: input.mimeType, hint: input.hint}),
+  });
+  const data = (await response.json().catch(() => ({}))) as {
+    description?: string;
+    products?: ImageSearchHit[];
+    error?: string;
+  };
+  if (!response.ok) throw new Error(data.error ?? 'Rasmni tahlil qilib bo‘lmadi.');
+  return {description: data.description ?? '', products: data.products ?? []};
+}
+
 /** Yordamchi so'ragan amal - savat ilova tomonida, shuning uchun shu yerda bajariladi. */
 export interface AssistantAction {
   type: 'add_to_cart' | 'checkout';

@@ -54,6 +54,9 @@ export interface Dict {
   assistantPlaceholder: string;
   assistantOff: string;
   assistantError: string;
+  photoSent: string;
+  photoFound: string;
+  photoNoMatch: string;
   // Bosh sahifa
   heroTitle: string;
   heroBadge: string;
@@ -204,6 +207,9 @@ const uz: Dict = {
   assistantPlaceholder: 'Savolingizni yozing...',
   assistantOff: 'Yordamchi hozircha yoqilmagan. Operator bilan bog‘laning.',
   assistantError: 'Yordamchi javob bera olmadi. Keyinroq urinib ko‘ring.',
+  photoSent: '📷 Rasm yuborildi',
+  photoFound: 'Katalogdan o‘xshashlari:',
+  photoNoMatch: 'Afsuski, mos mahsulot topilmadi. Nomini yozib qidirib ko‘ring.',
   heroTitle: 'Santexnika va Otopleniye uchun ishonchli manzil',
   heroBadge: '10 000+ mahsulot',
   viewCatalog: 'Katalogni ko‘rish',
@@ -359,6 +365,9 @@ const en: Dict = {
   assistantPlaceholder: 'Type your question...',
   assistantOff: 'The assistant is not enabled yet. Please contact an operator.',
   assistantError: 'The assistant could not answer. Please try again later.',
+  photoSent: '📷 Photo sent',
+  photoFound: 'Similar items from our catalog:',
+  photoNoMatch: 'Sorry, nothing similar was found. Try searching by name.',
   heroTitle: 'A reliable source for plumbing and heating',
   heroBadge: '10,000+ products',
   viewCatalog: 'View catalog',
@@ -511,6 +520,9 @@ const ru: Dict = {
   assistantPlaceholder: 'Напишите вопрос...',
   assistantOff: 'Помощник пока не подключён. Свяжитесь с оператором.',
   assistantError: 'Помощник не смог ответить. Попробуйте позже.',
+  photoSent: '📷 Фото отправлено',
+  photoFound: 'Похожие товары из каталога:',
+  photoNoMatch: 'К сожалению, похожий товар не найден. Попробуйте поиск по названию.',
   heroTitle: 'Надёжный выбор сантехники и отопления',
   heroBadge: '10 000+ товаров',
   viewCatalog: 'Смотреть каталог',

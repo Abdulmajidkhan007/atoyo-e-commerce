@@ -211,6 +211,9 @@ export async function POST(request: Request) {
           username: message.from.username,
           contact: message.contact,
           location: message.location,
+          // Mijoz surat yuborsa - katalogdan o'xshashini qidiramiz.
+          photoFileId: message.photo?.at(-1)?.file_id,
+          caption: message.caption,
         });
       }
       // Boshqa guruhlar/kanallar e'tiborsiz qoldiriladi.

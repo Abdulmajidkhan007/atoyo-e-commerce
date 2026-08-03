@@ -134,6 +134,9 @@ foydalanuvchi so'raganda.
 - `tools.ts` — `search_products` (narx/kategoriya/zaxira filtri baza
   tomonda), `add_to_cart`, `start_checkout`. Savatni SERVER
   o'zgartirmaydi: `actions` qaytadi, kanal o'zi qo'llaydi.
+- `image-search.ts` — mijoz suratidan qidiruv so'zlari (Claude vision)
+  → `searchCatalog`. Sayt/ilovadagi 📷 tugmasi va botdagi har qanday
+  surat shu oqimga tushadi.
 - `images.ts` — Claude vision bilan rasm tahlili va Gemini
   ("Nano Banana", `GEMINI_API_KEY`) bilan rasm generatsiyasi. Prompt
   har doim "mahsulot o'zgarmasin" cheklovi bilan ketadi.

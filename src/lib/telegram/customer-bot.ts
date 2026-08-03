@@ -7,6 +7,7 @@ import {
   removeReplyKeyboard,
   isChatMember,
   sendMediaGroup,
+  downloadTelegramFile,
   type MediaItem,
 } from "./bot";
 import { getRequiredChannels } from "./required-channels";
@@ -24,6 +25,7 @@ import { getPublishedPosts, getSiteSettings } from "@/lib/firebase/admin-content
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
 import { askAssistant } from "@/lib/ai/assistant";
 import { isAiConfigured } from "@/lib/ai/config";
+import { searchByImage } from "@/lib/ai/image-search";
 import type { Product, ProductCategory } from "@/types/product";
 import type { Order, OrderItem } from "@/types/order";
 import type { BlogPost } from "@/types/content";
@@ -696,6 +698,59 @@ async function finishOrder(
 // AI YORDAMCHI (sayt va ilova bilan bir xil "miya" - `lib/ai/assistant.ts`)
 // ---------------------------------------------------------------------------
 
+/**
+ * RASM BO'YICHA QIDIRUV (mijoz surat yuborganda).
+ *
+ * Santexnikada mahsulot nomi ko'pincha bilinmaydi, surat esa bor —
+ * shuning uchun shaxsiy chatga tushgan har qanday rasm katalogdan
+ * o'xshash mahsulotlarni qidirishga ketadi.
+ */
+async function searchByPhoto(
+  chatId: number,
+  fileId: string,
+  caption: string | undefined,
+  t: BotDict
+): Promise<void> {
+  if (!isAiConfigured()) {
+    await sendChatMessage(chatId, t.assistantOff);
+    return;
+  }
+
+  await sendChatMessage(chatId, t.photoSearching);
+
+  try {
+    const file = await downloadTelegramFile(fileId);
+    const result = await searchByImage({
+      base64: file.buffer.toString("base64"),
+      mimeType: file.contentType,
+      hint: caption,
+    });
+
+    if (result.products.length === 0) {
+      await sendChatMessage(
+        chatId,
+        `${escapeAssistantHtml(result.description)}\n\n${t.photoNoMatch}`,
+        { replyMarkup: { inline_keyboard: [[{ text: t.search, callback_data: "srch" }, { text: t.backToMenu, callback_data: "m|home" }]] } }
+      );
+      return;
+    }
+
+    const rows: InlineButton[][] = result.products.slice(0, 6).map((product) => [
+      { text: `${product.name.slice(0, 40)} — ${formatSom(product.effectivePrice)}`, callback_data: `p|${product.id}` },
+    ]);
+    rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);
+
+    await sendChatMessage(
+      chatId,
+      `${escapeAssistantHtml(result.description)}\n\n${t.photoFound}`,
+      { replyMarkup: { inline_keyboard: rows } }
+    );
+  } catch (error) {
+    console.error("Rasm bo'yicha qidiruv xatosi:", error);
+    await sendChatMessage(chatId, t.assistantError);
+  }
+}
+
 /** Model javobi HTML rejimida yuboriladi - belgilar qochiriladi. */
 function escapeAssistantHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -1143,6 +1198,9 @@ export async function handleCustomerMessage(params: {
   username?: string;
   contact?: { phone_number: string; first_name?: string; last_name?: string };
   location?: { latitude: number; longitude: number };
+  /** Mijoz yuborgan surat (katalogdan o'xshashini qidirish uchun). */
+  photoFileId?: string;
+  caption?: string;
 }): Promise<void> {
   const { chatId, userId, text, contact, location } = params;
 
@@ -1158,6 +1216,12 @@ export async function handleCustomerMessage(params: {
 
   const session = await getSession(chatId);
   const t = botDict(session.lang);
+
+  // ---- Surat: katalogdan o'xshash mahsulotlarni qidiramiz ----
+  if (params.photoFileId) {
+    await searchByPhoto(chatId, params.photoFileId, params.caption, t);
+    return;
+  }
 
   // ---- Checkout: manzil bosqichida lokatsiya kelishi mumkin ----
   if (session.state === "awaiting_checkout_address" && location) {

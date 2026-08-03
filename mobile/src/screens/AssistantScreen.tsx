@@ -14,7 +14,8 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {makeStyles, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {Icon} from '../components/Icon';
-import {askAssistant, assistantEnabled, type AssistantProduct} from '../api';
+import {launchImageLibrary} from 'react-native-image-picker';
+import {askAssistant, assistantEnabled, searchByImage, type AssistantProduct} from '../api';
 import {useAppDispatch} from '../store';
 import {addItem} from '../store/cartSlice';
 import type {RootStackParamList} from '../navigation/types';
@@ -100,6 +101,54 @@ export function AssistantScreen() {
     [busy, dispatch, messages, navigation, t.assistantIntro, t.assistantError],
   );
 
+  /** Galereyadan surat tanlab, katalogdan o'xshashini qidiradi. */
+  const pickPhoto = useCallback(async () => {
+    if (busy) return;
+    const picked = await launchImageLibrary({
+      mediaType: 'photo',
+      includeBase64: true,
+      // Katta suratlar serverda ham, tarmoqda ham og'irlik qiladi.
+      maxWidth: 1280,
+      maxHeight: 1280,
+      quality: 0.8,
+    });
+    const asset = picked.assets?.[0];
+    if (!asset?.base64) return;
+
+    setMessages(prev => [...prev, {role: 'user', content: t.photoSent}]);
+    setBusy(true);
+    try {
+      const result = await searchByImage({
+        base64: asset.base64,
+        mimeType: asset.type ?? 'image/jpeg',
+      });
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content:
+            result.products.length > 0
+              ? `${result.description}\n\n${t.photoFound}`
+              : `${result.description}\n\n${t.photoNoMatch}`,
+          products: result.products.slice(0, 3).map(product => ({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            discountPrice: product.effectivePrice < product.price ? product.effectivePrice : null,
+            stock: product.stock,
+          })),
+        },
+      ]);
+    } catch (error) {
+      setMessages(prev => [
+        ...prev,
+        {role: 'assistant', content: error instanceof Error ? error.message : t.assistantError},
+      ]);
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, t.assistantError, t.photoFound, t.photoNoMatch, t.photoSent]);
+
   if (enabled === false) {
     return (
       <View style={styles.center}>
@@ -148,6 +197,9 @@ export function AssistantScreen() {
       </ScrollView>
 
       <View style={styles.inputRow}>
+        <Pressable style={styles.photoBtn} disabled={busy} onPress={pickPhoto}>
+          <Icon name="image" size={20} color={styles.c.accent} />
+        </Pressable>
         <TextInput
           style={styles.input}
           value={input}
@@ -214,6 +266,16 @@ const useStyles = makeStyles(c => ({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: c.accent,
+  },
+  photoBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.surface,
   },
   sendDisabled: {opacity: 0.5},
 }));

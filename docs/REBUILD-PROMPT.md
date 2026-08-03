@@ -139,6 +139,17 @@ Uchala kanalda bitta "miya" — `/api/assistant` (Anthropic Claude,
   bot — 🤖 tugmasi va `/yordamchi` buyrug'i (`/start` bilan chiqiladi).
 - Javob bilan birga 3 tagacha mahsulot kartochkasi ko'rsatiladi.
 
+## 1c-2. RASM BO'YICHA QIDIRUV (mijoz uchun)
+
+Mijoz mahsulot nomini bilmasa — suratini yuboradi:
+
+- sayt/ilovada yordamchi oynasidagi 📷 tugmasi, botda esa shaxsiy
+  chatga tashlangan HAR QANDAY surat shu oqimga ketadi;
+- Claude vision rasmga qarab qidiruv so'zlarini beradi (uz+ru+en) va
+  kategoriyani taxmin qiladi, so'ng `searchCatalog` haqiqiy katalogdan
+  o'xshash mahsulotlarni topadi — narx/zaxira doim bazadan;
+- chegara: har IP uchun soatiga 10 ta rasm, rasm 4 MB gacha.
+
 ## 1d. AI RASM (admin panel)
 
 Mahsulot tahrirlash formasida ikki tugma (kalitlar bo'lsa ko'rinadi):
