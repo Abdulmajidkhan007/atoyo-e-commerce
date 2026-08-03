@@ -69,10 +69,10 @@ env:
   #   printf 'AIza...' | gcloud secrets versions add GEMINI_API_KEY --data-file=- --project=atoyo-uz
   #   firebase apphosting:secrets:grantaccess GEMINI_API_KEY --backend atoyo-e-commerce --project atoyo-uz
   # ---------------------------------------------------------------
-  # - variable: GEMINI_API_KEY
-  #   secret: GEMINI_API_KEY
-  #   availability:
-  #     - RUNTIME
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+    availability:
+      - RUNTIME
 
   # Kirish yo'llari. Faqat Firebase konsolida YOQILGANini yozing.
   # To'liq ro'yxat: google,telegram,apple,microsoft,facebook,phone
