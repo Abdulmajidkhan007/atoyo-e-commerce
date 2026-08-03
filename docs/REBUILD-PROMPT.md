@@ -267,6 +267,14 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - **Admin uchun ham:** buyurtmalar (real-vaqtda, holat tugmalari),
   mahsulot qidirish/kirim/tez tahrir, statistika, blog, promokod,
   mijozlar.
+- **Shrift o'lchami sozlamada** (Sozlamalar > Shrift o'lchami):
+  tizim bo'yicha / kichik / standart / katta / juda katta. Telefon
+  sozlamasidagi katta shrift menyu yozuvlarini qirqib qo'yardi
+  ("Katalog" -> "Kat"), shuning uchun ilova o'lchamni o'zi boshqaradi:
+  `makeStyles` dagi barcha `fontSize` koeffitsiyentga ko'paytiriladi va
+  tizim kattalashtirishi neytrallanadi (ikki marta kattalashmaydi).
+  "Tizim bo'yicha" rejimida telefon sozlamasi hurmat qilinadi, lekin
+  1.3 dan oshmaydi; pastki menyu balandligi ham shunga qarab o'sadi.
 - Dizayn saytdagidek (Deep Navy + oltin urg'u), ikonkalar Material
   (SVG), uch til, yorug'/qorong'i tema.
 - **Push bildirishnomalar:** buyurtma holati — shaxsan mijozga (qurilma

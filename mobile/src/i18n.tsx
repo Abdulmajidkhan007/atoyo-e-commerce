@@ -57,6 +57,13 @@ export interface Dict {
   photoSent: string;
   photoFound: string;
   photoNoMatch: string;
+  fontSizeTitle: string;
+  fontSizeHint: string;
+  fontSystem: string;
+  fontSmall: string;
+  fontNormal: string;
+  fontLarge: string;
+  fontXLarge: string;
   // Bosh sahifa
   heroTitle: string;
   heroBadge: string;
@@ -210,6 +217,14 @@ const uz: Dict = {
   photoSent: '📷 Rasm yuborildi',
   photoFound: 'Katalogdan o‘xshashlari:',
   photoNoMatch: 'Afsuski, mos mahsulot topilmadi. Nomini yozib qidirib ko‘ring.',
+  fontSizeTitle: 'Shrift o‘lchami',
+  fontSizeHint:
+    'Telefon sozlamasidagi katta shrift ilova yozuvlarini qirqib qo‘yishi mumkin. Bu yerdan o‘zingizga qulayini tanlang.',
+  fontSystem: 'Tizim bo‘yicha',
+  fontSmall: 'Kichik',
+  fontNormal: 'Standart',
+  fontLarge: 'Katta',
+  fontXLarge: 'Juda katta',
   heroTitle: 'Santexnika va Otopleniye uchun ishonchli manzil',
   heroBadge: '10 000+ mahsulot',
   viewCatalog: 'Katalogni ko‘rish',
@@ -368,6 +383,14 @@ const en: Dict = {
   photoSent: '📷 Photo sent',
   photoFound: 'Similar items from our catalog:',
   photoNoMatch: 'Sorry, nothing similar was found. Try searching by name.',
+  fontSizeTitle: 'Text size',
+  fontSizeHint:
+    'A large system font can cut off labels in the app. Pick the size that suits you.',
+  fontSystem: 'System',
+  fontSmall: 'Small',
+  fontNormal: 'Normal',
+  fontLarge: 'Large',
+  fontXLarge: 'Extra large',
   heroTitle: 'A reliable source for plumbing and heating',
   heroBadge: '10,000+ products',
   viewCatalog: 'View catalog',
@@ -523,6 +546,14 @@ const ru: Dict = {
   photoSent: '📷 Фото отправлено',
   photoFound: 'Похожие товары из каталога:',
   photoNoMatch: 'К сожалению, похожий товар не найден. Попробуйте поиск по названию.',
+  fontSizeTitle: 'Размер шрифта',
+  fontSizeHint:
+    'Крупный системный шрифт может обрезать надписи в приложении. Выберите удобный размер.',
+  fontSystem: 'Как в системе',
+  fontSmall: 'Мелкий',
+  fontNormal: 'Обычный',
+  fontLarge: 'Крупный',
+  fontXLarge: 'Очень крупный',
   heroTitle: 'Надёжный выбор сантехники и отопления',
   heroBadge: '10 000+ товаров',
   viewCatalog: 'Смотреть каталог',

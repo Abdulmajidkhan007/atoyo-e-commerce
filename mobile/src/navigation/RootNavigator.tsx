@@ -1,7 +1,7 @@
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {useTheme} from '../theme';
+import {useFontSize, useTheme} from '../theme';
 import {useI18n} from '../i18n';
 import {useAppSelector} from '../store';
 import {BrandHeader} from '../components/BrandHeader';
@@ -40,6 +40,11 @@ function tabIcon(name: IconName) {
 /** Pastki menyu: Bosh, Katalog, Savat, Sevimlilar, Profil (sayt kabi). */
 function Tabs() {
   const {palette} = useTheme();
+  // Shrift kattalashtirilganda yozuv qirqilib qolmasligi uchun
+  // menyu balandligi ham o'sadi ("Katalog" -> "Kat" bo'lib qolardi).
+  const labelSize = useFontSize(11);
+  const badgeSize = useFontSize(10);
+  const tabHeight = 58 + Math.max(0, labelSize - 11) * 2.2;
   const {t} = useI18n();
   const cartCount = useAppSelector(s => s.cart.items.reduce((sum, i) => sum + i.quantity, 0));
   const favCount = useAppSelector(s => s.favorites.ids.length);
@@ -51,14 +56,19 @@ function Tabs() {
         tabBarActiveTintColor: palette.accent,
         tabBarInactiveTintColor: palette.muted,
         tabBarStyle: {
-          height: 58,
+          height: tabHeight,
           paddingBottom: 6,
           paddingTop: 4,
           backgroundColor: palette.chrome,
           borderTopColor: palette.border,
         },
-        tabBarLabelStyle: {fontSize: 11},
-        tabBarBadgeStyle: {backgroundColor: palette.accent, color: palette.onAccent, fontSize: 10},
+        // Yozuv bir qatorga sig'masa kichrayadi, lekin qirqilmaydi.
+        tabBarLabelStyle: {fontSize: labelSize},
+        tabBarBadgeStyle: {
+          backgroundColor: palette.accent,
+          color: palette.onAccent,
+          fontSize: badgeSize,
+        },
       }}>
       <Tab.Screen
         name="Home"

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {ScrollView, Text, View} from 'react-native';
-import {makeStyles, spacing, useTheme, type ThemeMode} from '../theme';
+import {makeStyles, spacing, useTheme, type FontScaleMode, type ThemeMode} from '../theme';
 import {LOCALE_LABELS, useI18n, type Locale} from '../i18n';
 import {Button, Card, Chip, Field} from '../components/ui';
 import {subscribeToNewsletter} from '../api';
@@ -16,7 +16,7 @@ import {useAuth} from '../auth';
 export function SettingsScreen() {
   const styles = useStyles();
   const toast = useToast();
-  const {mode, setMode} = useTheme();
+  const {mode, setMode, fontScaleMode, setFontScaleMode} = useTheme();
   const {t, locale, setLocale} = useI18n();
   const {user} = useAuth();
   const [email, setEmail] = useState('');
@@ -43,6 +43,14 @@ export function SettingsScreen() {
     {value: 'light', label: t.themeLight},
     {value: 'dark', label: t.themeDark},
     {value: 'system', label: t.themeSystem},
+  ];
+
+  const fontOptions: {value: FontScaleMode; label: string}[] = [
+    {value: 'system', label: t.fontSystem},
+    {value: 'small', label: t.fontSmall},
+    {value: 'normal', label: t.fontNormal},
+    {value: 'large', label: t.fontLarge},
+    {value: 'xlarge', label: t.fontXLarge},
   ];
 
   const subscribe = async () => {
@@ -101,6 +109,22 @@ export function SettingsScreen() {
       </Card>
 
       <Card>
+        <Text style={styles.cardTitle}>{t.fontSizeTitle}</Text>
+        <Text style={styles.hint}>{t.fontSizeHint}</Text>
+        <View style={styles.chips}>
+          {fontOptions.map(option => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              active={fontScaleMode === option.value}
+              onPress={() => setFontScaleMode(option.value)}
+            />
+          ))}
+        </View>
+        <Text style={styles.sample}>{t.heroTitle}</Text>
+      </Card>
+
+      <Card>
         <Text style={styles.cardTitle}>{t.language}</Text>
         <View style={styles.chips}>
           {(Object.keys(LOCALE_LABELS) as Locale[]).map(code => (
@@ -136,4 +160,6 @@ const useStyles = makeStyles(c => ({
   muted: {color: c.muted, fontSize: 13},
   chips: {flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs},
   hint: {color: c.muted, fontSize: 12, lineHeight: 17},
+  /** Tanlangan o'lcham qanday ko'rinishini darhol ko'rsatadi. */
+  sample: {color: c.text, fontSize: 15, marginTop: spacing.xs},
 }));
