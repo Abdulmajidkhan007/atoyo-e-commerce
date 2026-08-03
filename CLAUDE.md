@@ -128,8 +128,12 @@ foydalanuvchi so'raganda.
 - `context.ts` — do'kon ma'lumotlari (5 daq. kesh) + savolga mos
   mahsulotlar. **Narx/zaxira faqat shu yerdan** keladi — modeldan
   emas.
-- `assistant.ts` — system prompt + Anthropic chaqiruvi. Uchala kanal
-  (sayt/ilova/bot) shu funksiyani chaqiradi; mantiq takrorlanmaydi.
+- `assistant.ts` — system prompt + Anthropic chaqiruvi + vosita
+  zanjiri (4 aylanishgacha). Uchala kanal (sayt/ilova/bot) shu
+  funksiyani chaqiradi; mantiq takrorlanmaydi.
+- `tools.ts` — `search_products` (narx/kategoriya/zaxira filtri baza
+  tomonda), `add_to_cart`, `start_checkout`. Savatni SERVER
+  o'zgartirmaydi: `actions` qaytadi, kanal o'zi qo'llaydi.
 - `images.ts` — Claude vision bilan rasm tahlili va Gemini
   ("Nano Banana", `GEMINI_API_KEY`) bilan rasm generatsiyasi. Prompt
   har doim "mahsulot o'zgarmasin" cheklovi bilan ketadi.

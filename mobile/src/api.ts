@@ -282,10 +282,21 @@ export async function assistantEnabled(): Promise<boolean> {
   }
 }
 
+/** Yordamchi so'ragan amal - savat ilova tomonida, shuning uchun shu yerda bajariladi. */
+export interface AssistantAction {
+  type: 'add_to_cart' | 'checkout';
+  productId?: string;
+  name?: string;
+  price?: number;
+  thumbnailUrl?: string;
+  stock?: number;
+  quantity?: number;
+}
+
 export async function askAssistant(input: {
   question: string;
   history: {role: 'user' | 'assistant'; content: string}[];
-}): Promise<{answer: string; products: AssistantProduct[]}> {
+}): Promise<{answer: string; products: AssistantProduct[]; actions: AssistantAction[]}> {
   const response = await fetch(`${SITE_URL}/api/assistant`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -294,10 +305,11 @@ export async function askAssistant(input: {
   const data = (await response.json().catch(() => ({}))) as {
     answer?: string;
     products?: AssistantProduct[];
+    actions?: AssistantAction[];
     error?: string;
   };
   if (!response.ok || !data.answer) throw new Error(data.error ?? 'Yordamchi javob bera olmadi.');
-  return {answer: data.answer, products: data.products ?? []};
+  return {answer: data.answer, products: data.products ?? [], actions: data.actions ?? []};
 }
 
 /**

@@ -718,7 +718,8 @@ async function replyWithAssistant(
   chatId: number,
   session: BotSession,
   text: string,
-  t: BotDict
+  t: BotDict,
+  userIdForCheckout: number
 ): Promise<void> {
   if (!isAiConfigured()) {
     session.state = "idle";
@@ -745,14 +746,39 @@ async function replyWithAssistant(
     ].slice(-8);
     await saveSession(chatId, session);
 
+    // Yordamchi savatga qo'shishni so'ragan bo'lsa - botda savat
+    // serverda (sessiyada) turadi, shuning uchun shu yerda bajariladi.
+    let goCheckout = false;
+    for (const action of reply.actions) {
+      if (action.type === "add_to_cart") {
+        for (let i = 0; i < action.quantity; i += 1) {
+          await addToCart(chatId, action.productId, t);
+        }
+      }
+      if (action.type === "checkout") goCheckout = true;
+    }
+
     const buttons: InlineButton[][] = reply.products.slice(0, 3).map((product) => [
       { text: product.name.slice(0, 60), callback_data: `p|${product.id}` },
     ]);
+    if (reply.actions.some((action) => action.type === "add_to_cart")) {
+      buttons.push([{ text: t.cart, callback_data: "crt" }]);
+    }
     buttons.push([{ text: t.backToMenu, callback_data: "m|home" }]);
 
     await sendChatMessage(chatId, escapeAssistantHtml(reply.answer), {
       replyMarkup: { inline_keyboard: buttons },
     });
+
+    if (goCheckout) {
+      // Rasmiylashtirish oqimi savat holatidan boshlanadi - yordamchi
+      // rejimidan chiqiladi.
+      const fresh = await getSession(chatId);
+      fresh.state = "idle";
+      fresh.assistantHistory = [];
+      await saveSession(chatId, fresh);
+      await startCheckout(chatId, userIdForCheckout, t);
+    }
   } catch (error) {
     console.error("Bot yordamchisi xatosi:", error);
     await sendChatMessage(chatId, t.assistantError);
@@ -1170,7 +1196,7 @@ export async function handleCustomerMessage(params: {
 
     // ---- AI yordamchi bilan suhbat (chiqish - /start yoki menyu) ----
     if (session.state === "awaiting_assistant" && !command.startsWith("/")) {
-      await replyWithAssistant(chatId, session, text, t);
+      await replyWithAssistant(chatId, session, text, t, userId);
       return;
     }
 

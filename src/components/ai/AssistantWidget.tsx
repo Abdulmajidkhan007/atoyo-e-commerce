@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CircularProgress, IconButton, TextField } from "@mui/material";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import { useAppDispatch } from "@/redux/hooks";
+import { addItem } from "@/redux/slices/cartSlice";
 
 /**
  * ATOYO YORDAMCHISI — saytdagi suzuvchi oyna.
@@ -30,7 +33,20 @@ function formatPrice(value: number): string {
   return `${Math.round(value).toLocaleString("ru-RU").replace(/ /g, " ")} so'm`;
 }
 
+/** Yordamchi qaytargan amallar (savatga qo'shish, rasmiylashtirish). */
+interface AssistantAction {
+  type: "add_to_cart" | "checkout";
+  productId?: string;
+  name?: string;
+  price?: number;
+  thumbnailUrl?: string;
+  stock?: number;
+  quantity?: number;
+}
+
 export function AssistantWidget() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [enabled, setEnabled] = useState(false);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -77,7 +93,27 @@ export function AssistantWidget() {
         answer?: string;
         error?: string;
         products?: ChatMessage["products"];
+        actions?: AssistantAction[];
       };
+
+      // Yordamchi savatga qo'shishni so'ragan bo'lsa - shu yerda
+      // bajariladi (savat brauzerda, serverda emas).
+      let goCheckout = false;
+      for (const action of data.actions ?? []) {
+        if (action.type === "add_to_cart" && action.productId) {
+          dispatch(
+            addItem({
+              productId: action.productId,
+              name: action.name ?? "",
+              price: action.price ?? 0,
+              thumbnailUrl: action.thumbnailUrl ?? "",
+              stock: action.stock ?? 0,
+              quantity: action.quantity ?? 1,
+            })
+          );
+        }
+        if (action.type === "checkout") goCheckout = true;
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -88,6 +124,10 @@ export function AssistantWidget() {
           products: data.answer ? data.products?.slice(0, 3) : undefined,
         },
       ]);
+      if (goCheckout) {
+        setOpen(false);
+        router.push("/buyurtma");
+      }
     } catch {
       setMessages((prev) => [
         ...prev,

@@ -15,6 +15,8 @@ import {makeStyles, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {Icon} from '../components/Icon';
 import {askAssistant, assistantEnabled, type AssistantProduct} from '../api';
+import {useAppDispatch} from '../store';
+import {addItem} from '../store/cartSlice';
 import type {RootStackParamList} from '../navigation/types';
 
 /**
@@ -33,6 +35,7 @@ export function AssistantScreen() {
   const styles = useStyles();
   const {t, money} = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dispatch = useAppDispatch();
 
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([{role: 'assistant', content: t.assistantIntro}]);
@@ -69,6 +72,22 @@ export function AssistantScreen() {
           ...prev,
           {role: 'assistant', content: reply.answer, products: reply.products.slice(0, 3)},
         ]);
+
+        // Savatga qo'shish/rasmiylashtirish - savat ilovada turadi.
+        for (const action of reply.actions) {
+          if (action.type === 'add_to_cart' && action.productId) {
+            dispatch(
+              addItem({
+                productId: action.productId,
+                name: action.name ?? '',
+                price: action.price ?? 0,
+                quantity: action.quantity ?? 1,
+                thumbnailUrl: action.thumbnailUrl ?? '',
+              }),
+            );
+          }
+          if (action.type === 'checkout') navigation.navigate('Buyurtma');
+        }
       } catch (error) {
         setMessages(prev => [
           ...prev,
@@ -78,7 +97,7 @@ export function AssistantScreen() {
         setBusy(false);
       }
     },
-    [busy, messages, t.assistantIntro, t.assistantError],
+    [busy, dispatch, messages, navigation, t.assistantIntro, t.assistantError],
   );
 
   if (enabled === false) {

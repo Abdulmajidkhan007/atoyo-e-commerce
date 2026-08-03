@@ -126,6 +126,15 @@ Uchala kanalda bitta "miya" — `/api/assistant` (Anthropic Claude,
   5 daqiqa keshlanadi va kontekstga qo'yiladi.
 - Chegaralar: savol 600 belgi, tarix 8 xabar, javob 700 token,
   har IP uchun soatiga 30 savol (`rateLimits` kolleksiyasi).
+- **Vositalar (tool use)** — model javob yozishdan oldin katalogni
+  HAQIQATAN qidiradi: `search_products` (so'z, narx oralig'i,
+  kategoriya, material, "faqat zaxirada bori", saralash),
+  `add_to_cart` (mijoz aniq so'rasa), `start_checkout`. Filtrni model
+  emas, BAZA bajaradi; zanjir 4 aylanish bilan cheklangan.
+- Savat amallari serverda bajarilmaydi: javob bilan `actions` qaytadi,
+  uni kanal o'z savatiga qo'llaydi (sayt/ilova — Redux, bot — sessiya).
+  Shu sabab yordamchi mijoz nomidan buyurtmani YAKUNLAY olmaydi —
+  faqat savatni to'ldirib rasmiylashtirishga olib chiqadi.
 - Sayt — suzuvchi oyna; ilova — "Yordamchi" ekrani (Profil orqali);
   bot — 🤖 tugmasi va `/yordamchi` buyrug'i (`/start` bilan chiqiladi).
 - Javob bilan birga 3 tagacha mahsulot kartochkasi ko'rsatiladi.
