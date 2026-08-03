@@ -216,10 +216,13 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           (product.variantAxes ?? []).map(axis => (
             <View key={axis.key} style={{gap: spacing.xs}}>
               <Text style={styles.muted}>{axis.label}</Text>
-              {/* Variantlar bitta ramka ichida (segment tanlagich):
-                  tanlangani ramka ichida rang bilan ajraladi. Pastki-chap
-                  burchak to'g'ri - saytdagi shakl bilan bir xil. */}
-              <View style={styles.variantGroup}>
+              {/* Segment tanlagich: ramka butun kenglikda, variantlar
+                  teng bo'linadi; ko'p bo'lsa ramka ichida aylanadi. */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.variantGroup}
+                contentContainerStyle={styles.variantGroupInner}>
                 {axis.values.map(value => {
                   const selected = selection[axis.key] === value;
                   return (
@@ -233,7 +236,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
                     </Pressable>
                   );
                 })}
-              </View>
+              </ScrollView>
             </View>
           ))}
 
@@ -364,18 +367,23 @@ const useStyles = makeStyles(c => ({
   zoomImage: {width: '100%', height: '100%'},
   zoomClose: {position: 'absolute', top: 40, right: 20},
   variantGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    alignSelf: 'flex-start',
-    maxWidth: '100%',
-    padding: 4,
+    width: '100%',
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 999,
     borderBottomLeftRadius: 0,
   },
+  /** Ichki qator: kamida to'liq kenglik, ko'p bo'lsa aylanadi. */
+  variantGroupInner: {
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    padding: 4,
+  },
   variant: {
+    flexGrow: 1,
+    alignItems: 'center',
     borderRadius: 999,
     paddingVertical: 6,
     paddingHorizontal: 14,

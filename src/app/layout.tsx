@@ -1,15 +1,73 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Providers } from "./providers";
 import { Analytics } from "@/components/analytics/Analytics";
+import { SITE_NAME, siteUrl } from "@/lib/seo/json-ld";
+import { ogImage, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_TITLE } from "@/lib/seo/metadata";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
 
+/**
+ * SAYT META MA'LUMOTLARI.
+ *
+ * `title.template` tufayli ichki sahifalar o'z nomini yozsa yetarli:
+ * brauzer yorlig'ida "Moyka hi-tech | Atoyo Santexnika" ko'rinadi.
+ * `metadataBase` bo'lmasa Open Graph rasmi nisbiy manzil bilan
+ * qolib ketadi va Telegram kartochkani ko'rsatmaydi.
+ */
 export const metadata: Metadata = {
-  title: "Atoyo Santexnika | Santexnika va Otopleniye Do'koni",
-  description:
-    "Quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari - eng sifatli santexnika mahsulotlari.",
+  metadataBase: new URL(siteUrl()),
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: siteUrl() }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "shopping",
+  alternates: {
+    canonical: "/",
+    languages: {
+      uz: "/",
+      "uz-UZ": "/",
+      ru: "/",
+      en: "/",
+    },
+  },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: siteUrl(),
+    locale: "uz_UZ",
+    alternateLocale: ["ru_RU", "en_US"],
+    images: [ogImage()],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [ogImage().url],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  },
+  formatDetection: { telephone: true, address: true, email: true },
+};
+
+/** Brauzer manzil satri rangi (mobil qurilmalarda ko'rinadi). */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#04202F" },
+  ],
 };
 
 /**

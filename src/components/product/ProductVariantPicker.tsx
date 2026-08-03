@@ -39,11 +39,12 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
       {axes.map((axis) => (
         <div key={axis.key} className="flex flex-col gap-1.5">
           <span className="text-sm text-navy-300">{axis.label}</span>
-          {/* Variantlar bitta "o'rab turuvchi" ramka ichida; tanlangani
-              ramka ichida rang bilan ajralib turadi (segment tanlagich).
-              Pastki-chap burchak to'g'ri qoldirilgan - shakl brenddagi
-              "qirqilgan burchak" uslubiga mos keladi. */}
-          <div className="inline-flex w-fit max-w-full flex-wrap items-center gap-1 rounded-full rounded-bl-none border border-navy-100 p-1 dark:border-navy-500">
+          {/* Segment tanlagich: ramka BUTUN KENGLIKDA, variantlar teng
+              bo'linadi. Variant ko'p bo'lib sig'masa ramka ichida
+              gorizontal aylanadi - ekrandan chiqib ketmaydi.
+              Pastki-chap burchak to'g'ri qoldirilgan (brend uslubi). */}
+          <div className="w-full overflow-x-auto rounded-full rounded-bl-none border border-navy-100 p-1 dark:border-navy-500">
+            <div className="flex min-w-full items-center gap-1">
             {axis.values.map((value) => {
               const isSelected = selection[axis.key] === value;
               const available = isValueAvailable(axis.key, value);
@@ -54,7 +55,7 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
                   onClick={() => setSelection((prev) => ({ ...prev, [axis.key]: value }))}
                   aria-pressed={isSelected}
                   className={[
-                    "rounded-full px-4 py-1.5 text-sm transition",
+                    "flex-1 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition",
                     // Tanlangan variant ostidagi rangli "yostiq" - shu
                     // tugmaning orqasiga o'tadi.
                     isSelected
@@ -67,6 +68,7 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
       ))}
