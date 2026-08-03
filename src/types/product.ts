@@ -74,6 +74,18 @@ export interface Product {
    */
   keywords?: string[];
   description: string;
+  /**
+   * TARJIMALAR (ixtiyoriy). Do'kon asosan o'zbekcha ishlaydi, lekin
+   * mijozning katta qismi ruschada qidiradi - shuning uchun nom va
+   * tavsifning ruscha/inglizcha varianti alohida saqlanadi. Bo'sh
+   * bo'lsa o'zbekchasi ko'rsatiladi (fallback), ya'ni eski mahsulotlar
+   * hech qanday o'zgarishsiz ishlayveradi. Qidiruv tokenlariga
+   * tarjimalar ham qo'shiladi - "смеситель" deb qidirilsa topiladi.
+   */
+  nameRu?: string;
+  nameEn?: string;
+  descriptionRu?: string;
+  descriptionEn?: string;
   /** Do'kon kodi / artikul (masalan "HS897") - qidiruvda ham ishlaydi. */
   sku?: string;
   category: ProductCategory;

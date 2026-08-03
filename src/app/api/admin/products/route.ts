@@ -16,6 +16,11 @@ export const runtime = "nodejs";
 const productSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(4000).default(""),
+  /** Tarjimalar - ixtiyoriy (bo'sh bo'lsa o'zbekchasi ishlatiladi). */
+  nameRu: z.string().max(200).optional(),
+  nameEn: z.string().max(200).optional(),
+  descriptionRu: z.string().max(4000).optional(),
+  descriptionEn: z.string().max(4000).optional(),
   /** Do'kon kodi / artikul (ixtiyoriy). */
   sku: z.string().max(60).default(""),
   /**
@@ -115,8 +120,15 @@ export async function POST(request: Request) {
     name: d.name.trim(),
     nameSearchIndex: d.name.trim().toLowerCase(),
     keywords: normalizeKeywords(d.keywords),
-    nameTokens: buildNameTokens(d.name, d.brand, d.sku, normalizeKeywords(d.keywords)),
+    nameTokens: buildNameTokens(d.name, d.brand, d.sku, normalizeKeywords(d.keywords), [
+      d.nameRu,
+      d.nameEn,
+    ]),
     description: d.description.trim(),
+    nameRu: d.nameRu?.trim() || undefined,
+    nameEn: d.nameEn?.trim() || undefined,
+    descriptionRu: d.descriptionRu?.trim() || undefined,
+    descriptionEn: d.descriptionEn?.trim() || undefined,
     sku: d.sku.trim(),
     category: d.category,
     brand: d.brand.trim(),

@@ -162,7 +162,9 @@ sharhni esa saytning API'si orqali yuboradi (`Authorization: Bearer
 
 ## Qolgan/kutilayotgan ishlar
 
-- Ko'p tillik uz/en/ru (boshlanmagan).
+- Ko'p tillik: interfeys uz/en/ru tayyor; mahsulot nomi/tavsifi uchun
+  ixtiyoriy `nameRu/nameEn/descriptionRu/descriptionEn` maydonlari bor
+  (`lib/products/i18n.ts`), tarjima yo'q bo'lsa o'zbekchasi ko'rinadi.
 - Payme/Click to'lovi va karta saqlash: kod tayyor, merchant kalitlari
   kelgach test kabinetida sinaladi.
 - To'liq "hamma narsa Telegramda" pariteti; profil rasm/email/parol tahrirlash.

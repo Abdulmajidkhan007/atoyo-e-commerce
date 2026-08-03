@@ -16,6 +16,8 @@ export const BOT_LANG_LABELS: Record<BotLang, string> = {
 };
 
 export interface BotDict {
+  /** Joriy til - mahsulot nomining tarjimasini tanlash uchun. */
+  lang: BotLang;
   welcome: string;
   mainMenu: string;
   catalog: string;
@@ -151,6 +153,7 @@ export interface BotDict {
 }
 
 const uz: BotDict = {
+  lang: "uz",
   welcome: "🏪 <b>Atoyo Santexnika</b> botiga xush kelibsiz!\n\nKatalogdan mahsulot tanlab, shu yerning o'zida buyurtma bering.",
   mainMenu: "🏪 <b>Bosh menyu</b>",
   catalog: "🛍 Katalog",
@@ -298,6 +301,7 @@ const uz: BotDict = {
 };
 
 const en: BotDict = {
+  lang: "en",
   welcome: "🏪 Welcome to the <b>Atoyo Santexnika</b> bot!\n\nPick products from the catalog and order right here.",
   mainMenu: "🏪 <b>Main menu</b>",
   catalog: "🛍 Catalog",
@@ -444,6 +448,7 @@ const en: BotDict = {
 };
 
 const ru: BotDict = {
+  lang: "ru",
   welcome: "🏪 Добро пожаловать в бот <b>Atoyo Santexnika</b>!\n\nВыбирайте товары из каталога и заказывайте прямо здесь.",
   mainMenu: "🏪 <b>Главное меню</b>",
   catalog: "🛍 Каталог",
@@ -592,7 +597,8 @@ const ru: BotDict = {
 const BOT_DICTS: Record<BotLang, BotDict> = { uz, en, ru };
 
 export function botDict(lang: BotLang | undefined): BotDict {
-  return BOT_DICTS[lang ?? "uz"] ?? BOT_DICTS.uz;
+  const key = lang ?? "uz";
+  return { ...(BOT_DICTS[key] ?? BOT_DICTS.uz), lang: key };
 }
 
 export function isBotLang(value: string | undefined): value is BotLang {

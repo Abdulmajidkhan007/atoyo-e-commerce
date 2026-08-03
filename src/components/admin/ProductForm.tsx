@@ -50,6 +50,10 @@ const EMPTY_FORM = {
   sku: "",
   keywords: "",
   description: "",
+  nameRu: "",
+  nameEn: "",
+  descriptionRu: "",
+  descriptionEn: "",
   category: "",
   material: "",
   unit: DEFAULT_UNIT,
@@ -130,6 +134,10 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
               sku: product.sku ?? "",
               keywords: (product.keywords ?? []).join(", "),
               description: product.description,
+              nameRu: product.nameRu ?? "",
+              nameEn: product.nameEn ?? "",
+              descriptionRu: product.descriptionRu ?? "",
+              descriptionEn: product.descriptionEn ?? "",
               category: product.category,
               material: product.material,
               unit: product.unit || DEFAULT_UNIT,
@@ -258,6 +266,11 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         sku: form.sku.trim(),
         keywords: form.keywords.split(",").map((item) => item.trim()).filter(Boolean),
         description: form.description.trim(),
+        // Tarjimalar - bo'sh bo'lsa yuborilmaydi (o'zbekchasi ishlatiladi).
+        nameRu: form.nameRu.trim() || undefined,
+        nameEn: form.nameEn.trim() || undefined,
+        descriptionRu: form.descriptionRu.trim() || undefined,
+        descriptionEn: form.descriptionEn.trim() || undefined,
         category: form.category,
         material: form.material,
         unit: form.unit,
@@ -481,6 +494,49 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
             minRows={2}
             fullWidth
           />
+
+          {/* TARJIMALAR. Mijozlarning katta qismi ruschada qidiradi;
+              bo'sh qoldirilsa o'zbekchasi ko'rsatiladi va hech narsa
+              buzilmaydi. Ruscha nom qidiruvga ham tushadi. */}
+          <div className="flex flex-col gap-3 rounded-lg border border-dashed border-navy-200 p-3 dark:border-navy-500">
+            <p className="text-xs font-medium text-navy-500 dark:text-navy-100">
+              Tarjimalar (ixtiyoriy) — bo&apos;sh qoldirsangiz o&apos;zbekchasi ko&apos;rinadi
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <TextField
+                size="small"
+                label="Nomi (ruscha)"
+                placeholder="Смеситель для кухни"
+                value={form.nameRu}
+                onChange={(e) => setForm({ ...form, nameRu: e.target.value })}
+              />
+              <TextField
+                size="small"
+                label="Nomi (inglizcha)"
+                placeholder="Kitchen faucet"
+                value={form.nameEn}
+                onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
+              />
+            </div>
+            <TextField
+              size="small"
+              label="Tavsif (ruscha)"
+              value={form.descriptionRu}
+              onChange={(e) => setForm({ ...form, descriptionRu: e.target.value })}
+              multiline
+              minRows={2}
+              fullWidth
+            />
+            <TextField
+              size="small"
+              label="Tavsif (inglizcha)"
+              value={form.descriptionEn}
+              onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })}
+              multiline
+              minRows={2}
+              fullWidth
+            />
+          </div>
 
           <TextField
             size="small"

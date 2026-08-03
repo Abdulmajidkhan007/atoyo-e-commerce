@@ -5,6 +5,8 @@ import { getProductById, getRelatedProducts } from "@/lib/firebase/admin-product
 import { getDictionary } from "@/lib/i18n/server";
 import { isDiscountActive, effectivePrice } from "@/lib/products/pricing";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { getLocale } from "@/lib/i18n/server";
+import { localizedDescription, localizedName } from "@/lib/products/i18n";
 import { labelOf } from "@/lib/products/taxonomy";
 import { hasVariants } from "@/lib/products/variants";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
@@ -30,13 +32,15 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app";
 
 export async function generateMetadata({ params }: ProductPageParams): Promise<Metadata> {
   const { id } = await params;
-  const product = await getProductById(id);
+  const [product, locale] = await Promise.all([getProductById(id), getLocale()]);
   if (!product) return { title: "Mahsulot topilmadi" };
 
-  const title = `${product.name} | Atoyo Santexnika`;
+  // Tanlangan tildagi nom/tavsif - tarjimasi bo'lmasa o'zbekchasi.
+  const name = localizedName(product, locale);
+  const title = `${name} | Atoyo Santexnika`;
   const description =
-    product.description?.slice(0, 160) ||
-    `${product.name} — ${effectivePrice(product).toLocaleString("uz-UZ")} so'm. Atoyo Santexnika do'konida.`;
+    localizedDescription(product, locale)?.slice(0, 160) ||
+    `${name} — ${effectivePrice(product).toLocaleString("uz-UZ")} so'm. Atoyo Santexnika do'konida.`;
   // Ijtimoiy tarmoqda ulashilganda mahsulot nomi/narxi bilan karta ko'rinadi.
   const ogImage = `${SITE_URL}/api/og/product/${id}`;
 
@@ -56,13 +60,18 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
 
 export default async function ProductPage({ params }: ProductPageParams) {
   const { id } = await params;
-  const [product, dict, taxonomy] = await Promise.all([
+  const [product, dict, taxonomy, locale] = await Promise.all([
     getProductById(id),
     getDictionary(),
     getTaxonomy(),
+    getLocale(),
   ]);
 
   if (!product) notFound();
+
+  // Nom va tavsif tanlangan tilda (tarjimasi yo'q bo'lsa - o'zbekchasi).
+  const name = localizedName(product, locale);
+  const description = localizedDescription(product, locale);
 
   // O'xshash mahsulotlar: avval MAXSUS KALIT SO'Z bo'yicha
   // (almashtiriladigan mahsulotlar), keyin shu kategoriyadan.
@@ -97,16 +106,16 @@ export default async function ProductPage({ params }: ProductPageParams) {
       <div className="grid gap-8 md:grid-cols-2">
         <ProductGallery
           images={product.images.length > 0 ? product.images : product.thumbnailUrl ? [product.thumbnailUrl] : []}
-          alt={product.name}
+          alt={name}
         />
 
         <div className="flex flex-col gap-3">
           <Chip label={(dict.categories as Record<string, string>)[product.category] ?? categoryLabel} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
 
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{product.name}</h1>
+            <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{name}</h1>
             <div className="flex shrink-0 items-center">
-              <ShareButton title={product.name} text={`${product.name} — Atoyo Santexnika`} />
+              <ShareButton title={name} text={`${name} — Atoyo Santexnika`} />
               <FavoriteButton product={product} />
             </div>
           </div>
@@ -134,7 +143,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
             </div>
           )}
 
-          <p className="text-sm text-navy-500 dark:text-navy-100">{product.description}</p>
+          <p className="text-sm text-navy-500 dark:text-navy-100">{description}</p>
 
           <dl className="grid grid-cols-2 gap-2 text-sm text-navy-500 dark:text-navy-100">
             {product.dimensions.diameterMm !== undefined && (

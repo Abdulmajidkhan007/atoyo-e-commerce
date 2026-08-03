@@ -9,6 +9,8 @@ import { addItem } from "@/redux/slices/cartSlice";
 import { isDiscountActive } from "@/lib/products/pricing";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { useCategoryLabel } from "@/lib/products/useTaxonomy";
+import { localizedName } from "@/lib/products/i18n";
+import { useI18n } from "@/lib/i18n/LocaleContext";
 import { FavoriteButton } from "./FavoriteButton";
 import { StarRating } from "./StarRating";
 import type { Product } from "@/types/product";
@@ -19,6 +21,9 @@ function formatSom(amount: number): string {
 
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();
+  // Nom tanlangan tilda (tarjimasi bo'lmasa - o'zbekchasi).
+  const { locale } = useI18n();
+  const name = localizedName(product, locale);
   // Kategoriya nomi ro'yxatdan olinadi - admin qo'shgan yangi
   // kategoriyalar ham ko'rinadi (ilgari kodda 8 tasi yozilgan edi).
   const categoryLabel = useCategoryLabel(product.category);
@@ -41,7 +46,7 @@ export function ProductCard({ product }: { product: Product }) {
         {product.thumbnailUrl ? (
           <Image
             src={product.thumbnailUrl}
-            alt={product.name}
+            alt={name}
             fill
             sizes="(max-width: 768px) 50vw, 25vw"
             className="object-cover transition group-hover:scale-105"
@@ -66,7 +71,7 @@ export function ProductCard({ product }: { product: Product }) {
         )}
 
         <Link href={`/mahsulot/${product.id}`} className="line-clamp-2 text-sm font-medium text-navy-900 hover:text-aqua-600 dark:text-white">
-          {product.name}
+          {name}
         </Link>
 
         {meta && <p className="text-xs text-navy-300">{meta}</p>}
@@ -105,14 +110,14 @@ export function ProductCard({ product }: { product: Product }) {
                 dispatch(
                   addItem({
                     productId: product.id,
-                    name: product.name,
+                    name,
                     price: hasDiscount ? product.discountPrice! : product.price,
                     thumbnailUrl: product.thumbnailUrl,
                     stock: product.stock,
                   })
                 )
               }
-              aria-label={`${product.name} savatga qo'shish`}
+              aria-label={`${name} savatga qo'shish`}
             >
               <AddShoppingCartIcon fontSize="small" />
             </Button>

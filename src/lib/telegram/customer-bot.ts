@@ -22,6 +22,7 @@ import { getFacets } from "@/lib/products/facets";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { getPublishedPosts, getSiteSettings } from "@/lib/firebase/admin-content";
+import { localizedDescription, localizedName } from "@/lib/products/i18n";
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
 import { askAssistant } from "@/lib/ai/assistant";
 import { isAiConfigured } from "@/lib/ai/config";
@@ -401,7 +402,7 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
 
   const unit = labelOf(BUILTIN_UNITS, product.unit) || product.unit || DEFAULT_UNIT;
   const lines = [
-    `<b>${product.name}</b>`,
+    `<b>${localizedName(product, t.lang)}</b>`,
     product.sku ? `#️⃣ ${product.sku}` : "",
     product.brand ? `${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
     hasVariants(product)
@@ -414,7 +415,7 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
       ? `⭐️ ${product.ratingAvg?.toFixed(1)} (${product.ratingCount})`
       : "",
     product.stock > 0 ? `${t.inStock}: ${product.stock} ${unit}` : `❌ ${t.outOfStock}`,
-    product.description ? `\n${product.description}` : "",
+    localizedDescription(product, t.lang) ? `\n${localizedDescription(product, t.lang)}` : "",
   ].filter(Boolean);
 
   const rows: InlineButton[][] = [];
@@ -477,7 +478,7 @@ async function addToCart(chatId: number, productId: string, t: BotDict): Promise
   } else {
     session.cart.push({
       productId: product.id,
-      name: product.name,
+      name: localizedName(product, t.lang),
       price: effectiveBotPrice(product),
       quantity: 1,
       thumbnailUrl: product.thumbnailUrl,

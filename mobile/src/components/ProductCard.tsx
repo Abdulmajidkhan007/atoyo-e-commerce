@@ -2,7 +2,7 @@ import React from 'react';
 import {Image, Pressable, Text, View} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
-import {effectivePrice, type Product} from '../types';
+import {effectivePrice, localizedName, type Product} from '../types';
 import {useAppDispatch, useAppSelector} from '../store';
 import {toggleFavorite} from '../store/favoritesSlice';
 import {Stars} from './ui';
@@ -12,7 +12,8 @@ import {hasVariants, minVariantPrice} from '../variants';
 /** Katalog va bosh sahifadagi mahsulot kartochkasi (sayt bilan bir xil). */
 export function ProductCard({product, onPress}: {product: Product; onPress: () => void}) {
   const styles = useStyles();
-  const {t, money} = useI18n();
+  const {t, money, locale} = useI18n();
+  const name = localizedName(product, locale);
   const dispatch = useAppDispatch();
   const isFavorite = useAppSelector(s => s.favorites.ids.includes(product.id));
   // Turlari bo'lgan mahsulotda narx "eng arzonidan" ko'rinishida
@@ -29,7 +30,7 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
             source={{uri: product.thumbnailUrl}}
             style={styles.image}
             resizeMode="cover"
-            alt={product.name}
+            alt={name}
           />
         ) : null}
         <Pressable
@@ -51,7 +52,7 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
 
       <View style={{padding: spacing.sm, gap: 2}}>
         <Text numberOfLines={2} style={styles.name}>
-          {product.name}
+          {name}
         </Text>
         <Text style={styles.brand}>
           {[product.brand, product.manufacturerCountry].filter(Boolean).join(' • ')}

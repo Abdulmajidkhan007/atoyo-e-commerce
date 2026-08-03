@@ -56,10 +56,14 @@ export function buildNameTokens(
   brand?: string,
   sku?: string,
   /** Maxsus kalitlar ham qidiruvga tushadi. */
-  keywords?: string[]
+  keywords?: string[],
+  /** Nomning tarjimalari - "смеситель" deb qidirilsa ham topiladi. */
+  translations?: (string | undefined)[]
 ): string[] {
   // Kod (artikul) ham tokenlarga tushadi - "HS897" deb qidirilsa topiladi.
-  const source = `${name} ${brand ?? ""} ${sku ?? ""} ${(keywords ?? []).join(" ")}`.toLowerCase();
+  const source = `${name} ${brand ?? ""} ${sku ?? ""} ${(keywords ?? []).join(" ")} ${(translations ?? [])
+    .filter(Boolean)
+    .join(" ")}`.toLowerCase();
   const words = source
     .split(/[^a-zA-Z0-9а-яА-ЯёЁўЎқҚғҒҳҲ'ʼ/.-]+/u)
     .map((w) => w.trim())
@@ -73,7 +77,7 @@ export function buildNameTokens(
     const normalized = normalizeSearchWord(word);
     if (normalized.length >= 2) tokens.add(normalized);
   }
-  return Array.from(tokens).slice(0, 40);
+  return Array.from(tokens).slice(0, 60);
 }
 
 /**

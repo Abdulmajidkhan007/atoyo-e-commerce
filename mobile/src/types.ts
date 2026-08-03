@@ -34,6 +34,11 @@ export interface Product {
   id: string;
   name: string;
   description: string;
+  /** Tarjimalar - bo'sh bo'lsa o'zbekchasi ko'rsatiladi (sayt bilan bir xil). */
+  nameRu?: string;
+  nameEn?: string;
+  descriptionRu?: string;
+  descriptionEn?: string;
   category: ProductCategory;
   /** Maxsus kalit so'zlar - o'zaro almashtiriladigan mahsulotlar. */
   keywords?: string[];
@@ -126,6 +131,25 @@ export const CATEGORY_KEYS: ProductCategory[] = [
   'pumps',
   'sanitary-ware',
 ];
+
+/**
+ * Mahsulot nomi/tavsifi tanlangan tilda. Tarjima kiritilmagan bo'lsa
+ * o'zbekchasi qaytadi - saytdagi `lib/products/i18n.ts` bilan bir xil.
+ */
+export function localizedName(product: Pick<Product, 'name' | 'nameRu' | 'nameEn'>, locale: string): string {
+  if (locale === 'ru') return product.nameRu?.trim() || product.name;
+  if (locale === 'en') return product.nameEn?.trim() || product.name;
+  return product.name;
+}
+
+export function localizedDescription(
+  product: Pick<Product, 'description' | 'descriptionRu' | 'descriptionEn'>,
+  locale: string,
+): string {
+  if (locale === 'ru') return product.descriptionRu?.trim() || product.description;
+  if (locale === 'en') return product.descriptionEn?.trim() || product.description;
+  return product.description;
+}
 
 /** Chegirma muddati o'tgan bo'lsa - to'liq narx (sayt bilan bir xil qoida). */
 export function effectivePrice(product: Product): number {

@@ -14,6 +14,10 @@ export const runtime = "nodejs";
 const updateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(4000).optional(),
+  nameRu: z.string().max(200).optional(),
+  nameEn: z.string().max(200).optional(),
+  descriptionRu: z.string().max(4000).optional(),
+  descriptionEn: z.string().max(4000).optional(),
   sku: z.string().max(60).optional(),
   keywords: z.array(z.string().max(60)).max(10).optional(),
   // Admin qo'shgan yangi turlar ham bo'lishi mumkin (metadata/taxonomy).
@@ -96,7 +100,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     d.name !== undefined ||
     d.sku !== undefined ||
     d.brand !== undefined ||
-    d.keywords !== undefined
+    d.keywords !== undefined ||
+    d.nameRu !== undefined ||
+    d.nameEn !== undefined
   ) {
     // Tokenlar nom + brend + KOD dan yasaladi. Ilgari bu yerda kod
     // berilmasdi va mahsulot tahrirlanganda "8276" kabi kod bo'yicha
@@ -108,10 +114,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       name,
       d.brand ?? existing.brand,
       d.sku ?? existing.sku,
-      normalizeKeywords(d.keywords ?? existing.keywords)
+      normalizeKeywords(d.keywords ?? existing.keywords),
+      // Tarjimalar ham indeksga tushadi - ruscha qidiruv ishlashi uchun.
+      [d.nameRu ?? existing.nameRu, d.nameEn ?? existing.nameEn]
     );
   }
   if (d.description !== undefined) updates.description = d.description.trim();
+  if (d.nameRu !== undefined) updates.nameRu = d.nameRu.trim() || undefined;
+  if (d.nameEn !== undefined) updates.nameEn = d.nameEn.trim() || undefined;
+  if (d.descriptionRu !== undefined) updates.descriptionRu = d.descriptionRu.trim() || undefined;
+  if (d.descriptionEn !== undefined) updates.descriptionEn = d.descriptionEn.trim() || undefined;
   if (d.category !== undefined) updates.category = d.category;
   if (d.material !== undefined) updates.material = d.material;
   if (d.unit !== undefined) updates.unit = d.unit;

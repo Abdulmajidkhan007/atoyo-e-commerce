@@ -11,7 +11,13 @@ import {
 } from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
-import {effectivePrice, type Product, type Review} from '../types';
+import {
+  effectivePrice,
+  localizedDescription,
+  localizedName,
+  type Product,
+  type Review,
+} from '../types';
 import {fetchProduct, fetchRelatedProducts} from '../firebase';
 import {fetchReviews, submitReview, SITE_URL} from '../api';
 import {useAppDispatch, useAppSelector} from '../store';
@@ -36,7 +42,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   const {productId} = route.params;
   const styles = useStyles();
   const toast = useToast();
-  const {t, money} = useI18n();
+  const {t, money, locale} = useI18n();
   const dispatch = useAppDispatch();
   const {user} = useAuth();
   const isFavorite = useAppSelector(s => s.favorites.ids.includes(productId));
@@ -120,7 +126,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         ...(variant
           ? {variantId: variant.id, variantLabel: variantLabel(product, variant)}
           : {}),
-        name: product.name,
+        name: localizedName(product, locale),
         price,
         quantity: 1,
         thumbnailUrl: product.thumbnailUrl,
@@ -166,7 +172,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
                 source={{uri: url}}
                 style={[styles.image, {width: windowWidth}]}
                 resizeMode="contain"
-                alt={`${product.name} — ${index + 1}`}
+                alt={`${localizedName(product, locale)} — ${index + 1}`}
               />
             </Pressable>
           ))}
@@ -178,13 +184,13 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
 
       <View style={{padding: spacing.lg, gap: spacing.sm}}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>{product.name}</Text>
+          <Text style={styles.title}>{localizedName(product, locale)}</Text>
           {/* Ulashish - Telegram/WhatsApp orqali havola yuborish. */}
           <Pressable
             hitSlop={10}
             onPress={() =>
               Share.share({
-                message: `${product.name} — ${SITE_URL}/mahsulot/${product.id}`,
+                message: `${localizedName(product, locale)} — ${SITE_URL}/mahsulot/${product.id}`,
               }).catch(() => {})
             }>
             <Icon name="share" size={21} color={styles.c.muted} />
@@ -251,7 +257,9 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           {stock > 0 ? t.inStockCount(stock) : t.notAvailable}
         </Text>
 
-        {!!product.description && <Text style={styles.description}>{product.description}</Text>}
+        {!!localizedDescription(product, locale) && (
+          <Text style={styles.description}>{localizedDescription(product, locale)}</Text>
+        )}
 
         <Button
           title={stock > 0 ? t.addToCart : t.outOfStock}
@@ -336,7 +344,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
               source={{uri: zoomUrl}}
               style={styles.zoomImage}
               resizeMode="contain"
-              alt={product.name}
+              alt={localizedName(product, locale)}
             />
           )}
           <Icon name="close" size={26} color={styles.c.white} style={styles.zoomClose} />

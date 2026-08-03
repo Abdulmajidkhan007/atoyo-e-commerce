@@ -109,6 +109,21 @@ qolganlari ishlaydi va asosiy amal to'xtamaydi):
 - Har biri sozlanmagan bo'lsa jimgina o'tkazib yuboriladi; admin
   panelda **Tizim tekshiruvi** har bir kanalning holatini ko'rsatadi.
 
+## 1b-2. KO'P TILLIK VA SEO
+
+- Sayt interfeysi uz/en/ru (`lib/i18n`), bot ham uch tilda.
+- **Mahsulot nomi va tavsifi** ixtiyoriy ruscha/inglizcha variantga ega
+  (`nameRu`, `nameEn`, `descriptionRu`, `descriptionEn`). Tarjima
+  kiritilmagan bo'lsa o'zbekchasi ko'rsatiladi — eski mahsulotlar
+  o'zgarishsiz ishlayveradi. Tarjima nomlari qidiruv tokenlariga ham
+  tushadi: "смеситель" deb qidirilsa ham topiladi. Sayt, ilova va bot
+  bir xil qoidada ishlaydi.
+- **Meta ma'lumotlar**: sarlavha shabloni (`%s | Atoyo Santexnika`),
+  uch alifbodagi kalit so'zlar, Open Graph + Twitter kartochka
+  (Telegram/WhatsApp havolasi rasm bilan ochiladi), canonical, robots
+  va tema rangi. Katalog/kontakt client komponent bo'lgani uchun
+  ularning meta ma'lumoti alohida `layout.tsx` da.
+
 ## 1c. AI YORDAMCHI (sayt, ilova, Telegram bot)
 
 Uchala kanalda bitta "miya" — `/api/assistant` (Anthropic Claude,
