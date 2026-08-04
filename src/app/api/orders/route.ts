@@ -66,6 +66,8 @@ export async function POST(request: Request) {
       deliveryZoneId: parsed.data.deliveryZoneId ?? null,
       userId: currentUser.uid,
       customerEmail: currentUser.email ?? null,
+      // Narx rolga qarab: optom mijozga optom, qolganlarga dona.
+      role: currentUser.role,
     });
 
     return NextResponse.json({ orderId: order.id }, { status: 201 });

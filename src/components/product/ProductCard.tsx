@@ -10,6 +10,7 @@ import { isDiscountActive } from "@/lib/products/pricing";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { useCategoryLabel } from "@/lib/products/useTaxonomy";
 import { localizedName } from "@/lib/products/i18n";
+import { useDisplayPrice } from "@/lib/products/usePricing";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { FavoriteButton } from "./FavoriteButton";
 import { StarRating } from "./StarRating";
@@ -34,11 +35,16 @@ export function ProductCard({ product }: { product: Product }) {
   const outOfStock = product.stock <= 0;
   /** Turlari bo'lsa narx "eng arzonidan" bo'ladi va tur sahifada tanlanadi. */
   const withVariants = hasVariants(product);
-  const cardPrice = withVariants
-    ? (minVariantPrice(product) ?? product.price)
-    : hasDiscount
-      ? product.discountPrice!
-      : product.price;
+  // Bazadagi narx OPTOM; oddiy mijozga ustama qo'shilgan dona narx,
+  // optom mijozga esa o'sha optom narx ko'rsatiladi.
+  const show = useDisplayPrice(product);
+  const cardPrice = show(
+    withVariants
+      ? (minVariantPrice(product) ?? product.price)
+      : hasDiscount
+        ? product.discountPrice!
+        : product.price
+  );
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl2 border border-navy-100 bg-white transition hover:shadow-lg dark:border-navy-500 dark:bg-navy-700">
@@ -86,7 +92,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="mt-auto flex items-center justify-between pt-2">
           <div className="flex flex-col">
             {hasDiscount && !withVariants && (
-              <span className="text-xs text-navy-300 line-through">{formatSom(product.price)}</span>
+              <span className="text-xs text-navy-300 line-through">{formatSom(show(product.price))}</span>
             )}
             <span className="font-bold text-navy-900 dark:text-white">
               {formatSom(cardPrice)}

@@ -7,6 +7,7 @@ import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { defaultVariant, findVariant, variantLabel, variantPrice } from "@/lib/products/variants";
+import { useDisplayPrice, useIsWholesale } from "@/lib/products/usePricing";
 import type { Product } from "@/types/product";
 
 /**
@@ -26,7 +27,10 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
   );
 
   const variant = useMemo(() => findVariant(product, selection), [product, selection]);
-  const price = variant ? variantPrice(variant) : product.price;
+  // Bazadagi narx optom - ko'rsatishda rolga qarab o'giriladi.
+  const show = useDisplayPrice(product);
+  const isWholesale = useIsWholesale();
+  const price = show(variant ? variantPrice(variant) : product.price);
   const stock = variant?.stock ?? 0;
   const outOfStock = stock <= 0;
 
@@ -76,13 +80,19 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
       <div className="flex items-baseline gap-2">
         {variant?.discountPrice ? (
           <span className="text-navy-300 line-through">
-            {variant.price.toLocaleString("uz-UZ")} so&apos;m
+            {show(variant.price).toLocaleString("uz-UZ")} so&apos;m
           </span>
         ) : null}
         <span className="text-2xl font-bold text-navy-900 dark:text-white">
           {price.toLocaleString("uz-UZ")} so&apos;m
         </span>
         <span className="text-sm text-navy-300">/ {unitLabel}</span>
+        {/* Optom mijozga narx optom ekani aniq ko'rinib tursin. */}
+        {isWholesale && (
+          <span className="rounded-full bg-aqua-500/15 px-2 py-0.5 text-xs font-medium text-aqua-700 dark:text-aqua-200">
+            optom
+          </span>
+        )}
       </div>
 
       <p className="text-sm text-navy-300">

@@ -6,6 +6,9 @@ import { getDictionary } from "@/lib/i18n/server";
 import { isDiscountActive, effectivePrice } from "@/lib/products/pricing";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { getLocale } from "@/lib/i18n/server";
+import { getCurrentAppUser } from "@/lib/firebase/session";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { markupFor, priceForRole } from "@/lib/products/wholesale";
 import { localizedDescription, localizedName } from "@/lib/products/i18n";
 import { labelOf } from "@/lib/products/taxonomy";
 import { hasVariants } from "@/lib/products/variants";
@@ -60,11 +63,14 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
 
 export default async function ProductPage({ params }: ProductPageParams) {
   const { id } = await params;
-  const [product, dict, taxonomy, locale] = await Promise.all([
+  const [product, dict, taxonomy, locale, viewer, pricing] = await Promise.all([
     getProductById(id),
     getDictionary(),
     getTaxonomy(),
     getLocale(),
+    // Optom mijozga optom narx ko'rsatiladi; qolganlarga dona narx.
+    getCurrentAppUser().catch(() => null),
+    getPricingSettings(),
   ]);
 
   if (!product) notFound();
@@ -72,6 +78,8 @@ export default async function ProductPage({ params }: ProductPageParams) {
   // Nom va tavsif tanlangan tilda (tarjimasi yo'q bo'lsa - o'zbekchasi).
   const name = localizedName(product, locale);
   const description = localizedDescription(product, locale);
+  /** Bazadagi optom narxni ko'rsatiladigan narxga o'giradi. */
+  const show = (wholesale: number) => priceForRole(wholesale, viewer?.role, markupFor(product, pricing));
 
   // O'xshash mahsulotlar: avval MAXSUS KALIT SO'Z bo'yicha
   // (almashtiriladigan mahsulotlar), keyin shu kategoriyadan.
@@ -135,9 +143,9 @@ export default async function ProductPage({ params }: ProductPageParams) {
               shuning uchun narx bloki tanlagich ichida chiqadi. */}
           {!hasVariants(product) && (
             <div className="flex items-baseline gap-2">
-              {hasDiscount && <span className="text-navy-300 line-through">{formatSom(product.price)}</span>}
+              {hasDiscount && <span className="text-navy-300 line-through">{formatSom(show(product.price))}</span>}
               <span className="text-2xl font-bold text-navy-900 dark:text-white">
-                {formatSom(hasDiscount ? product.discountPrice! : product.price)}
+                {formatSom(show(hasDiscount ? product.discountPrice! : product.price))}
               </span>
               <span className="text-sm text-navy-300">/ {unitLabel}</span>
             </div>

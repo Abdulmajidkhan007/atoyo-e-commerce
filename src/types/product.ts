@@ -105,7 +105,13 @@ export interface Product {
    */
   variantAxes?: VariantAxis[];
   variants?: ProductVariant[];
+  /**
+   * OPTOM narx (so'm). Admin faqat shuni kiritadi; dona (chakana) narx
+   * bundan ustama foizi bilan hisoblanadi - `lib/products/wholesale.ts`.
+   */
   price: number;
+  /** Shu mahsulotga alohida ustama foizi (bo'lmasa - umumiy sozlama). */
+  retailMarkupPercent?: number | null;
   /**
    * TANNARX - mahsulot bizga qancha tushgan (so'm, bir birlik uchun).
    * Faqat xodimlarga ko'rinadi; foyda shu asosda hisoblanadi. Kirim

@@ -13,8 +13,11 @@ import {
   validatePromo,
 } from "@/lib/orders/promo";
 import { getDeliverySettings } from "@/lib/orders/pricing";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { markupFor, priceForRole } from "@/lib/products/wholesale";
 import type { Product, ProductVariant } from "@/types/product";
 import type { Order, OrderItem, OrderLocation } from "@/types/order";
+import type { UserRole } from "@/types/user";
 import type { PromoCode } from "@/types/promo";
 import { recordStockMoves } from "@/lib/inventory/stock-moves";
 
@@ -42,6 +45,12 @@ export interface NewOrderInput {
   customerChatId?: number | null;
   /** Yetkazish hududi (sozlamalardagi ro'yxatdan) - narx shunga qarab. */
   deliveryZoneId?: string | null;
+  /**
+   * Mijozning roli. `client` (optom) bo'lsa bazadagi OPTOM narx
+   * qo'llanadi, qolganlarga esa ustama qo'shilgan DONA narx. Narx
+   * mijozdan emas - shu yerda, serverda hisoblanadi.
+   */
+  role?: UserRole;
 }
 
 /**
@@ -65,6 +74,11 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
   // tekshiriladi. Hammasi bitta tranzaksiyada - ikki mijoz oxirgi donani
   // bir vaqtda olib ketolmaydi.
   const deliverySettings = await getDeliverySettings();
+  // Ustama foizi va eng kam summa - sozlamalardan.
+  const pricing = await getPricingSettings();
+  /** Bazadagi narx optom; dona mijozga ustama qo'shiladi. */
+  const priceOf = (wholesale: number, product: Product) =>
+    priceForRole(wholesale, input.role, markupFor(product, pricing));
   const promoRef = input.promoCode
     ? db.doc(`promoCodes/${normalizePromoCode(input.promoCode)}`)
     : null;
@@ -116,7 +130,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
           variantId: variant.id,
           variantLabel: variantLabel(product, variant),
           name: product.name,
-          price: variantPrice(variant),
+          price: priceOf(variantPrice(variant), product),
           // Foyda hisoboti uchun tannarx nusxasi (turning o'ziniki
           // bo'lmasa - mahsulotniki).
           costPrice: variant.costPrice ?? product.costPrice ?? null,
@@ -135,7 +149,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
         productId: product.id,
         name: product.name,
         // Narx MIJOZDAN emas, bazadan - chegirma muddati ham tekshiriladi.
-        price: isDiscountActive(product) ? product.discountPrice! : product.price,
+        price: priceOf(isDiscountActive(product) ? product.discountPrice! : product.price, product),
         costPrice: product.costPrice ?? null,
         quantity: requested.quantity,
         thumbnailUrl: product.thumbnailUrl,
@@ -143,6 +157,16 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     }
 
     const itemsTotal = verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // ---- Eng kam buyurtma summasi ----
+    // Kichik buyurtmani yetkazish zarar keltiradi, shuning uchun
+    // sozlamadagi chegaradan past buyurtma qabul qilinmaydi.
+    if (pricing.minOrderAmount > 0 && itemsTotal < pricing.minOrderAmount) {
+      throw new OrderValidationError(
+        `Buyurtmaning eng kam summasi ${pricing.minOrderAmount.toLocaleString("uz-UZ")} so'm. ` +
+          `Hozir: ${itemsTotal.toLocaleString("uz-UZ")} so'm.`
+      );
+    }
 
     // ---- Promokod ham SERVERDA tekshiriladi ----
     // Kod mavjudligi, muddati, limiti va minimal summa shu tranzaksiyada
