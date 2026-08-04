@@ -1,0 +1,101 @@
+# PLAY STORE UCHUN AAB YIG'ISH.
+#
+# Qo'lda ishga tushiriladi (Actions -> "Play Store AAB" -> Run workflow),
+# chunki har push'da kerak emas va imzo kaliti bilan ishlaydi.
+#
+# Kerakli secret'lar (Settings -> Secrets and variables -> Actions):
+#   ANDROID_KEYSTORE_BASE64   - upload-keystore.jks fayli base64 ko'rinishida
+#   ANDROID_KEYSTORE_PASSWORD - keystore paroli
+#   ANDROID_KEY_ALIAS         - kalit nomi (masalan "atoyo")
+#   ANDROID_KEY_PASSWORD      - kalit paroli
+#   GOOGLE_SERVICES_JSON      - APK workflow'idagi bilan bir xil
+#
+# Kalitni qanday yaratish - docs/PLAY-STORE.md da yozilgan.
+name: Play Store AAB
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionName:
+        description: "Ilova versiyasi (masalan 1.0.0)"
+        required: false
+        default: ""
+
+jobs:
+  aab:
+    name: Signed AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Gradle keshi
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ilova paketlari
+        working-directory: mobile
+        run: npm ci
+
+      - name: Firebase konfiguratsiyasi
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON secret'i yo'q."
+            exit 1
+          fi
+          TARGET=mobile/android/app/google-services.json
+          if printf '%s' "$GOOGLE_SERVICES_JSON" | grep -q '{'; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > "$TARGET"
+          else
+            printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > "$TARGET"
+          fi
+
+      # Kalit fayli ish jarayonida yaratiladi va oxirida o'chib ketadi
+      # (runner har safar toza mashinada ishlaydi).
+      - name: Imzo kalitini tayyorlash
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret'i yo'q. docs/PLAY-STORE.md ga qarang."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/upload-keystore.jks"
+          echo "Kalit fayli tayyor ($(stat -c%s "$RUNNER_TEMP/upload-keystore.jks") bayt)."
+
+      - name: Versiyani belgilash
+        if: inputs.versionName != ''
+        run: |
+          sed -i "s/versionName \".*\"/versionName \"${{ inputs.versionName }}\"/" mobile/android/app/build.gradle
+          # versionCode har yuklashda oshishi SHART - Play Store bir xil
+          # raqamli paketni ikkinchi marta qabul qilmaydi.
+          CURRENT=$(grep -oP 'versionCode \K[0-9]+' mobile/android/app/build.gradle)
+          sed -i "s/versionCode $CURRENT/versionCode $((CURRENT + 1))/" mobile/android/app/build.gradle
+          grep -n "versionCode\|versionName" mobile/android/app/build.gradle | head -3
+
+      - name: AAB yig'ish
+        working-directory: mobile/android
+        env:
+          ATOYO_UPLOAD_STORE_FILE: ${{ runner.temp }}/upload-keystore.jks
+          ATOYO_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ATOYO_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ATOYO_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon --stacktrace
+
+      - name: AAB'ni yuklash
+        uses: actions/upload-artifact@v4
+        with:
+          name: atoyo-aab
+          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30

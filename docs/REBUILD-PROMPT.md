@@ -373,6 +373,13 @@ Hammasi env orqali yoqiladi; sozlanmasa tizim avvalgidek ishlayveradi:
 - Har push'da: typecheck, lint, unit testlar (vitest), sayt build,
   ilova typecheck/lint/codegen, Android APK yig'ilib `latest`
   release'ga yuklanadi.
+- **Play Store AAB** — qo'lda ishga tushiriladigan workflow
+  (`release-aab.yml`): imzo kaliti GitHub secret'laridan olinadi
+  (`ANDROID_KEYSTORE_BASE64` va h.k.), `bundleRelease` yig'iladi va
+  artifakt sifatida yuklanadi. Kalit bo'lmasa oddiy APK avvalgidek
+  debug kaliti bilan yig'ilaveradi. Tartib `docs/PLAY-STORE.md` da.
+- Saytda `/maxfiylik` sahifasi bor — Play Store talab qiladigan
+  maxfiylik siyosati havolasi (footerdan ham ochiladi).
 - Asosiy branchga push'da Firestore qoidalari va indekslari deploy
   qilinadi (service account secret'i bo'lsa).
 - Har kuni Firestore Cloud Storage'ga eksport qilinadi, 30 kundan

@@ -93,15 +93,29 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // PLAY STORE UCHUN IMZO.
+        //
+        // Kalitlar repoda saqlanmaydi: CI ularni secret'lardan olib
+        // muhit o'zgaruvchisiga qo'yadi (ATOYO_UPLOAD_*). O'zgaruvchi
+        // bo'lmasa - pastdagi release bloki debug kalitiga qaytadi,
+        // ya'ni oddiy APK yig'ish avvalgidek ishlayveradi.
+        release {
+            if (System.getenv('ATOYO_UPLOAD_STORE_FILE')) {
+                storeFile file(System.getenv('ATOYO_UPLOAD_STORE_FILE'))
+                storePassword System.getenv('ATOYO_UPLOAD_STORE_PASSWORD')
+                keyAlias System.getenv('ATOYO_UPLOAD_KEY_ALIAS')
+                keyPassword System.getenv('ATOYO_UPLOAD_KEY_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Play Store kaliti berilgan bo'lsa - o'sha bilan, aks holda
+            // debug kaliti bilan (sideload uchun APK shunda ham ishlaydi).
+            signingConfig System.getenv('ATOYO_UPLOAD_STORE_FILE') ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
