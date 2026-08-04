@@ -102,7 +102,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     d.brand !== undefined ||
     d.keywords !== undefined ||
     d.nameRu !== undefined ||
-    d.nameEn !== undefined
+    d.nameEn !== undefined ||
+    d.variants !== undefined
   ) {
     // Tokenlar nom + brend + KOD dan yasaladi. Ilgari bu yerda kod
     // berilmasdi va mahsulot tahrirlanganda "8276" kabi kod bo'yicha
@@ -115,8 +116,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       d.brand ?? existing.brand,
       d.sku ?? existing.sku,
       normalizeKeywords(d.keywords ?? existing.keywords),
-      // Tarjimalar ham indeksga tushadi - ruscha qidiruv ishlashi uchun.
-      [d.nameRu ?? existing.nameRu, d.nameEn ?? existing.nameEn]
+      // Tarjimalar va turlarning kodlari ham indeksga tushadi -
+      // ruscha qidiruv va "39302" kabi kod bo'yicha qidiruv uchun.
+      [
+        d.nameRu ?? existing.nameRu,
+        d.nameEn ?? existing.nameEn,
+        ...((d.variants ?? existing.variants) ?? []).map((variant) => variant.sku),
+      ]
     );
   }
   if (d.description !== undefined) updates.description = d.description.trim();

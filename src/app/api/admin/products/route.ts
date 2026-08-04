@@ -123,6 +123,8 @@ export async function POST(request: Request) {
     nameTokens: buildNameTokens(d.name, d.brand, d.sku, normalizeKeywords(d.keywords), [
       d.nameRu,
       d.nameEn,
+      // Turlarning kodlari ham qidiruvga tushadi ("39302" deb qidirilsa topiladi).
+      ...(d.variants ?? []).map((variant) => variant.sku),
     ]),
     description: d.description.trim(),
     nameRu: d.nameRu?.trim() || undefined,

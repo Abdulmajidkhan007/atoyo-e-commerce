@@ -223,6 +223,18 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
                   <span className="min-w-28 flex-1 text-sm font-medium text-navy-900 dark:text-white">
                     {Object.values(variant.options).join(" • ")}
                   </span>
+                  {/* HAR BIR TURNING O'Z KODI. Kod alohida "qator"
+                      qilib yozilsa turlar soni ko'payib ketardi
+                      (masalan 2 tur × 3 o'lcham × 6 kod = 36 ta);
+                      kod turning xossasi, shuning uchun shu yerda. */}
+                  <TextField
+                    size="small"
+                    label="Kod"
+                    placeholder="39301"
+                    value={variant.sku ?? ""}
+                    onChange={(e) => updateVariant(variant.id, { sku: e.target.value })}
+                    className="!w-28"
+                  />
                   <TextField
                     size="small"
                     type="number"
@@ -244,7 +256,8 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
 
               <p className="text-xs text-navy-300">
                 Mahsulotning umumiy narxi eng arzon turdan, zaxirasi esa hamma turlarning
-                yig&apos;indisidan olinadi.
+                yig&apos;indisidan olinadi. Kod (artikul) har bir tur uchun alohida yoziladi —
+                u Telegram e&apos;lonida va qidiruvda ishlatiladi.
               </p>
             </div>
           )}

@@ -1,5 +1,13 @@
 import React, {useState} from 'react';
-import {Image, Modal, Pressable, ScrollView, Text, View} from 'react-native';
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {
@@ -18,11 +26,12 @@ import {Icon, type IconName} from './Icon';
  * ILOVA HEADER'i.
  *
  * O'ng tomonda faqat IKKI tugma: tema almashtirish va "☰". Qolgani
- * ☰ ostidagi TOR oynada. Til va shrift o'lchami o'sha oynaning
- * ichida alohida kichik ko'rinishga o'tadi (orqaga qaytish tugmasi
- * bilan) - shunda oyna kichik qoladi va ro'yxat cho'zilib ketmaydi.
+ * ☰ bosilganda O'NG TOMONDAN chiqadigan to'liq balandlikdagi panelda
+ * (admin paneldagi sidebar kabi). Til va shrift o'lchami shu panel
+ * ichida alohida ko'rinishga o'tadi - orqaga qaytish tugmasi bilan.
  *
- * Yopish ikki xil: tashqi tomonga bosish yoki ☰ o'rniga chiqqan ✕.
+ * Yopish uch xil: tashqi tomonga bosish, paneldagi ✕ yoki telefondagi
+ * "orqaga" tugmasi.
  */
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -46,6 +55,9 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
   const navigation = useNavigation();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<MenuView>('main');
+  // Panel kengligi: ekranning 78% i, lekin 320 dan oshmaydi.
+  const {width: windowWidth} = useWindowDimensions();
+  const panelWidth = Math.min(320, Math.round(windowWidth * 0.78));
 
   /**
    * Tab ekraniga o'tish. `navigate('Tabs', {screen})` YOZILMAYDI - bu
@@ -118,12 +130,24 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
         </Pressable>
       </View>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+      <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
         {/* Tashqi tomonga bosilsa yopiladi. */}
         <Pressable style={styles.backdrop} onPress={close}>
           {/* Ichkariga bosilganda yopilmasligi uchun alohida Pressable. */}
-          <Pressable style={[styles.sheet, {top: insets.top + 44}]} onPress={() => {}}>
-            <ScrollView bounces={false}>
+          <Pressable
+            style={[styles.sheet, {width: panelWidth, paddingTop: insets.top + spacing.sm}]}
+            onPress={() => {}}>
+            {/* Panel sarlavhasi: brend + yopish (admin sidebar kabi). */}
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle} numberOfLines={1}>
+                {t.appNameShort}
+              </Text>
+              <Pressable hitSlop={8} onPress={close} accessibilityLabel={t.close}>
+                <Icon name="close" size={22} color={styles.c.text} />
+              </Pressable>
+            </View>
+
+            <ScrollView bounces={false} contentContainerStyle={{paddingBottom: insets.bottom + spacing.lg}}>
               {view === 'main' && (
                 <>
                   <MenuRow
@@ -317,24 +341,35 @@ const useStyles = makeStyles(c => ({
     justifyContent: 'center',
   },
   badgeText: {fontSize: 10, fontWeight: '700', color: c.onAccent},
-  backdrop: {flex: 1, backgroundColor: 'rgba(0,0,0,0.25)'},
-  /** Tor oyna: kengligi 210, balandligi ichidagi ro'yxatga qarab o'sadi. */
+  backdrop: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)'},
+  /**
+   * O'ng tomondagi to'liq balandlikdagi panel (admin sidebar kabi).
+   * Balandlik ekranga teng - ro'yxat uzun bo'lsa ichi aylanadi.
+   */
   sheet: {
     position: 'absolute',
-    right: spacing.md,
-    width: 210,
-    maxHeight: '65%',
-    backgroundColor: c.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: c.border,
-    paddingVertical: spacing.xs,
-    elevation: 8,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: c.chrome,
+    borderLeftWidth: 1,
+    borderLeftColor: c.border,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
-    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    shadowOffset: {width: -4, height: 0},
   },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  sheetTitle: {color: c.text, fontSize: 16, fontWeight: '800', flexShrink: 1},
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -345,9 +380,9 @@ const useStyles = makeStyles(c => ({
   },
   menuLeft: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1},
   menuRight: {flexDirection: 'row', alignItems: 'center', gap: 2, flexShrink: 1},
-  menuText: {color: c.text, fontSize: 14, flexShrink: 1},
+  menuText: {color: c.text, fontSize: 15, flexShrink: 1},
   menuTextOn: {color: c.accent, fontWeight: '700'},
-  menuValue: {color: c.muted, fontSize: 12, maxWidth: 74},
+  menuValue: {color: c.muted, fontSize: 12, maxWidth: 110},
   countPill: {
     minWidth: 20,
     paddingHorizontal: 6,

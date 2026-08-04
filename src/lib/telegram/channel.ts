@@ -12,7 +12,6 @@ import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import {
   hasVariants,
   minVariantPrice,
-  totalVariantStock,
   variantLabel,
   variantPrice,
 } from "@/lib/products/variants";
@@ -180,24 +179,27 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
   }
   lines.push(priceLine);
   if (withVariants) {
-    // Har bir turning O'Z NARXI ro'yxat bo'lib chiqadi:
-    //   Razmer:
-    //     • 50x45 — 225 000 so'm
-    //     • 55x45 — 235 000 so'm
+    // Har bir turning KODI va O'Z NARXI ro'yxat bo'lib chiqadi -
+    // do'kondagi eski qo'lyozma postlar shaklida:
+    //   39302 · Oddiy • 120 — 7 $
+    //   39305 · Jalyuzi • 120 — 8.1 $
     const axes = product.variantAxes ?? [];
     lines.push(`🔀 <b>${escapeHtml(axes.map((axis) => axis.label).join(" • "))}:</b>`);
     const rows = product.variants ?? [];
     for (const row of rows.slice(0, MAX_VARIANT_LINES)) {
       const label = variantLabel(product, row) || Object.values(row.options).join(" • ");
+      // Turning o'z kodi bo'lsa - eng oldida turadi (mijoz kod bo'yicha buyuradi).
+      const code = row.sku ? `<code>${escapeHtml(row.sku)}</code> · ` : "";
       const note = row.stock > 0 ? "" : " — tugagan";
-      lines.push(`   • ${escapeHtml(label)} — <b>${formatSom(variantPrice(row))}</b>${escapeHtml(note)}`);
+      lines.push(`   • ${code}${escapeHtml(label)} — <b>${formatSom(variantPrice(row))}</b>${escapeHtml(note)}`);
     }
     if (rows.length > MAX_VARIANT_LINES) {
       lines.push(`   • ...va yana ${rows.length - MAX_VARIANT_LINES} ta tur (saytda)`);
     }
   }
-  const stock = withVariants ? totalVariantStock(product) : product.stock;
-  if (stock > 0) lines.push(`📦 Mavjud: ${stock} ${unit}`);
+  // ZAXIRA MIQDORI e'londa KO'RSATILMAYDI - raqobatchi ham, mijoz ham
+  // "nechta qolgani" ni bilishi shart emas; tugagani esa yuqorida
+  // turning yonida yozilgan.
   if (product.material) lines.push(`🧱 ${escapeHtml(MATERIAL_LABELS[product.material] ?? product.material)}`);
   if (product.description) lines.push(``, escapeHtml(product.description.slice(0, 400)));
 
