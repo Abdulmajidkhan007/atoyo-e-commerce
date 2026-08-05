@@ -17,6 +17,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import { fileToBase64 } from "@/lib/files/base64";
 import type { Taxonomy } from "@/lib/products/taxonomy";
 
@@ -283,6 +284,62 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
     }
   };
 
+  /**
+   * Belgilanganlarni ijtimoiy tarmoqlarga joylash (Instagram/Facebook;
+   * videosi bori YouTube'ga ham). Har biri alohida yuboriladi -
+   * tarmoqlar tez ketma-ket post qilishni yoqtirmaydi.
+   */
+  const runSocial = async () => {
+    if (selectedIds.length === 0) return;
+    if (
+      !confirm(
+        `${selectedIds.length} ta mahsulot Instagram/Facebook'ga joylanadi. ` +
+          "Tarmoqlarning kunlik chegarasi bor (odatda 50 ta). Davom etamizmi?"
+      )
+    ) {
+      return;
+    }
+
+    setBusy("social");
+    setProgress(0);
+    let done = 0;
+    const errors: string[] = [];
+
+    try {
+      for (let i = 0; i < selectedIds.length; i += 1) {
+        const id = selectedIds[i]!;
+        const product = products.find((item) => item.id === id);
+        const res = await fetch("/api/admin/social/post", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: id,
+            // YouTube faqat videosi bor mahsulotda ishlaydi - server o'zi tekshiradi.
+            networks: ["instagram", "facebook"],
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { done?: string[]; errors?: string[] };
+        if ((data.done?.length ?? 0) > 0) done += 1;
+        for (const error of data.errors ?? []) {
+          if (errors.length < 5) errors.push(`${product?.name ?? id}: ${error}`);
+        }
+        setProgress(Math.round(((i + 1) / selectedIds.length) * 100));
+      }
+
+      setMessage({
+        kind: errors.length > 0 ? "info" : "ok",
+        text:
+          `📣 ${done} ta mahsulot joylandi.` +
+          (errors.length > 0 ? ` Xatolar: ${errors.join("; ")}` : ""),
+      });
+    } catch (error) {
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
+    } finally {
+      setBusy(null);
+      setProgress(0);
+    }
+  };
+
   /** Bitta mahsulotga rasm yuklash (ro'yxatdan chiqmasdan). */
   const uploadImages = async (files: FileList | null) => {
     const productId = uploadTarget.current;
@@ -463,6 +520,16 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
               onClick={() => void runAnnounce()}
             >
               Kanalga post qilish
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              color="secondary"
+              startIcon={<ShareOutlinedIcon />}
+              disabled={busy !== null}
+              onClick={() => void runSocial()}
+            >
+              Instagram/Facebook
             </Button>
             <Button
               size="small"

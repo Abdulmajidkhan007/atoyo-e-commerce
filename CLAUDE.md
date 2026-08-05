@@ -97,6 +97,15 @@ serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
 - Kirimda 20 tadan ko'p mahsulot bo'lsa kanalga e'lon qilinmaydi
   (`announce: false`).
 
+## Ijtimoiy tarmoqlar
+
+`src/lib/social/`: `meta.ts` (Instagram + Facebook, bitta sahifa
+tokeni), `youtube.ts` (faqat video, Shorts), `publish.ts` (matn
+shabloni, navbat `socialQueue`, kunlik chegara, 3 martalik qayta
+urinish). Kalitlar `secrets/social`, sozlama `settings/social`.
+Kanalga e'lon qilingan mahsulot navbatga tushadi (`announceProduct`
+ichida, `refresh` rejimida emas). Ijtimoiy tarmoqda faqat DONA narx.
+
 ## Ma'lum bloklar (foydalanuvchi hal qiladi)
 
 - **Firebase Storage yoqilmagan** — rasm yuklash Storage yoqilmaguncha

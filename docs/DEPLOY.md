@@ -467,3 +467,60 @@ tekshiring:
 
 Ikkala joyda parallel turishi ham mumkin: kod bir xil, `netlify.toml`
 ham, `apphosting.yaml` ham repozitoriyda qoladi.
+
+## Ijtimoiy tarmoqlar (Instagram, Facebook, YouTube)
+
+Kalitlar admin panelda **Sozlamalar → Ijtimoiy tarmoqlar** bo'limiga
+kiritiladi (faqat loyiha egasiga ko'rinadi) va Firestore'ning
+`secrets/social` hujjatiga yoziladi. Env orqali ham berish mumkin:
+`FB_PAGE_ID`, `FB_PAGE_ACCESS_TOKEN`, `IG_USER_ID`,
+`YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN`.
+
+### 1. Instagram va Facebook (bitta token)
+
+1. Instagram akkauntini **Professional (Business)** ga o'tkazing va
+   Facebook **sahifasiga** bog'lang (Instagram → Sozlamalar → Akkaunt
+   turi va vositalar).
+2. developers.facebook.com da **Create App** → "Business" turi.
+3. Ilovaga **Instagram Graph API** va **Facebook Login for Business**
+   mahsulotlarini qo'shing.
+4. **Graph API Explorer** da ilovani tanlab, quyidagi ruxsatlar bilan
+   token oling: `pages_show_list`, `pages_read_engagement`,
+   `pages_manage_posts`, `instagram_basic`, `instagram_content_publish`,
+   `business_management`.
+5. `GET /me/accounts` — sahifa ro'yxati chiqadi: `id` (sahifa ID si) va
+   `access_token` (sahifa tokeni) yozib oling.
+6. Sahifa tokenini **uzoq muddatli** qiling:
+   `GET /oauth/access_token?grant_type=fb_exchange_token&client_id=APP_ID
+   &client_secret=APP_SECRET&fb_exchange_token=SAHIFA_TOKENI`
+7. Instagram ID si: `GET /{page-id}?fields=instagram_business_account`.
+8. Ishlab chiqarishda (o'z akkauntingizdan tashqari) post qilish uchun
+   `instagram_content_publish` va `pages_manage_posts` ruxsatlari
+   **App Review** dan o'tishi kerak.
+
+Chegara: Instagram 24 soatda **50 ta** post qabul qiladi. Panelda
+"Kunlik chegara" shuning uchun bor.
+
+### 2. YouTube (faqat video, Shorts)
+
+1. Google Cloud konsolida (`atoyo-uz` loyihasi) **YouTube Data API v3**
+   ni yoqing.
+2. **OAuth consent screen** ni to'ldiring (External, test rejimida
+   kanal egasining email'ini "Test users" ga qo'shing).
+3. **Credentials → Create credentials → OAuth client ID → Desktop app**
+   → Client ID va Client Secret.
+4. Kanal egasi brauzerda quyidagi manzilga kiradi (bitta qatorda):
+   `https://accounts.google.com/o/oauth2/v2/auth?client_id=CLIENT_ID
+   &redirect_uri=urn:ietf:wg:oauth:2.0:oob&response_type=code
+   &scope=https://www.googleapis.com/auth/youtube.upload
+   &access_type=offline&prompt=consent`
+   Ruxsat bergach `code=...` chiqadi.
+5. Kodni refresh tokenga almashtiring:
+   `curl -d client_id=... -d client_secret=... -d code=... \
+    -d grant_type=authorization_code \
+    -d redirect_uri=urn:ietf:wg:oauth:2.0:oob \
+    https://oauth2.googleapis.com/token`
+   Javobdagi `refresh_token` ni panelga kiriting.
+
+Chegara: bitta yuklash 1600 birlik, kunlik kvota 10 000 — ya'ni kuniga
+~6 ta video. Shu sabab YouTube avtomatik emas, admin tanlaganda ishlaydi.

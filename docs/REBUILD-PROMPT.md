@@ -242,6 +242,33 @@ Do'kon ham do'konlarga (optom), ham oddiy xaridorga (dona) sotadi va
 - Yangi optom mijoz faollashganda xodimlar guruhining **optom topic'iga
   (441)** xabar tushadi.
 
+## 1g. IJTIMOIY TARMOQLAR (Instagram, Facebook, YouTube)
+
+Telegram kanali bilan bir qatorda ishlaydi, lekin kunlik chegaralar
+sababli NAVBAT orqali:
+
+- **Sozlamalar → Ijtimoiy tarmoqlar**: har tarmoq alohida yoqiladi,
+  post matni shabloni (`{nomi} {kodi} {narx} {kategoriya} {brend}
+  {tavsif} {havola}`), heshteglar, kunlik chegara (standart 20,
+  Instagram ruxsati 50). Kalitlar `secrets/social` da (faqat loyiha
+  egasi kiritadi), "Tekshirish" tugmasi sahifa/akkaunt/kanal nomini
+  o'qib ko'radi.
+- **Instagram**: rasm, karusel (2-10 rasm) yoki Reels. Ikki qadam -
+  konteyner yaratiladi, keyin nashr qilinadi; video tayyor bo'lishini
+  kutadi. **Facebook**: sahifaga rasm yoki video posti.
+  **YouTube**: faqat videosi bor mahsulot (Shorts) - rasm post qilib
+  bo'lmaydi (Community postlarining API si yo'q), kvota kuniga ~6 ta.
+- **Navbat** (`socialQueue`): kanalga chiqqan mahsulot navbatga
+  tushadi, "Navbatni yuborish" tugmasi yoki tashqi cron uni
+  bo'shatadi; xato bo'lsa 3 martagacha qayta uriniladi. Ommaviy
+  kirimda navbatga umuman qo'yilmaydi.
+- **Tanlab joylash**: katalogni tartibga solish sahifasida
+  belgilangan mahsulotlarni "Instagram/Facebook" tugmasi bilan
+  darhol joylash mumkin.
+- Ijtimoiy tarmoqda **dona (chakana) narx** ko'rsatiladi - optom narx
+  hech qachon chiqmaydi.
+- Kalit/token olish qadamlari: `docs/DEPLOY.md`.
+
 ## 2. ADMIN PANEL (saytda)
 
 Faqat xodimlarga. Kirish — session cookie; **rol tekshiruvi Node

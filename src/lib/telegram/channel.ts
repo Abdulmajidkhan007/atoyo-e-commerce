@@ -378,6 +378,19 @@ export async function announceProduct(product: Product, mode: AnnounceMode = "ne
       })
       .catch((error) => console.error("E'lon ID sini saqlashda xato:", error));
   }
+
+  /**
+   * IJTIMOIY TARMOQLAR: kanalga chiqqan mahsulot Instagram/Facebook
+   * navbatiga ham qo'yiladi (sozlamada yoqilgan bo'lsa). Ular kunlik
+   * chegara bilan ishlagani uchun darhol emas, navbat orqali ketadi.
+   * Postni jimgina yangilash (`refresh`) navbatga tushmaydi.
+   */
+  if (mode !== "refresh") {
+    const { enqueueProduct } = await import("@/lib/social/publish");
+    await enqueueProduct(product).catch((error) =>
+      console.error("Ijtimoiy tarmoq navbatiga qo'shishda xato:", error)
+    );
+  }
 }
 
 /** Yangi yoki tahrirlangan blog posti e'loni. */

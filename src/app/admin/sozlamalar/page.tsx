@@ -10,6 +10,7 @@ import { SiteSettingsForm } from "@/components/admin/SiteSettingsForm";
 import { PricingSettingsForm } from "@/components/admin/PricingSettingsForm";
 import { ChannelFooterForm } from "@/components/admin/ChannelFooterForm";
 import { SecretsForm } from "@/components/admin/SecretsForm";
+import { SocialSettingsForm } from "@/components/admin/SocialSettingsForm";
 import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,16 @@ export default async function AdminSettingsPage() {
           Optom narxdan dona narx qanday hisoblanishi va buyurtmaning eng kam summasi.
         </p>
         <PricingSettingsForm />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">Ijtimoiy tarmoqlar</h2>
+        <p className="mb-6 text-sm text-navy-300">
+          Instagram, Facebook va YouTube. Yoqilgan tarmoqqa yangi mahsulot va kirim
+          Telegram kanali bilan bir qatorda post bo&apos;ladi — kunlik chegara va navbat bilan.
+          Ommaviy kirimda (o&apos;nlab mahsulot) post ketmaydi.
+        </p>
+        <SocialSettingsForm owner={isOwner(user)} />
       </section>
 
       <section>
