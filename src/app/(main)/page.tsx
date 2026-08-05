@@ -13,7 +13,7 @@ import BathtubOutlinedIcon from "@mui/icons-material/BathtubOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { CategoryTile } from "@/components/home/CategoryTile";
-import { ProductGrid } from "@/components/product/ProductGrid";
+import { ShowcaseGrid } from "@/components/home/ShowcaseGrid";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { useCategories } from "@/lib/products/useTaxonomy";
 
@@ -28,6 +28,9 @@ const CATEGORY_ICONS: Record<string, SvgIconComponent> = {
   pumps: WaterOutlinedIcon,
   "sanitary-ware": BathtubOutlinedIcon,
 };
+
+/** Bosh sahifada ko'rinadigan kategoriyalar soni (qolgani katalogda). */
+const HOME_CATEGORIES = 11;
 
 export default function HomePage() {
   const { dict } = useI18n();
@@ -52,8 +55,12 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-7xl px-4 py-10">
         <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">{dict.home.categories}</h2>
+        {/*
+          Kategoriyalar ko'p (import bilan o'nlab yangisi qo'shildi) -
+          bosh sahifada asosiylari turadi, qolgani katalogda.
+        */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-          {categories.map((item) => (
+          {categories.slice(0, HOME_CATEGORIES).map((item) => (
             <CategoryTile
               key={item.slug}
               category={item.slug}
@@ -61,12 +68,21 @@ export default function HomePage() {
               Icon={CATEGORY_ICONS[item.slug] ?? CategoryOutlinedIcon}
             />
           ))}
+          {categories.length > HOME_CATEGORIES && (
+            <Link
+              href="/katalog"
+              className="flex flex-col items-center justify-center gap-2 rounded-xl2 border border-dashed border-navy-200 p-4 text-center text-sm font-medium text-navy-500 transition hover:border-aqua-500 hover:text-aqua-600 dark:border-navy-500 dark:text-navy-100"
+            >
+              <CategoryOutlinedIcon />
+              +{categories.length - HOME_CATEGORIES} ta yana
+            </Link>
+          )}
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-16">
         <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">{dict.home.newProducts}</h2>
-        <ProductGrid filters={{ sortBy: "newest" }} searchTerm="" />
+        <ShowcaseGrid />
       </section>
     </>
   );

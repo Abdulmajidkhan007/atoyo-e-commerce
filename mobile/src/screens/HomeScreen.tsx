@@ -5,6 +5,7 @@ import {useI18n} from '../i18n';
 import {type Product} from '../types';
 import {useCategories} from '../categories';
 import {fetchNewProducts} from '../firebase';
+import {fetchShowcase} from '../api';
 import {ProductCard} from '../components/ProductCard';
 import {Loading} from '../components/ui';
 import {Icon, type IconName} from '../components/Icon';
@@ -26,7 +27,13 @@ const CATEGORY_ICONS: Record<string, IconName> = {
 };
 
 /**
- * Bosh sahifa: qidiruv, brend banneri, kategoriyalar, yangi mahsulotlar
+ * Bosh sahifada ko'rinadigan kategoriyalar soni - qolgani katalogda
+ * (import bilan kategoriyalar o'nlab bo'lib ketdi).
+ */
+const HOME_CATEGORIES = 12;
+
+/**
+ * Bosh sahifa: qidiruv, brend banneri, kategoriyalar, namuna mahsulotlar
  * va sayt menyusidagi qolgan bo'limlarga havolalar.
  */
 export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
@@ -38,7 +45,17 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
   const [refreshing, setRefreshing] = useState(false);
   const [term, setTerm] = useState('');
 
-  const load = useCallback(() => fetchNewProducts(10).catch((): Product[] => []), []);
+  /**
+   * Bosh sahifada 6 ta namuna mahsulot - har kategoriyadan bittadan
+   * (saytdagi bilan bir xil). Server javob bermasa eng yangilari.
+   */
+  const load = useCallback(
+    () =>
+      fetchShowcase()
+        .then(items => (items.length > 0 ? items : fetchNewProducts(6)))
+        .catch((): Product[] => []),
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -119,7 +136,7 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
 
           <Text style={styles.section}>{t.categories}</Text>
           <View style={styles.categories}>
-            {categories.map(item => (
+            {categories.slice(0, HOME_CATEGORIES).map(item => (
               <Pressable
                 key={item.slug}
                 onPress={() => navigation.navigate('Katalog', {category: item.slug})}

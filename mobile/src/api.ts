@@ -26,6 +26,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data;
 }
 
+/**
+ * BOSH SAHIFA NAMUNASI: 6 ta mahsulot, har kategoriyadan bittadan
+ * (saytdagi bilan bir xil ro'yxat - serverda tayyorlanadi).
+ */
+export async function fetchShowcase(): Promise<AdminProduct[]> {
+  const response = await fetch(`${SITE_URL}/api/products/showcase`);
+  if (!response.ok) return [];
+  const data = (await response.json()) as {products?: AdminProduct[]};
+  return data.products ?? [];
+}
+
 export interface DeliverySettings {
   fee: number;
   freeFrom: number;
