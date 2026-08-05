@@ -4,7 +4,10 @@ import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { getDeliverySettings } from "@/lib/orders/pricing";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { searchTermVariants } from "@/lib/search/tokens";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { markupFor, priceForRole } from "@/lib/products/wholesale";
 import type { Product } from "@/types/product";
+import type { UserRole } from "@/types/user";
 
 /**
  * YORDAMCHI UCHUN "HAQIQAT MANBAI".
@@ -74,8 +77,16 @@ export async function buildShopContext(): Promise<string> {
   return text;
 }
 
-/** Savolga mos mahsulotlar (nom, brend, artikul va maxsus kalit so'zlar bo'yicha). */
-export async function findRelevantProducts(term: string, limitCount = 8): Promise<GroundedProduct[]> {
+/**
+ * Savolga mos mahsulotlar (nom, brend, artikul va maxsus kalit so'zlar
+ * bo'yicha). Narx so'rovchining roliga moslanadi - bazadagi qiymat
+ * optom narx, oddiy mijoz uni ko'rmasligi kerak.
+ */
+export async function findRelevantProducts(
+  term: string,
+  limitCount = 8,
+  viewerRole?: UserRole
+): Promise<GroundedProduct[]> {
   const variants = searchTermVariants(term, 10);
   const db = getAdminDb();
   const found = new Map<string, Product>();
@@ -118,6 +129,10 @@ export async function findRelevantProducts(term: string, limitCount = 8): Promis
     }
   }
 
+  const settings = await getPricingSettings();
+  const show = (product: Product, value: number) =>
+    priceForRole(value, viewerRole, markupFor(product, settings));
+
   return Array.from(found.values())
     // Zaxirasi bori oldinda - mijozga darhol taklif qilish mumkin bo'lganlari.
     .sort((a, b) => Number((b.stock ?? 0) > 0) - Number((a.stock ?? 0) > 0) || (b.salesCount ?? 0) - (a.salesCount ?? 0))
@@ -125,8 +140,8 @@ export async function findRelevantProducts(term: string, limitCount = 8): Promis
     .map((product) => ({
       id: product.id,
       name: product.name,
-      price: product.price,
-      discountPrice: product.discountPrice ?? null,
+      price: show(product, product.price),
+      discountPrice: product.discountPrice ? show(product, product.discountPrice) : null,
       stock: product.stock ?? 0,
       brand: product.brand ?? "",
       category: product.category,

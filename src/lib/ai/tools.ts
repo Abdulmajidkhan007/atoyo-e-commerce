@@ -3,7 +3,10 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { searchTermVariants } from "@/lib/search/tokens";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { markupFor, priceForRole } from "@/lib/products/wholesale";
 import type { Product } from "@/types/product";
+import type { UserRole } from "@/types/user";
 
 /**
  * YORDAMCHINING "QO'LLARI" (tool use).
@@ -57,12 +60,25 @@ function effectivePriceOf(product: Product): number {
   return active ? product.discountPrice! : product.price;
 }
 
-function toHit(product: Product): CatalogHit {
+/**
+ * NARXNI ROLGA MOSLASH. Bazadagi narx - OPTOM. Yordamchi ham xuddi
+ * sayt kabi mijozning roliga mos narxni ko'rsatishi shart: optom
+ * mijozga optom, qolganlarga dona narx. Aks holda yordamchi orqali
+ * optom narx "sizib" chiqadi.
+ */
+type PriceMapper = (product: Pick<Product, "retailMarkupPercent">, value: number) => number;
+
+async function priceMapper(role: UserRole | undefined): Promise<PriceMapper> {
+  const settings = await getPricingSettings();
+  return (product, value) => priceForRole(value, role, markupFor(product, settings));
+}
+
+function toHit(product: Product, show: PriceMapper): CatalogHit {
   return {
     id: product.id,
     name: product.name,
-    price: product.price,
-    effectivePrice: effectivePriceOf(product),
+    price: show(product, product.price),
+    effectivePrice: show(product, effectivePriceOf(product)),
     stock: product.stock ?? 0,
     brand: product.brand ?? "",
     category: product.category,
@@ -80,6 +96,8 @@ export interface CatalogQuery {
   inStockOnly?: boolean;
   sort?: "cheapest" | "expensive" | "popular";
   limit?: number;
+  /** So'rovchining roli - narx shunga qarab ko'rsatiladi. */
+  viewerRole?: UserRole;
 }
 
 /**
@@ -131,18 +149,23 @@ export async function searchCatalog(params: CatalogQuery): Promise<CatalogHit[]>
 
   let list = Array.from(candidates.values());
 
+  // Mijoz aytgan narx chegarasi - U KO'RADIGAN narxda, shuning uchun
+  // filtr ham rolga moslangan narx ustida ishlaydi.
+  const show = await priceMapper(params.viewerRole);
+  const shownPrice = (item: Product) => show(item, effectivePriceOf(item));
+
   if (params.category) list = list.filter((item) => item.category === params.category);
   if (params.material) list = list.filter((item) => item.material === params.material);
   if (params.inStockOnly) list = list.filter((item) => (item.stock ?? 0) > 0);
-  if (typeof params.minPrice === "number") list = list.filter((item) => effectivePriceOf(item) >= params.minPrice!);
-  if (typeof params.maxPrice === "number") list = list.filter((item) => effectivePriceOf(item) <= params.maxPrice!);
+  if (typeof params.minPrice === "number") list = list.filter((item) => shownPrice(item) >= params.minPrice!);
+  if (typeof params.maxPrice === "number") list = list.filter((item) => shownPrice(item) <= params.maxPrice!);
 
   switch (params.sort) {
     case "cheapest":
-      list.sort((a, b) => effectivePriceOf(a) - effectivePriceOf(b));
+      list.sort((a, b) => shownPrice(a) - shownPrice(b));
       break;
     case "expensive":
-      list.sort((a, b) => effectivePriceOf(b) - effectivePriceOf(a));
+      list.sort((a, b) => shownPrice(b) - shownPrice(a));
       break;
     default:
       // Standart: zaxirasi bori oldinda, keyin ko'p sotilgani.
@@ -154,7 +177,7 @@ export async function searchCatalog(params: CatalogQuery): Promise<CatalogHit[]>
       );
   }
 
-  return list.slice(0, limit).map(toHit);
+  return list.slice(0, limit).map((item) => toHit(item, show));
 }
 
 /** Model chaqira oladigan vositalar ro'yxati. */
@@ -218,7 +241,11 @@ function money(value: number): string {
 }
 
 /** Model chaqirgan vositani bajaradi. */
-export async function runAssistantTool(name: string, input: Record<string, unknown>): Promise<ToolOutcome> {
+export async function runAssistantTool(
+  name: string,
+  input: Record<string, unknown>,
+  viewerRole?: UserRole
+): Promise<ToolOutcome> {
   switch (name) {
     case "search_products": {
       const taxonomy = await getTaxonomy();
@@ -234,6 +261,7 @@ export async function runAssistantTool(name: string, input: Record<string, unkno
           ? (input.sort as CatalogQuery["sort"])
           : undefined,
         limit: typeof input.limit === "number" ? input.limit : undefined,
+        viewerRole,
       });
 
       if (hits.length === 0) {
@@ -265,14 +293,17 @@ export async function runAssistantTool(name: string, input: Record<string, unkno
 
       const requested = typeof input.quantity === "number" ? Math.floor(input.quantity) : 1;
       const quantity = Math.max(1, Math.min(requested, product.stock));
+      // Savatga ham rolga mos narx tushadi (bazadagi qiymat - optom).
+      const show = await priceMapper(viewerRole);
+      const price = show(product, effectivePriceOf(product));
 
       return {
-        content: `"${product.name}" (${quantity} dona, ${money(effectivePriceOf(product))}) savatga qo'shildi.`,
+        content: `"${product.name}" (${quantity} dona, ${money(price)}) savatga qo'shildi.`,
         action: {
           type: "add_to_cart",
           productId: product.id,
           name: product.name,
-          price: effectivePriceOf(product),
+          price,
           thumbnailUrl: product.thumbnailUrl || product.images?.[0] || "",
           stock: product.stock,
           quantity,

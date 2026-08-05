@@ -3,6 +3,7 @@ import {Image, Pressable, Text, View} from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {effectivePrice, localizedName, type Product} from '../types';
+import {useDisplayPrice} from '../pricing';
 import {useAppDispatch, useAppSelector} from '../store';
 import {toggleFavorite} from '../store/favoritesSlice';
 import {Stars} from './ui';
@@ -19,7 +20,9 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
   // Turlari bo'lgan mahsulotda narx "eng arzonidan" ko'rinishida
   // chiqadi - tanlash mahsulot sahifasida bo'ladi (saytdagi kabi).
   const withVariants = hasVariants(product);
-  const price = withVariants ? (minVariantPrice(product) ?? product.price) : effectivePrice(product);
+  // Bazadagi narx optom - rolga qarab dona narxga o'giriladi.
+  const show = useDisplayPrice(product);
+  const price = show(withVariants ? (minVariantPrice(product) ?? product.price) : effectivePrice(product));
   const hasDiscount = !withVariants && price < product.price;
 
   return (
@@ -59,7 +62,7 @@ export function ProductCard({product, onPress}: {product: Product; onPress: () =
         </Text>
         {(product.ratingCount ?? 0) > 0 && <Stars value={product.ratingAvg ?? 0} />}
         <View style={styles.priceRow}>
-          {hasDiscount && <Text style={styles.oldPrice}>{money(product.price)}</Text>}
+          {hasDiscount && <Text style={styles.oldPrice}>{money(show(product.price))}</Text>}
           <Text style={styles.price}>
             {money(price)}
             {withVariants ? ' dan' : ''}

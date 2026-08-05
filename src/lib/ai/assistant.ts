@@ -5,6 +5,7 @@ import { buildShopContext, findRelevantProducts, formatProducts, type GroundedPr
 import { checkQuestion, MAX_HISTORY_MESSAGES, REFUSAL_TEXT, sanitizeAnswer } from "./guard";
 import { assistantTools, runAssistantTool, type AssistantAction, type CatalogHit } from "./tools";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import type { UserRole } from "@/types/user";
 
 /**
  * ATOYO YORDAMCHISI — saytdagi, ilovadagi va Telegram botdagi bir xil
@@ -122,8 +123,10 @@ export async function askAssistant(params: {
   question: string;
   history?: AssistantMessage[];
   channel: AssistantChannel;
+  /** So'rovchining roli: optom mijozga optom narx, qolganlarga dona. */
+  viewerRole?: UserRole;
 }): Promise<AssistantReply> {
-  const { question, history = [], channel } = params;
+  const { question, history = [], channel, viewerRole } = params;
 
   // 1-qatlam: modelga bormaydigan so'rovlar (tejamkorlik + xavfsizlik).
   const verdict = checkQuestion(question);
@@ -137,7 +140,7 @@ export async function askAssistant(params: {
 
   const [shopContext, seedProducts, taxonomy] = await Promise.all([
     buildShopContext(),
-    findRelevantProducts(question, 5),
+    findRelevantProducts(question, 5, viewerRole),
     getTaxonomy(),
   ]);
 
@@ -179,7 +182,11 @@ export async function askAssistant(params: {
 
     const results: Anthropic.ToolResultBlockParam[] = [];
     for (const toolUse of toolUses) {
-      const outcome = await runAssistantTool(toolUse.name, (toolUse.input ?? {}) as Record<string, unknown>);
+      const outcome = await runAssistantTool(
+        toolUse.name,
+        (toolUse.input ?? {}) as Record<string, unknown>,
+        viewerRole
+      );
       if (outcome.action) actions.push(outcome.action);
       for (const hit of outcome.hits ?? []) shown.set(hit.id, hitToProduct(hit));
       results.push({ type: "tool_result", tool_use_id: toolUse.id, content: outcome.content });

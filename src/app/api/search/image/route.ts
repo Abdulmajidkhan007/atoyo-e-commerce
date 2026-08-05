@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { isAiConfigured } from "@/lib/ai/config";
 import { MAX_SEARCH_IMAGE_BYTES, searchByImage } from "@/lib/ai/image-search";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,7 +55,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await searchByImage({ base64, mimeType, hint: parsed.data.hint });
+    // Narx rolga qarab: optom mijoz optom narxni, qolganlar dona narxni ko'radi.
+    const viewer = await getAppUserFromRequest(request);
+    const result = await searchByImage({
+      base64,
+      mimeType,
+      hint: parsed.data.hint,
+      viewerRole: viewer?.role,
+    });
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof Anthropic.RateLimitError) {

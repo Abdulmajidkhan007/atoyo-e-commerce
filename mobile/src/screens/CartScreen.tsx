@@ -7,6 +7,7 @@ import {clearCart, removeItem, setQuantity} from '../store/cartSlice';
 import {Button, EmptyState} from '../components/ui';
 import type {StackScreenProps} from '../navigation/types';
 import {Icon} from '../components/Icon';
+import {usePricingSettings} from '../pricing';
 
 /** Savat: soni +/−, o'chirish va rasmiylashtirishga o'tish. */
 export function CartScreen({navigation}: StackScreenProps<'Savat'>) {
@@ -15,6 +16,10 @@ export function CartScreen({navigation}: StackScreenProps<'Savat'>) {
   const dispatch = useAppDispatch();
   const items = useAppSelector(s => s.cart.items);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  // Eng kam buyurtma summasi (serverda ham tekshiriladi) - mijoz buni
+  // rasmiylashtirishga o'tishdan oldin bilib tursin.
+  const {minOrderAmount} = usePricingSettings();
+  const belowMinimum = minOrderAmount > 0 && subtotal < minOrderAmount;
 
   if (items.length === 0) {
     return (
@@ -84,7 +89,17 @@ export function CartScreen({navigation}: StackScreenProps<'Savat'>) {
           <Text style={styles.totalLabel}>{t.total}</Text>
           <Text style={styles.total}>{money(subtotal)}</Text>
         </View>
-        <Button title={t.checkout} onPress={() => navigation.navigate('Buyurtma')} />
+        {belowMinimum && (
+          <Text style={styles.minOrder}>
+            Eng kam buyurtma summasi — {money(minOrderAmount)}. Yana{' '}
+            {money(minOrderAmount - subtotal)} {"lik mahsulot qo'shing."}
+          </Text>
+        )}
+        <Button
+          title={t.checkout}
+          onPress={() => navigation.navigate('Buyurtma')}
+          disabled={belowMinimum}
+        />
         <Button title={t.clearCart} variant="outline" onPress={() => dispatch(clearCart())} />
       </View>
     </View>
@@ -106,6 +121,7 @@ const useStyles = makeStyles(c => ({
   thumb: {width: 72, height: 72, borderRadius: radius.sm, backgroundColor: c.surfaceAlt},
   name: {color: c.text, fontWeight: '600'},
   price: {color: c.text, fontWeight: '700'},
+  minOrder: {color: c.danger, fontSize: 13},
   qtyRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm},
   qtyBtn: {
     width: 32,

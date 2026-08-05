@@ -45,7 +45,10 @@ export interface Product {
   brand: string;
   manufacturerCountry: string;
   material: string;
+  /** OPTOM narx - dona narx ustama bilan hisoblanadi (`pricing.ts`). */
   price: number;
+  /** Shu mahsulotga alohida ustama foizi (bo'lmasa - umumiy sozlama). */
+  retailMarkupPercent?: number | null;
   discountPrice: number | null;
   discountUntil?: number | null;
   stock: number;

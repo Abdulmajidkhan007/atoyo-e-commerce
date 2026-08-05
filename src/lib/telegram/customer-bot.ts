@@ -23,6 +23,9 @@ import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { getPublishedPosts, getSiteSettings } from "@/lib/firebase/admin-content";
 import { localizedDescription, localizedName } from "@/lib/products/i18n";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { markupFor, priceForRole } from "@/lib/products/wholesale";
+import { findWholesaleByPhone } from "@/lib/wholesale/clients";
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
 import { askAssistant } from "@/lib/ai/assistant";
 import { isAiConfigured } from "@/lib/ai/config";
@@ -84,6 +87,11 @@ interface BotSession {
   reviewRating?: number;
   /** Yordamchi bilan suhbat tarixi (faqat oxirgi bir nechta xabar). */
   assistantHistory?: { role: "user" | "assistant"; content: string }[];
+  /**
+   * Optom mijozmi (telefoni `wholesaleClients` da faol). Bir marta
+   * aniqlanib sessiyada saqlanadi - har xabarda qidirilmaydi.
+   */
+  wholesale?: boolean;
   updatedAt: number;
 }
 
@@ -363,8 +371,13 @@ async function showCategoryPage(
     return;
   }
 
+  // Narx mijoz turiga qarab (optom / dona).
+  const ctx = await priceContext(chatId);
   const rows: InlineButton[][] = products.map((p) => [
-    { text: `${p.name} — ${formatSom(effectiveBotPrice(p))}`, callback_data: `p|${p.id}` },
+    {
+      text: `${p.name} — ${formatSom(shownPrice(effectiveBotPrice(p), p, ctx))}`,
+      callback_data: `p|${p.id}`,
+    },
   ]);
 
   const nav: InlineButton[] = [];
@@ -389,6 +402,45 @@ function effectiveBotPrice(product: Product): number {
   return active ? product.discountPrice! : product.price;
 }
 
+/**
+ * NARX KONTEKSTI: bazadagi narx optom, botda esa mijozning turiga
+ * qarab ko'rsatiladi. Optom mijoz (telefoni ro'yxatda) optom narxni,
+ * qolganlar ustama qo'shilgan dona narxni ko'radi.
+ */
+interface PriceContext {
+  wholesale: boolean;
+  settings: Awaited<ReturnType<typeof getPricingSettings>>;
+}
+
+async function priceContext(chatId: number): Promise<PriceContext> {
+  const settings = await getPricingSettings();
+  const session = await getSession(chatId);
+
+  if (typeof session.wholesale === "boolean") {
+    return { wholesale: session.wholesale, settings };
+  }
+
+  // Birinchi marta: mijozning telefoni bo'yicha ro'yxatdan qidiramiz.
+  // Shaxsiy chatda chat ID = foydalanuvchi ID, shuning uchun botUsers
+  // hujjati o'sha kalit bilan topiladi.
+  let wholesale = false;
+  try {
+    const phone = (await getBotUser(chatId))?.phoneNumber ?? "";
+    if (phone) wholesale = Boolean(await findWholesaleByPhone(phone));
+  } catch (error) {
+    console.error("Optom mijozni aniqlashda xato:", error);
+  }
+
+  session.wholesale = wholesale;
+  await saveSession(chatId, session);
+  return { wholesale, settings };
+}
+
+/** Mahsulot narxini kontekstga (optom/dona) mos ko'rsatadi. */
+function shownPrice(wholesale: number, product: Product, ctx: PriceContext): number {
+  return priceForRole(wholesale, ctx.wholesale ? "client" : "user", markupFor(product, ctx.settings));
+}
+
 async function showProduct(chatId: number, productId: string, t: BotDict): Promise<void> {
   const doc = await getAdminDb().collection("products").doc(productId).get();
   if (!doc.exists) {
@@ -396,7 +448,8 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
     return;
   }
   const product = { id: doc.id, ...doc.data() } as Product;
-  const price = effectiveBotPrice(product);
+  const ctx = await priceContext(chatId);
+  const price = shownPrice(effectiveBotPrice(product), product, ctx);
   const session = await getSession(chatId);
   const isFavorite = (session.favorites ?? []).includes(product.id);
 
@@ -406,8 +459,12 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
     product.sku ? `#️⃣ ${product.sku}` : "",
     product.brand ? `${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
     hasVariants(product)
-      ? `💰 <b>${formatSom(minVariantPrice(product) ?? price)}</b> dan / ${unit}`
-      : `💰 <b>${formatSom(price)}</b> / ${unit}${price < product.price ? ` <s>${formatSom(product.price)}</s>` : ""}`,
+      ? `💰 <b>${formatSom(shownPrice(minVariantPrice(product) ?? price, product, ctx))}</b> dan / ${unit}`
+      : `💰 <b>${formatSom(price)}</b> / ${unit}${
+          price < shownPrice(product.price, product, ctx)
+            ? ` <s>${formatSom(shownPrice(product.price, product, ctx))}</s>`
+            : ""
+        }`,
     hasVariants(product)
       ? `🔀 ${(product.variantAxes ?? []).map((axis) => `${axis.label}: ${axis.values.join(", ")}`).join(" | ")}`
       : "",
@@ -479,7 +536,9 @@ async function addToCart(chatId: number, productId: string, t: BotDict): Promise
     session.cart.push({
       productId: product.id,
       name: localizedName(product, t.lang),
-      price: effectiveBotPrice(product),
+      // Savatga ko'rsatilgan narx tushadi; buyurtmada server baribir
+      // rolga qarab qayta hisoblaydi.
+      price: shownPrice(effectiveBotPrice(product), product, await priceContext(chatId)),
       quantity: 1,
       thumbnailUrl: product.thumbnailUrl,
     });
@@ -647,6 +706,8 @@ async function finishOrder(
       paymentMethod,
       promoCode: session.promoCode ?? null,
       customerChatId: chatId,
+      // Optom mijozga optom narx qo'llanadi (server qayta hisoblaydi).
+      role: (await priceContext(chatId)).wholesale ? "client" : "user",
     });
   } catch (error) {
     // Zaxira yetmasa yoki mahsulot sotuvdan olingan bo'lsa - savat saqlanadi,
@@ -725,6 +786,8 @@ async function searchByPhoto(
       base64: file.buffer.toString("base64"),
       mimeType: file.contentType,
       hint: caption,
+      // Narx rolga qarab: optom mijoz optom, qolganlar dona narxni ko'radi.
+      viewerRole: (await priceContext(chatId)).wholesale ? "client" : "user",
     });
 
     if (result.products.length === 0) {
@@ -791,6 +854,7 @@ async function replyWithAssistant(
       question: text,
       history: session.assistantHistory ?? [],
       channel: "telegram",
+      viewerRole: (await priceContext(chatId)).wholesale ? "client" : "user",
     });
 
     // Tarix faqat oxirgi 8 xabar - Firestore hujjati ham, so'rov ham
@@ -971,8 +1035,12 @@ async function showFavorites(chatId: number, t: BotDict): Promise<void> {
     .filter((s) => s.exists)
     .map((s) => ({ id: s.id, ...s.data() }) as Product);
 
+  const favCtx = await priceContext(chatId);
   const rows: InlineButton[][] = products.map((product) => [
-    { text: `${product.name} — ${formatSom(effectiveBotPrice(product))}`, callback_data: `p|${product.id}` },
+    {
+      text: `${product.name} — ${formatSom(shownPrice(effectiveBotPrice(product), product, favCtx))}`,
+      callback_data: `p|${product.id}`,
+    },
     { text: t.removeItem, callback_data: `fv|${product.id}` },
   ]);
   rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);

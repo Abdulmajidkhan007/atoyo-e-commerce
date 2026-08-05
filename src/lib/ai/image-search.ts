@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { AI_MODEL, getAnthropic, isAiConfigured } from "./config";
 import { searchCatalog, type CatalogHit } from "./tools";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import type { UserRole } from "@/types/user";
 
 /**
  * RASM BO'YICHA QIDIRUV.
@@ -47,6 +48,8 @@ export async function searchByImage(image: {
   mimeType: string;
   /** Mijozning qo'shimcha izohi ("25mm bo'lsin"). */
   hint?: string;
+  /** So'rovchining roli - narx shunga qarab qaytadi (optom/dona). */
+  viewerRole?: UserRole;
 }): Promise<ImageSearchResult> {
   if (!isAiConfigured()) throw new Error("AI kaliti sozlanmagan");
 
@@ -104,7 +107,7 @@ export async function searchByImage(image: {
 
   const products =
     terms.length > 0
-      ? await searchCatalog({ query: terms.join(" "), category, limit: 8 })
+      ? await searchCatalog({ query: terms.join(" "), category, limit: 8, viewerRole: image.viewerRole })
       : [];
 
   return {

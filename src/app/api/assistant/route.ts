@@ -5,6 +5,7 @@ import { askAssistant } from "@/lib/ai/assistant";
 import { isAiConfigured } from "@/lib/ai/config";
 import { MAX_HISTORY_MESSAGES, MAX_QUESTION_LENGTH } from "@/lib/ai/guard";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,10 +54,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Kim so'ragani narxga ta'sir qiladi: optom mijozga optom narx.
+    const viewer = await getAppUserFromRequest(request);
     const reply = await askAssistant({
       question: parsed.data.question,
       history: parsed.data.history ?? [],
       channel: parsed.data.channel ?? "site",
+      viewerRole: viewer?.role,
     });
     return NextResponse.json(reply);
   } catch (error) {

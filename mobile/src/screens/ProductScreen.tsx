@@ -21,6 +21,7 @@ import {
 import {fetchProduct, fetchRelatedProducts} from '../firebase';
 import {fetchReviews, submitReview, SITE_URL} from '../api';
 import {useAppDispatch, useAppSelector} from '../store';
+import {useDisplayPrice, useIsWholesale, useListPrice} from '../pricing';
 import {addItem} from '../store/cartSlice';
 import {toggleFavorite} from '../store/favoritesSlice';
 import {Button, Field, Loading, Stars} from '../components/ui';
@@ -64,6 +65,12 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
   /** Galereya rasmi ekran kengligida bo'ladi (foiz bilan ishlamaydi). */
   const {width: windowWidth} = useWindowDimensions();
+  // Bazadagi narx OPTOM; dona mijozga ustama qo'shiladi. Hook'lar
+  // shartsiz chaqirilishi kerak - shuning uchun yuklanish tekshiruvidan
+  // oldin turibdi.
+  const show = useDisplayPrice(product ?? undefined);
+  const listPrice = useListPrice();
+  const isWholesale = useIsWholesale();
 
   const loadReviews = useCallback(
     () => fetchReviews(productId).catch((): Review[] => []),
@@ -112,11 +119,9 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
     updater: (prev: Record<string, string>) => Record<string, string>,
   ) => setPicked(prev => updater(prev ?? selection));
   const variant = withVariants ? findVariant(product, selection) : null;
-  const price = withVariants
-    ? variant
-      ? variantPrice(variant)
-      : product.price
-    : effectivePrice(product);
+  const price = show(
+    withVariants ? (variant ? variantPrice(variant) : product.price) : effectivePrice(product),
+  );
   const stock = withVariants ? (variant?.stock ?? 0) : product.stock;
 
   const handleAddToCart = () => {
@@ -248,9 +253,11 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
 
         <View style={{flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm}}>
           {price < (variant?.price ?? product.price) && (
-            <Text style={styles.oldPrice}>{money(variant?.price ?? product.price)}</Text>
+            <Text style={styles.oldPrice}>{money(show(variant?.price ?? product.price))}</Text>
           )}
           <Text style={styles.price}>{money(price)}</Text>
+          {/* Optom mijozga narx optom ekani ko'rinib tursin. */}
+          {isWholesale && <Text style={styles.wholesaleTag}>optom</Text>}
         </View>
 
         <Text style={styles.muted}>
@@ -322,9 +329,12 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
                     </Text>
                     <Text style={styles.relatedPrice}>
                       {money(
-                        hasVariants(item)
-                          ? (minVariantPrice(item) ?? item.price)
-                          : effectivePrice(item),
+                        listPrice(
+                          item,
+                          hasVariants(item)
+                            ? (minVariantPrice(item) ?? item.price)
+                            : effectivePrice(item),
+                        ),
                       )}
                       {hasVariants(item) ? ' dan' : ''}
                     </Text>
@@ -414,6 +424,17 @@ const useStyles = makeStyles(c => ({
   brand: {color: c.muted, fontSize: 13},
   price: {fontSize: 24, fontWeight: '800', color: c.text},
   oldPrice: {color: c.muted, textDecorationLine: 'line-through'},
+  /** Optom mijozga: narx optom ekanini bildiruvchi kichik belgi. */
+  wholesaleTag: {
+    color: c.onAccent,
+    backgroundColor: c.accent,
+    fontSize: 11,
+    fontWeight: '700',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
   muted: {color: c.muted, fontSize: 13},
   description: {color: c.text, fontSize: 14, lineHeight: 21},
   section: {fontSize: 17, fontWeight: '700', color: c.text, marginTop: spacing.lg},
