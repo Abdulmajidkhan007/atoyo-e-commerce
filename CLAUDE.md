@@ -85,6 +85,18 @@ serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
   [--kurs=12600]`. Excel o'qish/yozish - `scripts/lib/xlsx.js`
   (tashqi kutubxonasiz).
 
+## Katta katalog bilan ishlash
+
+- Bosh sahifada faqat **6 ta namuna mahsulot** (har kategoriyadan
+  bittadan, `/api/products/showcase`, 5 daq. kesh) va cheklangan
+  kategoriyalar qatori - qolgani katalogda.
+- Ommaviy tozalash: `/admin/katalog/tartib` + `/api/admin/products/list`
+  (bitta tenglik filtri + `__name__` tartibi - kompozit indekssiz) va
+  `/api/admin/products/bulk` (delete / update / announce). Kanalga
+  ommaviy e'lon 10 tadan, orasida tanaffus bilan.
+- Kirimda 20 tadan ko'p mahsulot bo'lsa kanalga e'lon qilinmaydi
+  (`announce: false`).
+
 ## Ma'lum bloklar (foydalanuvchi hal qiladi)
 
 - **Firebase Storage yoqilmagan** — rasm yuklash Storage yoqilmaguncha

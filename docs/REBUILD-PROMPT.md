@@ -280,6 +280,15 @@ tekshiradi.
   qatorlari; qatorlarning dekart ko'paytmasi bo'yicha har bir turga
   alohida narx va zaxira; mahsulot narxi — eng arzon tur, zaxirasi —
   yig'indi. "Hammasiga birdek" tugmasi.
+- **Katalogni tartibga solish** (`/admin/katalog/tartib`): katta
+  importdan keyin xatolarni tozalash uchun. Brend yoki kategoriya
+  bo'yicha ro'yxat olinadi (sahifalab), ustiga qidiruv / "rasmi
+  yo'qlar" / "kanalga chiqmaganlar" filtri qo'yiladi; belgilanganlarni
+  o'chirish, boshqa kategoriyaga ko'chirish, brendini yozish, sotuvdan
+  olish/qaytarish, har biriga shu yerda rasm yuklash va TANLAB kanalga
+  post qilish mumkin. E'lon Telegram chegarasi sababli 10 tadan,
+  orasida ~1.2 s tanaffus bilan ketadi; rasmi yo'qlari o'tkazib
+  yuboriladi. Har bir ommaviy amal "actions" topikka yoziladi.
 - **Zaxirasiz mahsulotlar ro'yxati** (kirim sahifasida): `stock == 0`
   bo'lgan mahsulotlar ro'yxat bo'lib chiqadi (sahifalab yuklanadi),
   har biriga son yoziladi yoki "hammasiga bir xil son" qo'yiladi va
