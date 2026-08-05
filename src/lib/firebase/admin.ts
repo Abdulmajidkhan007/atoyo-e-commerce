@@ -67,7 +67,26 @@ export function getAdminAuth(): Auth {
 }
 
 export function getAdminDb(): Firestore {
-  return (cachedDb ??= getFirestore(getAdminApp()));
+  if (cachedDb) return cachedDb;
+
+  const db = getFirestore(getAdminApp());
+  /**
+   * `undefined` maydonlar YOZUVDA E'TIBORSIZ qoldiriladi.
+   *
+   * Kodda ixtiyoriy maydonlar ko'p ("Telegram username", tarjimalar,
+   * o'lchamlar...) va ular to'ldirilmasa `undefined` bo'ladi. Bu sozlama
+   * bo'lmasa Firestore butun yozuvni rad etadi:
+   * «Cannot use "undefined" as a Firestore value». Sozlama faqat
+   * birinchi ishlatishdan oldin qo'yiladi.
+   */
+  try {
+    db.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // Allaqachon sozlangan bo'lsa (issiq qayta yuklash) - o'z holicha.
+  }
+
+  cachedDb = db;
+  return db;
 }
 
 export function getAdminStorage(): Storage {

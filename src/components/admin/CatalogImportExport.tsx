@@ -4,18 +4,7 @@ import { useRef, useState } from "react";
 import { Alert, Button, CircularProgress } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
-
-/** Excel faylni base64 ga o'girish (FileReader "data:...;base64," qaytaradi). */
-async function fileToBase64(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  const CHUNK = 0x8000; // katta fayllarda stack toshib ketmasligi uchun bo'lib o'giramiz
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return btoa(binary);
-}
+import { fileToBase64 } from "@/lib/files/base64";
 
 interface ImportResult {
   created: number;

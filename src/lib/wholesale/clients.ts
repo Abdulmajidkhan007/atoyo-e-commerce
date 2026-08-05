@@ -82,6 +82,11 @@ export async function createWholesaleClient(input: NewClientInput): Promise<Whol
 
   const now = Date.now();
   const ref = db.collection(COLLECTION).doc();
+  /**
+   * Ixtiyoriy maydonlar (Telegram username, izoh) to'ldirilmagan bo'lsa
+   * BO'SH MATN yoziladi: Firestore `undefined` qiymatni qabul qilmaydi
+   * ("Cannot use undefined as a Firestore value" xatosi shundan edi).
+   */
   const client: WholesaleClient = {
     id: ref.id,
     number: input.number && input.number > 0 ? input.number : await nextClientNumber(),
@@ -89,13 +94,13 @@ export async function createWholesaleClient(input: NewClientInput): Promise<Whol
     phone,
     shopName: input.shopName.trim(),
     address: input.address.trim(),
-    telegramUsername: input.telegramUsername?.trim().replace(/^@/, "") || undefined,
+    telegramUsername: (input.telegramUsername ?? "").trim().replace(/^@/, ""),
     accessKey: generateAccessKey(),
     status: "invited",
     userId: null,
     activatedAt: null,
     invitedAt: null,
-    note: input.note?.trim() || undefined,
+    note: (input.note ?? "").trim(),
     createdAt: now,
     updatedAt: now,
   };
@@ -117,7 +122,11 @@ export async function updateWholesaleClient(
   id: string,
   patch: Partial<Pick<WholesaleClient, "name" | "phone" | "shopName" | "address" | "telegramUsername" | "note" | "status">>
 ): Promise<void> {
-  const data: Record<string, unknown> = { ...patch, updatedAt: Date.now() };
+  // `undefined` maydonlarni Firestore qabul qilmaydi - ularni tashlaymiz.
+  const data: Record<string, unknown> = { updatedAt: Date.now() };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) data[key] = value;
+  }
   if (patch.phone) data.phone = normalizeWholesalePhone(patch.phone);
   await getAdminDb().collection(COLLECTION).doc(id).update(data);
 }

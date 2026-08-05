@@ -279,8 +279,15 @@ export function parseCsvLine(line: string): string[] {
 /**
  * CSV matnni sarlavha bo'yicha obyektlarga aylantiradi. Ustunlar tartibi
  * muhim emas - faqat nomlari CSV_COLUMNS dagidek bo'lsa yetadi.
+ *
+ * `normalizeHeaders: false` - sarlavhalar o'zgarishsiz qoladi (boshqa
+ * bo'limlarning importi, masalan optom mijozlar ro'yxati, o'z ustun
+ * nomlariga ega).
  */
-export function parseCsv(text: string): Record<string, string>[] {
+export function parseCsv(
+  text: string,
+  options: { normalizeHeaders?: boolean } = {}
+): Record<string, string>[] {
   const clean = text.replace(/^﻿/, "").replace(/\r\n/g, "\n").trim();
   if (!clean) return [];
 
@@ -293,7 +300,8 @@ export function parseCsv(text: string): Record<string, string>[] {
       const cells = parseCsvLine(line);
       const row: Record<string, string> = {};
       headers.forEach((header, i) => {
-        row[normalizeHeader(header)] = (cells[i] ?? "").trim();
+        const key = options.normalizeHeaders === false ? header : normalizeHeader(header);
+        row[key] = (cells[i] ?? "").trim();
       });
       return row;
     });

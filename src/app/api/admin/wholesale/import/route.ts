@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   const rows =
     "xlsx" in parsed.data
       ? await parseXlsx(parsed.data.xlsx)
-      : parseCsv(parsed.data.csv).map((row) => {
+      : parseCsv(parsed.data.csv, { normalizeHeaders: false }).map((row) => {
           const mapped: Record<string, string> = {};
           for (const [key, value] of Object.entries(row)) mapped[normalizeHeader(key)] = value;
           return mapped;

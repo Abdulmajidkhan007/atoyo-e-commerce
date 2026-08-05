@@ -21,6 +21,7 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { WHOLESALE_STATUS_LABELS, type WholesaleClient } from "@/types/wholesale";
+import { fileToBase64 } from "@/lib/files/base64";
 
 /**
  * OPTOM MIJOZLAR paneli.
@@ -109,7 +110,7 @@ export function WholesalePanel() {
     try {
       const isXlsx = /\.xlsx?$/i.test(file.name);
       const payload = isXlsx
-        ? { xlsx: Buffer.from(await file.arrayBuffer()).toString("base64") }
+        ? { xlsx: await fileToBase64(file) }
         : { csv: await file.text() };
 
       const res = await fetch("/api/admin/wholesale/import", {
