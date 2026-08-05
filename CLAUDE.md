@@ -106,6 +106,21 @@ urinish). Kalitlar `secrets/social`, sozlama `settings/social`.
 Kanalga e'lon qilingan mahsulot navbatga tushadi (`announceProduct`
 ichida, `refresh` rejimida emas). Ijtimoiy tarmoqda faqat DONA narx.
 
+## Server komponentda MUI (buzilmasin)
+
+Server komponentga `component={Link}` kabi FUNKSIYA prop berilmaydi —
+"Functions cannot be passed directly to Client Components" xatosi
+chiqadi va sahifa 500 bo'ladi (`/admin/katalog` shundan yiqilgan edi).
+Server sahifada oddiy `<Link>` + Tailwind sinflari ishlatiladi, MUI
+tugmasi kerak bo'lsa alohida `"use client"` komponentga chiqariladi.
+
+## Pochta (SMTP)
+
+Kalitlar `secrets/email` hujjatida (Sozlamalar → "Email (SMTP)", faqat
+loyiha egasi), env (`SMTP_*`) zaxira sifatida qoladi.
+`isEmailConfigured()` — ASINXRON. Sozlanmagan bo'lsa email jim
+o'tkazib yuboriladi, e'lon natijasida sababi yoziladi.
+
 ## Ma'lum bloklar (foydalanuvchi hal qiladi)
 
 - **Firebase Storage yoqilmagan** — rasm yuklash Storage yoqilmaguncha

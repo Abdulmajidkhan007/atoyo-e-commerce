@@ -82,10 +82,11 @@ export async function POST(request: Request) {
 
   checks.push(
     await run("Email (SMTP)", async () => {
-      if (!isEmailConfigured()) {
+      if (!(await isEmailConfigured())) {
         throw new Error(
           "SMTP sozlanmagan - email xabarnomalar va e'lonlar yuborilmaydi. " +
-            "SMTP_HOST, SMTP_USER, SMTP_PASS kerak (Gmail uchun 'App password')."
+            "Sozlamalar → \"Email (SMTP)\" bo'limiga host, port, foydalanuvchi va " +
+            "parolni kiriting (Gmail uchun 'App password')."
         );
       }
       return "sozlangan";

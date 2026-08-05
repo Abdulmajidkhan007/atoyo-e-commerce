@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Juda ko'p urinish. Bir soatdan keyin qayta urining." }, { status: 429 });
   }
 
-  if (!isEmailConfigured()) return NextResponse.json({ ok: true, fallback: true });
+  if (!(await isEmailConfigured())) return NextResponse.json({ ok: true, fallback: true });
 
   try {
     const firebaseLink = await getAdminAuth().generatePasswordResetLink(email, {

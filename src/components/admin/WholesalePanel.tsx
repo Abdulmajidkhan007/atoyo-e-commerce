@@ -276,8 +276,18 @@ export function WholesalePanel() {
                   <Chip
                     size="small"
                     variant="outlined"
-                    color={STATUS_COLOR[client.status] ?? "default"}
-                    label={WHOLESALE_STATUS_LABELS[client.status]}
+                    color={
+                      // Kalit hali yuborilmagan bo'lsa "yuborilgan" deb
+                      // ko'rsatmaymiz - admin adashmasin.
+                      client.status === "invited" && !client.invitedAt
+                        ? "default"
+                        : (STATUS_COLOR[client.status] ?? "default")
+                    }
+                    label={
+                      client.status === "invited" && !client.invitedAt
+                        ? "Kalit yaratildi"
+                        : WHOLESALE_STATUS_LABELS[client.status]
+                    }
                   />
                 </td>
                 <td className="px-3 py-2">

@@ -11,6 +11,7 @@ import { PricingSettingsForm } from "@/components/admin/PricingSettingsForm";
 import { ChannelFooterForm } from "@/components/admin/ChannelFooterForm";
 import { SecretsForm } from "@/components/admin/SecretsForm";
 import { SocialSettingsForm } from "@/components/admin/SocialSettingsForm";
+import { EmailSettingsForm } from "@/components/admin/EmailSettingsForm";
 import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,17 @@ export default async function AdminSettingsPage() {
         </p>
         <PricingSettingsForm />
       </section>
+
+      {isOwner(user) && (
+        <section>
+          <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">Email (SMTP)</h2>
+          <p className="mb-6 text-sm text-navy-300">
+            Buyurtma holati, e&apos;lonlar va parol tiklash xatlari shu pochta orqali ketadi.
+            Sozlanmagan bo&apos;lsa email umuman yuborilmaydi (Telegram va SMS ishlayveradi).
+          </p>
+          <EmailSettingsForm />
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">Ijtimoiy tarmoqlar</h2>

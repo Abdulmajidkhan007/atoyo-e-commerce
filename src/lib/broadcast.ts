@@ -17,7 +17,7 @@ export async function sendBroadcast(params: {
   body: string;
   viaTelegram?: boolean;
   viaEmail?: boolean;
-}): Promise<{ telegramSent: number; emailSent: number }> {
+}): Promise<{ telegramSent: number; emailSent: number; emailNote?: string }> {
   const { title, body, viaTelegram = true, viaEmail = true } = params;
   const db = getAdminDb();
   let telegramSent = 0;
@@ -39,7 +39,12 @@ export async function sendBroadcast(params: {
   }
 
   // 2) Email: sayt foydalanuvchilari + obunachilar (takrorlarsiz)
-  if (viaEmail && isEmailConfigured()) {
+  let emailNote: string | undefined;
+  const emailReady = viaEmail ? await isEmailConfigured() : false;
+  if (viaEmail && !emailReady) {
+    emailNote = "SMTP sozlanmagan (Sozlamalar → Email (SMTP) bo'limiga kiriting).";
+  }
+  if (viaEmail && emailReady) {
     const emails = new Set<string>();
     const [users, subscribers] = await Promise.all([
       db.collection("users").limit(500).get(),
@@ -54,12 +59,19 @@ export async function sendBroadcast(params: {
       if (email) emails.add(email.toLowerCase());
     }
 
+    if (emails.size === 0) {
+      emailNote = "Email manzili bor foydalanuvchi topilmadi (ko'pchilik telefon bilan kirgan).";
+    }
+
     const bodyHtml = `<h3>${title}</h3><p style="white-space:pre-line">${body}</p>`;
     for (const email of emails) {
       const ok = await sendGenericEmail(email, `Atoyo Santexnika — ${title}`, bodyHtml);
       if (ok) emailSent += 1;
     }
+    if (emails.size > 0 && emailSent === 0) {
+      emailNote = "SMTP xato berdi - kalit yoki 'App password' ni tekshiring.";
+    }
   }
 
-  return { telegramSent, emailSent };
+  return { telegramSent, emailSent, emailNote };
 }

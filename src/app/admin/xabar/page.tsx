@@ -32,7 +32,11 @@ export default function BroadcastPage() {
       });
       if (!res.ok) throw new Error("failed");
       const data = await res.json();
-      setResult(`✅ Yuborildi — Telegram: ${data.telegramSent} ta, Email: ${data.emailSent} ta.`);
+      setResult(
+        `✅ Yuborildi — Telegram: ${data.telegramSent} ta, Email: ${data.emailSent} ta.` +
+          // Email ketmagan bo'lsa sababi aytiladi (SMTP yo'q, manzil yo'q...).
+          (data.emailNote ? ` ${data.emailNote}` : "")
+      );
       setTitle("");
       setBody("");
     } catch {
