@@ -113,6 +113,15 @@ export function CatalogImportExport() {
           rasm havolalarini yozing yoki rasmni keyin Telegram/admin panel orqali qo&apos;shing.
         </p>
         <p className="text-xs text-navy-300">
+          <b>Turlari bor mahsulot</b> (o&apos;lcham/rang): har bir tur <b>alohida qator</b> bo&apos;ladi
+          — nomi bir xil, <code>variantGroup</code> ustunida qator nomi (masalan{" "}
+          <code>O&apos;lcham</code>), <code>variantValue</code> da qiymati (<code>50x60</code>),
+          narx va zaxira esa o&apos;sha qatorning o&apos;zida. Ikkita qator kerak bo&apos;lsa{" "}
+          <code>O&apos;lcham|Rang</code> va <code>50x60|Oq</code> deb yoziladi. Ustun nomlarini
+          o&apos;zbekcha (<code>Nomi</code>, <code>Narxi</code>, <code>Zaxira</code>,{" "}
+          <code>Turi</code>, <code>Razmer</code>) yozsangiz ham tushunadi.
+        </p>
+        <p className="text-xs text-navy-300">
           <b>Faqat nomlarni yaratmoqchi bo&apos;lsangiz</b> (narx/kategoriya keyin):{" "}
           <code>draft</code> ustuniga <code>1</code> qo&apos;ying va faqat <code>name</code> ni
           to&apos;ldiring. Bunday mahsulotlar <b>chernovik</b> bo&apos;ladi: saytda ko&apos;rinmaydi,

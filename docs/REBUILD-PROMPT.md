@@ -205,6 +205,43 @@ Firestore'da faqat token va niqoblangan raqam (`users/{uid}/cards`,
 qoidalarda mijozga ham yopiq). Kalitlar yo'q bo'lsa profildagi
 "Kartalarim" bo'limi umuman ko'rinmaydi.
 
+## 1f. OPTOM (ULGURJI) MIJOZLAR VA IKKI XIL NARX
+
+Do'kon ham do'konlarga (optom), ham oddiy xaridorga (dona) sotadi va
+**ikki narx bir-biriga ko'rinmaydi**.
+
+- **Bazadagi narx — OPTOM narx.** Admin faqat shuni kiritadi. Dona
+  (chakana) narx undan ustama foizi bilan hisoblanadi:
+  `dona = optom × (1 + ustama%)`, natija 100 so'mgacha yaxlitlanadi.
+  Ustama sozlamalarda (`settings/pricing`, standart **5%**), kerak
+  bo'lsa alohida mahsulotga `retailMarkupPercent` qo'yiladi. Narx
+  ko'tarilganda 10 000 ta mahsulotni qayta yozish shart emas — bitta
+  foiz o'zgartiriladi. Qoida bitta joyda: `lib/products/wholesale.ts`
+  (client ham, server ham ishlatadi).
+- **Kim qaysi narxni ko'radi:** `role === "client"` (optom mijoz) —
+  optom narx; qolganlar — dona narx. Bu **hamma kanalda** bir xil:
+  sayt, mobil ilova (`mobile/src/pricing.ts`), Telegram bot
+  (`priceContext(chatId)`), AI yordamchi va rasm bo'yicha qidiruv
+  (`searchCatalog`/`findRelevantProducts` narxni rolga moslaydi, mijoz
+  aytgan narx chegarasi ham u ko'radigan narx ustida ishlaydi).
+  Buyurtma narxi ham serverda rolga qarab qayta hisoblanadi — mijoz
+  yuborgan narxga ishonilmaydi.
+- **Eng kam buyurtma summasi** (standart 100 000 so'm): savatda
+  ogohlantirish chiqadi va rasmiylashtirish tugmasi bloklanadi,
+  server esa buyurtmani baribir tekshiradi.
+- **Optom mijozlar bo'limi** (`/admin/optom`): 1C dan olingan ro'yxatni
+  Excel/CSV bilan yuklash (ustunlar `№, Ismi, Telefon, Do'kon nomi,
+  Manzil, Telegram`), har biriga **maxfiy kalit** (`ATY-XXXX-XXXX`)
+  yaratish, kalitni Telegram/SMS/email orqali yuborish, kalitni
+  yangilash va mijozni o'chirish (roli qaytariladi). Yozuvlar
+  `wholesaleClients` da, Firestore qoidalarida **hamma clientga yopiq**.
+- **`/optom` sahifasi:** mijoz telefon raqami va kalitni kiritadi
+  (havoladagi `?kalit=` avtomatik to'ldiriladi) → tekshiruvdan o'tsa
+  `users/{uid}.role = "client"` bo'ladi va shu ondan optom narxlarni
+  ko'radi. So'rovlar soatiga 10 tadan ko'p bo'lmaydi.
+- Yangi optom mijoz faollashganda xodimlar guruhining **optom topic'iga
+  (441)** xabar tushadi.
+
 ## 2. ADMIN PANEL (saytda)
 
 Faqat xodimlarga. Kirish — session cookie; **rol tekshiruvi Node
@@ -215,8 +252,19 @@ tekshiradi.
   artikul, kategoriya, material, sotish turi, brend, davlat,
   yetkazuvchi, narx, chegirma va muddati, zaxira, o'lchamlar, 10 tagacha
   rasm), chernovik rejimi, ko'p rasm yuklash, ommaviy narx o'zgartirish,
-  CSV import/eksport (10 000 ta nomni bir yo'la yaratish uchun),
+  CSV/Excel import/eksport (10 000 ta nomni bir yo'la yaratish uchun),
   indeks/raqamlarni yangilash.
+- **Import formati:** ustun nomlari inglizcha (`name`, `price`,
+  `stock`...) yoki o'zbekcha (`Nomi`, `Narxi`, `Zaxira`, `Turi`,
+  `Razmer`) bo'lishi mumkin. **Turlari bor mahsulot — har bir tur
+  alohida qator:** nomi bir xil qatorlar bitta mahsulotga yig'iladi,
+  `variantGroup` (qator nomi), `variantValue` (qiymati), `variantSku`
+  (turning kodi), narx/zaxira esa o'sha qatorning o'zida. Ikki
+  o'lchovli tur "|" bilan: `O'lcham|Rang` va `50x60|Oq`. Eksport ham
+  shu ko'rinishda chiqadi (fayl qaytib import qilinsa turlar tiklanadi).
+  Namunalar: `/namuna/atoyo-mahsulotlar.xlsx` (ikkinchi varaqda
+  yo'riqnoma) va `.csv`; fayl `scripts/make-sample-xlsx.js` bilan
+  yasaladi.
 - **Turlar (variantlar):** bitta mahsulotda o'lcham/rang/qalinlik
   qatorlari; qatorlarning dekart ko'paytmasi bo'yicha har bir turga
   alohida narx va zaxira; mahsulot narxi — eng arzon tur, zaxirasi —
@@ -261,6 +309,12 @@ salomlashuv rasmi.
   ("nom / narx / soni / kimdan / material") — bot mahsulotni yaratadi,
   albom (media_group) holatini vaqtincha saqlaydi, keyin ixtiyoriy
   maydonlarni tugmalar bilan so'raydi.
+- **Kirimda turlar:** izohga `Tur nomi: O'lcham` va `Turlar:` yozilib,
+  keyingi har bir qator bitta tur bo'ladi —
+  `50x60 - 850000 - 4 - BS-5060` (qiymat - narx - soni - kod). Ikki
+  qatorli tur `Balandlik|Rang` / `500mm|Oq` ko'rinishida. Turlar bo'lsa
+  umumiy "Narxi"/"Soni" yozilishi shart emas: narx eng arzon turdan,
+  zaxira turlar yig'indisidan olinadi.
 
 ### E'lon kanali
 
@@ -328,6 +382,11 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - `stockMoves` — ombor harakatlari (kirim/sotuv/qaytish/chiqim/sanoq).
 - `settings/*` — sayt, yetkazish, telegram topic; `secrets/telegram` —
   bot tokeni va h.k. (env'dan ustun).
+- `wholesaleClients` — optom mijozlar (raqam, ism, telefon, do'kon,
+  manzil, Telegram, maxfiy kalit, holat, faollashgan `uid`);
+  `metadata/wholesaleCounter` — tartib raqami. Qoidalarda hamma
+  clientga yopiq (kalit sizib chiqmasin).
+- `settings/pricing` — dona ustamasi (%) va eng kam buyurtma summasi.
 - `promoCodes`, `blogPosts`, `reviews`, `stats/summary`, `tgLogins`,
   `intakeAlbums`, `subscribers`.
 - Firestore qoidalari: mahsulot/blog — hammaga o'qish, yozish faqat

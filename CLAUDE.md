@@ -57,6 +57,27 @@ Untracked fayllar recycle'da yo'qoladi — ishni tez-tez commit + push qiling.
 - Bot generatsiya rasmlar `next/og` (`ImageResponse`) bilan, `runtime="nodejs"`,
   tashqi API'siz. Emoji renderlanmaydi — matn/harf ishlating.
 
+## Narx qoidasi (buzilmasin)
+
+Bazadagi `price` — **OPTOM** narx. Dona narx `lib/products/wholesale.ts`
+dagi `priceForRole()` orqali hisoblanadi (`settings/pricing` dagi ustama,
+standart 5%). Katalog narxini ko'rsatadigan HAR QANDAY yangi joy shu
+funksiyadan o'tishi shart: sayt (`lib/products/usePricing.ts`), ilova
+(`mobile/src/pricing.ts`), bot (`priceContext`/`shownPrice`), AI qatlami
+(`searchCatalog`, `findRelevantProducts` — `viewerRole`). Optom mijoz
+dona narxni, dona mijoz optom narxni ko'rmasligi kerak. Buyurtmada narx
+serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
+
+## Import/kirimda turlar
+
+- Excel/CSV importda **har bir tur alohida qator**: `variantGroup`,
+  `variantValue`, `variantSku` + o'sha qatordagi `price`/`stock`;
+  nomi bir xil qatorlar bitta mahsulotga yig'iladi. Mantiq
+  `lib/products/csv.ts` (`variantsFromRows`, `normalizeHeader`) da,
+  testlari `csv.test.ts`. Namuna fayl: `scripts/make-sample-xlsx.js`.
+- Telegram kirim izohida `Tur nomi:` + `Turlar:` bloki
+  (`lib/telegram/intake-parser.ts`, testlari `intake-parser.test.ts`).
+
 ## Ma'lum bloklar (foydalanuvchi hal qiladi)
 
 - **Firebase Storage yoqilmagan** — rasm yuklash Storage yoqilmaguncha

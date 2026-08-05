@@ -33,7 +33,11 @@ export type IntakeField =
   | "sku"
   | "diameter"
   | "length"
-  | "weight";
+  | "weight"
+  /** Turlar qatorining nomi ("O'lcham", "O'lcham|Rang"). */
+  | "variantAxis"
+  /** Turlar ro'yxati - keyingi qatorlarda yoziladi. */
+  | "variants";
 
 /** Kalit so'zlar - normalizatsiyadan keyingi ko'rinishda (apostrofsiz, kichik). */
 const FIELD_ALIASES: Record<string, IntakeField> = {
@@ -135,6 +139,18 @@ const FIELD_ALIASES: Record<string, IntakeField> = {
   birlik: "unit",
   unit: "unit",
   turi: "unit",
+
+  "tur nomi": "variantAxis",
+  "turlar nomi": "variantAxis",
+  "tur qatori": "variantAxis",
+  "olcham nomi": "variantAxis",
+
+  turlar: "variants",
+  variantlar: "variants",
+  olchamlar: "variants",
+  razmerlar: "variants",
+  razmerlari: "variants",
+  "turlari": "variants",
 
   ogirlik: "weight",
   ogirligi: "weight",
@@ -253,6 +269,35 @@ export function parseDate(text: string): number | null {
   return null;
 }
 
+/** Kirim izohidagi bitta tur (variant). */
+/**
+ * Tur qatorini bo'laklarga ajratadi: "50x60 - 850000 - 4 - BS-5060".
+ *
+ * Avval ATROFIDA BO'SHLIQ bo'lgan ajratgich bo'yicha bo'linadi - shunda
+ * kod ichidagi chiziqcha ("BS-5060") saqlanib qoladi. Bo'shliqsiz
+ * yozilgan bo'lsa ("50x60-850000-4") oddiy chiziqcha ham ishlaydi.
+ */
+function splitVariantLine(line: string): string[] {
+  const spaced = line
+    .split(/\s+[-—–]\s+|\s*[;\t]+\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (spaced.length >= 2) return spaced;
+
+  return line
+    .split(/[-—–;]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+export interface ParsedVariant {
+  /** Qatorlar bo'yicha qiymatlar: ["50x60"] yoki ["500mm", "Oq"]. */
+  values: string[];
+  price: number;
+  stock: number;
+  sku: string;
+}
+
 export interface ParsedIntake {
   name: string;
   price: number | null;
@@ -272,6 +317,10 @@ export interface ParsedIntake {
   diameterMm: number | null;
   lengthMm: number | null;
   weightKg: number | null;
+  /** Turlar qatorlarining nomlari ("O'lcham", ["Balandlik","Rang"]). */
+  variantAxisLabels: string[];
+  /** Turlar (bo'lsa, narx va zaxira shulardan olinadi). */
+  variants: ParsedVariant[];
   /** To'ldirilmagan majburiy maydonlar (rasm bu ro'yxatga kirmaydi). */
   missing: IntakeField[];
   /** Tushunarsiz qiymatlar (masalan material nomi topilmadi). */
@@ -301,24 +350,48 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
   const warnings: string[] = [];
   const unlabeled: string[] = [];
 
+  /**
+   * "Turlar:" dan keyingi qatorlar - turlar ro'yxati (har biri bitta
+   * tur). Kalitli yangi qator boshlanmaguncha shu ro'yxatga yig'iladi.
+   */
+  const variantLines: string[] = [];
+  let collectingVariants = false;
+
   for (const rawLine of caption.split("\n")) {
     const line = rawLine.trim();
     if (!line) continue;
 
     const separator = line.search(/[:=]|\s-\s/);
+    let field: IntakeField | undefined;
+    let value = "";
     if (separator > 0) {
-      const key = normalizeKey(line.slice(0, separator));
-      const field = FIELD_ALIASES[key];
+      field = FIELD_ALIASES[normalizeKey(line.slice(0, separator))];
       if (field) {
-        const value = line
+        value = line
           .slice(separator)
           .replace(/^[:=]\s*|^\s-\s/, "")
           .trim();
-        // Bir maydon ikki marta yozilsa - birinchisi qoladi.
-        if (!values.has(field)) values.set(field, value);
-        continue;
       }
     }
+
+    if (field === "variants") {
+      collectingVariants = true;
+      if (value) variantLines.push(value);
+      continue;
+    }
+
+    if (field) {
+      collectingVariants = false;
+      // Bir maydon ikki marta yozilsa - birinchisi qoladi.
+      if (!values.has(field)) values.set(field, value);
+      continue;
+    }
+
+    if (collectingVariants) {
+      variantLines.push(line);
+      continue;
+    }
+
     unlabeled.push(line);
   }
 
@@ -371,10 +444,66 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
     warnings.push("Chegirma muddati o'qilmadi (kun.oy.yil ko'rinishida yozing).");
   }
 
+  /**
+   * TURLAR. Har bir qator: "qiymat - narx - soni [- kod]".
+   * Ikki qatorli tur bo'lsa qiymatlar "|" bilan: "500mm|Oq - 320000 - 3".
+   * Ajratgich sifatida "-", "—" yoki ";" ishlaydi.
+   */
+  const variantAxisLabels = (values.get("variantAxis") ?? "")
+    .split("|")
+    .map((label) => label.trim())
+    .filter(Boolean);
+
+  const variants: ParsedVariant[] = [];
+  for (const line of variantLines) {
+    const parts = splitVariantLine(line);
+    if (parts.length < 2) {
+      warnings.push(`Tur qatori tushunilmadi: "${line}"`);
+      continue;
+    }
+
+    const [rawValues, rawPrice, rawStock, rawSku] = parts;
+    const variantPrice = parseAmount(rawPrice!);
+    if (variantPrice === null || variantPrice <= 0) {
+      warnings.push(`Tur narxi o'qilmadi: "${line}"`);
+      continue;
+    }
+
+    variants.push({
+      values: rawValues!
+        .split("|")
+        .map((value) => value.trim())
+        .filter(Boolean),
+      price: variantPrice,
+      stock: Math.max(0, Math.round(parseAmount(rawStock ?? "") ?? 0)),
+      sku: (rawSku ?? "").trim(),
+    });
+  }
+
+  // Qiymatlar soni qatorlar soniga mos kelmasa - o'sha tur tashlanadi.
+  const axisCount = variantAxisLabels.length || (variants[0]?.values.length ?? 1);
+  const usableVariants = variants.filter((variant) => {
+    if (variant.values.length === axisCount) return true;
+    warnings.push(`Tur qiymatlari soni mos emas: "${variant.values.join("|")}"`);
+    return false;
+  });
+
+  /**
+   * Turlari bor mahsulotda narx va zaxira TURLARDAN olinadi - izohda
+   * alohida yozilishi shart emas.
+   */
+  const hasVariantRows = usableVariants.length > 0;
+  const effectivePrice = hasVariantRows
+    ? Math.min(...usableVariants.map((variant) => variant.price))
+    : price;
+  const effectiveStock = hasVariantRows
+    ? usableVariants.reduce((sum, variant) => sum + variant.stock, 0)
+    : stock;
+
   const missing: IntakeField[] = [];
   if (!name) missing.push("name");
-  if (price === null || price <= 0) missing.push("price");
-  if (stock === null || stock < 0) missing.push("stock");
+  if (effectivePrice === null || effectivePrice <= 0) missing.push("price");
+  if (effectiveStock === null || effectiveStock < 0) missing.push("stock");
   if (!supplier) missing.push("supplier");
   if (!material) missing.push("material");
   if (!category) missing.push("category");
@@ -382,8 +511,8 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
 
   return {
     name,
-    price,
-    stock,
+    price: effectivePrice,
+    stock: effectiveStock,
     supplier,
     material,
     category,
@@ -397,6 +526,12 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
     diameterMm: values.has("diameter") ? parseAmount(values.get("diameter")!) : null,
     lengthMm: values.has("length") ? parseAmount(values.get("length")!) : null,
     weightKg: values.has("weight") ? parseAmount(values.get("weight")!) : null,
+    variantAxisLabels: hasVariantRows
+      ? variantAxisLabels.length > 0
+        ? variantAxisLabels
+        : ["Turi"]
+      : [],
+    variants: usableVariants,
     missing,
     warnings,
   };
@@ -419,7 +554,28 @@ export const INTAKE_FIELD_LABELS: Record<IntakeField, string> = {
   diameter: "Diametr",
   length: "Uzunlik",
   weight: "Og'irlik",
+  variantAxis: "Tur nomi (O'lcham/Rang)",
+  variants: "Turlar ro'yxati",
 };
+
+/**
+ * TURLARI bor mahsulot namunasi. "Turlar:" dan keyingi har bir qator -
+ * bitta tur: "qiymat - narx - soni - kod(ixtiyoriy)". Ikki qatorli tur
+ * kerak bo'lsa: "Tur nomi: Balandlik|Rang" va "500mm|Oq - 320000 - 3".
+ * Turlar bo'lsa umumiy "Narxi"/"Soni" yozilishi shart emas.
+ */
+export const INTAKE_VARIANT_TEMPLATE = [
+  "Basu moyka",
+  "Kategoriya: santexnika",
+  "Material: polat",
+  "Sotish turi: dona",
+  "Kimdan: Akmal aka",
+  "Tur nomi: O'lcham",
+  "Turlar:",
+  "50x60 - 850000 - 4 - BS-5060",
+  "60x80 - 990000 - 2",
+  "80x100 - 1150000 - 0",
+].join("\n");
 
 /** Xato bo'lganda ko'rsatiladigan namuna. */
 export const INTAKE_TEMPLATE = [

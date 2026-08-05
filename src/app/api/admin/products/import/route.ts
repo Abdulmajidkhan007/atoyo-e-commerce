@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
-import { parseCsv } from "@/lib/products/csv";
+import { normalizeHeader, parseCsv, variantsFromRows } from "@/lib/products/csv";
 import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
 import { logAction } from "@/lib/telegram/action-log";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
@@ -43,7 +43,7 @@ async function parseXlsx(base64: string): Promise<Record<string, string>[]> {
   const rows = (await readSheet(Buffer.from(base64, "base64"))) as unknown[][];
   if (rows.length < 2) return [];
 
-  const headers = (rows[0] ?? []).map((cell) => cellToText(cell));
+  const headers = (rows[0] ?? []).map((cell) => normalizeHeader(cellToText(cell)));
   return rows.slice(1).flatMap((cells) => {
     const row: Record<string, string> = {};
     headers.forEach((header, i) => {
@@ -124,15 +124,47 @@ export async function POST(request: Request) {
 
   let batch = db.batch();
   let pending = 0;
+
+  /**
+   * QATORLARNI MAHSULOTGA YIG'ISH.
+   *
+   * Turlari bor mahsulot bir nechta qator bo'lib keladi (har bir tur -
+   * alohida qator, o'z narxi va zaxirasi bilan). Qatorlar `id` bo'yicha,
+   * u bo'lmasa nom bo'yicha bitta guruhga yig'iladi; umumiy maydonlar
+   * (kategoriya, brend, rasm...) guruhning BIRINCHI qatoridan olinadi.
+   */
+  interface RowGroup {
+    rows: { row: Record<string, string>; lineNo: number }[];
+  }
+  const groups: RowGroup[] = [];
+  const groupByKey = new Map<string, RowGroup>();
+
+  rows.forEach((row, i) => {
+    const lineNo = i + 2; // sarlavha 1-qator
+    const id = (row.id ?? "").trim();
+    const name = (row.name ?? "").trim();
+    if (!id && !name) {
+      errors.push(`${lineNo}-qator: nom bo'sh`);
+      return;
+    }
+    const key = id ? `id:${id}` : `name:${name.toLowerCase()}`;
+    let group = groupByKey.get(key);
+    if (!group) {
+      group = { rows: [] };
+      groupByKey.set(key, group);
+      groups.push(group);
+    }
+    group.rows.push({ row, lineNo });
+  });
+
   // Yangi mahsulotlar uchun tartib raqamlari oldindan (bir tranzaksiyada)
   // ajratiladi - har bir qator uchun alohida so'rov qilinmasin.
-  const newRowCount = rows.filter((row) => !(row.id ?? "").trim()).length;
+  const newRowCount = groups.filter((group) => !(group.rows[0]!.row.id ?? "").trim()).length;
   const codes = await reserveProductCodes(newRowCount);
   let codeIndex = 0;
 
-  for (let i = 0; i < rows.length; i += 1) {
-    const row = rows[i]!;
-    const lineNo = i + 2; // sarlavha 1-qator
+  for (const group of groups) {
+    const { row, lineNo } = group.rows[0]!;
     const name = (row.name ?? "").trim();
 
     if (!name) {
@@ -149,7 +181,24 @@ export async function POST(request: Request) {
       (row.draft ?? "").trim().toLowerCase()
     );
 
-    const price = toNumber(row.price);
+    /**
+     * TURLAR: guruhdagi har bir qatorda `variantValue` bo'lsa - o'sha
+     * qator bitta tur (narxi va zaxirasi bilan).
+     */
+    const { axes, variants, errors: variantErrors } = variantsFromRows(group.rows, {
+      requirePrice: !isDraftRow,
+    });
+    errors.push(...variantErrors);
+
+    /**
+     * Turlari bor mahsulotda `price` - eng arzon turning narxi,
+     * `stock` - hamma turlar yig'indisi (katalogdagi saralash va
+     * filtrlar shu maydonlar bo'yicha ishlaydi).
+     */
+    const price =
+      variants.length > 0
+        ? Math.min(...variants.map((variant) => variant.price))
+        : toNumber(row.price);
     if (!isDraftRow && (price === undefined || price < 0)) {
       errors.push(`${lineNo}-qator: narx noto'g'ri`);
       continue;
@@ -216,8 +265,14 @@ export async function POST(request: Request) {
       manufacturerCountry: country,
       supplier,
       price: price ?? 0,
-      discountPrice: toNumber(row.discountPrice) ?? null,
-      stock: isDraftRow ? 0 : Math.max(0, Math.round(toNumber(row.stock) ?? 0)),
+      discountPrice: variants.length > 0 ? null : (toNumber(row.discountPrice) ?? null),
+      stock: isDraftRow
+        ? 0
+        : variants.length > 0
+          ? variants.reduce((sum, variant) => sum + variant.stock, 0)
+          : Math.max(0, Math.round(toNumber(row.stock) ?? 0)),
+      variantAxes: axes,
+      variants,
       dimensions: {
         ...(diameterMm !== undefined ? { diameterMm } : {}),
         ...(lengthMm !== undefined ? { lengthMm } : {}),
@@ -236,6 +291,12 @@ export async function POST(request: Request) {
       if (images.length === 0) {
         delete patch.images;
         delete patch.thumbnailUrl;
+      }
+      // Faylda tur ustunlari to'ldirilmagan bo'lsa - mavjud turlar
+      // o'chib ketmasin (ularni admin panelidan olib tashlash mumkin).
+      if (variants.length === 0) {
+        delete patch.variantAxes;
+        delete patch.variants;
       }
       batch.set(ref, patch, { merge: true });
       updated += 1;

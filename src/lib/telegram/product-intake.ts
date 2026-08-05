@@ -8,11 +8,18 @@ import { sendChatMessage, downloadTelegramFile } from "./bot";
 import { announceProduct } from "./channel";
 import { logAction } from "./action-log";
 import { startOptionalFieldsFlow } from "./admin-session";
-import { INTAKE_FIELD_LABELS, INTAKE_TEMPLATE, parseIntakeCaption, guessCategory } from "./intake-parser";
+import {
+  INTAKE_FIELD_LABELS,
+  INTAKE_TEMPLATE,
+  INTAKE_VARIANT_TEMPLATE,
+  parseIntakeCaption,
+  guessCategory,
+} from "./intake-parser";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { nextProductCode } from "@/lib/products/product-code";
 import { labelOf } from "@/lib/products/taxonomy";
-import type { Product } from "@/types/product";
+import { axisKeyOf, variantIdOf } from "@/lib/products/variants";
+import type { Product, ProductVariant, VariantAxis } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
 
 /**
@@ -251,6 +258,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
         "",
         "Rasm(lar)ni tashlab, izohiga quyidagicha yozing:",
         `<pre>${escapeHtml(INTAKE_TEMPLATE)}</pre>`,
+        "Turlari (o'lcham/rang) bo'lsa:",
+        `<pre>${escapeHtml(INTAKE_VARIANT_TEMPLATE)}</pre>`,
       ].join("\n"),
       { threadId }
     );
@@ -353,6 +362,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
         "",
         "Namuna:",
         `<pre>${escapeHtml(INTAKE_TEMPLATE)}</pre>`,
+        "Turlari (o'lcham/rang) bo'lsa:",
+        `<pre>${escapeHtml(INTAKE_VARIANT_TEMPLATE)}</pre>`,
         "Rasmni izohi bilan qaytadan tashlang.",
       ]
         .filter(Boolean)
@@ -361,6 +372,33 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     );
     return true;
   }
+
+  /**
+   * TURLAR (izohda "Turlar:" bo'lsa). Har bir tur o'z narxi va zaxirasi
+   * bilan saqlanadi; mahsulotning `price` i eng arzon turdan, `stock` i
+   * esa turlar yig'indisidan olinadi (parser shuni qaytargan).
+   */
+  const axes: VariantAxis[] = parsed.variantAxisLabels.map((label) => ({
+    key: axisKeyOf(label),
+    label,
+    values: [],
+  }));
+  const variants: ProductVariant[] = parsed.variants.map((item) => {
+    const options: Record<string, string> = {};
+    axes.forEach((axis, index) => {
+      const value = item.values[index] ?? "";
+      options[axis.key] = value;
+      if (value && !axis.values.includes(value)) axis.values.push(value);
+    });
+    return {
+      id: variantIdOf(axes, options),
+      options,
+      price: item.price,
+      discountPrice: null,
+      stock: item.stock,
+      sku: item.sku,
+    };
+  });
 
   const db = getAdminDb();
   const now = Date.now();
@@ -390,6 +428,7 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
       ...(parsed.weightKg !== null ? { weightKg: parsed.weightKg } : {}),
     },
     price: parsed.price!,
+    ...(variants.length > 0 ? { variantAxes: axes, variants } : {}),
     discountPrice: parsed.discountPrice,
     discountUntil: parsed.discountUntil,
     currency: "UZS",
@@ -450,7 +489,16 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     `🆔 ID: <b>${saved.code ?? "-"}</b>`,
     saved.sku ? `#️⃣ Kodi: ${escapeHtml(saved.sku)}` : "",
     `🏷 ${labelOf(taxonomy.categories, saved.category)} | 🧱 ${labelOf(taxonomy.materials, saved.material)}`,
-    `💰 ${formatSom(saved.price)} / ${unitLabel} | 📦 ${saved.stock} ${unitLabel}`,
+    variants.length > 0
+      ? `💰 ${formatSom(saved.price)} dan / ${unitLabel} | 📦 jami ${saved.stock} ${unitLabel}`
+      : `💰 ${formatSom(saved.price)} / ${unitLabel} | 📦 ${saved.stock} ${unitLabel}`,
+    // Turlar ro'yxati - admin nima kirganini darhol ko'rib tursin.
+    ...variants.map(
+      (variant) =>
+        `   • ${escapeHtml(axes.map((axis) => variant.options[axis.key]).filter(Boolean).join(" • "))}` +
+        ` — ${formatSom(variant.price)} · ${variant.stock} ${unitLabel}` +
+        (variant.sku ? ` · ${escapeHtml(variant.sku)}` : "")
+    ),
     `🚚 Kimdan: ${escapeHtml(saved.supplier ?? "")}`,
     mediaGroupId ? "🖼 Fayllar yuklanmoqda..." : `🖼 ${media.kind === "video" ? "Video" : "Rasm"} qo'shildi.`,
     ...parsed.warnings.map((warning) => `⚠️ ${warning}`),
