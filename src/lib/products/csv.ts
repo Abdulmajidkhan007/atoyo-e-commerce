@@ -15,6 +15,8 @@ export const CSV_COLUMNS = [
   "supplier",
   "price",
   "discountPrice",
+  /** Shu mahsulotning dona (chakana) ustamasi, foizda. Bo'sh - umumiy sozlama. */
+  "retailMarkupPercent",
   "stock",
   /**
    * TURLAR (variantlar). Bitta mahsulotning har bir turi ALOHIDA QATOR
@@ -83,6 +85,10 @@ const HEADER_ALIASES: Record<string, string> = {
   optomnarx: "price",
   chegirma: "discountPrice",
   chegirmanarxi: "discountPrice",
+  ustama: "retailMarkupPercent",
+  ustamafoiz: "retailMarkupPercent",
+  donaustama: "retailMarkupPercent",
+  foiz: "retailMarkupPercent",
   zaxira: "stock",
   soni: "stock",
   qoldiq: "stock",
@@ -215,6 +221,7 @@ function productRow(p: Product, variant?: ProductVariant): string {
     p.supplier ?? "",
     variant ? variant.price : p.price,
     (variant ? variant.discountPrice : p.discountPrice) ?? "",
+    p.retailMarkupPercent ?? "",
     variant ? variant.stock : p.stock,
     variant ? axes.map((axis) => axis.label).join(VARIANT_SEPARATOR) : "",
     variant ? axes.map((axis) => variant.options[axis.key] ?? "").join(VARIANT_SEPARATOR) : "",

@@ -1,10 +1,10 @@
-﻿id,sku,name,description,category,material,unit,brand,manufacturerCountry,supplier,price,discountPrice,stock,variantGroup,variantValue,variantSku,diameterMm,lengthMm,weightKg,images,draft,isActive
-,PPR-25,PPR quvur 25mm,Issiq va sovuq suv uchun polipropilen quvur,pipes,polypropylene,metr,Tebo,Turkiya,Akmal aka,45000,,120,,,,25,4000,1.2,,,1
-,KR-12,Latun kran 1/2,Yarim dyuymli to'p kran,faucets,brass,dona,Valtec,Italiya,Bek ota,89000,79000,40,,,,15,,0.35,https://example.com/kran-1.jpg | https://example.com/kran-2.jpg,,1
-,BASU-MOYKA,Basu moyka,Zanglamas po'lat oshxona moykasi,sanitary-ware,steel,dona,Basu,Xitoy,Akmal aka,850000,,4,O'lcham,50x60,BASU-5060,,,,https://example.com/moyka.jpg,,1
-,,Basu moyka,,,,,,,,990000,,2,O'lcham,60x80,BASU-6080,,,,,,
-,,Basu moyka,,,,,,,,1150000,,0,O'lcham,80x100,BASU-80100,,,,,,
-,RAD-AL,Alyuminiy radiator,Seksiyali radiator,radiators,steel,dona,Konner,Rossiya,Bek ota,320000,,15,Balandlik|Rang,500mm|Oq,RAD-500-OQ,,,,,,1
-,,Alyuminiy radiator,,,,,,,,360000,,8,Balandlik|Rang,500mm|Kulrang,RAD-500-KUL,,,,,,
-,,Alyuminiy radiator,,,,,,,,410000,,6,Balandlik|Rang,800mm|Oq,RAD-800-OQ,,,,,,
-,,Sirkulyatsion nasos (nomi aniqlanmagan),,,,,,,,,,,,,,,,,,1,
+﻿id,sku,name,description,category,material,unit,brand,manufacturerCountry,supplier,price,discountPrice,retailMarkupPercent,stock,variantGroup,variantValue,variantSku,diameterMm,lengthMm,weightKg,images,draft,isActive
+,PPR-25,PPR quvur 25mm,Issiq va sovuq suv uchun polipropilen quvur,pipes,polypropylene,metr,Tebo,Turkiya,Akmal aka,45000,,,120,,,,25,4000,1.2,,,1
+,KR-12,Latun kran 1/2,Yarim dyuymli to'p kran,faucets,brass,dona,Valtec,Italiya,Bek ota,89000,79000,,40,,,,15,,0.35,https://example.com/kran-1.jpg | https://example.com/kran-2.jpg,,1
+,BASU-MOYKA,Basu moyka,Zanglamas po'lat oshxona moykasi,sanitary-ware,steel,dona,Basu,Xitoy,Akmal aka,850000,,,4,O'lcham,50x60,BASU-5060,,,,https://example.com/moyka.jpg,,1
+,,Basu moyka,,,,,,,,990000,,,2,O'lcham,60x80,BASU-6080,,,,,,
+,,Basu moyka,,,,,,,,1150000,,,0,O'lcham,80x100,BASU-80100,,,,,,
+,RAD-AL,Alyuminiy radiator,Seksiyali radiator,radiators,steel,dona,Konner,Rossiya,Bek ota,320000,,,15,Balandlik|Rang,500mm|Oq,RAD-500-OQ,,,,,,1
+,,Alyuminiy radiator,,,,,,,,360000,,,8,Balandlik|Rang,500mm|Kulrang,RAD-500-KUL,,,,,,
+,,Alyuminiy radiator,,,,,,,,410000,,,6,Balandlik|Rang,800mm|Oq,RAD-800-OQ,,,,,,
+,,Sirkulyatsion nasos (nomi aniqlanmagan),,,,,,,,,,,,,,,,,,,1,

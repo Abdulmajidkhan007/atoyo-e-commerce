@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
 import { normalizeHeader, parseCsv, variantsFromRows } from "@/lib/products/csv";
-import { DEFAULT_UNIT } from "@/lib/products/taxonomy";
+import { DEFAULT_UNIT, matchTaxonomy, slugify as taxonomySlug } from "@/lib/products/taxonomy";
 import { logAction } from "@/lib/telegram/action-log";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { reserveProductCodes } from "@/lib/products/product-code";
@@ -113,6 +114,44 @@ export async function POST(request: Request) {
   const materialSlugs = new Set(taxonomy.materials.map((item) => item.slug));
   const unitSlugs = new Set(taxonomy.units.map((item) => item.slug));
 
+  /**
+   * YANGI KATEGORIYA/MATERIAL AVTOMATIK OCHILADI.
+   *
+   * Katta ro'yxat (masalan 1C dagi butun narxnoma) importda o'nlab yangi
+   * turni olib keladi - har birini qo'lda ochish o'rniga import ularni
+   * `metadata/taxonomy` ga qo'shib qo'yadi. Faylda slug ("sifon") ham,
+   * ko'rinadigan nom ("Sifon") ham bo'lishi mumkin.
+   */
+  const newCategories: { slug: string; label: string }[] = [];
+  const newMaterials: { slug: string; label: string }[] = [];
+
+  function resolveTaxonomy(
+    kind: "categories" | "materials",
+    raw: string
+  ): string | null {
+    const value = raw.trim();
+    if (!value) return null;
+
+    const known = kind === "categories" ? categorySlugs : materialSlugs;
+    if (known.has(value)) return value;
+
+    const matched = matchTaxonomy(
+      kind === "categories" ? taxonomy.categories : taxonomy.materials,
+      value
+    );
+    if (matched) return matched;
+
+    const slug = taxonomySlug(value);
+    if (!slug) return null;
+    if (!known.has(slug)) {
+      known.add(slug);
+      const label = value.charAt(0).toUpperCase() + value.slice(1);
+      (kind === "categories" ? newCategories : newMaterials).push({ slug, label });
+      (kind === "categories" ? taxonomy.categories : taxonomy.materials).push({ slug, label });
+    }
+    return slug;
+  }
+
   const db = getAdminDb();
   const now = Date.now();
   const errors: string[] = [];
@@ -203,24 +242,13 @@ export async function POST(request: Request) {
       errors.push(`${lineNo}-qator: narx noto'g'ri`);
       continue;
     }
-    const category = (row.category ?? "").trim() as ProductCategory;
-    if (category && !categorySlugs.has(category)) {
-      errors.push(`${lineNo}-qator: kategoriya noto'g'ri (${row.category ?? ""})`);
-      continue;
-    }
+    const category = (resolveTaxonomy("categories", row.category ?? "") ?? "") as ProductCategory;
     if (!category && !isDraftRow) {
       errors.push(`${lineNo}-qator: kategoriya bo'sh`);
       continue;
     }
-    const material = (row.material ?? "").trim() as ProductMaterial;
-    if (material && !materialSlugs.has(material)) {
-      errors.push(`${lineNo}-qator: material noto'g'ri (${row.material ?? ""})`);
-      continue;
-    }
-    if (!material && !isDraftRow) {
-      errors.push(`${lineNo}-qator: material bo'sh`);
-      continue;
-    }
+    // Material ixtiyoriy: katta narxnomalarda u ko'pincha ko'rsatilmaydi.
+    const material = (resolveTaxonomy("materials", row.material ?? "") ?? "") as ProductMaterial;
 
     const brand = (row.brand ?? "").trim();
     const country = (row.manufacturerCountry ?? "").trim();
@@ -266,6 +294,14 @@ export async function POST(request: Request) {
       supplier,
       price: price ?? 0,
       discountPrice: variants.length > 0 ? null : (toNumber(row.discountPrice) ?? null),
+      /**
+       * Shu mahsulotning dona ustamasi (foiz). Bo'sh bo'lsa `null` -
+       * umumiy sozlamadagi foiz ishlatiladi.
+       */
+      retailMarkupPercent: (() => {
+        const markup = toNumber(row.retailMarkupPercent);
+        return markup !== undefined && markup >= 0 ? markup : null;
+      })(),
       stock: isDraftRow
         ? 0
         : variants.length > 0
@@ -325,6 +361,20 @@ export async function POST(request: Request) {
 
   if (pending > 0) await batch.commit();
 
+  // Importda paydo bo'lgan yangi kategoriya/materiallar ro'yxatga qo'shiladi.
+  if (newCategories.length > 0 || newMaterials.length > 0) {
+    await db.doc("metadata/taxonomy").set(
+      {
+        ...(newCategories.length > 0
+          ? { categories: FieldValue.arrayUnion(...newCategories) }
+          : {}),
+        ...(newMaterials.length > 0 ? { materials: FieldValue.arrayUnion(...newMaterials) } : {}),
+        updatedAt: Date.now(),
+      },
+      { merge: true }
+    );
+  }
+
   for (const brand of brands) await registerFacets({ brand });
   for (const country of countries) await registerFacets({ country });
   for (const supplier of suppliers) await registerFacets({ supplier });
@@ -335,5 +385,12 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ created, updated, skipped: errors.length, errors: errors.slice(0, 50) });
+  return NextResponse.json({
+    created,
+    updated,
+    skipped: errors.length,
+    errors: errors.slice(0, 50),
+    // Yangi ochilgan kategoriyalar - admin ularni ko'rib chiqsin.
+    newCategories: newCategories.map((item) => item.label),
+  });
 }

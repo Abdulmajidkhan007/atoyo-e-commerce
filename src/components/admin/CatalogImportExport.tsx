@@ -11,6 +11,8 @@ interface ImportResult {
   updated: number;
   skipped: number;
   errors: string[];
+  /** Import paytida avtomatik ochilgan yangi kategoriyalar. */
+  newCategories?: string[];
 }
 
 /**
@@ -125,6 +127,11 @@ export function CatalogImportExport() {
         <Alert severity={result.skipped > 0 ? "warning" : "success"}>
           {result.created} ta yangi, {result.updated} ta yangilandi
           {result.skipped > 0 && `, ${result.skipped} ta qator o'tkazib yuborildi`}.
+          {(result.newCategories?.length ?? 0) > 0 && (
+            <div className="mt-1 text-xs">
+              Yangi kategoriyalar ochildi: {result.newCategories!.join(", ")}
+            </div>
+          )}
           {result.errors.length > 0 && (
             <ul className="mt-1 list-disc pl-5 text-xs">
               {result.errors.map((message) => (

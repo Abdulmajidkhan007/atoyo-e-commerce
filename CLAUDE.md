@@ -77,6 +77,13 @@ serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
   testlari `csv.test.ts`. Namuna fayl: `scripts/make-sample-xlsx.js`.
 - Telegram kirim izohida `Tur nomi:` + `Turlar:` bloki
   (`lib/telegram/intake-parser.ts`, testlari `intake-parser.test.ts`).
+- Importda `retailMarkupPercent` (dona ustamasi, foizda) ustuni bor;
+  notanish kategoriya/material avtomatik ochiladi, material esa
+  ixtiyoriy.
+- 1C narxnomasi (brendlar alohida varaqda, narx dollarda) →
+  `node scripts/convert-price-list.js <fayl.xlsx> [chiqish.xlsx]
+  [--kurs=12600]`. Excel o'qish/yozish - `scripts/lib/xlsx.js`
+  (tashqi kutubxonasiz).
 
 ## Ma'lum bloklar (foydalanuvchi hal qiladi)
 

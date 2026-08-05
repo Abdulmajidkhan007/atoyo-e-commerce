@@ -265,6 +265,17 @@ tekshiradi.
   Namunalar: `/namuna/atoyo-mahsulotlar.xlsx` (ikkinchi varaqda
   yo'riqnoma) va `.csv`; fayl `scripts/make-sample-xlsx.js` bilan
   yasaladi.
+- **Import qo'shimchalari:** `retailMarkupPercent` ustuni - shu
+  mahsulotning dona ustamasi (foizda), bo'sh bo'lsa umumiy sozlama
+  ishlatiladi; faylda uchragan YANGI kategoriya/material avtomatik
+  ochiladi (`metadata/taxonomy` ga qo'shiladi va javobda ko'rsatiladi);
+  material ixtiyoriy (katta narxnomalarda u ko'rsatilmaydi).
+- **1C narxnomasini o'girish:** `node scripts/convert-price-list.js
+  <narxnoma.xlsx> [chiqish.xlsx] [--kurs=12600]` - har brend alohida
+  varaqda turgan dollarli ro'yxatni bitta import fayliga aylantiradi:
+  nomdan brend/tur (kategoriya)/turi/rangi/kod ajratiladi, optom narx
+  so'mga o'giriladi, fayldagi dona narx esa har mahsulotning o'z
+  ustama foiziga aylanadi.
 - **Turlar (variantlar):** bitta mahsulotda o'lcham/rang/qalinlik
   qatorlari; qatorlarning dekart ko'paytmasi bo'yicha har bir turga
   alohida narx va zaxira; mahsulot narxi — eng arzon tur, zaxirasi —
