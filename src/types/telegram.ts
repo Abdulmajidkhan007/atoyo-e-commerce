@@ -1,4 +1,10 @@
-export type TelegramTopicKey = "orders" | "contact" | "subscribers" | "actions" | "intake";
+export type TelegramTopicKey =
+  | "orders"
+  | "contact"
+  | "subscribers"
+  | "actions"
+  | "intake"
+  | "wholesale";
 
 export interface TelegramTopicConfig {
   orders: number;
@@ -11,6 +17,11 @@ export interface TelegramTopicConfig {
    * mahsulotni katalogga qo'shadi (src/lib/telegram/product-intake.ts).
    */
   intake: number;
+  /**
+   * "Optom" topic'i: optom mijoz qo'shilganda, kalit yuborilganda va
+   * mijoz faollashganda xabar shu yerga tushadi.
+   */
+  wholesale: number;
 }
 
 /** Telegram webhook orqali keladigan callback_query payloadi (inline tugmalar) */

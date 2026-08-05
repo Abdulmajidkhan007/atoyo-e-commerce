@@ -11,6 +11,7 @@ function getDefaultTopicConfig(): TelegramTopicConfig {
     subscribers: Number(process.env.TELEGRAM_TOPIC_SUBSCRIBERS_ID ?? 0),
     actions: Number(process.env.TELEGRAM_TOPIC_ACTIONS_ID ?? 22),
     intake: Number(process.env.TELEGRAM_TOPIC_INTAKE_ID ?? 151),
+    wholesale: Number(process.env.TELEGRAM_TOPIC_WHOLESALE_ID ?? 441),
   };
 }
 
@@ -34,6 +35,7 @@ export async function resolveTopicConfig(): Promise<TelegramTopicConfig> {
       subscribers: Number(data.subscribers ?? defaults.subscribers),
       actions: Number(data.actions ?? defaults.actions),
       intake: Number(data.intake ?? defaults.intake),
+      wholesale: Number(data.wholesale ?? defaults.wholesale),
     };
   } catch {
     return defaults;

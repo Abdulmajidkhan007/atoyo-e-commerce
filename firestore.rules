@@ -52,6 +52,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // OPTOM MIJOZLAR va ularning kalitlari - faqat server. Kalit
+    // ro'yxatda ochiq turadi, shuning uchun clientga umuman berilmaydi.
+    match /wholesaleClients/{clientId} {
+      allow read, write: if false;
+    }
+
     // Loyiha xarajatlari va to'lovlar tarixi - faqat server (admin panel
     // ham /api/admin/expenses orqali o'qiydi).
     match /expenses/{expenseId} {
