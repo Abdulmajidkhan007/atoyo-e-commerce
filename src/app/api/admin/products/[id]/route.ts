@@ -37,6 +37,7 @@ const updateSchema = z.object({
   lengthMm: z.number().nonnegative().nullable().optional(),
   weightKg: z.number().nonnegative().nullable().optional(),
   images: z.array(z.string().url()).max(10).optional(),
+  videos: z.array(z.string().url()).max(3).optional(),
   /**
    * TURLARI (o'lcham/rang/qalinlik). Berilsa - `price` eng arzon
    * turdan, `stock` esa turlar yig'indisidan hisoblanadi.
@@ -156,6 +157,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // Chernovik nashr qilinganda katalogda ham ko'rinishi kerak.
     if (!d.isDraft && d.isActive === undefined) updates.isActive = true;
   }
+  if (d.videos !== undefined) updates.videos = d.videos;
   if (d.images !== undefined) {
     updates.images = d.images;
     updates.thumbnailUrl = d.images[0] ?? "";

@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/firebase/session";
-import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
+import { uploadImageAdmin, uploadVideoAdmin } from "@/lib/firebase/admin-storage";
 
 export const runtime = "nodejs";
 
 const MAX_FILES = 10;
+/** Video og'ir bo'lgani uchun bir martada 3 tagacha. */
+const MAX_VIDEOS = 3;
 
 /**
- * Admin panel uchun bir yoki bir nechta (1-10) rasmni serverda Storage'ga
- * yuklaydi va URL massivini qaytaradi. Faqat admin foydalanuvchi uchun.
+ * Admin panel uchun rasm yoki videoni serverda Storage'ga yuklaydi va
+ * URL massivini qaytaradi. `kind=video` bo'lsa video sifatida
+ * tekshiriladi (MP4/MOV/WebM, 20MB gacha). Faqat admin uchun.
  */
 export async function POST(request: Request) {
   const admin = await requireAdminUser();
@@ -30,19 +33,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "folder yoki productId majburiy." }, { status: 400 });
   }
 
+  const isVideo = String(formData.get("kind") ?? "").trim() === "video";
+  const limit = isVideo ? MAX_VIDEOS : MAX_FILES;
+
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) {
-    return NextResponse.json({ error: "Rasm yuborilmadi." }, { status: 400 });
+    return NextResponse.json({ error: "Fayl yuborilmadi." }, { status: 400 });
   }
-  if (files.length > MAX_FILES) {
-    return NextResponse.json({ error: `Ko'pi bilan ${MAX_FILES} ta rasm.` }, { status: 400 });
+  if (files.length > limit) {
+    return NextResponse.json(
+      { error: `Ko'pi bilan ${limit} ta ${isVideo ? "video" : "rasm"}.` },
+      { status: 400 }
+    );
   }
 
   try {
     const urls: string[] = [];
     for (const file of files) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const url = await uploadImageAdmin(folder, {
+      const upload = isVideo ? uploadVideoAdmin : uploadImageAdmin;
+      const url = await upload(folder, {
         buffer,
         contentType: file.type,
         originalName: file.name,
@@ -51,8 +61,8 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ urls });
   } catch (error) {
-    console.error("Rasm yuklashda xato:", error);
-    const message = error instanceof Error ? error.message : "Rasm yuklashda xatolik.";
+    console.error("Fayl yuklashda xato:", error);
+    const message = error instanceof Error ? error.message : "Fayl yuklashda xatolik.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

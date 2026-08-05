@@ -47,6 +47,8 @@ const productSchema = z.object({
   lengthMm: z.number().nonnegative().optional(),
   weightKg: z.number().nonnegative().optional(),
   images: z.array(z.string().url()).max(10).default([]),
+  /** Mahsulot videolari (Storage havolalari). */
+  videos: z.array(z.string().url()).max(3).default([]),
   /**
    * TURLARI (o'lcham/rang/qalinlik). Berilsa - `price` eng arzon
    * turdan, `stock` esa turlar yig'indisidan hisoblanadi.
@@ -152,6 +154,7 @@ export async function POST(request: Request) {
     currency: "UZS",
     stock: d.stock,
     images: d.images,
+    videos: d.videos,
     thumbnailUrl: d.images[0] ?? "",
     isActive: !d.isDraft,
     isDraft: d.isDraft,

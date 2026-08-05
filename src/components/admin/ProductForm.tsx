@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import {
   BUILTIN_CATEGORIES,
@@ -44,6 +45,8 @@ const FALLBACK_TAXONOMY: Taxonomy = {
 };
 
 const MAX_IMAGES = 10;
+/** Video og'ir bo'lgani uchun 3 tagacha, har biri 20MB gacha. */
+const MAX_VIDEOS = 3;
 
 const EMPTY_FORM = {
   name: "",
@@ -108,6 +111,9 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const [addingBusy, setAddingBusy] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<NewImage[]>([]);
+  /** Videolar: mahsulot sahifasida rasmlardan keyin ko'rsatiladi. */
+  const [existingVideos, setExistingVideos] = useState<string[]>([]);
+  const [newVideos, setNewVideos] = useState<NewImage[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** Turlari (o'lcham/rang/qalinlik) - bo'sh bo'lsa oddiy mahsulot. */
@@ -159,6 +165,8 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       );
       setExistingImages(product?.images ?? []);
       setNewImages([]);
+      setExistingVideos(product?.videos ?? []);
+      setNewVideos([]);
       setVariantAxes(product?.variantAxes ?? []);
       setVariants(product?.variants ?? []);
       setError(null);
@@ -167,6 +175,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   }, [product, initialName]);
 
   const totalImages = existingImages.length + newImages.length;
+  const totalVideos = existingVideos.length + newVideos.length;
 
   const unitLabel = taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit;
 
@@ -217,6 +226,14 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
     setNewImages((prev) => [...prev, ...picked.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))]);
   };
 
+  /** Video tanlash (mahsulot sahifasida va kanal postida ishlatiladi). */
+  const handleVideosSelected = (files: FileList | null) => {
+    if (!files) return;
+    const room = MAX_VIDEOS - totalVideos;
+    const picked = Array.from(files).slice(0, room);
+    setNewVideos((prev) => [...prev, ...picked.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))]);
+  };
+
   const handleSave = async () => {
     setError(null);
     // Chernovikda zaxira so'ralmaydi - u kirim orqali keladi.
@@ -257,6 +274,23 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
 
       const images = [...existingImages, ...uploadedUrls].slice(0, MAX_IMAGES);
 
+      // Videolar alohida yuboriladi (server ularni video sifatida tekshiradi).
+      let uploadedVideos: string[] = [];
+      if (newVideos.length > 0) {
+        const folderId = product?.id ?? crypto.randomUUID();
+        const fd = new FormData();
+        fd.append("productId", folderId);
+        fd.append("kind", "video");
+        newVideos.forEach((item) => fd.append("files", item.file));
+        const uploadRes = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        if (!uploadRes.ok) {
+          const body = await uploadRes.json().catch(() => ({}));
+          throw new Error(body.error ?? "Video yuklashda xatolik.");
+        }
+        uploadedVideos = (await uploadRes.json()).urls ?? [];
+      }
+      const videos = [...existingVideos, ...uploadedVideos].slice(0, MAX_VIDEOS);
+
       // Turlar ro'yxati saqlashdan oldin qatorlarga qarab tozalanadi:
       // yarim yozilgan qiymatlardan qolgan turlar bazaga tushmaydi.
       const clean = normalizeVariants(variantAxes, variants);
@@ -293,6 +327,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
         weightKg: form.weightKg ? Number(form.weightKg) : undefined,
         images,
+        videos,
       };
 
       const res = product?.id
@@ -675,6 +710,62 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
                 multiple
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={(e) => handleFilesSelected(e.target.files)}
+              />
+            </label>
+          )}
+        </div>
+      </div>
+
+      {/* Videolar (0-3 ta) - mahsulot sahifasida rasmlardan keyin turadi */}
+      <div>
+        <p className="mb-2 text-sm font-medium text-navy-500 dark:text-navy-100">
+          Videolar ({totalVideos}/{MAX_VIDEOS}) — ixtiyoriy, har biri 20MB gacha (MP4/MOV/WebM)
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {existingVideos.map((url, index) => (
+            <div
+              key={url}
+              className="relative h-20 w-28 overflow-hidden rounded-lg border border-navy-100 dark:border-navy-500"
+            >
+              <video src={url} className="h-full w-full object-cover" muted playsInline />
+              <button
+                type="button"
+                onClick={() => setExistingVideos((prev) => prev.filter((item) => item !== url))}
+                className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+                aria-label={`Videoni o'chirish ${index + 1}`}
+              >
+                <CloseIcon sx={{ fontSize: 14 }} />
+              </button>
+            </div>
+          ))}
+
+          {newVideos.map((item, index) => (
+            <div
+              key={item.previewUrl}
+              className="relative h-20 w-28 overflow-hidden rounded-lg border border-aqua-300"
+            >
+              <video src={item.previewUrl} className="h-full w-full object-cover" muted playsInline />
+              <button
+                type="button"
+                onClick={() => setNewVideos((prev) => prev.filter((_, i) => i !== index))}
+                className="absolute right-0.5 top-0.5 rounded-full bg-black/60 p-0.5 text-white"
+                aria-label="O'chirish"
+              >
+                <CloseIcon sx={{ fontSize: 14 }} />
+              </button>
+            </div>
+          ))}
+
+          {totalVideos < MAX_VIDEOS && (
+            <label className="flex h-20 w-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-navy-300 text-navy-300 hover:border-aqua-500 hover:text-aqua-500">
+              <VideocamOutlinedIcon />
+              <span className="text-[10px]">Video qo&apos;shish</span>
+              <input
+                type="file"
+                hidden
+                multiple
+                accept="video/mp4,video/quicktime,video/webm"
+                onChange={(event) => handleVideosSelected(event.target.files)}
               />
             </label>
           )}
