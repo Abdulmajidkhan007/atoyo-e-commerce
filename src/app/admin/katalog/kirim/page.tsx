@@ -9,6 +9,7 @@ import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { SearchBar } from "@/components/product/SearchBar";
 import { IntakeHistoryList } from "@/components/admin/IntakeHistoryList";
+import { ZeroStockIntake } from "@/components/admin/ZeroStockIntake";
 import { variantLabel } from "@/lib/products/variants";
 import type { Product } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
@@ -320,6 +321,14 @@ function IntakeContent() {
         <Button variant="outlined" startIcon={<PlaylistAddIcon />} onClick={() => setIsBulkOpen((v) => !v)}>
           Ro&apos;yxat bilan qo&apos;shish
         </Button>
+      </div>
+
+      {/*
+        ZAXIRASIZ MAHSULOTLAR: Excel bilan yaratilgan minglab mahsulotni
+        bir yo'la zaxiraga olish uchun tayyor ro'yxat.
+      */}
+      <div className="mb-4">
+        <ZeroStockIntake supplier={commonSupplier} onSaved={loadRecent} />
       </div>
 
       {/* Butun kirim bitta kishidan bo'lsa - bir marta yoziladi. */}

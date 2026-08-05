@@ -32,6 +32,12 @@ const intakeSchema = z.object({
     )
     .min(1)
     .max(100),
+  /**
+   * Kanalga e'lon qilinsinmi. Katta kirimda (masalan butun narxnomani
+   * bir yo'la zaxiraga olishda) kanal minglab post bilan to'lib
+   * ketmasligi uchun o'chirib qo'yiladi.
+   */
+  announce: z.boolean().optional(),
 });
 
 /** Oxirgi kirimlar - kirim sahifasidagi "so'nggi kirimlar" ro'yxati uchun. */
@@ -184,7 +190,7 @@ export async function POST(request: Request) {
         };
       })
     );
-    await announceIntake(refs, snaps);
+    if (parsed.data.announce !== false) await announceIntake(refs, snaps);
     await logAction(`📥 Kirim (${admin.email ?? "admin"}): ${parsed.data.items.length} ta mahsulot zaxirasi yangilandi`);
     return NextResponse.json({ ok: true, updated: parsed.data.items.length });
   } catch (error) {

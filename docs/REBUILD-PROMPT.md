@@ -280,6 +280,12 @@ tekshiradi.
   qatorlari; qatorlarning dekart ko'paytmasi bo'yicha har bir turga
   alohida narx va zaxira; mahsulot narxi — eng arzon tur, zaxirasi —
   yig'indi. "Hammasiga birdek" tugmasi.
+- **Zaxirasiz mahsulotlar ro'yxati** (kirim sahifasida): `stock == 0`
+  bo'lgan mahsulotlar ro'yxat bo'lib chiqadi (sahifalab yuklanadi),
+  har biriga son yoziladi yoki "hammasiga bir xil son" qo'yiladi va
+  bitta bosishda kirim qilinadi (serverga 100 tadan bo'lib ketadi).
+  20 tadan ko'p bo'lsa kanalga e'lon qilinmaydi - kanal to'lib
+  ketmasligi uchun (`announce: false`).
 - **Buyurtmalar:** holat o'zgartirish (yangi → qabul → yetkazishda →
   yakunlandi / bekor), bekor qilinganda zaxira qaytadi.
 - **Statistika, blog CRUD, promokodlar, foydalanuvchilar va rollar**
