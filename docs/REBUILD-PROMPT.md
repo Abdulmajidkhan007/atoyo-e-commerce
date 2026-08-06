@@ -42,8 +42,12 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
 
 ## 1. SAYT (mijoz qismi)
 
-- **Bosh sahifa:** hero banner, kategoriya kafellari (ro'yxat bazadan),
-  yangi mahsulotlar.
+- **Bosh sahifa:** hero banner, kategoriya kafellari (ro'yxat bazadan,
+  11 tasi + "yana N ta" havolasi) va **6 ta namuna mahsulot — har
+  kategoriyadan bittadan** (`/api/products/showcase`: zaxirasi bori
+  ustun, keyin eng yangisi; 5 daqiqa keshlanadi), pastida "Katalogni
+  ko'rish" tugmasi. Katalog 3 000+ mahsulotga yetganda bosh sahifada
+  uzun ro'yxat ko'rsatilmaydi.
 - **Katalog:** cheksiz skroll (kursorli sahifalash, bir sahifada 24 ta),
   filtr modali — kategoriya, material, brend, ishlab chiqaruvchi davlat,
   narx oralig'i, saralash (yangi / arzon / qimmat).
@@ -111,7 +115,13 @@ qolganlari ishlaydi va asosiy amal to'xtamaydi):
 - **Push** — FCM; qurilma tokeni `users/{uid}.pushTokens` da, umumiy
   e'lonlar `products` mavzusi orqali.
 - **SMS** — Eskiz.uz yoki Play Mobile (env orqali tanlanadi).
-- **Email** — SMTP (nodemailer).
+- **Email** — SMTP (nodemailer). Kalitlar `secrets/email` hujjatida
+  (Sozlamalar → "Email (SMTP)", faqat loyiha egasi ko'radi; host, port,
+  foydalanuvchi, App password, "Kimdan" va **sinov xati** tugmasi),
+  `SMTP_*` env zaxira sifatida qoladi. `isEmailConfigured()` asinxron;
+  sozlanmagan bo'lsa email jimgina o'tkazib yuboriladi va e'lon
+  natijasida sababi yoziladi ("SMTP sozlanmagan", "manzili bor
+  foydalanuvchi yo'q", "SMTP xato berdi").
 - Har biri sozlanmagan bo'lsa jimgina o'tkazib yuboriladi; admin
   panelda **Tizim tekshiruvi** har bir kanalning holatini ko'rsatadi.
 
@@ -330,9 +340,12 @@ tekshiradi.
   yo'qlar" / "kanalga chiqmaganlar" filtri qo'yiladi; belgilanganlarni
   o'chirish, boshqa kategoriyaga ko'chirish, brendini yozish, sotuvdan
   olish/qaytarish, har biriga shu yerda rasm yuklash va TANLAB kanalga
-  post qilish mumkin. E'lon Telegram chegarasi sababli 10 tadan,
-  orasida ~1.2 s tanaffus bilan ketadi; rasmi yo'qlari o'tkazib
-  yuboriladi. Har bir ommaviy amal "actions" topikka yoziladi.
+  post qilish mumkin (belgilanganlarni Instagram/Facebook'ga joylash
+  tugmasi ham shu yerda). Har bir qatorda alohida o'chirish, rasm
+  yuklash va tahrirlash tugmalari turadi. E'lon Telegram chegarasi
+  sababli 10 tadan, orasida ~1.2 s tanaffus bilan ketadi; rasmi
+  yo'qlari o'tkazib yuboriladi. Har bir ommaviy amal "actions"
+  topikka yoziladi.
 - **Zaxirasiz mahsulotlar ro'yxati** (kirim sahifasida): `stock == 0`
   bo'lgan mahsulotlar ro'yxat bo'lib chiqadi (sahifalab yuklanadi),
   har biriga son yoziladi yoki "hammasiga bir xil son" qo'yiladi va
@@ -344,9 +357,12 @@ tekshiradi.
 - **Statistika, blog CRUD, promokodlar, foydalanuvchilar va rollar**
   (huquqlar: mahsulot, blog, buyurtma, promokod, tahlil, xabar
   yuborish, sozlamalar, foydalanuvchilar, rollar).
-- **Sozlamalar:** sayt ma'lumotlari (kontakt, ijtimoiy tarmoq), kanal
-  posti footeri, bot topic ID lari, majburiy obuna kanallari, maxfiy
-  kalitlar (Firestore'da, env'dan ustun), **tizim tekshiruvi**
+- **Sozlamalar:** sayt ma'lumotlari (kontakt, ijtimoiy tarmoq havolalari),
+  **narx** (dona ustamasi va eng kam buyurtma), **Email (SMTP)** —
+  faqat loyiha egasiga, sinov xati bilan, **Ijtimoiy tarmoqlar** —
+  tarmoqlarni yoqish, post shabloni, navbat va "ulanish" tugmalari,
+  kanal posti footeri, bot topic ID lari, majburiy obuna kanallari,
+  maxfiy kalitlar (Firestore'da, env'dan ustun), **tizim tekshiruvi**
   (Firestore, custom token, FCM, bot tokeni, SMTP, SMS + sinov
   bildirishnomasi).
 - **Yetkazib berish:** standart narx va "shu summadan bepul", hamda
@@ -439,19 +455,32 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - `products` — nom, `nameSearchIndex`, `nameTokens[]`, tavsif, artikul,
   `code` (odam uchun tartib raqami), kategoriya/material/sotish turi
   (slug), brend, davlat, yetkazuvchi, narx, chegirma va muddati, zaxira,
-  o'lchamlar, rasm(lar), `variantAxes[]` va `variants[]`, `isActive`,
-  `isDraft`, `salesCount`, reyting, kanal posti ma'lumotlari, sanalar.
+  o'lchamlar, rasm(lar) va `videos[]` (3 tagacha), `variantAxes[]` va
+  `variants[]`, `retailMarkupPercent` (shu mahsulotning dona ustamasi),
+  `costPrice`, `isActive`, `isDraft`, `salesCount`, reyting, kanal
+  posti ma'lumotlari, sanalar. **`price` — OPTOM narx** (dona narx
+  ustama bilan hisoblanadi).
 - `orders` — mijoz, telefon, manzil, joylashuv, `items[]` (mahsulot,
   tur, narx, soni), summa, promokod, yetkazish narxi, to'lov turi va
   holati, status, Telegram xabar ID si, sanalar.
-- `users` — rol va huquqlar, telefon, manzil, Telegram ID, `pushTokens[]`.
+- `users` — rol va huquqlar, telefon, manzil, Telegram ID,
+  `pushTokens[]`. Rol `client` — OPTOM mijoz (optom narxni ko'radi),
+  `user` — oddiy (dona) mijoz; optom faollashganda
+  `wholesaleClientId` ham yoziladi.
 - `botUsers` — Telegram foydalanuvchilari (telefon, holat, savat, til).
 - `metadata/taxonomy` — admin qo'shgan kategoriya/material/sotish turi
   (standartlari kodda, birlashtiriladi); `metadata/facets` — brend va
   davlat ro'yxati.
 - `stockMoves` — ombor harakatlari (kirim/sotuv/qaytish/chiqim/sanoq).
-- `settings/*` — sayt, yetkazish, telegram topic; `secrets/telegram` —
-  bot tokeni va h.k. (env'dan ustun).
+- `settings/*` — sayt, yetkazish, telegram topic, `settings/pricing`
+  (dona ustamasi va eng kam buyurtma), `settings/social` (qaysi
+  ijtimoiy tarmoq yoqilgan, post shabloni, kunlik chegara).
+- `secrets/*` (clientga butunlay yopiq, env'dan ustun): `telegram` —
+  bot tokeni/guruh/webhook siri; `email` — SMTP; `social` — Meta App
+  ID/Secret, sahifa tokeni, IG User ID, YouTube client va refresh
+  token.
+- `socialQueue` — Instagram/Facebook/YouTube post navbati (mahsulot,
+  tarmoq, holat, urinishlar soni, xato, post ID si).
 - `wholesaleClients` — optom mijozlar (raqam, ism, telefon, do'kon,
   manzil, Telegram, maxfiy kalit, holat, faollashgan `uid`);
   `metadata/wholesaleCounter` — tartib raqami. Qoidalarda hamma
@@ -462,6 +491,36 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - Firestore qoidalari: mahsulot/blog — hammaga o'qish, yozish faqat
   serverdan; buyurtma — faqat egasi va admin; kompozit indekslar
   (`isActive` + `category`/`brand`/`price`/`nameTokens`...).
+
+## 5a. API YO'LLARI (asosiylari)
+
+Ochiq (mijoz): `/api/products/showcase` (bosh sahifa namunasi),
+`/api/products/[id]/reviews`, `/api/search`, `/api/search/image`,
+`/api/assistant`, `/api/taxonomy`, `/api/facets`, `/api/pricing`
+(dona ustamasi), `/api/delivery`, `/api/promo/validate`, `/api/orders`,
+`/api/orders/[id]/cancel`, `/api/contact`, `/api/subscribe`,
+`/api/profile*`, `/api/auth/*` (session, telegram, reset-password),
+`/api/payments/*` (payme, click, pay-with-card),
+`/api/wholesale/activate` (optom kalitini faollashtirish),
+`/api/telegram-webhook`.
+
+Admin (`requirePermission` bilan):
+- mahsulot: `products`, `products/[id]`, `products/import`,
+  `products/export`, `products/list` (filtrli ro'yxat),
+  `products/bulk` (delete/update/announce), `products/bulk-price`,
+  `products/zero-stock`, `products/intake` (kirim, `announce` bayrog'i
+  bilan), `products/reindex`, `products/search`, `products/search-index`,
+  `products/[id]/ai-images`;
+- ombor: `inventory` (GET tarix, POST bitta chiqim/sanoq, **PUT
+  ommaviy sanoq/chiqim**);
+- sozlama: `site-settings`, `delivery`, `pricing`, `taxonomy`,
+  `telegram-settings`, `secrets`, `email` (SMTP), `diagnostics`;
+- ijtimoiy tarmoq: `social` (sozlama + navbat holati + redirect URI
+  lar), `social/secrets`, `social/post`, `social/queue`,
+  `social/meta/connect|callback`, `social/youtube/connect|callback`;
+- boshqa: `orders/[id]/status`, `orders/[id]/return`, `users`,
+  `promo`, `blog`, `expenses`, `reports`, `stats`, `broadcast`,
+  `upload` (rasm va `kind=video`), `wholesale`, `wholesale/import`.
 
 ## 6. TALABLAR VA CHEKLOVLAR
 
@@ -518,6 +577,14 @@ Hammasi env orqali yoqiladi; sozlanmasa tizim avvalgidek ishlayveradi:
 
 - Payme/Click to'lovi va karta saqlash: kod yozilgan, merchant
   kalitlari kutilyapti (kalit kelgach test kabinetida sinaladi).
+- Ijtimoiy tarmoqlar kodda tayyor, lekin Meta App Review (boshqa
+  akkauntlarga post uchun) va YouTube consent screen'ni "Publish"
+  qilish foydalanuvchi zimmasida; navbatni avtomatik bo'shatadigan
+  cron ham qo'yilmagan (hozir "Navbatni yuborish" tugmasi bilan).
+- Optom narx himoyasi: interfeysning hamma joyida rol bo'yicha
+  to'g'ri narx ko'rsatiladi, lekin `products` hujjati ochiq
+  o'qilgani uchun optom narx bazada texnik jihatdan ko'rinadi -
+  uni alohida yopiq kolleksiyaga chiqarish qoldi.
 - iOS build (Mac + Xcode kerak).
 - Play Store uchun o'z keystore va AAB.
 - To'liq offline rejim.
