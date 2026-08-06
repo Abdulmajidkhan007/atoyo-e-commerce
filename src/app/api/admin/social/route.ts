@@ -4,6 +4,8 @@ import { requirePermission } from "@/lib/firebase/session";
 import { getSocialSettings, saveSocialSettings } from "@/lib/social/settings";
 import { describeSocialSecrets } from "@/lib/social/secrets";
 import { queueSummary } from "@/lib/social/publish";
+import { youtubeRedirectUri } from "@/lib/social/youtube-oauth";
+import { metaRedirectUri } from "@/lib/social/meta-oauth";
 import { logAction } from "@/lib/telegram/action-log";
 
 export const runtime = "nodejs";
@@ -32,7 +34,15 @@ export async function GET(request: Request) {
     describeSocialSecrets(),
     queueSummary(),
   ]);
-  return NextResponse.json({ settings, secrets, queue });
+  return NextResponse.json({
+    settings,
+    secrets,
+    queue,
+    // Google/Meta konsoliga qo'shiladigan manzillar - SERVER qaysi
+    // manzilni yuborsa, aynan o'shani ko'rsatamiz (aks holda
+    // "redirect_uri_mismatch" chiqadi).
+    redirectUris: { youtube: youtubeRedirectUri(), meta: metaRedirectUri() },
+  });
 }
 
 export async function PUT(request: Request) {

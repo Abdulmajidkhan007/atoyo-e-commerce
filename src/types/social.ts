@@ -63,6 +63,8 @@ export interface SocialJob {
 
 /** Kalitlar to'liq sozlanganini tekshirish uchun niqoblangan ko'rinish. */
 export interface SocialSecretsStatus {
+  /** Meta dasturi (App ID + Secret) kiritilganmi. */
+  metaApp: boolean;
   facebookPage: boolean;
   instagram: boolean;
   youtube: boolean;

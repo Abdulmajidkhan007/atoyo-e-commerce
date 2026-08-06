@@ -16,6 +16,8 @@ export const dynamic = "force-dynamic";
  * qachon qaytarilmaydi; javobda faqat "sozlangan/sozlanmagan".
  */
 const schema = z.object({
+  metaAppId: z.string().max(60).optional(),
+  metaAppSecret: z.string().max(120).optional(),
   pageAccessToken: z.string().max(500).optional(),
   pageId: z.string().max(60).optional(),
   igUserId: z.string().max(60).optional(),

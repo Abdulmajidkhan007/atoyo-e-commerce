@@ -476,7 +476,29 @@ kiritiladi (faqat loyiha egasiga ko'rinadi) va Firestore'ning
 `FB_PAGE_ID`, `FB_PAGE_ACCESS_TOKEN`, `IG_USER_ID`,
 `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN`.
 
-### 1. Instagram va Facebook (bitta token)
+### 1. Instagram va Facebook (panel orqali ulanish - TAVSIYA)
+
+1. Instagram akkaunti **Professional (Business)** bo'lsin va Facebook
+   **sahifasiga** bog'lansin.
+2. developers.facebook.com → **Create App** (Business turi).
+3. Ilovaga **Facebook Login** mahsulotini qo'shing va uning
+   sozlamalarida **"Valid OAuth Redirect URIs"** ga panelda ko'rsatilgan
+   manzilni yozing:
+   `https://atoyo-uz.web.app/api/admin/social/meta/callback`
+4. App Dashboard → Settings → Basic dan **App ID** va **App Secret** ni
+   olib, panelga (Sozlamalar → Ijtimoiy tarmoqlar → Kalitlar) kiriting
+   va **saqlang**.
+5. **"Facebook/Instagram'ga ulanish"** tugmasini bosing → Facebook
+   roziligini bering → sahifa tokeni va Instagram ID avtomatik
+   yoziladi. "Tekshirish" tugmasi sahifa nomi va IG username ni
+   ko'rsatadi.
+
+Eslatma: boshqa (o'zingizniki bo'lmagan) akkauntlarga post qilish uchun
+`instagram_content_publish` va `pages_manage_posts` ruxsatlari
+**App Review** dan o'tishi kerak; o'z sahifangizga esa dastur
+"Development" holatida ham ishlaydi (siz dastur admini bo'lganingiz uchun).
+
+### 1a. Instagram va Facebook (qo'lda, Graph API Explorer)
 
 1. Instagram akkauntini **Professional (Business)** ga o'tkazing va
    Facebook **sahifasiga** bog'lang (Instagram → Sozlamalar → Akkaunt

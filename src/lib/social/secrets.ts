@@ -15,6 +15,9 @@ const DOC_PATH = "secrets/social";
 const CACHE_TTL_MS = 60 * 1000;
 
 export interface SocialSecrets {
+  /** Meta (Facebook) dasturi - "ulanish" tugmasi shu bilan ishlaydi. */
+  metaAppId: string;
+  metaAppSecret: string;
   /** Facebook sahifasining uzoq muddatli tokeni. */
   pageAccessToken: string;
   /** Facebook sahifa ID si. */
@@ -29,6 +32,8 @@ export interface SocialSecrets {
 }
 
 const EMPTY: SocialSecrets = {
+  metaAppId: "",
+  metaAppSecret: "",
   pageAccessToken: "",
   pageId: "",
   igUserId: "",
@@ -41,6 +46,8 @@ let cache: { value: SocialSecrets; at: number } | null = null;
 
 function fromEnv(): SocialSecrets {
   return {
+    metaAppId: process.env.META_APP_ID ?? "",
+    metaAppSecret: process.env.META_APP_SECRET ?? "",
     pageAccessToken: process.env.FB_PAGE_ACCESS_TOKEN ?? "",
     pageId: process.env.FB_PAGE_ID ?? "",
     igUserId: process.env.IG_USER_ID ?? "",
@@ -87,6 +94,7 @@ export async function saveSocialSecrets(patch: Partial<SocialSecrets>): Promise<
 export async function describeSocialSecrets(): Promise<SocialSecretsStatus> {
   const secrets = await getSocialSecrets();
   return {
+    metaApp: Boolean(secrets.metaAppId && secrets.metaAppSecret),
     facebookPage: Boolean(secrets.pageAccessToken && secrets.pageId),
     instagram: Boolean(secrets.pageAccessToken && secrets.igUserId),
     youtube: Boolean(

@@ -40,11 +40,12 @@ interface QueueState {
 }
 
 export function SocialSettingsForm({ owner }: Props) {
-  /** Google Cloud'ga qo'shiladigan manzil - shu saytning o'zi. */
-  const redirectUri =
-    typeof window === "undefined"
-      ? "https://atoyo-uz.web.app/api/admin/social/youtube/callback"
-      : `${window.location.origin}/api/admin/social/youtube/callback`;
+  /**
+   * Google/Meta konsoliga qo'shiladigan manzillar. Ularni SERVER
+   * beradi: brauzerdagi manzil boshqacha bo'lsa ham (uzun hosted.app),
+   * konsolga aynan server yuboradigan manzil yozilishi kerak.
+   */
+  const [redirectUris, setRedirectUris] = useState({ youtube: "", meta: "" });
 
   const [settings, setSettings] = useState<SocialSettings>(DEFAULT_SOCIAL_SETTINGS);
   const [secrets, setSecrets] = useState<SocialSecretsStatus | null>(null);
@@ -53,6 +54,8 @@ export function SocialSettingsForm({ owner }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   /** Kalit maydonlari - yozilgani serverga ketadi, qaytarilmaydi. */
   const [keys, setKeys] = useState({
+    metaAppId: "",
+    metaAppSecret: "",
     pageId: "",
     pageAccessToken: "",
     igUserId: "",
@@ -70,8 +73,8 @@ export function SocialSettingsForm({ owner }: Props) {
     () => {
       if (typeof window === "undefined") return null;
       const params = new URLSearchParams(window.location.search);
-      const ok = params.get("youtube");
-      const failed = params.get("youtubeError");
+      const ok = params.get("youtube") ?? params.get("meta");
+      const failed = params.get("youtubeError") ?? params.get("metaError");
       if (!ok && !failed) return null;
       window.history.replaceState(null, "", window.location.pathname);
       return { kind: failed ? "error" : "ok", text: failed ?? ok ?? "" };
@@ -83,12 +86,22 @@ export function SocialSettingsForm({ owner }: Props) {
     let active = true;
     fetch("/api/admin/social")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { settings?: SocialSettings; secrets?: SocialSecretsStatus; queue?: QueueState } | null) => {
-        if (!active || !data) return;
-        if (data.settings) setSettings(data.settings);
-        if (data.secrets) setSecrets(data.secrets);
-        if (data.queue) setQueue(data.queue);
-      })
+      .then(
+        (
+          data: {
+            settings?: SocialSettings;
+            secrets?: SocialSecretsStatus;
+            queue?: QueueState;
+            redirectUris?: { youtube: string; meta: string };
+          } | null
+        ) => {
+          if (!active || !data) return;
+          if (data.settings) setSettings(data.settings);
+          if (data.secrets) setSecrets(data.secrets);
+          if (data.queue) setQueue(data.queue);
+          if (data.redirectUris) setRedirectUris(data.redirectUris);
+        }
+      )
       .finally(() => {
         if (active) setLoading(false);
       });
@@ -136,6 +149,8 @@ export function SocialSettingsForm({ owner }: Props) {
       if (!res.ok || !data.secrets) throw new Error(data.error ?? "Saqlanmadi.");
       setSecrets(data.secrets);
       setKeys({
+        metaAppId: "",
+        metaAppSecret: "",
         pageId: "",
         pageAccessToken: "",
         igUserId: "",
@@ -315,7 +330,20 @@ export function SocialSettingsForm({ owner }: Props) {
           <div className="grid gap-3 md:grid-cols-2">
             <TextField
               size="small"
-              label="Facebook sahifa ID"
+              label="Meta App ID"
+              value={keys.metaAppId}
+              onChange={(event) => setKeys({ ...keys, metaAppId: event.target.value })}
+            />
+            <TextField
+              size="small"
+              label="Meta App Secret"
+              type="password"
+              value={keys.metaAppSecret}
+              onChange={(event) => setKeys({ ...keys, metaAppSecret: event.target.value })}
+            />
+            <TextField
+              size="small"
+              label="Facebook sahifa ID (ulanishda o'zi to'ladi)"
               value={keys.pageId}
               onChange={(event) => setKeys({ ...keys, pageId: event.target.value })}
             />
@@ -367,19 +395,46 @@ export function SocialSettingsForm({ owner }: Props) {
             <Button
               variant="outlined"
               color="secondary"
+              href="/api/admin/social/meta/connect"
+            >
+              Facebook/Instagram&apos;ga ulanish
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
               href="/api/admin/social/youtube/connect"
             >
               YouTube&apos;ga ulanish
             </Button>
           </div>
-          <p className="text-xs text-navy-300">
-            <b>YouTube uchun:</b> Google Cloud&apos;da OAuth mijozi turi{" "}
-            <b>&quot;Web application&quot;</b> bo&apos;lsin va &quot;Authorized redirect URIs&quot;
-            ga aynan shu manzil qo&apos;shilsin:{" "}
-            <code className="break-all">{redirectUri}</code>. Keyin Client ID va Secret ni saqlab,
-            &quot;YouTube&apos;ga ulanish&quot; tugmasini bosing — refresh token o&apos;zi
-            yoziladi (qo&apos;lda ko&apos;chirish shart emas).
-          </p>
+
+          <div className="flex flex-col gap-2 rounded-lg bg-navy-50 p-3 text-xs text-navy-500 dark:bg-navy-600/40 dark:text-navy-100">
+            <p>
+              <b>Facebook/Instagram uchun:</b> developers.facebook.com da dastur oching →
+              &quot;Facebook Login&quot; mahsulotini qo&apos;shing → &quot;Valid OAuth Redirect
+              URIs&quot; ga aynan shu manzilni yozing:
+            </p>
+            <code className="break-all rounded bg-white/70 p-2 dark:bg-navy-800">
+              {redirectUris.meta || "…"}
+            </code>
+            <p>
+              Keyin App ID va App Secret ni saqlab, &quot;Facebook/Instagram&apos;ga ulanish&quot;
+              tugmasini bosing — sahifa tokeni va Instagram ID o&apos;zi topiladi.
+            </p>
+
+            <p className="mt-2">
+              <b>YouTube uchun:</b> Google Cloud&apos;da OAuth mijozi turi{" "}
+              <b>&quot;Web application&quot;</b> bo&apos;lsin va &quot;Authorized redirect
+              URIs&quot; ga aynan shu manzil qo&apos;shilsin:
+            </p>
+            <code className="break-all rounded bg-white/70 p-2 dark:bg-navy-800">
+              {redirectUris.youtube || "…"}
+            </code>
+            <p>
+              Manzil oxirida bo&apos;sh joy yoki qo&apos;shimcha &quot;/&quot; bo&apos;lmasin —
+              Meta ham, Google ham harfma-harf solishtiradi.
+            </p>
+          </div>
           <p className="text-xs text-navy-300">
             Kalitlar Firestore&apos;ning <code>secrets/social</code> hujjatida saqlanadi — u
             mijozlarga umuman ochilmaydi. Bo&apos;sh qoldirilgan maydon o&apos;zgarmaydi.

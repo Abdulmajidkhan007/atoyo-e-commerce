@@ -273,6 +273,11 @@ sababli NAVBAT orqali:
   darhol joylash mumkin.
 - Ijtimoiy tarmoqda **dona (chakana) narx** ko'rsatiladi - optom narx
   hech qachon chiqmaydi.
+- **Facebook/Instagram ulanishi**: `/api/admin/social/meta/connect` →
+  Facebook roziligi → `/callback` uzoq muddatli foydalanuvchi tokenini
+  oladi, `me/accounts` dan sahifa tokenini va bog'langan Instagram
+  akkaunt ID sini topib `secrets/social` ga yozadi (Meta App ID/Secret
+  panelda kiritiladi, redirect URI `<sayt>/api/admin/social/meta/callback`).
 - **YouTube ulanishi**: Google "oob" usulini bekor qilgani uchun
   refresh tokenni sayt o'zi oladi — `/api/admin/social/youtube/connect`
   Google roziligiga yuboradi, `/callback` kodni tokenga almashtirib
