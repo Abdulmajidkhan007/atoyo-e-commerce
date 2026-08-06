@@ -18,7 +18,6 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
-import { fileToBase64 } from "@/lib/files/base64";
 import type { Taxonomy } from "@/lib/products/taxonomy";
 
 /**
@@ -340,6 +339,32 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
     }
   };
 
+  /** Bitta mahsulotni o'chirish (belgilamasdan, qatorning o'zidan). */
+  const deleteOne = async (product: ListProduct) => {
+    if (!confirm(`"${product.name}" butunlay o'chiriladi. Davom etamizmi?`)) return;
+
+    setBusy("delete-one");
+    try {
+      const res = await fetch("/api/admin/products/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", ids: [product.id] }),
+      });
+      if (!res.ok) throw new Error("O'chirishda xatolik.");
+      setProducts((prev) => prev.filter((item) => item.id !== product.id));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+      setMessage({ kind: "ok", text: `🗑 "${product.name}" o'chirildi.` });
+    } catch (error) {
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   /** Bitta mahsulotga rasm yuklash (ro'yxatdan chiqmasdan). */
   const uploadImages = async (files: FileList | null) => {
     const productId = uploadTarget.current;
@@ -627,6 +652,15 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1">
+                      {/* O'chirish - eng chapda: filtrda keraksizi chiqsa darhol. */}
+                      <IconButton
+                        size="small"
+                        aria-label="O'chirish"
+                        disabled={busy !== null}
+                        onClick={() => void deleteOne(product)}
+                      >
+                        <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+                      </IconButton>
                       <IconButton
                         size="small"
                         aria-label="Rasm yuklash"

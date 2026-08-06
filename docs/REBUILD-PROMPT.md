@@ -84,6 +84,12 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   qaytish, chiqim, sanoq. Har yozuvda oldingi/keyingi qoldiq, izoh,
   kim qilgani. Qo'lda: chiqim (singan/yo'qolgan) va inventarizatsiya
   (haqiqiy qoldiqqa tenglashtirish).
+- **Ro'yxat bo'yicha sanoq** (Ombor sahifasida): kategoriya yoki brend
+  tanlanadi, javondagi mahsulotlar ro'yxati chiqadi va har biriga
+  HAQIQIY soni yoziladi (yoki "sahifadagilarga 0"); saqlanganda zaxira
+  shu songa tenglashadi va har biri ombor tarixiga "sanoq" bo'lib
+  tushadi. Shu bo'lim "chiqim" rejimida ham ishlaydi (zaxiradan
+  ayiriladi). Server: `PUT /api/admin/inventory` (200 tadan).
 - **Qaytarish** (`POST /api/admin/orders/<id>/return`): yetkazilgan
   buyurtmadan mahsulot qaytganda zaxira qaytadi, sotuv soni va tushum
   kamayadi, ombor jurnaliga yoziladi, mijozga push va SMS boradi.

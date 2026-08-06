@@ -38,6 +38,85 @@ const adjustSchema = z.object({
 });
 
 /**
+ * OMMAVIY SANOQ/CHIQIM: filtrlangan ro'yxat bo'yicha bir necha
+ * mahsulotni bir yo'la tuzatish (bittalab qidirib o'tirmaslik uchun).
+ * Har bir mahsulot uchun ombor tarixiga alohida yozuv tushadi.
+ */
+const bulkSchema = z.object({
+  type: z.enum(["out", "count"]),
+  note: z.string().max(200).default(""),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        qty: z.number().int().nonnegative().max(1000000),
+      })
+    )
+    .min(1)
+    .max(200),
+});
+
+export async function PUT(request: Request) {
+  const admin = await requirePermission("products", request);
+  if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  const parsed = bulkSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+
+  const { type, note, items } = parsed.data;
+  const db = getAdminDb();
+  const refs = items.map((item) => db.collection("products").doc(item.productId));
+  const snaps = await db.getAll(...refs);
+
+  const batch = db.batch();
+  const moves: Parameters<typeof recordStockMoves>[0] = [];
+  const skipped: string[] = [];
+  const now = Date.now();
+
+  snaps.forEach((snap, index) => {
+    if (!snap.exists) return;
+    const product = snap.data() as Product;
+    const item = items[index]!;
+    const before = product.stock ?? 0;
+
+    // Chiqimda zaxiradan ko'pini olib bo'lmaydi - o'sha qator tashlanadi.
+    if (type === "out" && item.qty > before) {
+      skipped.push(product.name);
+      return;
+    }
+
+    const after = type === "out" ? before - item.qty : item.qty;
+    if (after === before) return;
+
+    batch.update(refs[index]!, { stock: after, updatedAt: now });
+    moves.push({
+      productId: item.productId,
+      productName: product.name,
+      productCode: product.code ?? null,
+      type,
+      qty: after - before,
+      stockBefore: before,
+      stockAfter: after,
+      note: note.trim() || (type === "count" ? "Inventarizatsiya" : "Chiqim"),
+      adminUid: admin.uid,
+      adminName: admin.displayName ?? admin.email ?? null,
+    });
+  });
+
+  if (moves.length > 0) {
+    await batch.commit();
+    await recordStockMoves(moves);
+    await logAction(
+      type === "count"
+        ? `🔢 Ommaviy sanoq (${admin.email ?? "admin"}): ${moves.length} ta mahsulot qoldig'i tenglashtirildi`
+        : `📤 Ommaviy chiqim (${admin.email ?? "admin"}): ${moves.length} ta mahsulot`
+    );
+  }
+
+  return NextResponse.json({ ok: true, updated: moves.length, skipped });
+}
+
+/**
  * QO'LDA TUZATISH: chiqim yoki inventarizatsiya (sanoq).
  *
  * Ikkalasi ham zaxirani o'zgartiradi va tarixga yozuv qoldiradi -

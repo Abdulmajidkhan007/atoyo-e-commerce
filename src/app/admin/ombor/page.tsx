@@ -1,8 +1,13 @@
 import { InventoryPanel } from "@/components/admin/InventoryPanel";
+import { StockCountPanel } from "@/components/admin/StockCountPanel";
+import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { getFacets } from "@/lib/products/facets";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminInventoryPage() {
+export default async function AdminInventoryPage() {
+  const [taxonomy, facets] = await Promise.all([getTaxonomy(), getFacets()]);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -13,6 +18,12 @@ export default function AdminInventoryPage() {
           savolga javob topiladi.
         </p>
       </div>
+      {/*
+        Ro'yxat bo'yicha sanoq: kategoriya/brend bo'yicha filtrlab,
+        javondagi haqiqiy sonni yozib chiqish (bittalab qidirmasdan).
+      */}
+      <StockCountPanel taxonomy={taxonomy} brands={facets.brands} />
+
       <InventoryPanel />
     </div>
   );
