@@ -5,6 +5,7 @@ import { logAction } from "@/lib/telegram/action-log";
 import { effectivePrice } from "@/lib/products/pricing";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import { retailFromWholesale, DEFAULT_RETAIL_MARKUP } from "@/lib/products/wholesale";
+import { publicDescription } from "@/lib/products/description";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
 import { getSocialSettings } from "./settings";
 import { publishToFacebook, publishToInstagram } from "./meta";
@@ -58,7 +59,8 @@ export async function buildCaption(product: Product): Promise<string> {
     .replaceAll("{narx}", price)
     .replaceAll("{kategoriya}", product.category)
     .replaceAll("{brend}", product.brand ?? "")
-    .replaceAll("{tavsif}", product.description ?? "")
+    // Ichki xizmat ma'lumoti (1C kodi) ijtimoiy tarmoqqa chiqmaydi.
+    .replaceAll("{tavsif}", publicDescription(product.description))
     .replaceAll("{havola}", `${SITE_URL}/mahsulot/${product.id}`);
 
   return `${text}\n\n${settings.hashtags}`.trim();

@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n/config";
 import type { Product } from "@/types/product";
+import { publicDescription } from "./description";
 
 /**
  * MAHSULOT MATNINING TILGA MOS VARIANTI.
@@ -17,13 +18,18 @@ export function localizedName(
   return product.name;
 }
 
+/**
+ * MIJOZGA ko'rinadigan tavsif. Ichki xizmat ma'lumoti (1C kodi)
+ * bu yerda kesib tashlanadi - u faqat xodimlar uchun va admin
+ * panelda tavsifning O'ZI to'liq ko'rinadi.
+ */
 export function localizedDescription(
   product: Pick<Product, "description" | "descriptionRu" | "descriptionEn">,
   locale: Locale
 ): string {
-  if (locale === "ru") return product.descriptionRu?.trim() || product.description;
-  if (locale === "en") return product.descriptionEn?.trim() || product.description;
-  return product.description;
+  if (locale === "ru") return publicDescription(product.descriptionRu?.trim() || product.description);
+  if (locale === "en") return publicDescription(product.descriptionEn?.trim() || product.description);
+  return publicDescription(product.description);
 }
 
 /** Qidiruv indeksiga tushadigan barcha nomlar (tarjimalari bilan). */

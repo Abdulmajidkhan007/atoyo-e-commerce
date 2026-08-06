@@ -8,6 +8,7 @@ import {
   type MediaItem,
 } from "./bot";
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
+import { publicDescription } from "@/lib/products/description";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import {
   hasVariants,
@@ -215,7 +216,10 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
   // "nechta qolgani" ni bilishi shart emas; tugagani esa yuqorida
   // turning yonida yozilgan.
   if (product.material) lines.push(`🧱 ${escapeHtml(MATERIAL_LABELS[product.material] ?? product.material)}`);
-  if (product.description) lines.push(``, escapeHtml(product.description.slice(0, 400)));
+  // Tavsifdan ichki xizmat ma'lumoti (1C kodi) olib tashlanadi -
+  // u faqat xodimlar uchun, kanalda ko'rinmasligi kerak.
+  const about = publicDescription(product.description);
+  if (about) lines.push(``, escapeHtml(about.slice(0, 400)));
 
   return lines.join("\n");
 }

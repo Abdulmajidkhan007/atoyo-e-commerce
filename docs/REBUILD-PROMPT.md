@@ -138,6 +138,11 @@ qolganlari ishlaydi va asosiy amal to'xtamaydi):
   o'zgarishsiz ishlayveradi. Tarjima nomlari qidiruv tokenlariga ham
   tushadi: "смеситель" deb qidirilsa ham topiladi. Sayt, ilova va bot
   bir xil qoidada ishlaydi.
+- **Ichki ma'lumot mijozga chiqmaydi:** narxnomadan import qilinganda
+  tavsifga xizmat qatori tushadi ("1C kodi: 5967. Qadoqda: 6 dona").
+  Mijozga ko'rinadigan hamma joy (kanal posti, Instagram/Facebook,
+  sayt, ilova, bot) `publicDescription()` dan o'tadi va ichki kod
+  kesib tashlanadi; admin panelda tavsif to'liq ko'rinadi.
 - **Meta ma'lumotlar**: sarlavha shabloni (`%s | Atoyo Santexnika`),
   uch alifbodagi kalit so'zlar, Open Graph + Twitter kartochka
   (Telegram/WhatsApp havolasi rasm bilan ochiladi), canonical, robots

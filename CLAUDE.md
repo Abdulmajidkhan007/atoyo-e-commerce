@@ -90,6 +90,13 @@ serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
 - Bosh sahifada faqat **6 ta namuna mahsulot** (har kategoriyadan
   bittadan, `/api/products/showcase`, 5 daq. kesh) va cheklangan
   kategoriyalar qatori - qolgani katalogda.
+- **Ichki ma'lumot mijozga chiqmaydi:** 1C narxnomasidan kelgan
+  tavsifda "1C kodi: 5967" bo'lishi mumkin. Mijozga ko'rinadigan
+  HAR QANDAY joy `lib/products/description.ts` dagi
+  `publicDescription()` dan o'tadi (kanal posti, ijtimoiy tarmoq,
+  sayt/ilova/bot - `localizedDescription` ichida). Admin panelda
+  tavsifning o'zi to'liq ko'rinadi. Mobil nusxasi -
+  `mobile/src/types.ts`.
 - Kanalga e'lon: mahsulotda `channelMessageId` bo'lsa YANGI post
   tashlanmaydi - eski post tahrirlanadi. `announceProduct` natija
   qaytaradi (`posted` / `edited` / `unchanged` / `skipped`), UI shuni

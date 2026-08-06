@@ -145,13 +145,34 @@ export function localizedName(product: Pick<Product, 'name' | 'nameRu' | 'nameEn
   return product.name;
 }
 
+/**
+ * 1C narxnomasidan kelgan tavsifda xizmat ma'lumoti bo'ladi
+ * ("1C kodi: 5967. Qadoqda: 6 dona"). Ichki kod mijozga kerak emas -
+ * saytdagi `lib/products/description.ts` bilan bir xil qoida.
+ */
+const INTERNAL_CODE =
+  /(^|[.;\n])[^\S\n]*1\s*[cC\u0441\u0421]\s*[k\u043a][o\u043e][d\u0434][a-zA-Z\u0430-\u044f\u0410-\u042f]{0,2}\s*[:\-\u2013]\s*[^.\n;]*/gi;
+
+export function publicDescription(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(INTERNAL_CODE, (_match, before?: string) => before ?? '')
+    .replace(/\.\s*\./g, '.')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/^[\s.;,\u2013-]+/, '')
+    .replace(/[\s;,]+$/, '')
+    .trim();
+}
+
 export function localizedDescription(
   product: Pick<Product, 'description' | 'descriptionRu' | 'descriptionEn'>,
   locale: string,
 ): string {
-  if (locale === 'ru') return product.descriptionRu?.trim() || product.description;
-  if (locale === 'en') return product.descriptionEn?.trim() || product.description;
-  return product.description;
+  if (locale === 'ru')
+    return publicDescription(product.descriptionRu?.trim() || product.description);
+  if (locale === 'en')
+    return publicDescription(product.descriptionEn?.trim() || product.description);
+  return publicDescription(product.description);
 }
 
 /** Chegirma muddati o'tgan bo'lsa - to'liq narx (sayt bilan bir xil qoida). */
