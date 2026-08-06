@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import {
   TextField,
@@ -21,6 +21,7 @@ import AddIcon from "@mui/icons-material/Add";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import CloseIcon from "@mui/icons-material/Close";
+import ContentPasteOutlinedIcon from "@mui/icons-material/ContentPasteOutlined";
 import {
   BUILTIN_CATEGORIES,
   BUILTIN_MATERIALS,
@@ -29,6 +30,7 @@ import {
   type Taxonomy,
   type TaxonomyKind,
 } from "@/lib/products/taxonomy";
+import { ACCEPTED_IMAGE_TYPES, imagesFromTransfer, shouldPasteAsImage } from "@/lib/files/clipboard";
 import { ProductVariantsEditor } from "./ProductVariantsEditor";
 import { AiImagePanel } from "./AiImagePanel";
 import { minVariantPrice, normalizeVariants, totalVariantStock } from "@/lib/products/variants";
@@ -111,6 +113,8 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const [addingBusy, setAddingBusy] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<NewImage[]>([]);
+  /** Buferdan rasm qo'yilganda chiqadigan qisqa izoh (4 soniya). */
+  const [pasteNote, setPasteNote] = useState<string | null>(null);
   /** Videolar: mahsulot sahifasida rasmlardan keyin ko'rsatiladi. */
   const [existingVideos, setExistingVideos] = useState<string[]>([]);
   const [newVideos, setNewVideos] = useState<NewImage[]>([]);
@@ -219,11 +223,86 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
     }
   };
 
+  /**
+   * Rasm qo'shishning YAGONA yo'li: fayl tanlash ham, buferdan (Ctrl+V)
+   * qo'yish ham shu yerdan o'tadi. Nechta rasm qo'shilganini qaytaradi
+   * (chegara to'lgan bo'lsa 0).
+   */
+  const addImageFiles = useCallback(
+    (files: File[]) => {
+      const room = MAX_IMAGES - existingImages.length - newImages.length;
+      if (room <= 0 || files.length === 0) return 0;
+      const picked = files.slice(0, room);
+      setNewImages((prev) => [
+        ...prev,
+        ...picked.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
+      ]);
+      return picked.length;
+    },
+    [existingImages.length, newImages.length]
+  );
+
   const handleFilesSelected = (files: FileList | null) => {
     if (!files) return;
-    const room = MAX_IMAGES - totalImages;
-    const picked = Array.from(files).slice(0, room);
-    setNewImages((prev) => [...prev, ...picked.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))]);
+    addImageFiles(Array.from(files));
+  };
+
+  // BUFERDAN RASM: sahifaning istalgan joyida Ctrl+V bosilsa rasm
+  // qo'shiladi (matn maydoniga matn qo'yish buzilmaydi - `shouldPasteAsImage`).
+  useEffect(() => {
+    function onPaste(event: ClipboardEvent) {
+      if (!shouldPasteAsImage(event)) return;
+      const { files, skipped } = imagesFromTransfer(event.clipboardData);
+      if (files.length === 0) {
+        if (skipped > 0) setPasteNote("Bu turdagi rasm qabul qilinmaydi (JPEG / PNG / WebP / GIF).");
+        return;
+      }
+      event.preventDefault();
+      const added = addImageFiles(files);
+      setPasteNote(
+        added > 0
+          ? `Buferdan ${added} ta rasm qo'shildi.`
+          : `Rasmlar to'ldi (${MAX_IMAGES} ta) — avval bittasini o'chiring.`
+      );
+    }
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [addImageFiles]);
+
+  useEffect(() => {
+    if (!pasteNote) return;
+    const timer = setTimeout(() => setPasteNote(null), 4000);
+    return () => clearTimeout(timer);
+  }, [pasteNote]);
+
+  /**
+   * "Buferdan qo'yish" tugmasi - Ctrl+V ishlamaydigan holatlar uchun
+   * (fokus boshqa oynada, planshet). Brauzer ruxsat so'rashi mumkin.
+   */
+  const pasteFromClipboard = async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      const files: File[] = [];
+      for (const item of items) {
+        const type = item.types.find((t) => ACCEPTED_IMAGE_TYPES.includes(t));
+        if (!type) continue;
+        const blob = await item.getType(type);
+        const ext = type.split("/")[1] ?? "png";
+        files.push(new File([blob], `bufer-${Date.now()}-${files.length + 1}.${ext}`, { type }));
+      }
+      if (files.length === 0) {
+        setPasteNote("Buferda rasm topilmadi.");
+        return;
+      }
+      const added = addImageFiles(files);
+      setPasteNote(
+        added > 0
+          ? `Buferdan ${added} ta rasm qo'shildi.`
+          : `Rasmlar to'ldi (${MAX_IMAGES} ta) — avval bittasini o'chiring.`
+      );
+    } catch {
+      setPasteNote("Brauzer buferga ruxsat bermadi — Ctrl+V bosib ko'ring.");
+    }
   };
 
   /** Video tanlash (mahsulot sahifasida va kanal postida ishlatiladi). */
@@ -665,11 +744,41 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         />
       )}
 
-      {/* Rasmlar galereyasi (1-10 ta) */}
-      <div>
-        <p className="mb-2 text-sm font-medium text-navy-500 dark:text-navy-100">
-          Rasmlar ({totalImages}/{MAX_IMAGES}) — birinchisi asosiy rasm
+      {/* Rasmlar galereyasi (1-10 ta) — fayl tanlash yoki buferdan Ctrl+V */}
+      <div
+        onDrop={(event) => {
+          const { files } = imagesFromTransfer(event.dataTransfer);
+          if (files.length === 0) return;
+          event.preventDefault();
+          const added = addImageFiles(files);
+          if (added > 0) setPasteNote(`${added} ta rasm qo'shildi.`);
+        }}
+        onDragOver={(event) => event.preventDefault()}
+      >
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium text-navy-500 dark:text-navy-100">
+            Rasmlar ({totalImages}/{MAX_IMAGES}) — birinchisi asosiy rasm
+          </p>
+          <Button
+            type="button"
+            size="small"
+            variant="outlined"
+            startIcon={<ContentPasteOutlinedIcon />}
+            onClick={pasteFromClipboard}
+            disabled={totalImages >= MAX_IMAGES}
+            className="!normal-case"
+          >
+            Buferdan qo&apos;yish
+          </Button>
+        </div>
+        <p className="mb-2 text-xs text-navy-400 dark:text-navy-200">
+          Skrinshot yoki nusxalangan rasmni <b>Ctrl+V</b> (Mac: ⌘+V) bilan shu yerga qo&apos;ysa
+          ham bo&apos;ladi — faylni saqlab o&apos;tirish shart emas. Rasmni sichqoncha bilan
+          sudrab tashlash ham ishlaydi.
         </p>
+        {pasteNote && (
+          <p className="mb-2 text-xs font-medium text-aqua-600 dark:text-aqua-300">{pasteNote}</p>
+        )}
         <div className="flex flex-wrap gap-2">
           {existingImages.map((url, index) => (
             <div key={url} className="relative h-20 w-20 overflow-hidden rounded-lg border border-navy-100 dark:border-navy-500">

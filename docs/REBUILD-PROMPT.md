@@ -305,7 +305,9 @@ tekshiradi.
 - **Mahsulotlar:** ro'yxat, qidiruv, qo'shish/tahrirlash (nom, tavsif,
   artikul, kategoriya, material, sotish turi, brend, davlat,
   yetkazuvchi, narx, chegirma va muddati, zaxira, o'lchamlar, 10 tagacha
-  rasm va 3 tagacha video), chernovik rejimi, ko'p rasm yuklash, ommaviy narx o'zgartirish,
+  rasm va 3 tagacha video), chernovik rejimi, ko'p rasm yuklash
+  (fayl tanlash, **buferdan Ctrl+V / "Buferdan qo'yish" tugmasi** —
+  `lib/files/clipboard.ts`, va sudrab tashlash), ommaviy narx o'zgartirish,
   CSV/Excel import/eksport (10 000 ta nomni bir yo'la yaratish uchun),
   indeks/raqamlarni yangilash.
 - **Import formati:** ustun nomlari inglizcha (`name`, `price`,
