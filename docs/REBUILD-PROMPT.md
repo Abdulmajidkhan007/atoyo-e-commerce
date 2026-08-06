@@ -273,6 +273,12 @@ sababli NAVBAT orqali:
   darhol joylash mumkin.
 - Ijtimoiy tarmoqda **dona (chakana) narx** ko'rsatiladi - optom narx
   hech qachon chiqmaydi.
+- **YouTube ulanishi**: Google "oob" usulini bekor qilgani uchun
+  refresh tokenni sayt o'zi oladi — `/api/admin/social/youtube/connect`
+  Google roziligiga yuboradi, `/callback` kodni tokenga almashtirib
+  `secrets/social` ga yozadi (CSRF `state` cookie bilan). Google
+  Cloud'dagi OAuth mijozi "Web application" bo'lishi va redirect URI
+  `<sayt>/api/admin/social/youtube/callback` bo'lishi shart.
 - Kalit/token olish qadamlari: `docs/DEPLOY.md`.
 
 ## 2. ADMIN PANEL (saytda)

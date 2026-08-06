@@ -503,6 +503,28 @@ Chegara: Instagram 24 soatda **50 ta** post qabul qiladi. Panelda
 
 ### 2. YouTube (faqat video, Shorts)
 
+**MUHIM:** Google `urn:ietf:wg:oauth:2.0:oob` (kodni qo'lda ko'chirish)
+usulini bekor qilgan — u endi "Error 400: invalid_request" beradi.
+Shuning uchun refresh tokenni saytning o'zi oladi: panelda
+"YouTube'ga ulanish" tugmasi bor.
+
+Tartib:
+1. Google Cloud → **YouTube Data API v3** yoqilsin.
+2. **OAuth consent screen**: External; "Test users" ga kanal egasining
+   Gmail'i qo'shilsin (dastur "Testing" holatida bo'lsa refresh token
+   7 kunda eskiradi — "Publish app" bilan uni doimiy qilish mumkin).
+3. **Credentials → Create credentials → OAuth client ID → Web
+   application** (Desktop EMAS!). "Authorized redirect URIs" ga aynan
+   shu manzil qo'shiladi:
+   `https://atoyo-uz.web.app/api/admin/social/youtube/callback`
+4. Client ID va Secret panelga (Sozlamalar → Ijtimoiy tarmoqlar)
+   kiritilib **saqlanadi**.
+5. **"YouTube'ga ulanish"** tugmasi bosiladi → kanal egasining Google
+   hisobi bilan kirib ruxsat beriladi → refresh token avtomatik
+   yoziladi. "Tekshirish" tugmasi kanal nomini ko'rsatadi.
+
+Eski (qo'lda) tartib:
+
 1. Google Cloud konsolida (`atoyo-uz` loyihasi) **YouTube Data API v3**
    ni yoqing.
 2. **OAuth consent screen** ni to'ldiring (External, test rejimida

@@ -40,13 +40,17 @@ interface QueueState {
 }
 
 export function SocialSettingsForm({ owner }: Props) {
+  /** Google Cloud'ga qo'shiladigan manzil - shu saytning o'zi. */
+  const redirectUri =
+    typeof window === "undefined"
+      ? "https://atoyo-uz.web.app/api/admin/social/youtube/callback"
+      : `${window.location.origin}/api/admin/social/youtube/callback`;
+
   const [settings, setSettings] = useState<SocialSettings>(DEFAULT_SOCIAL_SETTINGS);
   const [secrets, setSecrets] = useState<SocialSecretsStatus | null>(null);
   const [queue, setQueue] = useState<QueueState | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ kind: "ok" | "error" | "info"; text: string } | null>(null);
-
   /** Kalit maydonlari - yozilgani serverga ketadi, qaytarilmaydi. */
   const [keys, setKeys] = useState({
     pageId: "",
@@ -56,6 +60,24 @@ export function SocialSettingsForm({ owner }: Props) {
     youtubeClientSecret: "",
     youtubeRefreshToken: "",
   });
+
+  /**
+   * "YouTube'ga ulanish" dan qaytganda Google natijasi manzil qatorida
+   * keladi - uni boshlang'ich holatga o'qib olamiz (effekt ichida
+   * setState qilmasdan).
+   */
+  const [message, setMessageState] = useState<{ kind: "ok" | "error" | "info"; text: string } | null>(
+    () => {
+      if (typeof window === "undefined") return null;
+      const params = new URLSearchParams(window.location.search);
+      const ok = params.get("youtube");
+      const failed = params.get("youtubeError");
+      if (!ok && !failed) return null;
+      window.history.replaceState(null, "", window.location.pathname);
+      return { kind: failed ? "error" : "ok", text: failed ?? ok ?? "" };
+    }
+  );
+  const setMessage = setMessageState;
 
   useEffect(() => {
     let active = true;
@@ -338,7 +360,26 @@ export function SocialSettingsForm({ owner }: Props) {
             <Button variant="outlined" disabled={busy !== null} onClick={() => void checkKeys()}>
               {busy === "check" ? <CircularProgress size={20} /> : "Tekshirish"}
             </Button>
+            {/*
+              YouTube refresh tokenini qo'lda olish endi ishlamaydi
+              (Google "oob" usulini bekor qilgan) - saytning o'zi oladi.
+            */}
+            <Button
+              variant="outlined"
+              color="secondary"
+              href="/api/admin/social/youtube/connect"
+            >
+              YouTube&apos;ga ulanish
+            </Button>
           </div>
+          <p className="text-xs text-navy-300">
+            <b>YouTube uchun:</b> Google Cloud&apos;da OAuth mijozi turi{" "}
+            <b>&quot;Web application&quot;</b> bo&apos;lsin va &quot;Authorized redirect URIs&quot;
+            ga aynan shu manzil qo&apos;shilsin:{" "}
+            <code className="break-all">{redirectUri}</code>. Keyin Client ID va Secret ni saqlab,
+            &quot;YouTube&apos;ga ulanish&quot; tugmasini bosing — refresh token o&apos;zi
+            yoziladi (qo&apos;lda ko&apos;chirish shart emas).
+          </p>
           <p className="text-xs text-navy-300">
             Kalitlar Firestore&apos;ning <code>secrets/social</code> hujjatida saqlanadi — u
             mijozlarga umuman ochilmaydi. Bo&apos;sh qoldirilgan maydon o&apos;zgarmaydi.
