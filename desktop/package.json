@@ -1,0 +1,65 @@
+{
+  "name": "atoyo-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Atoyo Santexnika & Otopleniye - do'kon kompyuteri uchun ilova",
+  "author": "Atoyo",
+  "license": "UNLICENSED",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "icon": "node build/make-icon.js",
+    "dist": "electron-builder --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never",
+    "dist:mac": "electron-builder --mac --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "uz.atoyo.desktop",
+    "productName": "Atoyo",
+    "copyright": "Atoyo Santexnika",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "offline.html",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Atoyo",
+      "artifactName": "Atoyo-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office",
+      "icon": "build/icon.png",
+      "artifactName": "Atoyo-${version}.${ext}"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.business",
+      "icon": "build/icon.png",
+      "artifactName": "Atoyo-${version}.${ext}"
+    }
+  }
+}

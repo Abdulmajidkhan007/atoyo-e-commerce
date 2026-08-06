@@ -6,7 +6,7 @@ const eslintConfig = [
   // scripts/ - Admin SDK bilan ishlaydigan bir martalik CommonJS util
   // skriptlar (seed, make-admin); Next.js/TS lint qoidalari ularga tegishli emas.
   // mobile/ - alohida React Native loyihasi, o'z eslint sozlamasi bor.
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "scripts/**", "mobile/**"] },
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "scripts/**", "mobile/**", "desktop/**"] },
   ...nextCoreWebVitals,
 ];
 

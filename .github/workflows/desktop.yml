@@ -1,0 +1,160 @@
+# DESKTOP ILOVA (Electron) - Windows va Linux uchun yig'ish.
+#
+# Sandbox'da yig'ib bo'lmaydi (Windows kerak, electron-builder katta
+# fayllarni yuklaydi), shuning uchun hamma ish shu yerda bo'ladi.
+#
+# Qachon ishlaydi:
+#   • `desktop/**` o'zgarib push bo'lganda;
+#   • qo'lda: Actions -> "Desktop ilova" -> Run workflow.
+#
+# Natija APK bilan bir xil tartibda chiqadi, faqat ALOHIDA relizda:
+#   https://github.com/<owner>/<repo>/releases/tag/desktop-latest
+#     • Atoyo-Setup-<versiya>.exe  - Windows o'rnatgichi
+#     • Atoyo-<versiya>.AppImage   - Linux (o'rnatishsiz ishlaydi)
+#
+# macOS uchun .dmg qo'shish mumkin, lekin u Apple imzosi (Developer ID,
+# yillik to'lov) bo'lmasa "noma'lum dasturchi" ogohlantirishi bilan
+# ochiladi - shuning uchun hozircha yoqilmagan.
+name: Desktop ilova
+
+on:
+  push:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+    inputs:
+      versionName:
+        description: "Ilova versiyasi (masalan 1.0.1). Bo'sh bo'lsa package.json dagi qoladi."
+        required: false
+        default: ""
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Yig'ish (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            command: npm run dist:win
+            pattern: desktop/dist/*.exe
+            artifact: atoyo-desktop-windows
+          - os: ubuntu-latest
+            label: Linux
+            command: npm run dist:linux
+            pattern: desktop/dist/*.AppImage
+            artifact: atoyo-desktop-linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Versiyani belgilash
+        if: inputs.versionName != ''
+        shell: bash
+        working-directory: desktop
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${{ inputs.versionName }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+            console.log('Versiya:', pkg.version);
+          "
+
+      - name: Paketlar
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+
+      # Ikonka repoda turadi, lekin har ehtimolga qarshi qayta
+      # yasaladi - u kod bilan chiziladi (tashqi vosita kerak emas).
+      - name: Ikonka
+        working-directory: desktop
+        run: npm run icon
+
+      - name: Yig'ish
+        working-directory: desktop
+        env:
+          # electron-builder GitHub'ga o'zi yuklamasin - relizni
+          # keyingi ish (release) o'zi yaratadi.
+          GH_TOKEN: ""
+        run: ${{ matrix.command }}
+
+      - name: Natijani yuklash
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.pattern }}
+          retention-days: 14
+          if-no-files-found: error
+
+  release:
+    name: Ochiq reliz (desktop-latest)
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fayllarni yig'ish
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Reliz yaratish / yangilash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ls -la artifacts
+
+          VERSION=$(node -p "require('./desktop/package.json').version")
+          BUILD_DATE="$(date -u '+%Y-%m-%d %H:%M UTC')"
+          NOTES=$(printf '%s\n' \
+            "Atoyo desktop ilovasi (Electron) - avtomatik build." \
+            "" \
+            "- Versiya: \`${VERSION}\`" \
+            "- Commit: \`${GITHUB_SHA}\`" \
+            "- Sana: ${BUILD_DATE}" \
+            "" \
+            "**Windows:** \`Atoyo-Setup-${VERSION}.exe\` - yuklab olib ishga tushiring." \
+            "**Linux:** \`Atoyo-${VERSION}.AppImage\` - \`chmod +x\` qilib ishga tushiring." \
+            "" \
+            "Ilova saytning o'zini ochadi, shuning uchun sayt yangilansa ilovani" \
+            "qayta o'rnatish SHART EMAS - faqat oynani yangilash (Ctrl+R) yetadi." \
+            "" \
+            "Imzo yo'q: Windows birinchi ishga tushirishda \"SmartScreen\" ogohlantirishi" \
+            "chiqadi - \"Batafsil\" -> \"Baribir ishga tushirish\".")
+
+          # "desktop-latest" tegi har build'da joriy commit'ga ko'chadi.
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/desktop-latest" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/desktop-latest" \
+              -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref=refs/tags/desktop-latest -f sha="$GITHUB_SHA" >/dev/null
+          fi
+
+          # Android relizi "latest" tegida turadi - uni bosib olmaslik
+          # uchun bu reliz `--latest=false` bilan yaratiladi.
+          if gh release view desktop-latest >/dev/null 2>&1; then
+            gh release edit desktop-latest --target "$GITHUB_SHA" \
+              --title "Atoyo desktop (oxirgi build)" --notes "$NOTES" --latest=false
+          else
+            gh release create desktop-latest --target "$GITHUB_SHA" \
+              --title "Atoyo desktop (oxirgi build)" --notes "$NOTES" --latest=false
+          fi
+
+          gh release upload desktop-latest artifacts/* --clobber

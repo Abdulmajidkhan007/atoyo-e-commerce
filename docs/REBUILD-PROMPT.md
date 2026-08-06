@@ -452,6 +452,56 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - APK GitHub Actions'da yig'iladi va `latest` release'ga yuklanadi;
   saytdagi footerdagi tugma o'sha faylga qaraydi.
 
+## 4a. DO'KONDAGI TELEVIZOR (`/tv`)
+
+Do'konga osilgan televizor uchun reklama ekrani. **Televizorga ILOVA
+O'RNATILMAYDI** — bu saytdagi oddiy sahifa, uni Android TV box yoki
+Smart TV brauzeri kiosk rejimida ochib turadi. Shuning uchun Samsung
+(Tizen), LG (webOS), Android TV — hammasida ishlaydi va do'kon
+moderatsiyasini kutish shart emas.
+
+- Ekranda: katta rasm (sekin yaqinlashadi), brend, nom, KATTA narx,
+  chegirma belgisi, "Sotuvda bor", QR kod (telefonda o'sha mahsulot
+  sahifasi ochiladi), soat, pastda yuguruvchi qator va telefon raqami.
+- Sahifa o'zini o'zi boshqaradi: slaydni almashtiradi, har 3 daqiqada
+  ma'lumotni yangilaydi, internet uzilsa oxirgi holatni ko'rsatib
+  turadi ("aloqa yo'q" belgisi bilan) va 30 soniyada qayta urinadi,
+  `wakeLock` bilan ekran o'chishini oldini oladi.
+- **Narx har doim DONA narx** — televizorni hamma ko'radi.
+  Rasmsiz mahsulot ekranga chiqmaydi.
+- Boshqaruv: **Admin panel → "Do'kon ekrani"** (`/admin/tv`,
+  `settings/tv`): yoqish/o'chirish, manba (yangi / eng ko'p sotilgan /
+  chegirmadagi / tanlangan kategoriyalar / qo'lda tanlangan
+  mahsulotlar), nechta mahsulot (5-40), slayd davomiyligi (4-60 s),
+  narx/QR/faqat-zaxiradagilar bayroqlari, sarlavha, yuguruvchi qator,
+  telefon. Sahifa pastida "Hozir ekranda" ko'rinishi bor.
+- QR kod tashqi xizmatsiz chiziladi (`qrcode-generator` → SVG).
+- Tartib: `docs/TV.md`.
+
+## 4b. DESKTOP ILOVA (Electron, `desktop/`)
+
+Do'kon kompyuteri uchun. Ichida **saytning o'zi** ochiladi — UI
+qaytadan yozilmaydi, sayt yangilansa ilova ham yangilangan bo'ladi.
+React Native Windows/macOS ATAYLAB tanlanmagan: u RN dan orqada
+yuradi, Linux yo'q va mobil UI ni katta ekranga qayta moslash kerak
+bo'lardi.
+
+- Qo'shimchalari: chek chop etish (Ctrl+P), USB shtrix-kod skaneri,
+  `Do'kon → Do'kon ekrani` (`/tv` ni to'liq ekranli alohida oynada),
+  offline sahifa + "Qayta urinish", bitta nusxa, oyna o'lchami eslab
+  qolinadi, o'zbekcha menyu.
+- Xavfsizlik: `contextIsolation`, `sandbox`, `nodeIntegration: false`,
+  preload hech narsa ochmaydi, navigatsiya faqat sayt domenida
+  (qolgani tashqi brauzerda), kamera/mikrofon rad etiladi.
+- Ikonka koddan chiziladi (`desktop/build/make-icon.js`, PNG + zlib) —
+  tashqi grafik vosita kerak emas.
+- Yig'ish: GitHub Actions (`.github/workflows/desktop.yml`), Windows
+  (`.exe`, NSIS) va Linux (`.AppImage`); natija **`desktop-latest`**
+  relizga chiqadi (Android APK relizi `latest` alohida qoladi).
+  Secret kerak emas. macOS `.dmg` tayyor, lekin Apple imzosi
+  bo'lmagani uchun workflow'da yoqilmagan.
+- Tartib: `docs/DESKTOP.md`.
+
 ## 5. MA'LUMOTLAR MODELI (Firestore)
 
 - `products` — nom, `nameSearchIndex`, `nameTokens[]`, tavsif, artikul,
@@ -497,6 +547,7 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 ## 5a. API YO'LLARI (asosiylari)
 
 Ochiq (mijoz): `/api/products/showcase` (bosh sahifa namunasi),
+`/api/tv/slides` (do'kondagi televizor ekrani),
 `/api/products/[id]/reviews`, `/api/search`, `/api/search/image`,
 `/api/assistant`, `/api/taxonomy`, `/api/facets`, `/api/pricing`
 (dona ustamasi), `/api/delivery`, `/api/promo/validate`, `/api/orders`,
@@ -520,6 +571,7 @@ Admin (`requirePermission` bilan):
 - ijtimoiy tarmoq: `social` (sozlama + navbat holati + redirect URI
   lar), `social/secrets`, `social/post`, `social/queue`,
   `social/meta/connect|callback`, `social/youtube/connect|callback`;
+- do'kon ekrani: `tv` (GET sozlama + tayyor slaydlar, PUT saqlash);
 - boshqa: `orders/[id]/status`, `orders/[id]/return`, `users`,
   `promo`, `blog`, `expenses`, `reports`, `stats`, `broadcast`,
   `upload` (rasm va `kind=video`), `wholesale`, `wholesale/import`.
@@ -563,6 +615,10 @@ Hammasi env orqali yoqiladi; sozlanmasa tizim avvalgidek ishlayveradi:
 - Har push'da: typecheck, lint, unit testlar (vitest), sayt build,
   ilova typecheck/lint/codegen, Android APK yig'ilib `latest`
   release'ga yuklanadi.
+- **Desktop ilova** — `desktop.yml`: `desktop/**` o'zgarganda (yoki
+  qo'lda) Windows `.exe` (NSIS) va Linux `.AppImage` yig'iladi va
+  **`desktop-latest`** relizga yuklanadi. Secret kerak emas; Android
+  relizi (`latest`) bilan aralashmaydi.
 - **Play Store AAB** — qo'lda ishga tushiriladigan workflow
   (`release-aab.yml`): imzo kaliti GitHub secret'laridan olinadi
   (`ANDROID_KEYSTORE_BASE64` va h.k.), `bundleRelease` yig'iladi va

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="utf-8" />
+    <title>Aloqa yo'q — Atoyo</title>
+    <style>
+      /* Bu sahifa internet uzilganda ochiladi, shuning uchun ichida
+         hech qanday tashqi fayl (font, rasm, skript) bo'lmasligi kerak. */
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #04202f;
+        color: #ffffff;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+      }
+      .box {
+        max-width: 520px;
+        padding: 32px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 12px;
+      }
+      p {
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.6;
+        margin: 0 0 8px;
+      }
+      code {
+        color: #c49a6c;
+        font-size: 13px;
+      }
+      button {
+        margin-top: 24px;
+        padding: 12px 28px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #04202f;
+        background: #c49a6c;
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #d0ac81;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>Internet aloqasi yo&rsquo;q</h1>
+      <p>Sayt ochilmadi. Wi-Fi yoki kabelni tekshiring va qayta urinib ko&rsquo;ring.</p>
+      <p><code id="reason"></code></p>
+      <button id="retry" type="button">Qayta urinish</button>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const code = params.get("code") || "";
+      const text = params.get("text") || "";
+      document.getElementById("reason").textContent = [text, code && "(" + code + ")"]
+        .filter(Boolean)
+        .join(" ");
+
+      const target = params.get("url");
+      document.getElementById("retry").addEventListener("click", () => {
+        if (target) location.href = target;
+        else location.reload();
+      });
+
+      // Aloqa tiklansa - o'zi qaytadi.
+      window.addEventListener("online", () => {
+        if (target) location.href = target;
+      });
+    </script>
+  </body>
+</html>

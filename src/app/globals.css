@@ -56,3 +56,70 @@ body {
     box-shadow: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------
+   DO'KONDAGI TELEVIZOR (/tv).
+
+   Ekran uzoqdan ko'riladi va sichqoncha yo'q: kursor yashiriladi,
+   ortiqcha aylantirish bo'lmaydi. Animatsiyalar CSS bilan - JS
+   televizor brauzerida sekin ishlashi mumkin.
+--------------------------------------------------------------------- */
+.tv-root {
+  cursor: none;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Pastdagi yuguruvchi qator. */
+@keyframes tv-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.tv-marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: tv-marquee 40s linear infinite;
+}
+
+/* Rasm sekin yaqinlashadi - ekran "muzlab qolgan" ko'rinmaydi. */
+@keyframes tv-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+.tv-kenburns {
+  animation: tv-kenburns 12s ease-out forwards;
+}
+
+/* Slayd almashganda yumshoq paydo bo'lish. */
+@keyframes tv-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tv-fade-in {
+  animation: tv-fade-in 0.6s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-marquee,
+  .tv-kenburns,
+  .tv-fade-in {
+    animation: none;
+  }
+}

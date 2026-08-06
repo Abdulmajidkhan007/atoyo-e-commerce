@@ -10,3 +10,7 @@ next-env.d.ts
 /coverage
 firebase-debug.log
 firestore-debug.log
+
+# Desktop ilova (Electron) - yig'ilgan fayllar GitHub Actions'da yasaladi
+desktop/dist/
+desktop/node_modules/

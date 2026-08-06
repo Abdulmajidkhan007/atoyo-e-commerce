@@ -8,7 +8,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api/", "/profil", "/savat", "/buyurtma", "/tolov"],
+      // `/tv` - do'kondagi televizor ekrani, mijoz uchun emas.
+      disallow: ["/admin", "/api/", "/profil", "/savat", "/buyurtma", "/tolov", "/tv"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

@@ -208,6 +208,24 @@ foydalanuvchi so'raganda.
 Kirish yo'llari (`NEXT_PUBLIC_AUTH_PROVIDERS`) — Firebase konsolida
 yoqilgan provayderlargina ro'yxatga qo'shiladi.
 
+## Do'kon ekrani (`/tv`) va desktop ilova (`desktop/`)
+
+- **`/tv`** — do'konga osilgan televizor uchun sahifa (ilova EMAS,
+  brauzer kiosk rejimida ochadi). Sozlamasi `settings/tv`, boshqaruvi
+  `/admin/tv`. Narx u yerda **har doim DONA narx** (`priceForRole`
+  orqali `undefined` rol bilan) — televizorni hamma ko'radi.
+  Rasmsiz mahsulot ekranga chiqmaydi. Slaydlar 2 daqiqa keshlanadi
+  (`lib/tv/slides.ts`), so'rovlar mavjud indekslarga tayanadi.
+  QR kod tashqi xizmatsiz — `qrcode-generator` → SVG. Tartib:
+  `docs/TV.md`.
+- **`desktop/`** — Electron ilovasi: saytning O'ZINI ochadi, UI
+  takrorlanmaydi. Root tooling'dan chiqarilgan (`tsconfig` exclude,
+  `eslint.config.mjs` ignores) — `mobile/` kabi. Sandbox'da
+  yig'ilmaydi; `.github/workflows/desktop.yml` Windows `.exe` va
+  Linux `.AppImage` yasab **`desktop-latest`** relizga qo'yadi
+  (Android APK relizi `latest` alohida). Ikonka koddan chiziladi:
+  `node desktop/build/make-icon.js`. Tartib: `docs/DESKTOP.md`.
+
 ## Mobil ilova (`mobile/`)
 
 React Native CLI (bare, RN 0.76) — **faqat mijozlar uchun**. Sayt bilan
