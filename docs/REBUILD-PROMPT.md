@@ -347,10 +347,16 @@ tekshiradi.
   o'chirish, boshqa kategoriyaga ko'chirish, brendini yozish, sotuvdan
   olish/qaytarish, har biriga shu yerda rasm yuklash va TANLAB kanalga
   post qilish mumkin (belgilanganlarni Instagram/Facebook'ga joylash
-  tugmasi ham shu yerda). Har bir qatorda alohida o'chirish, rasm
-  yuklash va tahrirlash tugmalari turadi. E'lon Telegram chegarasi
-  sababli 10 tadan, orasida ~1.2 s tanaffus bilan ketadi; rasmi
-  yo'qlari o'tkazib yuboriladi. Har bir ommaviy amal "actions"
+  tugmasi ham shu yerda; videosi bori YouTube Shorts'ga ham). Har bir
+  qatorda alohida o'chirish, rasm yuklash va tahrirlash tugmalari
+  turadi. E'lon Telegram chegarasi sababli 10 tadan, orasida ~1.2 s
+  tanaffus bilan ketadi; rasmi yo'qlari o'tkazib yuboriladi.
+  **Kanalda ALLAQACHON turgan mahsulotga yangi post tashlanmaydi** —
+  eski post joyida tahrirlanadi (kanal takrorlar bilan to'lmasin), va
+  natija ajratib ko'rsatiladi: nechtasi yangi post bo'ldi, nechtasi
+  yangilandi, nechtasida o'zgarish yo'q edi. Haqiqatan yangi post
+  kerak bo'lsa **"Qayta post qilish"** belgisi qo'yiladi — eski post
+  o'chirilib, yangisi tashlanadi (`announceProduct(..., "repost")`). Har bir ommaviy amal "actions"
   topikka yoziladi.
 - **Zaxirasiz mahsulotlar ro'yxati** (kirim sahifasida): `stock == 0`
   bo'lgan mahsulotlar ro'yxat bo'lib chiqadi (sahifalab yuklanadi),

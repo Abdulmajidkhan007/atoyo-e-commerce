@@ -136,7 +136,21 @@ async function loadFooter(): Promise<ChannelPostFooter | undefined> {
  *                  avvalgicha qoladi (ixtiyoriy maydon to'ldirilganda —
  *                  yangi mahsulot "yangilandi" deb ko'rinmasligi uchun).
  */
-export type AnnounceMode = "new" | "updated" | "refresh";
+/**
+ * `new`     - yangi mahsulot e'loni;
+ * `updated` - narx/chegirma o'zgardi (post tahrirlanadi, sarlavha "yangilandi");
+ * `refresh` - postni JIMGINA yangilash (bildirishnoma yo'q);
+ * `repost`  - eski postni O'CHIRIB, kanalga YANGISINI tashlash (admin
+ *             "qayta post qilish"ni tanlaganda).
+ */
+export type AnnounceMode = "new" | "updated" | "refresh" | "repost";
+
+/**
+ * E'lon natijasi - chaqiruvchi nima bo'lganini bilishi uchun.
+ * Ilgari funksiya `void` qaytarardi va admin panel eski postni jimgina
+ * tahrirlaganda ham "kanalga joylandi" deb yozardi.
+ */
+export type AnnounceResult = "posted" | "edited" | "unchanged" | "skipped";
 
 /**
  * Mahsulot o'zgarishi kanalda "yangilandi" deb e'lon qilinishga
@@ -274,13 +288,17 @@ export async function refreshChannelPost(
  * qo'shilgan) - eski post o'chirilib, yangisi tashlanadi, chunki
  * yuborilgan albomga rasm qo'shib bo'lmaydi.
  */
-export async function announceProduct(product: Product, mode: AnnounceMode = "new"): Promise<void> {
+export async function announceProduct(
+  product: Product,
+  mode: AnnounceMode = "new"
+): Promise<AnnounceResult> {
   // Chernovik hali e'lon qilinmaydi - "✅ Yetarli, tayyor" bosilgandan
   // (yoki kirim orqali zaxira kelgandan) keyin chiqadi.
-  if (!product.isActive || product.isDraft) return;
+  if (!product.isActive || product.isDraft) return "skipped";
 
   // Sarlavha: `refresh` bo'lsa postdagi avvalgi sarlavha saqlanadi.
-  const header: "new" | "updated" = mode === "refresh" ? product.channelMode ?? "new" : mode;
+  const header: "new" | "updated" =
+    mode === "refresh" ? (product.channelMode ?? "new") : mode === "repost" ? "new" : mode;
 
   // Mobil ilovaga push: faqat HAQIQIY yangilik bo'lganda (yangi mahsulot
   // yoki narx/chegirma o'zgarishi). `refresh` - postni jimgina yangilash,
@@ -313,7 +331,7 @@ export async function announceProduct(product: Product, mode: AnnounceMode = "ne
   const buttonUrl = `${siteUrl()}/mahsulot/${product.id}`;
   const buttonText = "🛒 Saytda ko'rish";
 
-  const posted =
+  let posted =
     product.channelChatId && product.channelMessageId
       ? {
           chatId: product.channelChatId,
@@ -321,6 +339,13 @@ export async function announceProduct(product: Product, mode: AnnounceMode = "ne
           photoCount: product.channelPhotoCount ?? 0,
         }
       : null;
+
+  // 0) QAYTA POST: eski post o'chiriladi va pastda yangisi tashlanadi.
+  //    (Tahrirlash bilan chalkashmasin - admin ataylab shuni so'ragan.)
+  if (mode === "repost" && posted) {
+    await deleteMessage(posted.chatId, posted.messageId).catch(() => {});
+    posted = null;
+  }
 
   // 1) Post bor va rasmlar o'zgarmagan - o'shanisini tahrirlaymiz.
   if (posted && posted.photoCount === gallery.length) {
@@ -344,10 +369,10 @@ export async function announceProduct(product: Product, mode: AnnounceMode = "ne
           .update({ channelMode: header })
           .catch(() => {});
       }
-      return;
+      return "edited";
     } catch (error) {
       // Matn o'zgarmagan bo'lsa Telegram xato beradi - bu xato emas.
-      if (error instanceof Error && /not modified/i.test(error.message)) return;
+      if (error instanceof Error && /not modified/i.test(error.message)) return "unchanged";
       // Xabar o'chirilgan/juda eski bo'lsa - pastda yangisini tashlaymiz.
       console.error("Kanaldagi e'lonni tahrirlashda xato:", error);
     }
@@ -391,6 +416,8 @@ export async function announceProduct(product: Product, mode: AnnounceMode = "ne
       console.error("Ijtimoiy tarmoq navbatiga qo'shishda xato:", error)
     );
   }
+
+  return sent ? "posted" : "skipped";
 }
 
 /** Yangi yoki tahrirlangan blog posti e'loni. */

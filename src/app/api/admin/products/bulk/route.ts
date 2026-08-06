@@ -43,6 +43,13 @@ const schema = z.union([
   z.object({
     action: z.literal("announce"),
     ids: z.array(z.string().min(1)).min(1).max(MAX_ANNOUNCE),
+    /**
+     * `true` bo'lsa allaqachon kanalda turgan mahsulotning ESKI POSTI
+     * o'chirilib, yangisi tashlanadi. Standart holatda (false) eski
+     * post joyida tahrirlanadi - kanal takror e'lonlar bilan
+     * to'lib ketmasligi uchun.
+     */
+    repost: z.boolean().optional(),
   }),
 ]);
 
@@ -122,8 +129,17 @@ export async function POST(request: Request) {
   }
 
   /* ---------------- KANALGA E'LON ---------------- */
+  //
+  // MUHIM: allaqachon kanalda turgan mahsulot uchun YANGI post
+  // tashlanmaydi - eski post joyida tahrirlanadi (kanal takrorlar
+  // bilan to'lib ketmasligi uchun). Shuning uchun natija ajratib
+  // qaytariladi: nechtasi YANGI post bo'ldi, nechtasi yangilandi.
+  // Haqiqatan yangi post kerak bo'lsa - `repost: true`.
+  const repost = parsed.data.repost === true;
   const snaps = await db.getAll(...refs);
   let posted = 0;
+  let edited = 0;
+  let unchanged = 0;
   const skipped: string[] = [];
 
   for (const snap of snaps) {
@@ -132,21 +148,33 @@ export async function POST(request: Request) {
 
     // Rasmsiz mahsulot kanalda chiroyli chiqmaydi - o'tkazib yuboriladi.
     if ((product.images ?? []).length === 0) {
-      skipped.push(product.name);
+      skipped.push(`${product.name} (rasmi yo'q)`);
       continue;
     }
+    if (product.isActive === false || product.isDraft) {
+      skipped.push(`${product.name} (sotuvda emas)`);
+      continue;
+    }
+
     try {
-      await announceProduct(product, product.channelMessageId ? "refresh" : "new");
-      posted += 1;
+      const mode = repost ? "repost" : product.channelMessageId ? "refresh" : "new";
+      const result = await announceProduct(product, mode);
+      if (result === "posted") posted += 1;
+      else if (result === "edited") edited += 1;
+      else if (result === "unchanged") unchanged += 1;
+      else skipped.push(`${product.name} (e'lon qilinmadi)`);
     } catch (error) {
       console.error("Kanalga e'lon xatosi:", error);
-      skipped.push(product.name);
+      skipped.push(`${product.name} (Telegram xatosi)`);
     }
     await sleep(ANNOUNCE_DELAY_MS);
   }
 
-  if (posted > 0) {
-    await logAction(`📢 Kanalga e'lon (${who}): ${posted} ta mahsulot`);
+  if (posted > 0 || edited > 0) {
+    await logAction(
+      `📢 Kanalga e'lon (${who}): ${posted} ta yangi post` +
+        (edited > 0 ? `, ${edited} ta eski post yangilandi` : "")
+    );
   }
-  return NextResponse.json({ ok: true, posted, skipped });
+  return NextResponse.json({ ok: true, posted, edited, unchanged, skipped });
 }

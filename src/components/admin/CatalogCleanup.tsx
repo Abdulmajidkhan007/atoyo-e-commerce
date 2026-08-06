@@ -8,6 +8,7 @@ import {
   Button,
   Checkbox,
   CircularProgress,
+  FormControlLabel,
   IconButton,
   LinearProgress,
   MenuItem,
@@ -83,6 +84,8 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
   const [page, setPage] = useState(0);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  /** Kanalda turgan mahsulotning eski postini o'chirib, yangisini tashlash. */
+  const [repostMode, setRepostMode] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState<{ kind: "ok" | "error" | "info"; text: string } | null>(null);
@@ -237,13 +240,27 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
     }
   };
 
-  /** Tanlanganlarni kanalga e'lon qilish (10 tadan, sekin). */
+  /**
+   * Tanlanganlarni kanalga e'lon qilish (10 tadan, sekin).
+   *
+   * MUHIM: kanalda ALLAQACHON turgan mahsulot uchun yangi post
+   * tashlanmaydi - eski post joyida tahrirlanadi (kanal takrorlar
+   * bilan to'lib ketmasin). Shu sababli natija ajratib ko'rsatiladi.
+   * Haqiqatan yangi post kerak bo'lsa - "Qayta post qilish" belgisi.
+   */
   const runAnnounce = async () => {
     if (selectedIds.length === 0) return;
+    const already = selectedIds.filter((id) => products.find((item) => item.id === id)?.posted).length;
+
     if (
       !confirm(
-        `${selectedIds.length} ta mahsulot kanalga post qilinadi. ` +
-          "Telegram chegarasi tufayli sekin ketadi — oynani yopmang. Davom etamizmi?"
+        `${selectedIds.length} ta mahsulot kanalga post qilinadi.` +
+          (already > 0
+            ? repostMode
+              ? `\n\n${already} tasi allaqachon kanalda — ULARNING ESKI POSTI O'CHIRILIB, yangisi tashlanadi.`
+              : `\n\n${already} tasi allaqachon kanalda — ular uchun YANGI post tashlanmaydi, eski posti yangilanadi. Yangi post kerak bo'lsa "Qayta post qilish" belgisini qo'ying.`
+            : "") +
+          "\n\nTelegram chegarasi tufayli sekin ketadi — oynani yopmang. Davom etamizmi?"
       )
     ) {
       return;
@@ -252,29 +269,50 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
     setBusy("announce");
     setProgress(0);
     let posted = 0;
+    let edited = 0;
+    let unchanged = 0;
     const skipped: string[] = [];
     try {
       for (let i = 0; i < selectedIds.length; i += ANNOUNCE_CHUNK) {
         const res = await fetch("/api/admin/products/bulk", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "announce", ids: selectedIds.slice(i, i + ANNOUNCE_CHUNK) }),
+          body: JSON.stringify({
+            action: "announce",
+            ids: selectedIds.slice(i, i + ANNOUNCE_CHUNK),
+            repost: repostMode,
+          }),
         });
         if (!res.ok) throw new Error("E'lon qilishda xatolik.");
-        const data = (await res.json()) as { posted: number; skipped: string[] };
+        const data = (await res.json()) as {
+          posted: number;
+          edited?: number;
+          unchanged?: number;
+          skipped: string[];
+        };
         posted += data.posted;
+        edited += data.edited ?? 0;
+        unchanged += data.unchanged ?? 0;
         skipped.push(...data.skipped);
         setProgress(Math.round(((i + ANNOUNCE_CHUNK) / selectedIds.length) * 100));
       }
 
       applyLocal(selectedIds, { posted: true });
+      const parts: string[] = [];
+      if (posted > 0) parts.push(`${posted} ta YANGI post kanalga tushdi`);
+      if (edited > 0) parts.push(`${edited} tasining eski posti yangilandi`);
+      if (unchanged > 0) parts.push(`${unchanged} tasida o'zgarish yo'q edi`);
+      if (skipped.length > 0) parts.push(`${skipped.length} tasi o'tkazib yuborildi`);
+
       setMessage({
-        kind: skipped.length > 0 ? "info" : "ok",
+        kind: posted > 0 && skipped.length === 0 ? "ok" : "info",
         text:
-          `📢 ${posted} ta mahsulot kanalga joylandi.` +
-          (skipped.length > 0
-            ? ` Rasmi yo'qligi uchun ${skipped.length} tasi o'tkazib yuborildi.`
-            : ""),
+          `📢 ${parts.join(", ")}.` +
+          (posted === 0 && (edited > 0 || unchanged > 0)
+            ? " Kanalga yangi xabar kelmagani shundan — bular avval e'lon qilingan. " +
+              "Yangi post kerak bo'lsa \"Qayta post qilish\" belgisini qo'ying."
+            : "") +
+          (skipped.length > 0 ? ` (${skipped.slice(0, 3).join("; ")})` : ""),
       });
     } catch (error) {
       setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
@@ -554,6 +592,19 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
             >
               Kanalga post qilish
             </Button>
+            {/* Kanalda turgani uchun yangi post tashlanmasligi ko'pincha
+                "post kelmadi" degan taassurot qoldiradi - shu belgi bilan
+                eski post o'chirilib, yangisi tashlanadi. */}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={repostMode}
+                  onChange={(event) => setRepostMode(event.target.checked)}
+                />
+              }
+              label={<span className="text-xs">Qayta post qilish (eskisini o&apos;chirib)</span>}
+            />
             <Button
               size="small"
               variant="contained"

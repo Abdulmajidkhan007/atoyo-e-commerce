@@ -90,6 +90,11 @@ serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
 - Bosh sahifada faqat **6 ta namuna mahsulot** (har kategoriyadan
   bittadan, `/api/products/showcase`, 5 daq. kesh) va cheklangan
   kategoriyalar qatori - qolgani katalogda.
+- Kanalga e'lon: mahsulotda `channelMessageId` bo'lsa YANGI post
+  tashlanmaydi - eski post tahrirlanadi. `announceProduct` natija
+  qaytaradi (`posted` / `edited` / `unchanged` / `skipped`), UI shuni
+  ochiq yozadi. Haqiqatan yangi post kerak bo'lsa `"repost"` rejimi
+  (eski post o'chiriladi).
 - Ommaviy tozalash: `/admin/katalog/tartib` + `/api/admin/products/list`
   (bitta tenglik filtri + `__name__` tartibi - kompozit indekssiz) va
   `/api/admin/products/bulk` (delete / update / announce). Kanalga
