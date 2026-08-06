@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
-import { cookies } from "next/headers";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { isOwner } from "@/lib/permissions";
 import { getSocialSecrets } from "@/lib/social/secrets";
-import { metaRedirectUri, META_SCOPES, META_STATE_COOKIE } from "@/lib/social/meta-oauth";
+import { createOAuthState } from "@/lib/social/oauth-state";
+import { metaRedirectUri, META_SCOPES } from "@/lib/social/meta-oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,14 +28,8 @@ export async function GET() {
     );
   }
 
-  const state = randomUUID();
-  (await cookies()).set(META_STATE_COOKIE, state, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    maxAge: 10 * 60,
-    path: "/",
-  });
+  // `state` bazada saqlanadi - Firebase Hosting cookie'ni uzatmaydi.
+  const state = await createOAuthState("meta", user!.uid);
 
   const url = new URL("https://www.facebook.com/v21.0/dialog/oauth");
   url.searchParams.set("client_id", secrets.metaAppId);

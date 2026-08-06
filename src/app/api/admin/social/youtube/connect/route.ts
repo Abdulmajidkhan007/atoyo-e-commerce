@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
-import { cookies } from "next/headers";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { isOwner } from "@/lib/permissions";
 import { getSocialSecrets } from "@/lib/social/secrets";
-import { youtubeRedirectUri, YOUTUBE_SCOPE, YOUTUBE_STATE_COOKIE } from "@/lib/social/youtube-oauth";
+import { createOAuthState } from "@/lib/social/oauth-state";
+import { youtubeRedirectUri, YOUTUBE_SCOPE } from "@/lib/social/youtube-oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,15 +33,9 @@ export async function GET() {
     );
   }
 
-  // CSRF himoyasi: tasodifiy `state` cookie'ga yoziladi va qaytishda solishtiriladi.
-  const state = randomUUID();
-  (await cookies()).set(YOUTUBE_STATE_COOKIE, state, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    maxAge: 10 * 60,
-    path: "/",
-  });
+  // CSRF himoyasi: bir martalik `state` BAZAGA yoziladi (cookie'da emas -
+  // Firebase Hosting `__session` dan boshqa cookie'larni uzatmaydi).
+  const state = await createOAuthState("youtube", user!.uid);
 
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", secrets.youtubeClientId);

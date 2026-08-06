@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { isOwner } from "@/lib/permissions";
 import { getSocialSecrets, saveSocialSecrets } from "@/lib/social/secrets";
-import { youtubeRedirectUri, YOUTUBE_STATE_COOKIE } from "@/lib/social/youtube-oauth";
+import { consumeOAuthState } from "@/lib/social/oauth-state";
+import { youtubeRedirectUri } from "@/lib/social/youtube-oauth";
 import { logAction } from "@/lib/telegram/action-log";
 
 export const runtime = "nodejs";
@@ -30,13 +30,14 @@ export async function GET(request: Request) {
   if (error) return back(`Google rad etdi: ${error}`);
 
   const code = params.get("code");
-  const state = params.get("state");
-  const jar = await cookies();
-  const expected = jar.get(YOUTUBE_STATE_COOKIE)?.value;
-  jar.delete(YOUTUBE_STATE_COOKIE);
-
   if (!code) return back("Kod kelmadi.");
-  if (!state || !expected || state !== expected) return back("So'rov tasdiqlanmadi (state).");
+
+  const ok = await consumeOAuthState("youtube", params.get("state"), user!.uid);
+  if (!ok) {
+    return back(
+      "So'rov tasdiqlanmadi (state) — ulanishni qaytadan, shu brauzerning o'zida boshlang."
+    );
+  }
 
   const secrets = await getSocialSecrets();
   const response = await fetch("https://oauth2.googleapis.com/token", {

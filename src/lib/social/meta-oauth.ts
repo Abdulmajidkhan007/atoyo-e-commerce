@@ -5,6 +5,8 @@ import "server-only";
  *
  * `redirect_uri` connect va callback'da HARFMA-HARF bir xil bo'lishi
  * shart - Meta ham, Google ham shuni tekshiradi.
+ *
+ * CSRF `state` cookie'da EMAS, bazada saqlanadi - `oauth-state.ts` ga qarang.
  */
 export const META_SCOPES = [
   "pages_show_list",
@@ -15,7 +17,6 @@ export const META_SCOPES = [
   "business_management",
 ].join(",");
 
-export const META_STATE_COOKIE = "meta_oauth_state";
 
 export function metaRedirectUri(): string {
   const base =

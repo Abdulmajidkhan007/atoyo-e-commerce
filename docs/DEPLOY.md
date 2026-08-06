@@ -536,14 +536,25 @@ Tartib:
    Gmail'i qo'shilsin (dastur "Testing" holatida bo'lsa refresh token
    7 kunda eskiradi — "Publish app" bilan uni doimiy qilish mumkin).
 3. **Credentials → Create credentials → OAuth client ID → Web
-   application** (Desktop EMAS!). "Authorized redirect URIs" ga aynan
-   shu manzil qo'shiladi:
-   `https://atoyo-uz.web.app/api/admin/social/youtube/callback`
+   application** (Desktop EMAS!). Ikkita maydon bor, ularni
+   ADASHTIRMANG:
+   - **Authorized JavaScript origins** → faqat domen:
+     `https://atoyo-uz.web.app`
+   - **Authorized redirect URIs** → to'liq yo'l bilan:
+     `https://atoyo-uz.web.app/api/admin/social/youtube/callback`
 4. Client ID va Secret panelga (Sozlamalar → Ijtimoiy tarmoqlar)
    kiritilib **saqlanadi**.
 5. **"YouTube'ga ulanish"** tugmasi bosiladi → kanal egasining Google
    hisobi bilan kirib ruxsat beriladi → refresh token avtomatik
    yoziladi. "Tekshirish" tugmasi kanal nomini ko'rsatadi.
+
+> **"So'rov tasdiqlanmadi (state)"** xatosi haqida: OAuth ning CSRF
+> `state` qiymati avval cookie'da saqlanardi, lekin **Firebase Hosting
+> backendga `__session` dan boshqa HECH QANDAY cookie'ni uzatmaydi** —
+> shu sababli Google'dan qaytganda tekshiruv yiqilardi. Endi `state`
+> Firestore'da (`oauthStates`, faqat server o'qiydi) saqlanadi va
+> ulanishni boshlagan foydalanuvchiga bog'lanadi. Meta (Facebook/
+> Instagram) ulanishi ham xuddi shunday ishlaydi.
 
 Eski (qo'lda) tartib:
 

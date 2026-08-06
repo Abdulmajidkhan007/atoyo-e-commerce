@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { isOwner } from "@/lib/permissions";
 import { getSocialSecrets, saveSocialSecrets } from "@/lib/social/secrets";
-import { metaRedirectUri, META_STATE_COOKIE } from "@/lib/social/meta-oauth";
+import { consumeOAuthState } from "@/lib/social/oauth-state";
+import { metaRedirectUri } from "@/lib/social/meta-oauth";
 import { logAction } from "@/lib/telegram/action-log";
 
 export const runtime = "nodejs";
@@ -34,13 +34,14 @@ export async function GET(request: Request) {
   if (error) return back(`Facebook rad etdi: ${error}`);
 
   const code = params.get("code");
-  const state = params.get("state");
-  const jar = await cookies();
-  const expected = jar.get(META_STATE_COOKIE)?.value;
-  jar.delete(META_STATE_COOKIE);
-
   if (!code) return back("Kod kelmadi.");
-  if (!state || !expected || state !== expected) return back("So'rov tasdiqlanmadi (state).");
+
+  const ok = await consumeOAuthState("meta", params.get("state"), user!.uid);
+  if (!ok) {
+    return back(
+      "So'rov tasdiqlanmadi (state) — ulanishni qaytadan, shu brauzerning o'zida boshlang."
+    );
+  }
 
   const secrets = await getSocialSecrets();
 

@@ -159,6 +159,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // OAuth (YouTube/Facebook) uchun bir martalik `state` - faqat server.
+    match /oauthStates/{state} {
+      allow read, write: if false;
+    }
+
     // Telegram orqali kirish uchun bir martalik kodlar - faqat server.
     match /tgLogins/{code} {
       allow read, write: if false;

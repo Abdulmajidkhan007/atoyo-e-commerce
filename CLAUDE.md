@@ -97,6 +97,15 @@ serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
 - Kirimda 20 tadan ko'p mahsulot bo'lsa kanalga e'lon qilinmaydi
   (`announce: false`).
 
+## Cookie qoidasi (Firebase Hosting)
+
+Sayt Firebase Hosting rewrite orqali ochilgani uchun backendga **faqat
+`__session` cookie yetib boradi** — boshqa nomdagi cookie'lar yo'lda
+tashlab ketiladi. Shu sababli OAuth `state`, bir martalik kodlar va
+shunga o'xshash qisqa muddatli qiymatlar cookie'da EMAS, serverda
+(Firestore) saqlanadi: `lib/social/oauth-state.ts` (`oauthStates`,
+qoidalarda yopiq). Yangi oqim yozayotganda shuni yodda tuting.
+
 ## Ijtimoiy tarmoqlar
 
 `src/lib/social/`: `meta.ts` (Instagram + Facebook, bitta sahifa
