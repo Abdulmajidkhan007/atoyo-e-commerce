@@ -68,6 +68,10 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
 - **Profil:** buyurtmalar tarixi real-vaqtda (onSnapshot), sevimlilar,
   sozlamalar, hisobni o'chirish.
 - **Blog:** maqolalar ro'yxati va sahifasi (Article JSON-LD).
+- **Yordamchi oynasi:** suzuvchi oyna burchagidan sudrab kattalashtiriladi
+  va "to'liq ekran" tugmasi bilan butun ekranga yoyiladi (sarlavhaga ikki
+  marta bosish ham, Esc bilan qaytish ham ishlaydi); o'lcham brauzerda
+  saqlanadi.
 - **Boshqa:** "Biz haqimizda", kontakt formasi (xodimlar guruhiga
   tushadi), yangiliklarga obuna, sitemap va robots, uch til (uz/ru/en),
   yorug'/qorong'i tema, mobil pastki menyu.

@@ -34,6 +34,8 @@ export interface AdminListProduct {
   isDraft: boolean;
   thumbnailUrl: string;
   imageCount: number;
+  /** Videosi bormi - YouTube (Shorts) ga faqat shundaylari ketadi. */
+  hasVideo: boolean;
   /** Kanalga e'lon qilinganmi (post ID si bor-yo'qligi). */
   posted: boolean;
 }
@@ -67,6 +69,7 @@ export async function GET(request: Request) {
       "isDraft",
       "thumbnailUrl",
       "images",
+      "videos",
       "channelMessageId"
     )
     .orderBy("__name__")
@@ -91,6 +94,7 @@ export async function GET(request: Request) {
       isDraft: data.isDraft === true,
       thumbnailUrl: data.thumbnailUrl ?? "",
       imageCount: (data.images ?? []).length,
+      hasVideo: (data.videos ?? []).length > 0,
       posted: Boolean(data.channelMessageId),
     };
   });

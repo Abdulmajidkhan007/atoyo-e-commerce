@@ -50,6 +50,7 @@ interface ListProduct {
   isActive: boolean;
   isDraft: boolean;
   thumbnailUrl: string;
+  hasVideo: boolean;
   imageCount: number;
   posted: boolean;
 }
@@ -290,10 +291,14 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
    */
   const runSocial = async () => {
     if (selectedIds.length === 0) return;
+    const withVideo = selectedIds.filter(
+      (id) => products.find((item) => item.id === id)?.hasVideo
+    ).length;
     if (
       !confirm(
-        `${selectedIds.length} ta mahsulot Instagram/Facebook'ga joylanadi. ` +
-          "Tarmoqlarning kunlik chegarasi bor (odatda 50 ta). Davom etamizmi?"
+        `${selectedIds.length} ta mahsulot Instagram/Facebook'ga joylanadi` +
+          (withVideo > 0 ? `, shundan ${withVideo} tasi YouTube'ga ham (videosi bor)` : "") +
+          ". Tarmoqlarning kunlik chegarasi bor (odatda 50 ta). Davom etamizmi?"
       )
     ) {
       return;
@@ -313,8 +318,11 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             productId: id,
-            // YouTube faqat videosi bor mahsulotda ishlaydi - server o'zi tekshiradi.
-            networks: ["instagram", "facebook"],
+            // YouTube - faqat videosi bor mahsulotda (Shorts); videosizini
+            // yuborsak har biriga keraksiz xato qaytadi.
+            networks: product?.hasVideo
+              ? ["instagram", "facebook", "youtube"]
+              : ["instagram", "facebook"],
           }),
         });
         const data = (await res.json().catch(() => ({}))) as { done?: string[]; errors?: string[] };
