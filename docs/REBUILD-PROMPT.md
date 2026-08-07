@@ -72,9 +72,21 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   va "to'liq ekran" tugmasi bilan butun ekranga yoyiladi (sarlavhaga ikki
   marta bosish ham, Esc bilan qaytish ham ishlaydi); o'lcham brauzerda
   saqlanadi.
+- **Yuklanish holati:** spinner emas, mahsulot kartochkasining
+  SKELETI ko'rsatiladi (`ProductCardSkeleton` — kartochka bilan bir xil
+  o'lchamda), shu sababli ro'yxat kelganda sahifa sakramaydi. Katalogda
+  ham, bosh sahifadagi namunada ham shunday.
+- **Til almashtirish:** ro'yxatda til nomi emas, DAVLAT BAYROG'I
+  (vektor SVG, emoji emas — Windows'da emoji bayroqlar chizilmaydi) va
+  qisqa kod: UZ / EN / RU. 320px ekranda faqat bayroq qoladi.
 - **Boshqa:** "Biz haqimizda", kontakt formasi (xodimlar guruhiga
   tushadi), yangiliklarga obuna, sitemap va robots, uch til (uz/ru/en),
   yorug'/qorong'i tema, mobil pastki menyu.
+- **Responsive:** 320px kenglikdagi telefonlarda ham gorizontal
+  skroll BO'LMASLIGI shart. Savat qatori tor ekranda ikkiga bo'linadi
+  (rasm+nom+o'chirish / son+summa), mahsulot kartochkasidagi narx va
+  "Turini tanlash" tugmasi `flex-wrap` bilan - sig'masa tugma pastga
+  tushadi, ustma-ust tushmaydi.
 
 ## 1a. HISOBOT, OMBOR VA QAYTARISH
 

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button, CircularProgress } from "@mui/material";
+import { Button } from "@mui/material";
 import { ProductCard } from "@/components/product/ProductCard";
+import { ProductCardSkeletons } from "@/components/product/ProductCardSkeleton";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import type { Product } from "@/types/product";
 
@@ -33,10 +34,11 @@ export function ShowcaseGrid() {
     };
   }, []);
 
+  // Yuklanayotganda kartochka skeletlari - bosh sahifa "sakramaydi".
   if (products === null) {
     return (
-      <div className="flex justify-center py-10">
-        <CircularProgress size={26} />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <ProductCardSkeletons count={6} />
       </div>
     );
   }

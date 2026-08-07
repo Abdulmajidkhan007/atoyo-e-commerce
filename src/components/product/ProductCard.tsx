@@ -76,7 +76,10 @@ export function ProductCard({ product }: { product: Product }) {
           <Chip label={categoryLabel} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
         )}
 
-        <Link href={`/mahsulot/${product.id}`} className="line-clamp-2 text-sm font-medium text-navy-900 hover:text-aqua-600 dark:text-white">
+        <Link
+          href={`/mahsulot/${product.id}`}
+          className="line-clamp-2 text-[13px] font-medium leading-snug text-navy-900 hover:text-aqua-600 sm:text-sm dark:text-white"
+        >
           {name}
         </Link>
 
@@ -89,21 +92,35 @@ export function ProductCard({ product }: { product: Product }) {
           </p>
         )}
 
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <div className="flex flex-col">
+        {/* Narx va tugma. `flex-wrap` MUHIM: tor ekranda (320px) uzun
+            narx va "Turini tanlash" tugmasi bir qatorga sig'may,
+            ustma-ust tushib qolardi - endi tugma pastga o'tadi. */}
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-2">
+          <div className="flex min-w-0 flex-col leading-tight">
             {hasDiscount && !withVariants && (
-              <span className="text-xs text-navy-300 line-through">{formatSom(show(product.price))}</span>
+              <span className="text-[11px] leading-tight text-navy-300 line-through">
+                {formatSom(show(product.price))}
+              </span>
             )}
-            <span className="font-bold text-navy-900 dark:text-white">
+            <span className="text-[13px] font-bold leading-tight text-navy-900 sm:text-[15px] dark:text-white">
               {formatSom(cardPrice)}
-              {withVariants && <span className="text-xs font-normal text-navy-300"> dan</span>}
+              {withVariants && (
+                <span className="text-[10px] font-normal leading-none text-navy-300"> dan</span>
+              )}
             </span>
           </div>
 
           {/* Turlari bo'lsa savatga to'g'ridan-to'g'ri qo'shilmaydi -
               avval o'lchami/rangi tanlanishi kerak. */}
           {withVariants ? (
-            <Button size="small" variant="contained" color="primary" component={Link} href={`/mahsulot/${product.id}`}>
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              component={Link}
+              href={`/mahsulot/${product.id}`}
+              className="!min-w-0 !px-2.5 !py-1 !text-[11px] !font-semibold !leading-tight"
+            >
               Turini tanlash
             </Button>
           ) : (
@@ -124,6 +141,7 @@ export function ProductCard({ product }: { product: Product }) {
                 )
               }
               aria-label={`${name} savatga qo'shish`}
+              className="!min-w-0 !px-2.5 !py-1"
             >
               <AddShoppingCartIcon fontSize="small" />
             </Button>

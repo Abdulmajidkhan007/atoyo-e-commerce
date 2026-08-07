@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { CircularProgress } from "@mui/material";
 import { getProductsPage, searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { createFuzzySearcher } from "@/lib/search/fuzzy";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { ProductCard } from "./ProductCard";
+import { ProductCardSkeletons } from "./ProductCardSkeleton";
 import type { Product, ProductFilterParams } from "@/types/product";
 
 const PAGE_SIZE = 24;
@@ -125,19 +125,25 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
     return <p className="py-12 text-center text-sm text-navy-300">{dict.product.empty}</p>;
   }
 
+  // Birinchi yuklanish - spinner emas, kartochka SKELETLARI. Ekran
+  // kengligiga qarab bir sahifada 4-8 dona ko'rinadi, shuning uchun
+  // 8 tasi yetarli (ortiqchasi ekrandan pastda qoladi).
+  const firstLoad = isLoading && products.length === 0;
+
   return (
     <div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+        {firstLoad ? (
+          <ProductCardSkeletons count={8} />
+        ) : (
+          products.map((product) => <ProductCard key={product.id} product={product} />)
+        )}
+
+        {/* Keyingi sahifa yuklanayotganda ham skelet - ro'yxat oxirida. */}
+        {isLoading && products.length > 0 && <ProductCardSkeletons count={4} />}
       </div>
 
-      {(isLoading || hasMore) && (
-        <div ref={sentinelRef} className="flex justify-center py-8">
-          {isLoading && <CircularProgress size={28} />}
-        </div>
-      )}
+      {hasMore && <div ref={sentinelRef} className="h-8" />}
     </div>
   );
 }
