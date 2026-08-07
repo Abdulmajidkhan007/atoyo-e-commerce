@@ -123,6 +123,34 @@ Tartib:
 3. Birinchi stikerda to'plam avtomatik yaratiladi va havola
    ko'rsatiladi: `t.me/addstickers/atoyo_by_<bot>`.
 
+### To'plam qachon paydo bo'ladi
+
+**Bot to'plami OLDINDAN mavjud emas.** `t.me/addstickers/atoyo_by_<bot>`
+havolasi birinchi stiker qo'shilgunicha **"Stickers not found"** deydi —
+bu xato emas, to'plam hali yaratilmagan. U birinchi
+"To'plamga qo'shish" bosilganda Telegram tomonida yaratiladi.
+
+Agar qo'shish paytida xato chiqsa, eng ko'p uchraydigan sabab:
+**to'plam egasi bot bilan hech qachon suhbat boshlamagan.** Botni
+shaxsiy chatda oching, `/start` bosing va qaytadan urinib ko'ring
+(sayt bu xatoni shu matn bilan tushuntiradi).
+
+### Mijozlarga tarqatish
+
+To'plam tayyor bo'lgach havola ikki joyda o'zi paydo bo'ladi:
+
+- **Botda** — Kontakt ekranida "🎨 Stikerlarimiz" tugmasi va
+  `/stikerlar` buyrug'i (uch tilda);
+- **Saytda** — `/kontakt` sahifasining pastida "Telegram
+  stikerlarimiz" bo'limi.
+
+Ikkalasi ham `/api/stickers` dan o'qiydi va to'plam **haqiqatan
+mavjud bo'lsagina** ko'rinadi — ishlamaydigan havola berilmaydi.
+
+Eng kuchli tarqalish yo'li esa botning o'zi: mijoz `/start` bosganda
+yoki buyurtma holati o'zgarganda stiker keladi, mijoz uni bosib
+to'plamni qo'shib oladi.
+
 ### Animatsiyali stiker
 
 Telegram animatsiya uchun ikki format qabul qiladi:

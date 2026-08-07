@@ -129,6 +129,10 @@ export interface BotDict {
   readOnSite: string;
   contact: string;
   contactTitle: string;
+  /** Do'kon stikerlari to'plamiga havola. */
+  stickersButton: string;
+  stickersText: string;
+  stickersNone: string;
   about: string;
   // ---- Buyurtmani bekor qilish ----
   cancelOrder: string;
@@ -270,6 +274,11 @@ const uz: BotDict = {
   readOnSite: "📖 To'liq o'qish",
   contact: "📞 Bog'lanish",
   contactTitle: "📞 <b>Biz bilan bog'laning</b>",
+  stickersButton: "🎨 Stikerlarimiz",
+  stickersText:
+    "🎨 <b>Atoyo stikerlari</b>\n\nQuyidagi to'plamni bosib o'zingizga qo'shing — " +
+    "istalgan suhbatda ishlatasiz.",
+  stickersNone: "Stikerlar to'plami hali tayyor emas.",
   about: "ℹ️ Biz haqimizda",
   cancelOrder: "❌ Buyurtmani bekor qilish",
   cancelConfirmQ: "Buyurtmani bekor qilasizmi?",
@@ -417,6 +426,10 @@ const en: BotDict = {
   readOnSite: "📖 Read more",
   contact: "📞 Contact",
   contactTitle: "📞 <b>Get in touch</b>",
+  stickersButton: "🎨 Our stickers",
+  stickersText:
+    "🎨 <b>Atoyo stickers</b>\n\nTap the pack below to add it — then use it in any chat.",
+  stickersNone: "The sticker pack is not ready yet.",
   about: "ℹ️ About us",
   cancelOrder: "❌ Cancel order",
   cancelConfirmQ: "Cancel this order?",
@@ -564,6 +577,11 @@ const ru: BotDict = {
   readOnSite: "📖 Читать полностью",
   contact: "📞 Связаться",
   contactTitle: "📞 <b>Свяжитесь с нами</b>",
+  stickersButton: "🎨 Наши стикеры",
+  stickersText:
+    "🎨 <b>Стикеры Atoyo</b>\n\nНажмите на набор ниже и добавьте себе — " +
+    "используйте в любом чате.",
+  stickersNone: "Набор стикеров пока не готов.",
   about: "ℹ️ О нас",
   cancelOrder: "❌ Отменить заказ",
   cancelConfirmQ: "Отменить заказ?",

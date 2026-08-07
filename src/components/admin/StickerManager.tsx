@@ -396,6 +396,17 @@ export function StickerManager() {
           </Alert>
         )}
 
+        {/* Bot to'plami BIRINCHI stiker qo'shilganda yaratiladi -
+            shungacha havola ishlamaydi ("Stickers not found"). */}
+        {settings?.packName && !packs.some((pack) => pack.name === settings.packName && !pack.error) && (
+          <Alert severity="warning" className="!mb-4">
+            Bot to&apos;plami (<code>{settings.packName}</code>) hali <b>yaratilmagan</b> — u
+            birinchi stiker qo&apos;shilganda paydo bo&apos;ladi. Shungacha
+            <code> t.me/addstickers/{settings.packName}</code> havolasi &quot;Stickers not
+            found&quot; deydi. Pastdagi bo&apos;limdan bitta stiker yasab qo&apos;shing.
+          </Alert>
+        )}
+
         {packs.map((pack) => (
           <div key={pack.name} className="mb-4">
             <p className="mb-2 text-sm font-semibold text-navy-900 dark:text-white">

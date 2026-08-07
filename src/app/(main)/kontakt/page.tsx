@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TextField, Button, Alert, CircularProgress } from "@mui/material";
 import { normalizePhone, isValidName } from "@/lib/validation";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { StickerPacks } from "@/components/layout/StickerPacks";
 
 export default function ContactPage() {
   const { dict } = useI18n();
@@ -80,6 +81,11 @@ export default function ContactPage() {
           {isSubmitting ? <CircularProgress size={22} color="inherit" /> : dict.contact.send}
         </Button>
       </form>
+
+      {/* Telegram stiker to'plami - tayyor bo'lsagina ko'rinadi. */}
+      <div className="mt-8">
+        <StickerPacks />
+      </div>
     </section>
   );
 }

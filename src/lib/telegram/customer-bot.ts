@@ -28,7 +28,7 @@ import { markupFor, priceForRole } from "@/lib/products/wholesale";
 import { findWholesaleByPhone } from "@/lib/wholesale/clients";
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
 import { askAssistant } from "@/lib/ai/assistant";
-import { sendLoadingSticker, sendSlotSticker } from "@/lib/telegram/stickers";
+import { publicStickerPacks, sendLoadingSticker, sendSlotSticker } from "@/lib/telegram/stickers";
 import { isAiConfigured } from "@/lib/ai/config";
 import { searchByImage } from "@/lib/ai/image-search";
 import type { Product, ProductCategory } from "@/types/product";
@@ -1243,9 +1243,32 @@ async function showContactInfo(chatId: number, t: BotDict): Promise<void> {
 
   const rows: InlineButton[][] = [];
   if (socialRow.length > 0) rows.push(socialRow);
+  // Stiker to'plami tayyor bo'lsa - shu yerdan olinadi.
+  const packs = await publicStickerPacks().catch(() => []);
+  if (packs.length > 0) rows.push([{ text: t.stickersButton, callback_data: "stk" }]);
   rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);
 
   await sendChatMessage(chatId, lines.join("\n"), { replyMarkup: { inline_keyboard: rows } });
+}
+
+/** Do'kon stiker to'plamlari havolasi (mijozga). */
+async function showStickerPacks(chatId: number, t: BotDict): Promise<void> {
+  const packs = await publicStickerPacks().catch(() => []);
+  if (packs.length === 0) {
+    await sendChatMessage(chatId, t.stickersNone, {
+      replyMarkup: { inline_keyboard: [[{ text: t.backToMenu, callback_data: "m|home" }]] },
+    });
+    return;
+  }
+
+  await sendChatMessage(chatId, t.stickersText, {
+    replyMarkup: {
+      inline_keyboard: [
+        ...packs.slice(0, 5).map((pack) => [{ text: `🎨 ${pack.title}`, url: pack.link }]),
+        [{ text: t.backToMenu, callback_data: "m|home" }],
+      ],
+    },
+  });
 }
 
 /** Mijoz o'z buyurtmasini bekor qiladi (faqat pending/approved). */
@@ -1427,6 +1450,11 @@ export async function handleCustomerMessage(params: {
       await startAssistant(chatId, session, t);
       return;
     }
+    if (command === "/stikerlar" || command === "/stickers") {
+      await showStickerPacks(chatId, t);
+      return;
+    }
+
     if (command === "/til" || command === "/lang") {
       await showLanguageMenu(chatId, t);
       return;
@@ -1647,6 +1675,11 @@ export async function handleCustomerCallback(params: {
     case "info": {
       await answerCallbackQuery(callbackQueryId);
       await showContactInfo(chatId, t);
+      return;
+    }
+    case "stk": {
+      await answerCallbackQuery(callbackQueryId);
+      await showStickerPacks(chatId, t);
       return;
     }
     // ---- Buyurtmani bekor qilish ----

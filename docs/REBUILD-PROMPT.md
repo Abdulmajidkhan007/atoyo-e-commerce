@@ -505,6 +505,10 @@ biriktiriladi. Slot bo'sh bo'lsa bot avvalgidek faqat matn yuboradi.
 - **Animatsiyali stiker:** `.tgs` (Lottie, 64KB) yoki `.webm`
   (VP9+alfa, 256KB) — bularni sayt yasay olmaydi, tayyor fayl
   yuklanadi va to'plamga qo'shiladi.
+- **Tarqatish:** to'plam tayyor bo'lgach havola botda (Kontakt ekrani
+  tugmasi + `/stikerlar`) va saytda (`/kontakt` sahifasi) o'zi paydo
+  bo'ladi — `/api/stickers` orqali, faqat to'plam HAQIQATAN mavjud
+  bo'lsa (aks holda "Stickers not found" havolasi berilardi).
 - Tartib: `docs/STICKERS.md`.
 
 ## 4a. DO'KONDAGI TELEVIZOR (`/tv`)

@@ -196,6 +196,21 @@ export async function addStickerToPack(input: {
     exists = false;
   }
 
+  const explain = (error: unknown): never => {
+    const message = error instanceof Error ? error.message : String(error);
+    // Eng ko'p uchraydigan sabab: to'plam egasi bot bilan hech qachon
+    // suhbat boshlamagan - Telegram bunda "PEER_ID_INVALID" beradi.
+    if (/PEER_ID_INVALID|user not found|chat not found|USER_IS_BLOCKED/i.test(message)) {
+      throw new Error(
+        "To'plam egasi bot bilan suhbat boshlamagan. Botni shaxsiy chatda oching va /start bosing, keyin qaytadan urinib ko'ring."
+      );
+    }
+    if (/STICKERSET_INVALID|name is already occupied|sticker set name is already/i.test(message)) {
+      throw new Error("Bu nomdagi to'plam band. Sozlamada boshqa to'plam nomini ko'rsating.");
+    }
+    throw new Error(message);
+  };
+
   if (exists) {
     await addStickerToSet({
       userId: settings.ownerUserId,
@@ -203,7 +218,7 @@ export async function addStickerToPack(input: {
       fileId: uploaded,
       emoji: input.emoji,
       format: input.format,
-    });
+    }).catch(explain);
   } else {
     await createNewStickerSet({
       userId: settings.ownerUserId,
@@ -212,7 +227,7 @@ export async function addStickerToPack(input: {
       fileId: uploaded,
       emoji: input.emoji,
       format: input.format,
-    });
+    }).catch(explain);
   }
 
   if (settings.packName !== packName) await saveStickerSettings({ packName });
@@ -221,4 +236,41 @@ export async function addStickerToPack(input: {
   const set = await getStickerSet(packName);
   const last = set.stickers.at(-1);
   return { packName, fileId: last?.file_id ?? uploaded, created: !exists };
+}
+
+/**
+ * OMMAGA OCHIQ TO'PLAMLAR (mijozlarga havola berish uchun).
+ *
+ * Faqat HAQIQATAN mavjud to'plamlar qaytadi: bot to'plami birinchi
+ * stiker qo'shilgunicha yaratilmaydi, shuning uchun uning havolasini
+ * oldindan ko'rsatish "Stickers not found" degan tushunmovchilikka
+ * olib keladi.
+ */
+export interface PublicPack {
+  name: string;
+  title: string;
+  link: string;
+}
+
+let packsCache: { value: PublicPack[]; at: number } | null = null;
+const PACKS_TTL = 5 * 60 * 1000;
+
+export async function publicStickerPacks(): Promise<PublicPack[]> {
+  if (packsCache && Date.now() - packsCache.at < PACKS_TTL) return packsCache.value;
+
+  const settings = await getStickerSettings();
+  const names = Array.from(new Set([settings.packName, ...settings.extraPacks].filter(Boolean)));
+
+  const packs: PublicPack[] = [];
+  for (const name of names) {
+    try {
+      const set = await getStickerSet(name);
+      packs.push({ name, title: set.title, link: `https://t.me/addstickers/${name}` });
+    } catch {
+      // To'plam hali yaratilmagan yoki o'chirilgan - ko'rsatilmaydi.
+    }
+  }
+
+  packsCache = { value: packs, at: Date.now() };
+  return packs;
 }
