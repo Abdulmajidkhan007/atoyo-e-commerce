@@ -1,0 +1,122 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requirePermission } from "@/lib/firebase/session";
+import { stickerPng } from "@/lib/stickers/render";
+import { addStickerToPack } from "@/lib/telegram/stickers";
+import { logAction } from "@/lib/telegram/action-log";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * YANGI STIKER YASASH VA TO'PLAMGA QO'SHISH.
+ *
+ * Ikki xil manba bo'lishi mumkin:
+ *   • `design` - saytda yasalgan statik stiker (PNG, `next/og`);
+ *   • `upload` - tayyor fayl (animatsiyali `.tgs` yoki video `.webm`,
+ *     dizayner tayyorlagan) - uni sayt yasay olmaydi, lekin
+ *     to'plamga qo'sha oladi.
+ *
+ * MUHIM: Bot faqat O'ZI yaratgan to'plamga stiker qo'sha oladi.
+ * @Stickers bot orqali yasalgan eski to'plam tahrirlanmaydi.
+ */
+const schema = z.union([
+  z.object({
+    kind: z.literal("design"),
+    template: z.enum(["circle", "badge", "banner"]),
+    text: z.string().min(1).max(60),
+    subtitle: z.string().max(60).optional(),
+    color: z.string().max(20).optional(),
+    withLogo: z.boolean().optional(),
+    emoji: z.string().min(1).max(8),
+  }),
+  z.object({
+    kind: z.literal("upload"),
+    /** Fayl mazmuni base64 ko'rinishida. */
+    data: z.string().min(10),
+    fileName: z.string().max(120),
+    format: z.enum(["static", "animated", "video"]),
+    emoji: z.string().min(1).max(8),
+  }),
+]);
+
+/** Telegram cheklovlari (turiga qarab). */
+const MAX_BYTES: Record<"static" | "animated" | "video", number> = {
+  static: 512 * 1024,
+  animated: 64 * 1024,
+  video: 256 * 1024,
+};
+
+const CONTENT_TYPE: Record<"static" | "animated" | "video", string> = {
+  static: "image/png",
+  animated: "application/gzip",
+  video: "video/webm",
+};
+
+export async function POST(request: Request) {
+  const admin = await requirePermission("settings", request);
+  if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "So'rov noto'g'ri." }, { status: 400 });
+
+  const input = parsed.data;
+
+  try {
+    let buffer: Buffer;
+    let format: "static" | "animated" | "video";
+    let fileName: string;
+
+    if (input.kind === "design") {
+      buffer = await stickerPng({
+        template: input.template,
+        text: input.text,
+        subtitle: input.subtitle,
+        color: input.color,
+        withLogo: input.withLogo,
+      });
+      format = "static";
+      fileName = "atoyo-sticker.png";
+    } else {
+      buffer = Buffer.from(input.data.replace(/^data:[^,]+,/, ""), "base64");
+      format = input.format;
+      fileName = input.fileName || `atoyo-sticker.${format === "video" ? "webm" : "tgs"}`;
+    }
+
+    if (buffer.length > MAX_BYTES[format]) {
+      return NextResponse.json(
+        {
+          error: `Fayl juda katta: ${Math.round(buffer.length / 1024)}KB. Telegram chegarasi — ${
+            MAX_BYTES[format] / 1024
+          }KB.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const result = await addStickerToPack({
+      buffer,
+      contentType: CONTENT_TYPE[format],
+      fileName,
+      format,
+      emoji: input.emoji,
+    });
+
+    await logAction(
+      `🎨 Yangi stiker qo'shildi (${admin.email ?? "admin"}): ${
+        input.kind === "design" ? `"${input.text}"` : fileName
+      } → t.me/addstickers/${result.packName}`
+    ).catch(() => {});
+
+    return NextResponse.json({
+      ...result,
+      link: `https://t.me/addstickers/${result.packName}`,
+    });
+  } catch (error) {
+    console.error("Stiker qo'shishda xato:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Stiker qo'shilmadi." },
+      { status: 500 }
+    );
+  }
+}

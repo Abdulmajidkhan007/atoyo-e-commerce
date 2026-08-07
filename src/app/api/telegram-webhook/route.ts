@@ -6,6 +6,7 @@ import { handleAdminCommand } from "@/lib/telegram/admin-commands";
 import { handleAdminSessionMessage, handleAdminSessionCallback } from "@/lib/telegram/admin-session";
 import { handleCustomerMessage, handleCustomerCallback } from "@/lib/telegram/customer-bot";
 import { handleIntakeMessage } from "@/lib/telegram/product-intake";
+import { handleStickerCommand, handleStickerMessage } from "@/lib/telegram/sticker-commands";
 import { resolveTopicConfig } from "@/lib/telegram/topics";
 import { getTelegramSecrets } from "@/lib/telegram/secrets";
 
@@ -36,6 +37,16 @@ interface TelegramMessage {
   caption?: string;
   /** Albom (bir nechta rasm bitta post) identifikatori. */
   media_group_id?: string;
+  /** Stiker (xodimlar guruhida bot javob stikerlarini sozlash uchun). */
+  sticker?: {
+    file_id: string;
+    set_name?: string;
+    emoji?: string;
+    is_animated?: boolean;
+    is_video?: boolean;
+  };
+  /** Reply qilingan xabar (stikerni slotga biriktirishda kerak). */
+  reply_to_message?: TelegramMessage;
 }
 
 interface TelegramCallbackQuery {
@@ -125,10 +136,27 @@ export async function POST(request: Request) {
     const message = update?.message;
     if (
       message &&
-      (message.text || message.contact || message.location || message.photo || message.video)
+      (message.text ||
+        message.contact ||
+        message.location ||
+        message.photo ||
+        message.video ||
+        message.sticker)
     ) {
       if (isAdminGroupChat(message.chat, staffChatId)) {
         const adminUserId = message.from?.id;
+
+        // Xodimlar guruhiga tashlangan stiker: bot uning kodini aytadi
+        // va to'plamni eslab qoladi (kirim topic'ida bundan mustasno -
+        // u yerda stiker mahsulotga aloqador emas).
+        if (message.sticker && !message.text) {
+          await handleStickerMessage({
+            chatId: message.chat.id,
+            threadId: message.message_thread_id,
+            sticker: message.sticker,
+          });
+          return NextResponse.json({ ok: true });
+        }
 
         // "Kirim" topic'i: rasm + izoh = yangi mahsulot. Bu topic
         // buyruqlarga ham, interaktiv sessiyaga ham tegishli emas -
@@ -177,6 +205,20 @@ export async function POST(request: Request) {
             caption,
             media,
             mediaGroupId: message.media_group_id,
+          });
+          return NextResponse.json({ ok: true });
+        }
+
+        // Stiker buyruqlari alohida - ular reply qilingan stikerni
+        // ham ko'rishi kerak.
+        const stickerCommand = message.text?.trim().match(/^\/stiker(?:lar)?(?:@\S+)?\b/i);
+        if (stickerCommand) {
+          await handleStickerCommand({
+            chatId: message.chat.id,
+            threadId: message.message_thread_id,
+            userId: adminUserId,
+            argsText: message.text!.trim().slice(stickerCommand[0].length).trim(),
+            replySticker: message.reply_to_message?.sticker,
           });
           return NextResponse.json({ ok: true });
         }

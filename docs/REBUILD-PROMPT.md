@@ -467,6 +467,34 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - APK GitHub Actions'da yig'iladi va `latest` release'ga yuklanadi;
   saytdagi footerdagi tugma o'sha faylga qaraydi.
 
+## 3a. BOT STIKERLARI
+
+Bot muhim daqiqalarda stiker yuboradi — do'kon jonli ko'rinadi:
+salomlashuv (`/start`), buyurtma qabul qilinishi, holat o'zgarishi
+(qabul qilindi / yo'lda / yetkazildi / bekor), yordamchi javob
+tayyorlayotgan payt ("kutish" stikeri javob kelgach O'CHIRILADI),
+xatolik. Har "daqiqa" — bitta SLOT, slotga stiker `file_id` si
+biriktiriladi. Slot bo'sh bo'lsa bot avvalgidek faqat matn yuboradi.
+
+- **Biriktirish (telefon):** xodimlar guruhiga stiker tashlanadi →
+  bot uning kodini aytadi va to'plamni eslab qoladi; o'sha stikerga
+  reply qilib `/stiker start` yoziladi. `/stiker` — ro'yxat va holat,
+  `/stiker olib <slot>` — bo'shatish, `/stiker egasi` — to'plam
+  egasini belgilash.
+- **Biriktirish (sayt):** `/admin/stikerlar` — slotlar ro'yxati va
+  to'plamlar; stikerni bosish uni tanlangan slotga biriktiradi.
+  Stiker rasmlari server orqali ko'rsatiladi (fayl manzilida bot
+  tokeni bo'lgani uchun).
+- **Yangi stiker yasash:** shablon (doira / nishon / lenta) + yozuv →
+  sayt 512x512 shaffof PNG chizadi (`next/og`, tashqi xizmatsiz) va
+  Telegram to'plamiga qo'shadi. Bot faqat O'ZI yaratgan to'plamga
+  yoza oladi (`atoyo_by_<bot>`), @Stickers orqali yasalgan eski
+  to'plam faqat o'qiladi.
+- **Animatsiyali stiker:** `.tgs` (Lottie, 64KB) yoki `.webm`
+  (VP9+alfa, 256KB) — bularni sayt yasay olmaydi, tayyor fayl
+  yuklanadi va to'plamga qo'shiladi.
+- Tartib: `docs/STICKERS.md`.
+
 ## 4a. DO'KONDAGI TELEVIZOR (`/tv`)
 
 Do'konga osilgan televizor uchun reklama ekrani. **Televizorga ILOVA
@@ -587,6 +615,9 @@ Admin (`requirePermission` bilan):
   lar), `social/secrets`, `social/post`, `social/queue`,
   `social/meta/connect|callback`, `social/youtube/connect|callback`;
 - do'kon ekrani: `tv` (GET sozlama + tayyor slaydlar, PUT saqlash);
+- stikerlar: `stickers` (slotlar + to'plamlar), `stickers/create`
+  (yasash yoki tayyor faylni qo'shish), `stickers/preview` (512x512
+  ko'rinish), `stickers/file` (Telegram rasmini uzatish);
 - boshqa: `orders/[id]/status`, `orders/[id]/return`, `users`,
   `promo`, `blog`, `expenses`, `reports`, `stats`, `broadcast`,
   `upload` (rasm va `kind=video`), `wholesale`, `wholesale/import`.

@@ -23,6 +23,7 @@ import WarehouseOutlinedIcon from "@mui/icons-material/WarehouseOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import TvOutlinedIcon from "@mui/icons-material/TvOutlined";
+import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { signOutUser } from "@/lib/firebase/auth";
 import { useAppDispatch } from "@/redux/hooks";
@@ -44,6 +45,7 @@ const NAV_ITEMS: { href: string; label: string; Icon: typeof DashboardOutlinedIc
   { href: "/admin/tolovlar", label: "To'lovlar", Icon: PaymentsOutlinedIcon, perm: "settings" },
   { href: "/admin/promokod", label: "Promokod", Icon: LocalOfferOutlinedIcon, perm: "settings" },
   { href: "/admin/tv", label: "Do'kon ekrani", Icon: TvOutlinedIcon, perm: "settings" },
+  { href: "/admin/stikerlar", label: "Stikerlar", Icon: EmojiEmotionsOutlinedIcon, perm: "settings" },
   { href: "/admin/sozlamalar", label: "Sozlamalar", Icon: SettingsOutlinedIcon, perm: "settings" },
 ];
 

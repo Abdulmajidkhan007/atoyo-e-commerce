@@ -55,6 +55,11 @@ const HELP_TEXT = [
   "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
   "<code>/stat</code> — umumiy statistika",
   "<code>/elon Matn...</code> — barcha foydalanuvchilarga e'lon (Telegram + Email)",
+  "",
+  "<b>🎨 Bot stikerlari:</b>",
+  "<code>/stiker</code> — slotlar ro'yxati va holati",
+  "stikerga <b>reply</b> qilib <code>/stiker start</code> — biriktirish",
+  "<code>/stiker olib start</code> — olib tashlash",
 ].join("\n");
 
 function formatSom(amount: number): string {

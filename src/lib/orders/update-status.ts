@@ -2,6 +2,7 @@ import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { editTopicMessageText, sendChatMessage } from "@/lib/telegram/bot";
+import { sendSlotSticker, slotForOrderStatus } from "@/lib/telegram/stickers";
 import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
 import { formatOrderMessage } from "@/lib/telegram/templates";
 import { sendOrderStatusEmail } from "@/lib/email/mailer";
@@ -127,6 +128,9 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
 
   if (telegramChatId) {
     try {
+      // Holatga mos stiker (sozlangan bo'lsa) - xabardan oldin.
+      const slot = slotForOrderStatus(updatedOrder.status);
+      if (slot) await sendSlotSticker(telegramChatId, slot);
       await sendChatMessage(
         telegramChatId,
         `📦 Buyurtmangiz <b>#${updatedOrder.id.slice(0, 8)}</b> holati: <b>${STATUS_DM_TEXT[updatedOrder.status]}</b>`

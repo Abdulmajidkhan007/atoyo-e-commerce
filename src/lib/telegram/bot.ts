@@ -287,3 +287,126 @@ export async function setTelegramWebhook(webhookUrl: string, secretToken: string
     allowed_updates: ["message", "callback_query"],
   });
 }
+
+/* ------------------------------------------------------------------ *
+ * STIKERLAR
+ *
+ * Bot ma'lum daqiqalarda stiker yuboradi (salomlashuv, buyurtma
+ * holati...). Yangi stiker QO'SHISH faqat botning O'ZI yaratgan
+ * to'plamiga mumkin - @Stickers bot orqali yasalgan eski to'plamga
+ * Bot API yozolmaydi (o'qish esa hammasiga ochiq).
+ * ------------------------------------------------------------------ */
+
+/** Bot haqida ma'lumot - to'plam nomi `_by_<username>` bilan tugashi shart. */
+export async function getBotUsername(): Promise<string> {
+  const me = await callTelegramApi<{ username?: string }>("getMe", {});
+  return me.username ?? "";
+}
+
+export async function sendSticker(
+  chatId: number | string,
+  fileId: string,
+  options?: { threadId?: number }
+): Promise<SentMessage> {
+  return callTelegramApi<SentMessage>("sendSticker", {
+    chat_id: chatId,
+    message_thread_id: options?.threadId,
+    sticker: fileId,
+  });
+}
+
+export interface TelegramSticker {
+  file_id: string;
+  file_unique_id: string;
+  emoji?: string;
+  is_animated?: boolean;
+  is_video?: boolean;
+  thumbnail?: { file_id: string };
+}
+
+export interface TelegramStickerSet {
+  name: string;
+  title: string;
+  stickers: TelegramSticker[];
+}
+
+/** To'plamni o'qish - ochiq to'plamlarning hammasi uchun ishlaydi. */
+export async function getStickerSet(name: string): Promise<TelegramStickerSet> {
+  return callTelegramApi<TelegramStickerSet>("getStickerSet", { name });
+}
+
+/**
+ * Fayl yuborish (multipart) - stiker rasmini yuklash uchun.
+ * `callTelegramApi` faqat JSON yuboradi, shuning uchun alohida.
+ */
+async function callTelegramApiForm<T>(method: string, form: FormData): Promise<T> {
+  const response = await fetch(`${TELEGRAM_API_BASE}/bot${await getBotToken()}/${method}`, {
+    method: "POST",
+    body: form,
+    cache: "no-store",
+  });
+  const rawBody = await response.text();
+  let data: { ok: boolean; description?: string; result?: T };
+  try {
+    data = JSON.parse(rawBody);
+  } catch {
+    throw new Error(`Telegram API'dan kutilmagan javob (${method}): ${rawBody.slice(0, 120)}`);
+  }
+  if (!data.ok) throw new Error(`Telegram API xatosi (${method}): ${data.description ?? "xato"}`);
+  return data.result as T;
+}
+
+/** Stiker faylini yuklaydi va Telegram'dagi `file_id` sini qaytaradi. */
+export async function uploadStickerFile(
+  userId: number,
+  file: { buffer: Buffer; fileName: string; contentType: string },
+  format: "static" | "animated" | "video"
+): Promise<string> {
+  const form = new FormData();
+  form.append("user_id", String(userId));
+  form.append("sticker_format", format);
+  form.append(
+    "sticker",
+    new Blob([new Uint8Array(file.buffer)], { type: file.contentType }),
+    file.fileName
+  );
+  const result = await callTelegramApiForm<{ file_id: string }>("uploadStickerFile", form);
+  return result.file_id;
+}
+
+/** Yangi to'plam yaratadi (nomi `..._by_<bot_username>` bo'lishi shart). */
+export async function createNewStickerSet(params: {
+  userId: number;
+  name: string;
+  title: string;
+  fileId: string;
+  emoji: string;
+  format: "static" | "animated" | "video";
+}): Promise<void> {
+  await callTelegramApi("createNewStickerSet", {
+    user_id: params.userId,
+    name: params.name,
+    title: params.title,
+    stickers: [
+      { sticker: params.fileId, format: params.format, emoji_list: [params.emoji] },
+    ],
+  });
+}
+
+export async function addStickerToSet(params: {
+  userId: number;
+  name: string;
+  fileId: string;
+  emoji: string;
+  format: "static" | "animated" | "video";
+}): Promise<void> {
+  await callTelegramApi("addStickerToSet", {
+    user_id: params.userId,
+    name: params.name,
+    sticker: { sticker: params.fileId, format: params.format, emoji_list: [params.emoji] },
+  });
+}
+
+export async function deleteStickerFromSet(fileId: string): Promise<void> {
+  await callTelegramApi("deleteStickerFromSet", { sticker: fileId });
+}

@@ -202,6 +202,19 @@ foydalanuvchi so'raganda.
 - Env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (xodimlar guruhi),
   `TELEGRAM_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL` (OG rasm URL'lari uchun).
 
+## Bot stikerlari
+
+Bot muhim daqiqalarda stiker yuboradi (salomlashuv, buyurtma holati,
+"kutish"). Sozlama `settings/stickers`, slot → `file_id`. Yuborish
+HECH QACHON asosiy oqimni to'xtatmaydi (`sendSlotSticker` xatoni
+yutadi). Biriktirish: xodimlar guruhida stikerga reply qilib
+`/stiker <slot>`, yoki `/admin/stikerlar`. Yangi stiker saytda
+chiziladi (`lib/stickers/render.tsx`, `next/og`, 512x512 PNG) va
+BOT YARATGAN to'plamga qo'shiladi — @Stickers orqali yasalgan eski
+to'plamni Bot API tahrirlay olmaydi (faqat o'qiydi). Animatsiyali
+`.tgs`/`.webm` sayt tomonidan yasalmaydi, faqat yuklab qo'shiladi.
+Tartib: `docs/STICKERS.md`.
+
 ## AI qatlami (`src/lib/ai/`)
 
 - `config.ts` — Anthropic klienti (`ANTHROPIC_API_KEY`, model

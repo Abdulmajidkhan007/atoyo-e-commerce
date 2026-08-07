@@ -28,6 +28,7 @@ import { markupFor, priceForRole } from "@/lib/products/wholesale";
 import { findWholesaleByPhone } from "@/lib/wholesale/clients";
 import { listReviews, saveReview } from "@/lib/reviews/save-review";
 import { askAssistant } from "@/lib/ai/assistant";
+import { sendLoadingSticker, sendSlotSticker } from "@/lib/telegram/stickers";
 import { isAiConfigured } from "@/lib/ai/config";
 import { searchByImage } from "@/lib/ai/image-search";
 import type { Product, ProductCategory } from "@/types/product";
@@ -248,6 +249,8 @@ function mainMenuKeyboard(t: BotDict): { inline_keyboard: InlineButton[][] } {
 
 /** Salomlashuv: generatsiya qilingan banner rasm + asosiy menyu (/start). */
 async function sendGreeting(chatId: number, t: BotDict): Promise<void> {
+  // Stiker sozlangan bo'lsa - salomlashuvdan oldin (bo'lmasa jimgina o'tadi).
+  await sendSlotSticker(chatId, "start");
   await sendChatMessage(chatId, t.welcome, {
     replyMarkup: mainMenuKeyboard(t),
     photoUrl: WELCOME_IMAGE_URL,
@@ -723,6 +726,9 @@ async function finishOrder(
 
   await saveSession(chatId, { state: "idle", cart: [], lang: session.lang, updatedAt: Date.now() });
 
+  // Buyurtma qabul qilingani - stiker bilan (sozlangan bo'lsa).
+  await sendSlotSticker(chatId, "order_created");
+
   // Onlayn to'lov tanlanganda saytdagi to'lov sahifasiga tugma beramiz
   // (Payme/Click kalitlar ulangach o'sha yerda to'laydi).
   const keyboard =
@@ -848,6 +854,8 @@ async function replyWithAssistant(
   }
 
   await sendChatMessage(chatId, t.assistantThinking);
+  // "Kutish" stikeri javob kelgach o'chiriladi.
+  const clearLoading = await sendLoadingSticker(chatId);
 
   try {
     const reply = await askAssistant({
@@ -886,6 +894,7 @@ async function replyWithAssistant(
     }
     buttons.push([{ text: t.backToMenu, callback_data: "m|home" }]);
 
+    await clearLoading();
     await sendChatMessage(chatId, escapeAssistantHtml(reply.answer), {
       replyMarkup: { inline_keyboard: buttons },
     });
@@ -901,6 +910,8 @@ async function replyWithAssistant(
     }
   } catch (error) {
     console.error("Bot yordamchisi xatosi:", error);
+    await clearLoading();
+    await sendSlotSticker(chatId, "error");
     await sendChatMessage(chatId, t.assistantError);
   }
 }
