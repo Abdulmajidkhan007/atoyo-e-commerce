@@ -99,9 +99,19 @@ async function fetchSourceImage(url: string): Promise<{ base64: string; mimeType
  * alohida ushlaydi, shunda bitta uslub tushib qolsa ham qolganlari
  * saqlanadi.
  */
+export interface ImageSource {
+  base64: string;
+  mimeType: string;
+}
+
+/**
+ * Gemini'ga bitta so'rov. Manba rasmlari IXTIYORIY: mahsulot
+ * generatsiyasida bitta rasm beriladi, stiker studiyasida esa
+ * matnning o'zidan ham yasash mumkin.
+ */
 async function callModel(
   model: string,
-  source: { base64: string; mimeType: string },
+  sources: ImageSource[],
   prompt: string,
   apiKey: string
 ): Promise<GeneratedImage> {
@@ -113,8 +123,10 @@ async function callModel(
         {
           role: "user",
           parts: [
-            { inline_data: { mime_type: source.mimeType, data: source.base64 } },
-            { text: `${prompt}\n\n${FIDELITY_RULE}` },
+            ...sources.map((source) => ({
+              inline_data: { mime_type: source.mimeType, data: source.base64 },
+            })),
+            { text: prompt },
           ],
         },
       ],
@@ -186,7 +198,15 @@ function uzbekHint(message: string): string | null {
   return null;
 }
 
-async function generateOne(source: { base64: string; mimeType: string }, prompt: string): Promise<GeneratedImage> {
+/**
+ * Rasm generatsiyasining UMUMIY yo'li: model nomlarini navbat bilan
+ * sinaydi va ishlaganini eslab qoladi. Mahsulot rasmlari ham, stiker
+ * studiyasi ham shu funksiyani chaqiradi (prompt esa har xil).
+ */
+export async function generateImage(params: {
+  prompt: string;
+  sources?: ImageSource[];
+}): Promise<GeneratedImage> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error("GEMINI_API_KEY sozlanmagan.");
 
@@ -195,7 +215,7 @@ async function generateOne(source: { base64: string; mimeType: string }, prompt:
 
   for (const model of models) {
     try {
-      const image = await callModel(model, source, prompt, apiKey);
+      const image = await callModel(model, params.sources ?? [], params.prompt, apiKey);
       workingModel = model;
       return image;
     } catch (error) {
@@ -208,6 +228,11 @@ async function generateOne(source: { base64: string; mimeType: string }, prompt:
   }
 
   throw lastError ?? new Error("Gemini javob bermadi.");
+}
+
+/** Mahsulot rasmi: manba rasm + o'zgarmaslik qoidasi. */
+async function generateOne(source: ImageSource, prompt: string): Promise<GeneratedImage> {
+  return generateImage({ prompt: `${prompt}\n\n${FIDELITY_RULE}`, sources: [source] });
 }
 
 /** Kalitga ochiq rasm modellari (xatolikni tushuntirish uchun). */

@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     template: (params.get("template") as StickerTemplate) || "circle",
     text: params.get("text") ?? "ATOYO",
     subtitle: params.get("subtitle") ?? "",
+    icon: params.get("icon") ?? "none",
     color: params.get("color") ?? undefined,
     withLogo: params.get("logo") !== "0",
   });

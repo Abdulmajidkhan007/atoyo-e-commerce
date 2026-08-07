@@ -490,6 +490,18 @@ biriktiriladi. Slot bo'sh bo'lsa bot avvalgidek faqat matn yuboradi.
   Telegram to'plamiga qo'shadi. Bot faqat O'ZI yaratgan to'plamga
   yoza oladi (`atoyo_by_<bot>`), @Stickers orqali yasalgan eski
   to'plam faqat o'qiladi.
+- **AI studiyasi (faqat admin):** to'rt manba — do'kon uslubida /
+  erkin matndan / mahsulot suratidan / mavjud stiker uslubida.
+  Gemini rasm chizadi, `sharp` uni stikerga aylantiradi: 512x512,
+  fon flood-fill bilan olib tashlanadi, atrofiga oq chegara
+  qo'shiladi, WEBP ga siqiladi. Natija avval ko'rsatiladi, keyin
+  to'plamga qo'shiladi yoki DO'KON SHABLONI ichiga qo'yiladi.
+  Model yozuv chizmaydi (harflarni xato yozadi) - yozuv shablondan.
+- **Dizayn:** stiker do'konning haqiqiy uslubida — oq halqa,
+  yuqorida oltin chiziqli ikonka (15 ta vektor ikonka), oq qalin
+  yozuv, oltin izoh, pastda oq linzada ATOYO logotipi (Λ + ikkita
+  oltin to'lqin). Logotip ham, ikonkalar ham koddan SVG sifatida
+  chiziladi — rasm fayli saqlanmaydi.
 - **Animatsiyali stiker:** `.tgs` (Lottie, 64KB) yoki `.webm`
   (VP9+alfa, 256KB) — bularni sayt yasay olmaydi, tayyor fayl
   yuklanadi va to'plamga qo'shiladi.

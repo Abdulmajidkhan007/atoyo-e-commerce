@@ -16,6 +16,13 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import { STICKER_ICONS, STICKER_ICON_LABELS } from "@/lib/stickers/icons";
+import {
+  STICKER_AI_MODE_HINTS,
+  STICKER_AI_MODE_LABELS,
+  type StickerAiMode,
+} from "@/lib/stickers/ai-modes";
 import {
   STICKER_SLOTS,
   STICKER_SLOT_INFO,
@@ -58,14 +65,28 @@ export function StickerManager() {
   const [newPack, setNewPack] = useState("");
   const [ownerId, setOwnerId] = useState("");
 
+  /** AI studiyasi. */
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [ai, setAi] = useState({
+    mode: "template" as StickerAiMode,
+    idea: "",
+    outline: 14,
+    referenceFileId: "",
+    imageBase64: "",
+  });
+  const [aiResult, setAiResult] = useState<string | null>(null);
+
   /** Stiker yasash formasi. */
   const [design, setDesign] = useState({
     template: "circle" as StickerTemplate,
     text: "RAHMAT",
     subtitle: "",
+    icon: "check",
     withLogo: true,
     emoji: "🙏",
   });
+  /** AI chizgan rasm shablon ichiga qo'yilganda shu yerda turadi. */
+  const [designArt, setDesignArt] = useState<string | null>(null);
 
   const load = async () => {
     try {
@@ -83,7 +104,14 @@ export function StickerManager() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => void load(), 0);
+    const timer = setTimeout(() => {
+      void load();
+      // AI kaliti bor-yo'qligi - bo'lmasa studiya ko'rsatilmaydi.
+      void fetch("/api/admin/stickers/ai")
+        .then((res) => (res.ok ? res.json() : { enabled: false }))
+        .then((data: { enabled?: boolean }) => setAiEnabled(Boolean(data.enabled)))
+        .catch(() => setAiEnabled(false));
+    }, 0);
     return () => clearTimeout(timer);
   }, []);
 
@@ -143,7 +171,7 @@ export function StickerManager() {
       const res = await fetch("/api/admin/stickers/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "design", ...design }),
+        body: JSON.stringify({ kind: "design", ...design, artDataUrl: designArt ?? undefined }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         link?: string;
@@ -198,9 +226,75 @@ export function StickerManager() {
     }
   };
 
+  /** AI stiker yasash (natija darhol to'plamga tushmaydi). */
+  const runAi = async () => {
+    setBusy("ai");
+    setMessage(null);
+    setAiResult(null);
+    try {
+      const res = await fetch("/api/admin/stickers/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: ai.mode,
+          idea: ai.idea,
+          outline: ai.outline,
+          referenceFileId: ai.mode === "style" ? ai.referenceFileId || undefined : undefined,
+          imageBase64: ai.mode === "photo" ? ai.imageBase64 || undefined : undefined,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        image?: string;
+        bytes?: number;
+        error?: string;
+      };
+      if (!res.ok || !data.image) throw new Error(data.error ?? "Stiker yasalmadi.");
+      setAiResult(data.image);
+      setMessage({
+        kind: "info",
+        text: `Tayyor (${Math.round((data.bytes ?? 0) / 1024)}KB). Ma'qul bo'lsa "To'plamga qo'shish" ni bosing.`,
+      });
+    } catch (error) {
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  /** AI yasagan stikerni Telegram to'plamiga qo'shish. */
+  const addAiToPack = async () => {
+    if (!aiResult) return;
+    setBusy("ai-add");
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/stickers/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "upload",
+          data: aiResult,
+          fileName: "atoyo-ai.webp",
+          format: "static",
+          emoji: design.emoji,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { link?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Qo'shilmadi.");
+      setMessage({ kind: "ok", text: `Stiker to'plamga qo'shildi: ${data.link}` });
+      setAiResult(null);
+      await load();
+    } catch (error) {
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const previewUrl = `/api/admin/stickers/preview?template=${design.template}&text=${encodeURIComponent(
     design.text
-  )}&subtitle=${encodeURIComponent(design.subtitle)}&logo=${design.withLogo ? "1" : "0"}`;
+  )}&subtitle=${encodeURIComponent(design.subtitle)}&icon=${design.icon}&logo=${
+    design.withLogo ? "1" : "0"
+  }`;
 
   if (loading) {
     return (
@@ -338,9 +432,184 @@ export function StickerManager() {
         ))}
       </section>
 
-      {/* ---------- 3) YANGI STIKER YASASH ---------- */}
+      {/* ---------- 3) AI STUDIYASI ---------- */}
+      {aiEnabled && (
+        <section className="rounded-xl2 border border-aqua-200 bg-aqua-50/50 p-4 dark:border-navy-500 dark:bg-navy-600/40">
+          <h2 className="mb-1 flex items-center gap-2 text-lg font-bold text-navy-900 dark:text-white">
+            <AutoAwesomeIcon fontSize="small" /> AI bilan stiker yasash
+          </h2>
+          <p className="mb-4 text-sm text-navy-300">
+            Sun&apos;iy intellekt rasm chizadi, sayt uni haqiqiy Telegram stikeriga aylantiradi:
+            512×512, foni shaffof, atrofida oq chegara. Natija darhol to&apos;plamga tushmaydi —
+            avval ko&apos;rasiz.
+          </p>
+
+          <div className="grid gap-4 md:grid-cols-[280px_1fr]">
+            {/* Natija */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-[240px] w-[240px] rounded-xl2 bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:24px_24px] p-2">
+                {aiResult ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={aiResult} alt="AI stiker" className="h-full w-full object-contain" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-center text-xs text-navy-300">
+                    {busy === "ai" ? "Chizilmoqda…" : "Hali yasalmagan"}
+                  </div>
+                )}
+              </div>
+              {aiResult && (
+                <div className="flex flex-col gap-1">
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => void addAiToPack()}
+                    disabled={busy !== null}
+                  >
+                    {busy === "ai-add" ? (
+                      <CircularProgress size={18} color="inherit" />
+                    ) : (
+                      "To'plamga qo'shish"
+                    )}
+                  </Button>
+                  {/* Eng chiroyli natija: AI rasmi + do'kon ramkasi. */}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      setDesignArt(aiResult);
+                      setMessage({
+                        kind: "info",
+                        text: "Rasm shablonga qo'yildi — pastda yozuvni yozib, saqlang.",
+                      });
+                    }}
+                    disabled={busy !== null}
+                  >
+                    Shablon ichiga qo&apos;yish
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Sozlamalari */}
+            <div className="flex flex-col gap-3">
+              <FormControl size="small" fullWidth>
+                <InputLabel id="ai-mode">Nimadan yasalsin</InputLabel>
+                <Select
+                  labelId="ai-mode"
+                  label="Nimadan yasalsin"
+                  value={ai.mode}
+                  onChange={(event) =>
+                    setAi({ ...ai, mode: event.target.value as StickerAiMode })
+                  }
+                >
+                  {(Object.keys(STICKER_AI_MODE_LABELS) as StickerAiMode[]).map((mode) => (
+                    <MenuItem key={mode} value={mode}>
+                      {STICKER_AI_MODE_LABELS[mode]}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <p className="-mt-2 text-xs text-navy-300">{STICKER_AI_MODE_HINTS[ai.mode]}</p>
+
+              <TextField
+                size="small"
+                label="Nima chizilsin"
+                placeholder="Kulayotgan santexnik bosh barmog'ini ko'tarib turibdi"
+                value={ai.idea}
+                onChange={(event) => setAi({ ...ai, idea: event.target.value.slice(0, 300) })}
+                multiline
+                minRows={2}
+                fullWidth
+              />
+
+              {ai.mode === "photo" && (
+                <Button component="label" variant="outlined" size="small" className="!w-fit">
+                  {ai.imageBase64 ? "Surat tanlandi ✓ (almashtirish)" : "Mahsulot suratini tanlash"}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => setAi({ ...ai, imageBase64: String(reader.result) });
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </Button>
+              )}
+
+              {ai.mode === "style" && (
+                <div>
+                  <p className="mb-1 text-xs font-medium text-navy-500 dark:text-navy-100">
+                    Namuna stiker (bosib tanlang)
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {packs.flatMap((pack) => pack.stickers).slice(0, 40).map((sticker) => (
+                      <button
+                        key={sticker.fileId}
+                        type="button"
+                        onClick={() => setAi({ ...ai, referenceFileId: sticker.fileId })}
+                        className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border bg-white p-1 dark:bg-navy-600 ${
+                          ai.referenceFileId === sticker.fileId
+                            ? "border-aqua-500 ring-2 ring-aqua-400"
+                            : "border-navy-100 dark:border-navy-500"
+                        }`}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={sticker.previewUrl} alt="" className="h-full w-full object-contain" />
+                      </button>
+                    ))}
+                    {packs.length === 0 && (
+                      <span className="text-xs text-navy-300">Avval to&apos;plam qo&apos;shing.</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-3">
+                <TextField
+                  size="small"
+                  type="number"
+                  label="Oq chegara (0-40)"
+                  value={ai.outline}
+                  onChange={(event) =>
+                    setAi({ ...ai, outline: Math.max(0, Math.min(40, Number(event.target.value) || 0)) })
+                  }
+                  className="w-[160px]"
+                />
+                <TextField
+                  size="small"
+                  label="Emoji"
+                  value={design.emoji}
+                  onChange={(event) => setDesign({ ...design, emoji: event.target.value.slice(0, 8) })}
+                  className="w-[120px]"
+                />
+                <Button
+                  variant="contained"
+                  startIcon={<AutoAwesomeIcon />}
+                  onClick={() => void runAi()}
+                  disabled={busy !== null}
+                >
+                  {busy === "ai" ? <CircularProgress size={20} color="inherit" /> : "Yasash"}
+                </Button>
+              </div>
+
+              <p className="text-xs text-navy-300">
+                Model <b>yozuv chizmaydi</b> (harflarni xato yozadi) — yozuvli stiker kerak bo&apos;lsa
+                pastdagi shablondan foydalaning. Har bir urinish pul turadi, shuning uchun
+                oynani ochiq qoldirib bosaverish shart emas.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ---------- 4) YOZUVLI STIKER (SHABLON) ---------- */}
       <section>
-        <h2 className="mb-1 text-lg font-bold text-navy-900 dark:text-white">Yangi stiker yasash</h2>
+        <h2 className="mb-1 text-lg font-bold text-navy-900 dark:text-white">Yozuvli stiker (shablon)</h2>
         <p className="mb-4 text-sm text-navy-300">
           Yozuvni kiriting — stiker shu yerda chiziladi va bot to&apos;plamiga qo&apos;shiladi.
           Bot faqat <b>o&apos;zi yaratgan</b> to&apos;plamga stiker qo&apos;sha oladi (@Stickers orqali
@@ -414,9 +683,40 @@ export function StickerManager() {
               size="small"
               label="Ikkinchi qator (ixtiyoriy)"
               value={design.subtitle}
-              onChange={(event) => setDesign({ ...design, subtitle: event.target.value.slice(0, 60) })}
+              onChange={(event) => setDesign({ ...design, subtitle: event.target.value.slice(0, 70) })}
               fullWidth
             />
+
+            {/* Yuqoridagi ikonka - do'kon stikerlaridagi oltin belgi. */}
+            {designArt ? (
+              <Alert
+                severity="info"
+                action={
+                  <Button size="small" onClick={() => setDesignArt(null)}>
+                    Olib tashlash
+                  </Button>
+                }
+              >
+                Yuqorida AI chizgan rasm turibdi (ikonka o&apos;rniga).
+              </Alert>
+            ) : (
+              <FormControl size="small" fullWidth>
+                <InputLabel id="st-icon">Yuqoridagi ikonka</InputLabel>
+                <Select
+                  labelId="st-icon"
+                  label="Yuqoridagi ikonka"
+                  value={design.icon}
+                  onChange={(event) => setDesign({ ...design, icon: event.target.value })}
+                >
+                  <MenuItem value="none">{STICKER_ICON_LABELS.none}</MenuItem>
+                  {STICKER_ICONS.map((icon) => (
+                    <MenuItem key={icon} value={icon}>
+                      {STICKER_ICON_LABELS[icon] ?? icon}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             <div className="flex flex-wrap items-center gap-3">
               <TextField

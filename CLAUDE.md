@@ -213,7 +213,10 @@ chiziladi (`lib/stickers/render.tsx`, `next/og`, 512x512 PNG) va
 BOT YARATGAN to'plamga qo'shiladi — @Stickers orqali yasalgan eski
 to'plamni Bot API tahrirlay olmaydi (faqat o'qiydi). Animatsiyali
 `.tgs`/`.webm` sayt tomonidan yasalmaydi, faqat yuklab qo'shiladi.
-Tartib: `docs/STICKERS.md`.
+Statik stikerni AI ham yasaydi (`lib/stickers/ai.ts` - Gemini rasm,
+`image.ts` - `sharp` bilan fon olib tashlash + oq chegara + WEBP).
+Logotip va 15 ta ikonka koddan vektor sifatida chiziladi
+(`lib/stickers/art.ts`) - rasm fayli yo'q. Tartib: `docs/STICKERS.md`.
 
 ## AI qatlami (`src/lib/ai/`)
 

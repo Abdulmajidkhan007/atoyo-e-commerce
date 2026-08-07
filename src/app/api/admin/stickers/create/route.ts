@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePermission } from "@/lib/firebase/session";
 import { stickerPng } from "@/lib/stickers/render";
+import { ensureStickerWebp } from "@/lib/stickers/image";
 import { addStickerToPack } from "@/lib/telegram/stickers";
 import { logAction } from "@/lib/telegram/action-log";
 
@@ -24,8 +25,11 @@ const schema = z.union([
   z.object({
     kind: z.literal("design"),
     template: z.enum(["circle", "badge", "banner"]),
-    text: z.string().min(1).max(60),
-    subtitle: z.string().max(60).optional(),
+    text: z.string().min(1).max(70),
+    subtitle: z.string().max(70).optional(),
+    icon: z.string().max(30).optional(),
+    /** AI chizgan rasm - ikonka o'rniga shablon ichiga qo'yiladi. */
+    artDataUrl: z.string().max(3_000_000).optional(),
     color: z.string().max(20).optional(),
     withLogo: z.boolean().optional(),
     emoji: z.string().min(1).max(8),
@@ -53,6 +57,12 @@ const CONTENT_TYPE: Record<"static" | "animated" | "video", string> = {
   video: "video/webm",
 };
 
+/** Yuklangan faylning turi nom bo'yicha (AI stiker WEBP qaytaradi). */
+function contentTypeFor(format: "static" | "animated" | "video", fileName: string): string {
+  if (format === "static") return "image/webp";
+  return CONTENT_TYPE[format];
+}
+
 export async function POST(request: Request) {
   const admin = await requirePermission("settings", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
@@ -68,19 +78,28 @@ export async function POST(request: Request) {
     let fileName: string;
 
     if (input.kind === "design") {
-      buffer = await stickerPng({
-        template: input.template,
-        text: input.text,
-        subtitle: input.subtitle,
-        color: input.color,
-        withLogo: input.withLogo,
-      });
+      buffer = await ensureStickerWebp(
+        await stickerPng({
+          template: input.template,
+          text: input.text,
+          subtitle: input.subtitle,
+          icon: input.icon,
+          artDataUrl: input.artDataUrl,
+          color: input.color,
+          withLogo: input.withLogo,
+        })
+      );
       format = "static";
-      fileName = "atoyo-sticker.png";
+      fileName = "atoyo-sticker.webp";
     } else {
       buffer = Buffer.from(input.data.replace(/^data:[^,]+,/, ""), "base64");
       format = input.format;
-      fileName = input.fileName || `atoyo-sticker.${format === "video" ? "webm" : "tgs"}`;
+      // Statik stiker har doim 512x512 WEBP ga keltiriladi.
+      if (format === "static") buffer = await ensureStickerWebp(buffer);
+      fileName =
+        format === "static"
+          ? "atoyo-sticker.webp"
+          : input.fileName || `atoyo-sticker.${format === "video" ? "webm" : "tgs"}`;
     }
 
     if (buffer.length > MAX_BYTES[format]) {
@@ -96,7 +115,7 @@ export async function POST(request: Request) {
 
     const result = await addStickerToPack({
       buffer,
-      contentType: CONTENT_TYPE[format],
+      contentType: contentTypeFor(format, fileName),
       fileName,
       format,
       emoji: input.emoji,

@@ -32,6 +32,7 @@
     "read-excel-file": "^9.3.5",
     "redux-persist": "^6.0.0",
     "server-only": "^0.0.1",
+    "sharp": "^0.34.5",
     "swiper": "^11.2.10",
     "zod": "^3.24.1"
   },

@@ -59,11 +59,56 @@ Stiker rasmlari Telegram'dan **server orqali** ko'rsatiladi
 (`/api/admin/stickers/file`) — fayl manzilida bot tokeni bo'lgani
 uchun uni brauzerga to'g'ridan-to'g'ri berib bo'lmaydi.
 
-## 4. Yangi stiker yasash
+## 4. AI STUDIYASI (sun'iy intellekt yasaydi)
 
-Sayt stikerni o'zi chizadi (`next/og`, tashqi xizmatsiz):
-shablon (doira / nishon / lenta), yozuv, ikkinchi qator, "ATOYO"
-lentasi. Natija 512×512 shaffof PNG.
+**Admin → Stikerlar → "AI bilan stiker yasash"** (faqat
+`GEMINI_API_KEY` sozlangan bo'lsa ko'rinadi).
+
+To'rt xil manba:
+
+| Rejim | Nima qiladi |
+|---|---|
+| **Do'kon uslubida** | Ko'k/oltin brend palitrasida santexnika mavzusidagi belgi |
+| **Matndan** | "Kulayotgan santexnik bosh barmoq ko'tarib turibdi" — erkin tasvir |
+| **Mahsulot suratidan** | Suratni yuklaysiz → u stiker illyustratsiyasiga aylanadi |
+| **Mavjud stiker uslubida** | To'plamdan namuna tanlaysiz → AI o'sha uslubda yangisini chizadi |
+
+Keyin sayt rasmni **haqiqiy stikerga** aylantiradi (`lib/stickers/image.ts`,
+`sharp` bilan):
+
+1. 512×512 ga keltiradi;
+2. **fonini olib tashlaydi** — chekkadan "to'kib chiqish" (flood fill)
+   usuli bilan, shuning uchun mahsulot ichidagi oq joylar saqlanadi;
+3. atrofiga **oq chegara** chizadi (alfa kanalni yoyib, oq siluet
+   yasaydi va ostiga qo'yadi) — stiker har qanday chat foniga
+   tushganda ajralib turadi;
+4. WEBP ga siqadi (512KB chegarasiga sig'guncha sifat pasayadi).
+
+Natija **darhol to'plamga tushmaydi** — avval ko'rasiz, keyin:
+
+- **"To'plamga qo'shish"** — rasmning o'zi stiker bo'ladi;
+- **"Shablon ichiga qo'yish"** — eng chiroylisi: AI rasmi do'kon
+  ramkasiga (oq halqa + yozuv + ATOYO linzasi) tushadi.
+
+> Model **yozuv chizmaydi** — bu ataylab: rasm modellari harflarni,
+> ayniqsa o'zbekchani, xato yozadi. Yozuv har doim shablon orqali
+> aniq qo'yiladi.
+
+## 4a. Yangi stiker yasash
+
+Sayt stikerni do'konning HAQIQIY uslubida chizadi (`next/og`,
+tashqi xizmatsiz):
+
+- oq halqa ichida to'q ko'k doira (gradient bilan);
+- yuqorida **oltin chiziqli ikonka** — 15 ta tayyor: yulduz, sovg'a,
+  savol, tasdiq, quti, telefon, yetkazish, mashina, masjid, yurak,
+  soat, kalit, tomchi, chegirma, e'lon (`lib/stickers/art.ts`,
+  vektor SVG);
+- o'rtada oq qalin yozuv, ostida kichik oltin izoh;
+- pastda oq linza va **ATOYO logotipi** (Λ harfi + ikkita oltin
+  to'lqin) — u ham koddan chiziladi, rasm fayli kerak emas.
+
+Natija 512×512 shaffof stiker.
 
 **Muhim cheklov:** Bot faqat **o'zi yaratgan** to'plamga stiker
 qo'sha oladi. @Stickers bot orqali yasalgan eski to'plam
