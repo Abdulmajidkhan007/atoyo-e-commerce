@@ -32,7 +32,7 @@ function resetEmailHtml(link: string): string {
  *
  * Firebase'ning standart xati `atoyo-uz.firebaseapp.com` havolasi bilan
  * keladi va ko'pincha spamga tushadi; "Customize action URL" esa faqat
- * Firebase Hosting domeni uchun ishlaydi (netlify.app domeniga
+ * Firebase Hosting domeni uchun ishlaydi (boshqa domenda
  * EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED xatosi chiqadi).
  *
  * Shuning uchun: Admin SDK havolani yaratadi, undan `oobCode` olinadi va

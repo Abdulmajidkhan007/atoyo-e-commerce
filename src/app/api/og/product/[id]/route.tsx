@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getProductById } from "@/lib/firebase/admin-products";
 import { effectivePrice } from "@/lib/products/pricing";
+import { formatSom } from "@/lib/format";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const product = await getProductById(id);
   const name = product?.name ?? "Atoyo Santexnika";
-  const price = product ? `${effectivePrice(product).toLocaleString("uz-UZ")} so'm` : "";
+  const price = product ? formatSom(effectivePrice(product)) : "";
 
   return new ImageResponse(
     (

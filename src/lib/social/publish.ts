@@ -12,6 +12,7 @@ import { publishToFacebook, publishToInstagram } from "./meta";
 import { uploadToYoutube } from "./youtube";
 import { SOCIAL_LABELS, type SocialJob, type SocialNetwork } from "@/types/social";
 import type { Product } from "@/types/product";
+import { formatSom } from "@/lib/format";
 
 /**
  * IJTIMOIY TARMOQQA POST QILISH VA NAVBAT.
@@ -30,10 +31,6 @@ const COLLECTION = "socialQueue";
 const MAX_ATTEMPTS = 3;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo-uz.web.app";
-
-function formatSom(amount: number): string {
-  return `${Math.round(amount).toLocaleString("uz-UZ")} so'm`;
-}
 
 /**
  * POST MATNI. Ijtimoiy tarmoqda DONA (chakana) narx ko'rsatiladi -

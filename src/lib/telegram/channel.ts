@@ -20,6 +20,7 @@ import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { sendPushToTopic, PRODUCTS_TOPIC } from "@/lib/notifications/push";
 import type { Product } from "@/types/product";
 import type { BlogPost, ChannelPostFooter } from "@/types/content";
+import { formatSom } from "@/lib/format";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
 
@@ -29,10 +30,6 @@ function siteUrl(): string {
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
 /**

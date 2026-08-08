@@ -10,14 +10,11 @@ import {
   buildClickCheckoutUrl,
 } from "@/lib/payments/config";
 import type { Order } from "@/types/order";
+import { formatSom } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "To'lov | Atoyo Santexnika" };
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 /**
  * Onlayn to'lov sahifasi: buyurtma uchun Payme/Click tugmalari.

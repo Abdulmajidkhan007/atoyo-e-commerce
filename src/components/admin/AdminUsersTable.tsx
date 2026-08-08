@@ -28,6 +28,7 @@ import {
   type PermissionKey,
 } from "@/lib/permissions";
 import type { AppUser } from "@/types/user";
+import { formatDate, formatSom } from "@/lib/format";
 
 /** Serverdan keladigan qo'shimcha maydonlar (buyurtma statistikasi). */
 interface EnrichedUser extends AppUser {
@@ -35,14 +36,6 @@ interface EnrichedUser extends AppUser {
   totalSpent?: number;
   lastOrderAt?: number | null;
   source?: "telegram" | "site";
-}
-
-/** Sana - locale'ga bog'liq bo'lmasin uchun qo'lda formatlanadi. */
-function formatDate(ms?: number | null): string {
-  if (!ms) return "—";
-  const d = new Date(ms);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
 interface UsersPage {
@@ -242,7 +235,7 @@ export function AdminUsersTable({ viewerIsOwner }: { viewerIsOwner: boolean }) {
                     </p>
                     {((user as EnrichedUser).totalSpent ?? 0) > 0 && (
                       <p className="text-navy-300">
-                        {((user as EnrichedUser).totalSpent ?? 0).toLocaleString("uz-UZ")} so&apos;m
+                        {formatSom((user as EnrichedUser).totalSpent ?? 0)}
                       </p>
                     )}
                     {(user as EnrichedUser).lastOrderAt ? (

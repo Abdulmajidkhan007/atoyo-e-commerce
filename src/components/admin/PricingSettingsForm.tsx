@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Button, CircularProgress, TextField } from "@mui/material";
 import { DEFAULT_PRICING_SETTINGS, retailFromWholesale } from "@/lib/products/wholesale";
+import { formatSom } from "@/lib/format";
 
 /**
  * NARX SOZLAMALARI.
@@ -75,7 +76,7 @@ export function PricingSettingsForm() {
           label="Dona ustamasi (%)"
           value={markup}
           onChange={(event) => setMarkup(event.target.value.replace(/[^\d.]/g, ""))}
-          helperText={`Masalan: optom 100 000 so'm → dona ${example.toLocaleString("uz-UZ")} so'm`}
+          helperText={`Masalan: optom 100 000 so'm → dona ${formatSom(example)}`}
         />
         <TextField
           size="small"

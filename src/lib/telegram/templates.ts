@@ -1,5 +1,6 @@
 import "server-only";
 import type { Order, OrderStatus } from "@/types/order";
+import { formatSom } from "@/lib/format";
 
 function escapeHtml(text: string): string {
   return text
@@ -30,7 +31,7 @@ const PAYMENT_STATUS_LABELS: Record<Order["paymentStatus"], string> = {
 
 export function formatOrderMessage(order: Order): string {
   const itemsList = order.items
-    .map((item) => `• ${escapeHtml(item.name)} — ${item.quantity} x ${item.price.toLocaleString("uz-UZ")} so'm`)
+    .map((item) => `• ${escapeHtml(item.name)} — ${item.quantity} x ${formatSom(item.price)}`)
     .join("\n");
 
   const lines = [
@@ -61,19 +62,19 @@ export function formatOrderMessage(order: Order): string {
 
   // Chegirma/yetkazish bo'lsa - hisob-kitob ochiq ko'rsatiladi.
   if (order.discountAmount || order.deliveryFee) {
-    lines.push(`🧾 <b>Mahsulotlar summasi:</b> ${(order.subtotal ?? order.totalAmount).toLocaleString("uz-UZ")} so'm`);
+    lines.push(`🧾 <b>Mahsulotlar summasi:</b> ${formatSom(order.subtotal ?? order.totalAmount)}`);
     if (order.discountAmount) {
       lines.push(
-        `🏷 <b>Chegirma${order.promoCode ? ` (${escapeHtml(order.promoCode)})` : ""}:</b> −${order.discountAmount.toLocaleString("uz-UZ")} so'm`
+        `🏷 <b>Chegirma${order.promoCode ? ` (${escapeHtml(order.promoCode)})` : ""}:</b> −${formatSom(order.discountAmount)}`
       );
     }
     if (order.deliveryFee) {
-      lines.push(`🚚 <b>Yetkazib berish:</b> ${order.deliveryFee.toLocaleString("uz-UZ")} so'm`);
+      lines.push(`🚚 <b>Yetkazib berish:</b> ${formatSom(order.deliveryFee)}`);
     }
   }
 
   lines.push(
-    `💰 <b>Jami:</b> ${order.totalAmount.toLocaleString("uz-UZ")} so'm`,
+    `💰 <b>Jami:</b> ${formatSom(order.totalAmount)}`,
     `💳 <b>To'lov:</b> ${PAYMENT_LABELS[order.paymentMethod]}${PAYMENT_STATUS_LABELS[order.paymentStatus]}`,
     ``,
     `Holat: ${STATUS_LABELS[order.status]}`

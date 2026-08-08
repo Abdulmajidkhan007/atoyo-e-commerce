@@ -17,7 +17,7 @@ export interface SecretsSnapshot {
 
 const SOURCE_LABELS: Record<SecretView["source"], string> = {
   panel: "shu paneldan o'rnatilgan",
-  env: "Netlify env'dan olinyapti",
+  env: "server sozlamasidan (env) olinyapti",
   none: "o'rnatilmagan",
 };
 
@@ -97,7 +97,8 @@ export function SecretsForm({ initial }: { initial: SecretsSnapshot }) {
     <form onSubmit={submit} className="flex max-w-xl flex-col gap-4 rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
       <p className="text-xs text-navy-300">
         Qiymatlar to&apos;liq ko&apos;rsatilmaydi. Bo&apos;sh qoldirilgan maydon o&apos;zgarmaydi;{" "}
-        <code>-</code> yozilsa paneldagi qiymat o&apos;chadi va yana Netlify&apos;dagi qiymat ishlaydi.
+        <code>-</code> yozilsa paneldagi qiymat o&apos;chadi va yana server sozlamasidagi (env) qiymat
+        ishlaydi.
       </p>
 
       <SecretField

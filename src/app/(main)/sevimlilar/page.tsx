@@ -8,10 +8,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { removeFavorite } from "@/redux/slices/favoritesSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 /** Sevimli mahsulotlar ro'yxati (localStorage'da saqlanadi). */
 export default function FavoritesPage() {

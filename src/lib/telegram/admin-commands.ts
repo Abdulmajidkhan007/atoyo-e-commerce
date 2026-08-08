@@ -9,6 +9,7 @@ import { sendBroadcast } from "@/lib/broadcast";
 import { logAction } from "./action-log";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 import type { Order } from "@/types/order";
+import { formatSom } from "@/lib/format";
 
 /**
  * ADMIN BUYRUQLARI - FAQAT yopiq xodimlar guruhida ishlaydi.
@@ -61,10 +62,6 @@ const HELP_TEXT = [
   "stikerga <b>reply</b> qilib <code>/stiker start</code> — biriktirish",
   "<code>/stiker olib start</code> — olib tashlash",
 ].join("\n");
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 /**
  * Mahsulotni topadi. Buyruqlarda odatda QISQA RAQAM yoziladi

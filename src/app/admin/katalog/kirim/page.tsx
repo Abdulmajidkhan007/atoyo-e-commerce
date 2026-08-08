@@ -13,10 +13,7 @@ import { ZeroStockIntake } from "@/components/admin/ZeroStockIntake";
 import { variantLabel } from "@/lib/products/variants";
 import type { Product } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 interface IntakeRow {
   productId: string;

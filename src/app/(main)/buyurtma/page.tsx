@@ -21,10 +21,7 @@ import { normalizePhone, isValidName } from "@/lib/validation";
 import { deliveryFeeFor } from "@/lib/orders/promo";
 import { DEFAULT_DELIVERY_SETTINGS, type DeliverySettings } from "@/types/promo";
 import { useI18n } from "@/lib/i18n/LocaleContext";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 export default function CheckoutPage() {
   const router = useRouter();

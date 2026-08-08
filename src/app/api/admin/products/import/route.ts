@@ -11,6 +11,7 @@ import { logAction } from "@/lib/telegram/action-log";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { reserveProductCodes } from "@/lib/products/product-code";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
+import { slugify } from "@/lib/slug";
 
 export const runtime = "nodejs";
 
@@ -58,15 +59,6 @@ async function parseXlsx(base64: string): Promise<Record<string, string>[]> {
 /** Firestore batch chegarasi 500 - xavfsiz oraliq bilan bo'lib yozamiz. */
 const BATCH_SIZE = 400;
 
-function slugify(name: string): string {
-  return (
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-") || "mahsulot"
-  );
-}
 
 function toNumber(value: string | undefined): number | undefined {
   if (!value || !value.trim()) return undefined;
@@ -359,7 +351,7 @@ export async function POST(request: Request) {
         ...base,
         id: ref.id,
         code: codes[codeIndex++],
-        slug: `${slugify(name)}-${ref.id.slice(0, 6)}`,
+        slug: `${slugify(name, { fallback: "mahsulot" })}-${ref.id.slice(0, 6)}`,
         discountUntil: null,
         currency: "UZS",
         salesCount: 0,

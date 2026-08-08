@@ -155,7 +155,7 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
           <p className="mt-1 text-xs text-navy-300">
             Yangi mahsulot va blog postlari (saytdan ham, adminlar guruhidan ham) shu kanalga
             avtomatik chiqadi. Bot kanalda <b>admin</b> bo&apos;lishi kerak. Bo&apos;sh qoldirilsa —
-            Netlify&apos;dagi <code>TELEGRAM_CHANNEL_ID</code> qiymati ishlatiladi.
+            server sozlamasidagi <code>TELEGRAM_CHANNEL_ID</code> qiymati ishlatiladi.
           </p>
         </div>
         <TextField

@@ -34,6 +34,7 @@ import { searchByImage } from "@/lib/ai/image-search";
 import type { Product, ProductCategory } from "@/types/product";
 import type { Order, OrderItem } from "@/types/order";
 import type { BlogPost } from "@/types/content";
+import { formatSom } from "@/lib/format";
 
 /**
  * MIJOZ-BOT - FAQAT shaxsiy (private) chatlarda ishlaydi. Webhook bu
@@ -109,10 +110,6 @@ const WELCOME_IMAGE_URL = `${SITE_URL}/api/og/welcome`;
 function profileImageUrl(name: string, phone: string): string {
   const q = new URLSearchParams({ name, phone });
   return `${SITE_URL}/api/og/profile?${q.toString()}`;
-}
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
 interface BotUser {

@@ -14,14 +14,20 @@ import { NextResponse, type NextRequest } from "next/server";
  *      (masalan CVE-2025-29927) /adminni ocholmaydi: proxy chetlab
  *      o'tilsa ham layout tekshiruvi turibdi.
  *
- * MUHIM CHEKLOV (nega bu yerda Firebase Admin SDK YO'Q): Next.js 16'ning
- * o'zida Proxy Node.js runtime'da ishlaydi, LEKIN Netlify'ning Next.js
- * adapteri (@netlify/plugin-nextjs) proxy/middleware'ni Deno asosidagi
- * Edge Function sifatida joylashtiradi. firebase-admin Node API'lariga
- * bog'liq bo'lgani uchun u Edge'da yuklanmaydi va butun /admin yo'nalishi
- * "nextHandler is not a function" xatosi bilan yiqilar edi. Shuning uchun
- * bu qatlam ATAYLAB faqat cookie mavjudligini tekshiradi - to'liq
- * kriptografik tekshiruv yuqoridagi 2-qatlamda amalga oshadi.
+ * MUHIM CHEKLOV (nega bu yerda Firebase Admin SDK YO'Q): bu fayl
+ * ATAYLAB "edge-safe" - firebase-admin import QILINMAYDI. Sabab ikkita:
+ *
+ *   • Proxy HAR BIR /admin so'roviga qo'shiladi. firebase-admin og'ir
+ *     paket - uni bu yerga tortish har so'rovga sovuq start qo'shadi,
+ *     holbuki bu qatlam faqat "cookie bormi?" degan tez tekshiruv.
+ *   • Proxy'ni Edge runtime'da ishlatadigan hostinglar bor (masalan
+ *     Netlify adapteri uni Deno Edge Function qilib joylashtiradi).
+ *     firebase-admin Node API'lariga bog'liq va u yerda yuklanmaydi -
+ *     butun /admin "nextHandler is not a function" bilan yiqilardi.
+ *     Firebase App Hosting'da bunday cheklov yo'q, lekin qoidani
+ *     saqlaymiz: zaxira hosting variantini yopib qo'ymaydi.
+ *
+ * To'liq kriptografik tekshiruv yuqoridagi 2-qatlamda amalga oshadi.
  */
 
 const SESSION_COOKIE_NAME = "__session";

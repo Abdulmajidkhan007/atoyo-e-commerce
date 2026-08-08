@@ -55,7 +55,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  // "-" = panel qiymatini olib tashlash (Netlify env'idagi qiymat ishlaydi).
+  // "-" = panel qiymatini olib tashlash (server env'idagi qiymat ishlaydi).
   const updates: Record<string, string> = {};
   const changed: string[] = [];
   for (const key of ["botToken", "chatId", "webhookSecret"] as const) {

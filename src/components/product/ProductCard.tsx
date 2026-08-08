@@ -15,10 +15,7 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 import { FavoriteButton } from "./FavoriteButton";
 import { StarRating } from "./StarRating";
 import type { Product } from "@/types/product";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();

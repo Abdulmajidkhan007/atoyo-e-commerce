@@ -3,7 +3,6 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -28,7 +27,6 @@ const firebaseConfig = {
 let cachedApp: FirebaseApp | null = null;
 let cachedAuth: Auth | null = null;
 let cachedDb: Firestore | null = null;
-let cachedStorage: FirebaseStorage | null = null;
 
 function getFirebaseApp(): FirebaseApp {
   return (cachedApp ??= getApps().length ? getApp() : initializeApp(firebaseConfig));
@@ -42,6 +40,6 @@ export function getFirebaseDb(): Firestore {
   return (cachedDb ??= getFirestore(getFirebaseApp()));
 }
 
-export function getFirebaseStorage(): FirebaseStorage {
-  return (cachedStorage ??= getStorage(getFirebaseApp()));
-}
+// ESLATMA: bu yerda `getFirebaseStorage()` yo'q. Rasmlar client'dan
+// EMAS, server API route'lari orqali (Admin SDK + `sharp`) yuklanadi -
+// `lib/firebase/admin-storage.ts` ga qarang.

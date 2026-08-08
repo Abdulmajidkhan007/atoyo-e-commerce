@@ -20,6 +20,7 @@ import type { Order, OrderItem, OrderLocation } from "@/types/order";
 import type { UserRole } from "@/types/user";
 import type { PromoCode } from "@/types/promo";
 import { recordStockMoves } from "@/lib/inventory/stock-moves";
+import { formatSom } from "@/lib/format";
 
 /** Buyurtmani qabul qilib bo'lmasa (zaxira yetmasa, mahsulot yo'q) - mijozga
  *  tushunarli sabab qaytarish uchun alohida xato turi. */
@@ -163,8 +164,8 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     // sozlamadagi chegaradan past buyurtma qabul qilinmaydi.
     if (pricing.minOrderAmount > 0 && itemsTotal < pricing.minOrderAmount) {
       throw new OrderValidationError(
-        `Buyurtmaning eng kam summasi ${pricing.minOrderAmount.toLocaleString("uz-UZ")} so'm. ` +
-          `Hozir: ${itemsTotal.toLocaleString("uz-UZ")} so'm.`
+        `Buyurtmaning eng kam summasi ${formatSom(pricing.minOrderAmount)}. ` +
+          `Hozir: ${formatSom(itemsTotal)}.`
       );
     }
 

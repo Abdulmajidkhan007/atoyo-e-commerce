@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { announceBlogPost } from "@/lib/telegram/channel";
 import type { BlogPost } from "@/types/content";
+import { slugify } from "@/lib/slug";
 
 export const runtime = "nodejs";
 
@@ -15,15 +16,6 @@ const postSchema = z.object({
   isPublished: z.boolean().default(true),
 });
 
-function slugify(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-") || "post"
-  );
-}
 
 /**
  * Barcha maqolalar (chop etilgani ham, chernovigi ham) - mobil ilovaning
@@ -54,7 +46,7 @@ export async function POST(request: Request) {
   const ref = getAdminDb().collection("blogPosts").doc();
   const post: BlogPost = {
     id: ref.id,
-    slug: `${slugify(d.title)}-${ref.id.slice(0, 6)}`,
+    slug: `${slugify(d.title, { fallback: "post" })}-${ref.id.slice(0, 6)}`,
     title: d.title.trim(),
     excerpt: d.excerpt.trim(),
     content: d.content.trim(),

@@ -10,10 +10,7 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 import { ensureSessionCookie } from "@/lib/firebase/auth";
 import { StarRating } from "./StarRating";
 import type { Review } from "@/types/review";
-
-function formatDate(ms: number): string {
-  return new Date(ms).toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
+import { formatDate } from "@/lib/format";
 
 /**
  * Mahsulot sharhlari: ro'yxat + tizimga kirgan mijoz uchun forma.

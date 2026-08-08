@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Providers } from "./providers";
 import { Analytics } from "@/components/analytics/Analytics";
 import { SITE_NAME, siteUrl } from "@/lib/seo/json-ld";
@@ -91,7 +92,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="uz" suppressHydrationWarning>
       <body className={inter.variable}>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <Providers>{children}</Providers>
+        {/*
+          MUI uslublari SERVERDA chizilgan HTML ichiga qo'shiladi. Busiz
+          emotion uslublarni faqat brauzerda, hydration'dan keyin
+          joylashtiradi - birinchi ochilishda tugmalar/inputlar bir
+          lahza uslubsiz "sakrab" ko'rinadi (sekin internetda ayniqsa
+          sezilarli).
+
+          `enableCssLayer` ATAYLAB yoqilmagan: u MUI uslublarini CSS
+          qatlamiga (`@layer`) soladi va Tailwind bilan ustunlik
+          tartibini o'zgartiradi - saytdagi mavjud `!` prefiksli
+          Tailwind override'lari boshqacha ishlab ketishi mumkin.
+        */}
+        <AppRouterCacheProvider>
+          <Providers>{children}</Providers>
+        </AppRouterCacheProvider>
         {/* NEXT_PUBLIC_GA_ID qo'yilgan bo'lsagina yuklanadi. */}
         <Analytics />
       </body>

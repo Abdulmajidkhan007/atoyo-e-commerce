@@ -88,18 +88,11 @@ export function mergeTaxonomy(stored: StoredTaxonomy | undefined): Taxonomy {
   };
 }
 
-/** Yangi tur qo'shilganda nomdan slug yasaymiz (lotin harflari + chiziqcha). */
-export function slugify(label: string): string {
-  return (
-    label
-      .toLowerCase()
-      .trim()
-      .replace(/[’'`ʻʼ]/g, "")
-      .replace(/[^a-z0-9Ѐ-ӿ\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .slice(0, 40) || `tur-${Date.now().toString(36)}`
-  );
-}
+/**
+ * Yangi tur qo'shilganda nomdan slug yasaymiz. Mantiq `@/lib/slug` da —
+ * mahsulot va blog route'lari ham o'shanikini ishlatadi.
+ */
+export { slugify } from "@/lib/slug";
 
 function merge(
   builtin: TaxonomyItem[],

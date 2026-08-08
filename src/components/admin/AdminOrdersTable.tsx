@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { getOrdersPage } from "@/lib/firebase/firestore";
 import type { Order, OrderStatus } from "@/types/order";
+import { formatSom } from "@/lib/format";
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string; color: "default" | "success" | "info" | "warning" | "error" }[] = [
   { value: "pending", label: "Kutilmoqda", color: "warning" },
@@ -23,10 +24,6 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string; color: "default" | "s
   { value: "completed", label: "Yakunlandi", color: "success" },
   { value: "cancelled", label: "Bekor qilindi", color: "error" },
 ];
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 const PAGE_SIZE = 20;
 

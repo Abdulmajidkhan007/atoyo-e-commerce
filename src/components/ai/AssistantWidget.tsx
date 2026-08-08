@@ -12,6 +12,7 @@ import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
 import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
+import { formatSom } from "@/lib/format";
 
 /**
  * ATOYO YORDAMCHISI — saytdagi suzuvchi oyna.
@@ -33,10 +34,6 @@ const GREETING =
 const SUGGESTIONS = ["Issiq suv uchun qaysi quvur?", "Yetkazib berish qancha?", "Buyurtmani qanday beraman?"];
 
 const PHOTO_HINT = "📷 tugmasi orqali mahsulot suratini yuborsangiz, o'xshashini katalogdan topib beraman.";
-
-function formatPrice(value: number): string {
-  return `${Math.round(value).toLocaleString("ru-RU").replace(/ /g, " ")} so'm`;
-}
 
 /**
  * OYNA O'LCHAMI (desktop ilovalaridagi kabi).
@@ -419,7 +416,7 @@ export function AssistantWidget() {
                         >
                           <span className="font-medium">{product.name}</span>
                           <span className="block text-aqua-600 dark:text-aqua-300">
-                            {formatPrice(product.discountPrice ?? product.price)}
+                            {formatSom(product.discountPrice ?? product.price)}
                             {product.stock > 0 ? "" : " • zaxirada yo'q"}
                           </span>
                         </Link>

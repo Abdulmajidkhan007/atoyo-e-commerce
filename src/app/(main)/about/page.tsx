@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Biz haqimizda | Atoyo Santexnika",
+  alternates: { canonical: "/about" },
 };
 
 const FEATURES = [

@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 import { defaultVariant, findVariant, variantLabel, variantPrice } from "@/lib/products/variants";
 import { useDisplayPrice, useIsWholesale } from "@/lib/products/usePricing";
 import type { Product } from "@/types/product";
+import { formatSom } from "@/lib/format";
 
 /**
  * TUR TANLASH (o'lcham / qalinlik / rang...) va savatga qo'shish.
@@ -80,11 +81,11 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
       <div className="flex items-baseline gap-2">
         {variant?.discountPrice ? (
           <span className="text-navy-300 line-through">
-            {show(variant.price).toLocaleString("uz-UZ")} so&apos;m
+            {formatSom(show(variant.price))}
           </span>
         ) : null}
         <span className="text-2xl font-bold text-navy-900 dark:text-white">
-          {price.toLocaleString("uz-UZ")} so&apos;m
+          {formatSom(price)}
         </span>
         <span className="text-sm text-navy-300">/ {unitLabel}</span>
         {/* Optom mijozga narx optom ekani aniq ko'rinib tursin. */}

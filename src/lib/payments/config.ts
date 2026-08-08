@@ -5,7 +5,7 @@ import "server-only";
  * merchant kalitlari qo'shilishi bilan to'lov avtomatik faollashadi,
  * kod o'zgartirish shart emas.
  *
- * Kerakli env'lar (Netlify'da NON-SECRET qilib qo'ying):
+ * Kerakli env'lar (App Hosting'da `apphosting.yaml` yoki Secret Manager):
  *   PAYME_MERCHANT_ID  - Payme kassa ID (checkout.paycom.uz uchun)
  *   PAYME_KEY          - Payme Merchant API paroli (webhook autentifikatsiyasi)
  *   CLICK_MERCHANT_ID  - Click merchant ID

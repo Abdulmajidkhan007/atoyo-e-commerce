@@ -3,10 +3,7 @@ import { getDashboardStats, getTopSellingProducts } from "@/lib/firebase/admin-a
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { isOwner } from "@/lib/permissions";
 import { ResetDemoData } from "@/components/admin/ResetDemoData";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatNumber, formatSom } from "@/lib/format";
 
 export default async function AdminDashboardPage() {
   const [stats, topProducts, viewer] = await Promise.all([
@@ -22,7 +19,7 @@ export default async function AdminDashboardPage() {
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
           <p className="text-sm text-navy-300">Jami buyurtmalar</p>
-          <p className="mt-1 text-3xl font-bold text-navy-900 dark:text-white">{stats.totalOrders.toLocaleString("uz-UZ")}</p>
+          <p className="mt-1 text-3xl font-bold text-navy-900 dark:text-white">{formatNumber(stats.totalOrders)}</p>
         </div>
         <div className="rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
           <p className="text-sm text-navy-300">Jami tushum</p>

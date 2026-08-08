@@ -11,6 +11,7 @@ import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { DEFAULT_UNIT, labelOf, type TaxonomyItem } from "@/lib/products/taxonomy";
 import { parseDate } from "./intake-parser";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
+import { formatSom } from "@/lib/format";
 
 /**
  * INTERAKTIV ADMIN OQIMI (BotFather uslubidagi tugmali menyu).
@@ -106,10 +107,6 @@ async function saveSession(userId: number, session: AdminSession): Promise<void>
 
 async function clearSession(userId: number): Promise<void> {
   await sessionRef(userId).delete().catch(() => {});
-}
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
 function parseNumber(text: string): number {
@@ -712,7 +709,7 @@ export async function handleAdminSessionCallback(params: {
           published = true;
           publishedCode = product.code;
           await logAction(
-            `📦 Yangi mahsulot (Telegram kirimi): №${product.code} — ${product.name}, ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} ${product.unit}`
+            `📦 Yangi mahsulot (Telegram kirimi): №${product.code} — ${product.name}, ${formatSom(product.price)}, ${product.stock} ${product.unit}`
           );
         }
         await announceProduct(product, published ? "new" : "refresh").catch((error) =>

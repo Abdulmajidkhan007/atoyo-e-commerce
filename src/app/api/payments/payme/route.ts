@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
 import type { Order } from "@/types/order";
+import { reportError } from "@/lib/ops/report-error";
 
 export const runtime = "nodejs";
 
@@ -184,7 +185,8 @@ export async function POST(request: Request) {
         return rpcError(id, ERR_METHOD, "Noma'lum metod.");
     }
   } catch (error) {
-    console.error("Payme webhook xatosi:", error);
+    // Pul yo'lidagi xato - xodimlar guruhiga darhol xabar ketsin.
+    await reportError("Payme webhook", error, { method: body?.method, id: String(id ?? "") });
     return rpcError(id, ERR_CANT_PERFORM, "Ichki xatolik.");
   }
 }

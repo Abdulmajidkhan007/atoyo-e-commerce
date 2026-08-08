@@ -12,10 +12,7 @@ import {
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import type { DeliverySettings, PromoCode } from "@/types/promo";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 function toDateInput(ms: number | null): string {
   return ms ? new Date(ms).toISOString().slice(0, 10) : "";

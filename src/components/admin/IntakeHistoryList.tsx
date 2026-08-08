@@ -1,20 +1,12 @@
 import Link from "next/link";
 import type { StockIntake } from "@/types/intake";
+import { formatDateTime, formatSom } from "@/lib/format";
 
 /**
  * KIRIM RO'YXATI - kim, qachon, qayerdan (admin panel yoki Telegram)
  * va nima kiritgani. Kirim sahifasida oxirgi bir nechtasi, tarix
  * sahifasida to'liq ro'yxat sifatida ishlatiladi.
  */
-
-/** Sana/vaqt - `toLocaleString` locale'ga bog'liq bo'lmasin uchun qo'lda. */
-function formatDateTime(ms: number): string {
-  const d = new Date(ms);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(
-    d.getMinutes()
-  )}`;
-}
 
 function sourceOf(intake: StockIntake): { label: string; className: string } {
   // Eski yozuvlarda `source` yo'q - Telegram kirimlari `tg:` bilan boshlanadi.
@@ -81,7 +73,7 @@ export function IntakeHistoryList({ intakes }: { intakes: StockIntake[] }) {
                   </span>
                   {item.price !== null && (
                     <span className="text-navy-500 dark:text-navy-100">
-                      narx: {item.price.toLocaleString("uz-UZ")} so&apos;m
+                      narx: {formatSom(item.price)}
                     </span>
                   )}
                   {item.supplier && (

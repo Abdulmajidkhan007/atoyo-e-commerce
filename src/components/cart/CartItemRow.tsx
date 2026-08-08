@@ -9,10 +9,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useAppDispatch } from "@/redux/hooks";
 import { removeItem, updateQuantity } from "@/redux/slices/cartSlice";
 import type { CartItem } from "@/redux/slices/cartSlice";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 /**
  * SAVATDAGI BITTA QATOR.

@@ -15,9 +15,10 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
  *
  * Parol tiklash xatini /api/auth/reset-password o'zi yuboradi: Admin SDK
  * havola yaratadi, undan `oobCode` olinib shu sahifaga havola tuziladi.
- * Firebase konsolidagi "Customize action URL" bizga to'g'ri kelmaydi -
- * u faqat Firebase Hosting domenlarini qabul qiladi (netlify.app uchun
- * EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED xatosi chiqadi).
+ * Firebase konsolidagi "Customize action URL" ishlatilmaydi: u faqat
+ * Firebase Hosting domenlarini qabul qiladi (boshqa domenda
+ * EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED xatosi chiqadi) va xat Firebase
+ * nomidan ketib, ko'pincha spamga tushadi.
  */
 function AuthActionContent() {
   const { dict } = useI18n();

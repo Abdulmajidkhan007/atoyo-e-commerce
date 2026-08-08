@@ -3,6 +3,7 @@ import Link from "next/link";
 import { isDiscountActive } from "@/lib/products/pricing";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import type { Product } from "@/types/product";
+import { formatSom } from "@/lib/format";
 
 /**
  * O'XSHASH MAHSULOTLAR - mahsulot sahifasining pastida.
@@ -50,7 +51,7 @@ export function RelatedProducts({
             <span className="flex flex-col gap-1 p-3">
               <span className="line-clamp-2 text-sm text-navy-900 dark:text-white">{product.name}</span>
               <span className="text-sm font-semibold text-navy-900 dark:text-white">
-                {priceOf(product).toLocaleString("uz-UZ")} so&apos;m
+                {formatSom(priceOf(product))}
                 {hasVariants(product) ? " dan" : ""}
               </span>
             </span>

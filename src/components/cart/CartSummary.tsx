@@ -5,10 +5,7 @@ import { Button } from "@mui/material";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { usePricingSettings } from "@/lib/products/usePricing";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 export function CartSummary() {
   const { dict } = useI18n();

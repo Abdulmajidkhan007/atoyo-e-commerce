@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { createOrder, OrderValidationError } from "@/lib/orders/create-order";
 import { normalizePhone, isValidName } from "@/lib/validation";
+import { reportError } from "@/lib/ops/report-error";
 
 const orderSchema = z.object({
   customerName: z
@@ -76,8 +77,9 @@ export async function POST(request: Request) {
     if (error instanceof OrderValidationError) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    // Boshqa xatolarning sababi server loglarida - mijozga umumiy xabar.
-    console.error("Buyurtmani saqlashda xato:", error);
+    // Boshqa xatolar - mijozga umumiy xabar, xodimlar guruhiga esa
+    // aniq sabab (buyurtma yo'qolib qolmasin).
+    await reportError("Buyurtmani saqlash", error);
     return NextResponse.json({ error: "Buyurtmani saqlashda xatolik yuz berdi." }, { status: 500 });
   }
 }

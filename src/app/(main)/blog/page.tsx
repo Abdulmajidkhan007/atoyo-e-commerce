@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Blog | Atoyo Santexnika",
+  alternates: { canonical: "/blog" },
 };
 
 export default async function BlogPage() {

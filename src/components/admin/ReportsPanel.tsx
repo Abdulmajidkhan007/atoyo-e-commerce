@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Alert, Button, CircularProgress, TextField } from "@mui/material";
+import { formatSom } from "@/lib/format";
 
 interface DayRow {
   date: string;
@@ -36,10 +37,6 @@ const PRESETS = [
   { label: "30 kun", days: 30 },
   { label: "90 kun", days: 90 },
 ];
-
-function som(value: number): string {
-  return `${value.toLocaleString("uz-UZ")} so'm`;
-}
 
 /** Do'kon egasi uchun tushum va foyda hisoboti. */
 export function ReportsPanel() {
@@ -130,10 +127,10 @@ export function ReportsPanel() {
       {data && (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label="Tushum" value={som(data.totals.revenue)} />
-            <Stat label="Foyda" value={som(data.totals.profit)} accent />
+            <Stat label="Tushum" value={formatSom(data.totals.revenue)} />
+            <Stat label="Foyda" value={formatSom(data.totals.profit)} accent />
             <Stat label="Buyurtmalar" value={String(data.totals.orders)} />
-            <Stat label="O'rtacha chek" value={som(data.totals.averageCheck)} />
+            <Stat label="O'rtacha chek" value={formatSom(data.totals.averageCheck)} />
           </div>
 
           {data.totals.costCoverage < 100 && (
@@ -159,9 +156,9 @@ export function ReportsPanel() {
                     />
                   </div>
                   <span className="w-28 shrink-0 text-right text-navy-900 dark:text-white">
-                    {som(row.revenue)}
+                    {formatSom(row.revenue)}
                   </span>
-                  <span className="w-24 shrink-0 text-right text-navy-300">+{som(row.profit)}</span>
+                  <span className="w-24 shrink-0 text-right text-navy-300">+{formatSom(row.profit)}</span>
                 </div>
               ))}
             </div>
@@ -186,8 +183,8 @@ export function ReportsPanel() {
                     <tr key={row.productId} className="border-t border-navy-100 dark:border-navy-500">
                       <td className="py-1.5 text-navy-900 dark:text-white">{row.name}</td>
                       <td className="py-1.5 text-right">{row.qty}</td>
-                      <td className="py-1.5 text-right">{som(row.revenue)}</td>
-                      <td className="py-1.5 text-right text-aqua-600">{som(row.profit)}</td>
+                      <td className="py-1.5 text-right">{formatSom(row.revenue)}</td>
+                      <td className="py-1.5 text-right text-aqua-600">{formatSom(row.profit)}</td>
                     </tr>
                   ))}
                 </tbody>

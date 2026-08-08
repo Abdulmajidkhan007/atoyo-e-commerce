@@ -22,6 +22,7 @@ import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import type { Taxonomy } from "@/lib/products/taxonomy";
+import { formatSom } from "@/lib/format";
 
 /**
  * KATALOGNI TARTIBGA SOLISH (katta importdan keyin).
@@ -62,10 +63,6 @@ interface ListProduct {
 const ANNOUNCE_CHUNK = 10;
 const EDIT_CHUNK = 200;
 const PAGE_SIZE = 50;
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 interface Props {
   taxonomy: Taxonomy;

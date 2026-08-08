@@ -21,6 +21,7 @@ import { labelOf } from "@/lib/products/taxonomy";
 import { axisKeyOf, variantIdOf } from "@/lib/products/variants";
 import type { Product, ProductVariant, VariantAxis } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
+import { formatSom } from "@/lib/format";
 
 /**
  * "KIRIM" TOPIC'i — Telegramdan tez mahsulot qo'shish.
@@ -82,10 +83,6 @@ function albumRef(mediaGroupId: string) {
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
 }
 
 /**

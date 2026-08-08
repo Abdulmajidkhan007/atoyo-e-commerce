@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Alert, Button, CircularProgress, LinearProgress, MenuItem, TextField } from "@mui/material";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import { formatSom } from "@/lib/format";
 
 /**
  * ZAXIRASI YO'Q MAHSULOTLAR RO'YXATI (bir yo'la kirim qilish uchun).
@@ -29,10 +30,6 @@ interface ZeroStockProduct {
 /** Bir so'rovda yuboriladigan qatorlar soni (server chegarasi). */
 const CHUNK = 100;
 const PAGE_SIZE = 50;
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 interface Props {
   /** Kirim saqlangach kirim tarixini yangilash. */

@@ -36,6 +36,63 @@ function firebaseWebappEnv(): Record<string, string> {
   };
 }
 
+/**
+ * CONTENT SECURITY POLICY.
+ *
+ * Sayt qaysi manbadan skript/rasm/ulanish olishi mumkinligini
+ * brauzerga aytadi — XSS bo'lganda ham begona domenga ma'lumot
+ * ketishini to'sadi.
+ *
+ * Ataylab yumshoq qo'yilgan joylar (busiz sayt ishlamaydi):
+ *   • `'unsafe-inline'` (style) — MUI/emotion uslublarni inline
+ *     `<style>` sifatida joylashtiradi, `nonce`siz boshqa yo'l yo'q.
+ *   • `'unsafe-inline'` (script) — root layout'dagi tema skripti va
+ *     Next.js'ning hydration ma'lumotlari inline keladi.
+ *   • `'unsafe-eval'` — ishlab chiqish rejimida (`next dev`) React
+ *     Fast Refresh talab qiladi; productionda qo'shilmaydi.
+ *
+ * Ruxsat berilgan tashqi manbalar: Firebase (auth/firestore/storage),
+ * Google hisob rasmi, Google Analytics va Telegram login vidjeti.
+ */
+function contentSecurityPolicy(): string {
+  const dev = process.env.NODE_ENV === "development";
+
+  const directives: Record<string, string[]> = {
+    "default-src": ["'self'"],
+    "script-src": [
+      "'self'",
+      "'unsafe-inline'",
+      ...(dev ? ["'unsafe-eval'"] : []),
+      "https://www.googletagmanager.com",
+      "https://apis.google.com",
+      "https://telegram.org",
+      "https://*.telegram.org",
+    ],
+    "style-src": ["'self'", "'unsafe-inline'"],
+    "img-src": ["'self'", "data:", "blob:", "https:"],
+    "font-src": ["'self'", "data:"],
+    "connect-src": [
+      "'self'",
+      "https://*.googleapis.com",
+      "https://*.google.com",
+      "https://*.firebaseio.com",
+      "https://*.cloudfunctions.net",
+      "https://www.google-analytics.com",
+      ...(dev ? ["ws://localhost:*", "http://localhost:*"] : []),
+    ],
+    // Firebase auth popup'i va Telegram login vidjeti iframe ochadi.
+    "frame-src": ["'self'", "https://*.firebaseapp.com", "https://oauth.telegram.org"],
+    "frame-ancestors": ["'none'"],
+    "base-uri": ["'self'"],
+    "form-action": ["'self'"],
+    "object-src": ["'none'"],
+  };
+
+  return Object.entries(directives)
+    .map(([name, values]) => `${name} ${values.join(" ")}`)
+    .join("; ");
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
@@ -79,6 +136,7 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
+          { key: "Content-Security-Policy", value: contentSecurityPolicy() },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

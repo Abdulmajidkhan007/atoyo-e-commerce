@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 /**
  * TELEGRAM MAXFIY KALITLARI.
  *
- * Kalitlar Netlify env'ida turadi, lekin ularni almashtirish uchun har
+ * Kalitlar server env'ida turadi, lekin ularni almashtirish uchun har
  * safar deploy qilib o'tirmaslik kerak: admin (loyiha egasi) panel
  * orqali yangi qiymat yozsa, u Firestore'ning `secrets/telegram`
  * hujjatiga tushadi va env'dan ustun turadi.

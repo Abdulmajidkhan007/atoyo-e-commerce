@@ -7,8 +7,8 @@ serverini** ko'tara olishi shart.
 
 | Variant | Ishlaydimi | Izoh |
 |---|---|---|
-| **Firebase App Hosting** | ✅ | Bir xil Firebase loyihasi; Admin SDK uchun kalit ham kerak emas. Blaze (karta) rejimi kerak, lekin bepul limiti bor |
-| Netlify | ✅ | Hozirgi joy |
+| **Firebase App Hosting** | ✅ | **Hozirgi joy.** Bir xil Firebase loyihasi; Admin SDK uchun kalit ham kerak emas. Blaze (karta) rejimi kerak, lekin bepul limiti bor |
+| Netlify | ✅ | Avvalgi joy. `netlify.toml` olib tashlandi — qaytish kerak bo'lsa git tarixidan tiklanadi |
 | Vercel | ✅ | Eng tez ko'chadi; bepul (Hobby) tarifi **notijorat** loyihalar uchun — do'kon uchun Pro (20 $/oy) talab qilinadi |
 | **GitHub Pages** | ❌ | Faqat statik fayllar. API route, admin panel, Telegram webhook, buyurtma — hech biri ishlamaydi |
 | Firebase Hosting (eskisi, "static") | ⚠️ | O'zi statik; SSR uchun baribir Cloud Functions/App Hosting kerak |
@@ -452,21 +452,74 @@ Qo'yilmagan bo'lsa sayt hech qanday tashqi kuzatuv skriptini yuklamaydi.
 
 ---
 
-## Netlify'da qolish
+## Ijtimoiy navbatni avtomatik bo'shatish (cron)
 
-Netlify'ning bepul tarifi (100 GB trafik, 300 build-daqiqa/oy) kichik
-do'kon uchun yetadi. Agar hisob "to'lov kerak" deb tursa, avval
-tekshiring:
+Ijtimoiy tarmoq postlari darhol ketmaydi — avval `socialQueue`
+kolleksiyasiga tushadi (kunlik chegara va qayta urinish shu yerda
+boshqariladi). Navbatni **kimdir bo'shatishi** kerak.
 
-- **Billing → Usage** — qaysi limitdan oshgani (odatda build-daqiqalar);
-- keraksiz avtomatik build'larni kamaytiring: har push'da build bo'lmasin
-  desangiz Netlify → Site settings → Build & deploy → **Stop builds**
-  yoki faqat bitta branchni kuzatishga qo'ying;
-- limit oyning boshida yangilanadi — shoshilinch bo'lmasa kutish ham
-  variant.
+Avval buni faqat admin panelidagi tugma qilardi: admin o'sha ekranga
+kirmasa, postlar cheksiz yotib qolardi. Endi `/api/cron/social`
+manzili bor.
 
-Ikkala joyda parallel turishi ham mumkin: kod bir xil, `netlify.toml`
-ham, `apphosting.yaml` ham repozitoriyda qoladi.
+### 1. Sir yarating
+
+```bash
+# Uzun tasodifiy satr
+openssl rand -hex 32
+
+gcloud secrets create CRON_SECRET --replication-policy=automatic --project=atoyo-uz
+printf '<yuqoridagi satr>' | gcloud secrets versions add CRON_SECRET --data-file=- --project=atoyo-uz
+firebase apphosting:secrets:grantaccess CRON_SECRET --backend atoyo-e-commerce --project atoyo-uz
+```
+
+`apphosting.yaml` ga qo'shing:
+
+```yaml
+  - variable: CRON_SECRET
+    secret: CRON_SECRET
+    availability:
+      - RUNTIME
+```
+
+> `CRON_SECRET` qo'yilmaguncha endpoint **503** qaytaradi — tasodifan
+> ochiq qolib ketmaydi.
+
+### 2. Cloud Scheduler
+
+```bash
+gcloud scheduler jobs create http atoyo-social-queue \
+  --project=atoyo-uz \
+  --location=us-east4 \
+  --schedule="0 * * * *" \
+  --time-zone="Asia/Tashkent" \
+  --uri="https://atoyo-uz.web.app/api/cron/social" \
+  --http-method=POST \
+  --headers="Authorization=Bearer <yuqoridagi satr>"
+```
+
+Tekshirish:
+
+```bash
+# Sirsiz - 401
+curl -i -X POST https://atoyo-uz.web.app/api/cron/social
+# Sir bilan - 200 va navbat holati
+curl -X POST https://atoyo-uz.web.app/api/cron/social \
+  -H "Authorization: Bearer <satr>"
+```
+
+## Sog'liq tekshiruvi va xatolar
+
+- **`/api/health`** — sayt tirikligini bildiradi (`{"ok":true}`).
+  Bazaga tegmaydi, shuning uchun monitoring so'rovlari Firestore
+  o'qishini sarflamaydi. UptimeRobot kabi xizmatga shu manzilni bering.
+- **Xatolar Telegramga tushadi.** Sentry kabi alohida xizmat
+  qo'shilmagan: `src/lib/ops/report-error.ts` xato haqida xodimlar
+  guruhining "Actions" topic'iga yozadi. Bir xil xato 10 daqiqada
+  bir marta yuboriladi (guruh to'lib ketmasin). Ulangan joylar:
+  Payme/Click webhook'lari, buyurtma yaratish, ijtimoiy navbat cron'i
+  va brauzerda sahifa yiqilganda (`global-error.tsx` →
+  `/api/client-error`).
 
 ## Ijtimoiy tarmoqlar (Instagram, Facebook, YouTube)
 

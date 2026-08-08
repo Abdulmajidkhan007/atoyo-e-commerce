@@ -2,6 +2,7 @@ import "server-only";
 import nodemailer from "nodemailer";
 import { getEmailSecrets } from "./secrets";
 import type { Order, OrderStatus } from "@/types/order";
+import { formatSom } from "@/lib/format";
 
 /**
  * SMTP orqali email xabarnoma.
@@ -62,10 +63,6 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   completed: "Yakunlandi 🎉",
   cancelled: "Bekor qilindi ❌",
 };
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 /** Umumiy email (e'lon/xabarnoma). Sozlanmagan bo'lsa false qaytaradi. */
 export async function sendGenericEmail(to: string, subject: string, bodyHtml: string): Promise<boolean> {

@@ -22,10 +22,7 @@ import { StarRating } from "@/components/product/StarRating";
 import { ShareButton } from "@/components/product/ShareButton";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { productJsonLd } from "@/lib/seo/json-ld";
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
+import { formatSom } from "@/lib/format";
 
 interface ProductPageParams {
   params: Promise<{ id: string }>;
@@ -36,20 +33,26 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app";
 export async function generateMetadata({ params }: ProductPageParams): Promise<Metadata> {
   const { id } = await params;
   const [product, locale] = await Promise.all([getProductById(id), getLocale()]);
-  if (!product) return { title: "Mahsulot topilmadi" };
+  if (!product) return { title: "Mahsulot topilmadi", robots: { index: false, follow: false } };
 
   // Tanlangan tildagi nom/tavsif - tarjimasi bo'lmasa o'zbekchasi.
   const name = localizedName(product, locale);
   const title = `${name} | Atoyo Santexnika`;
   const description =
     localizedDescription(product, locale)?.slice(0, 160) ||
-    `${name} — ${effectivePrice(product).toLocaleString("uz-UZ")} so'm. Atoyo Santexnika do'konida.`;
+    `${name} — ${formatSom(effectivePrice(product))}. Atoyo Santexnika do'konida.`;
   // Ijtimoiy tarmoqda ulashilganda mahsulot nomi/narxi bilan karta ko'rinadi.
   const ogImage = `${SITE_URL}/api/og/product/${id}`;
 
   return {
     title,
     description,
+    // MUHIM: canonical ATAYLAB shu yerda qayta belgilanadi. Root
+    // layout'da `alternates.canonical: "/"` turibdi va Next.js uni
+    // ichki sahifalarga MEROS qilib beradi - ya'ni har bir mahsulot
+    // sahifasi o'zini bosh sahifa deb e'lon qilardi va Google
+    // 10 000 mahsulotni "dublikat" deb hisoblardi.
+    alternates: { canonical: `/mahsulot/${id}` },
     openGraph: {
       title,
       description,

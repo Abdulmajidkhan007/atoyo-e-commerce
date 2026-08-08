@@ -16,7 +16,14 @@ interface BlogPostPageParams {
 export async function generateMetadata({ params }: BlogPostPageParams): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
-  return { title: post ? `${post.title} | Atoyo Blog` : "Maqola topilmadi" };
+  if (!post) return { title: "Maqola topilmadi", robots: { index: false, follow: false } };
+
+  return {
+    title: `${post.title} | Atoyo Blog`,
+    description: post.excerpt?.slice(0, 160) || undefined,
+    // Root layout'dagi `canonical: "/"` meros bo'lib qolmasin.
+    alternates: { canonical: `/blog/${post.slug}` },
+  };
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageParams) {

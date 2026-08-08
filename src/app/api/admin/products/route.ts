@@ -10,6 +10,8 @@ import { announceProduct } from "@/lib/telegram/channel";
 import { indexProduct } from "@/lib/search/engine";
 import { nextProductCode } from "@/lib/products/product-code";
 import type { Product } from "@/types/product";
+import { formatSom } from "@/lib/format";
+import { slugify } from "@/lib/slug";
 
 export const runtime = "nodejs";
 
@@ -88,15 +90,6 @@ const productSchema = z.object({
   isDraft: z.boolean().default(false),
 });
 
-function slugify(name: string): string {
-  return (
-    name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-") || "mahsulot"
-  );
-}
 
 /** Yangi mahsulot yaratish (faqat admin). */
 export async function POST(request: Request) {
@@ -118,7 +111,7 @@ export async function POST(request: Request) {
     id: ref.id,
     // Odamlar uchun qisqa tartib raqami (1, 2, 3...).
     code: await nextProductCode(),
-    slug: `${slugify(d.name)}-${ref.id.slice(0, 6)}`,
+    slug: `${slugify(d.name, { fallback: "mahsulot" })}-${ref.id.slice(0, 6)}`,
     name: d.name.trim(),
     nameSearchIndex: d.name.trim().toLowerCase(),
     keywords: normalizeKeywords(d.keywords),
@@ -172,7 +165,7 @@ export async function POST(request: Request) {
   await logAction(
     d.isDraft
       ? `📝 Yangi mahsulot ochildi (${admin.email ?? "admin"}): №${product.code} — ${product.name} (chernovik, kirim kutilmoqda)`
-      : `📦 Yangi mahsulot (${admin.email ?? "admin"}): №${product.code} — ${product.name}, ${product.price.toLocaleString("uz-UZ")} so'm, ${product.stock} dona`
+      : `📦 Yangi mahsulot (${admin.email ?? "admin"}): №${product.code} — ${product.name}, ${formatSom(product.price)}, ${product.stock} dona`
   );
   return NextResponse.json({ product }, { status: 201 });
 }

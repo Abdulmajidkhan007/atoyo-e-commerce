@@ -6,6 +6,7 @@ import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { isStaff } from "@/lib/permissions";
 import { PrintButton } from "@/components/order/PrintButton";
 import type { Order } from "@/types/order";
+import { formatDateTime, formatSom } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -27,20 +28,6 @@ const STATUS_LABELS: Record<Order["status"], string> = {
   completed: "Yakunlangan",
   cancelled: "Bekor qilingan",
 };
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
-
-function formatDateTime(ms: number): string {
-  return new Date(ms).toLocaleString("uz-UZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 /**
  * BUYURTMA CHEKI - chop etishga (yoki brauzer orqali PDF saqlashga)

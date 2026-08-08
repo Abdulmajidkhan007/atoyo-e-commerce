@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { getAdminDb } from "@/lib/firebase/admin";
 import type { Order } from "@/types/order";
+import { reportError } from "@/lib/ops/report-error";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,18 @@ function md5(value: string): string {
 }
 
 export async function POST(request: Request) {
+  try {
+    return await handle(request);
+  } catch (error) {
+    // Pul yo'lidagi xato - xodimlar guruhiga darhol xabar ketsin.
+    // Click 500 javobni qayta yuboradi, shuning uchun xatoni yutib
+    // yubormay, aniq imzo xatosi bilan javob qaytaramiz.
+    await reportError("Click webhook", error);
+    return NextResponse.json({ error: ERR_SIGN, error_note: "Internal error" });
+  }
+}
+
+async function handle(request: Request) {
   const form = await request.formData().catch(() => null);
   if (!form) {
     return NextResponse.json({ error: ERR_SIGN, error_note: "Bad request" });

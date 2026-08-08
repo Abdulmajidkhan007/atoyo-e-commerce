@@ -7,10 +7,11 @@ import { getAdminDb } from "@/lib/firebase/admin";
  * "contact:<IP>") uchun berilgan oyna ichida nechta so'rov bo'lganini
  * `rateLimits` kolleksiyasida sanaydi.
  *
- * Nega Firestore: Netlify function'lari serversiz va har chaqiruvda
- * xotira tozalanishi mumkin, shuning uchun xotiradagi hisoblagich
- * ishonchsiz. Yozuvlar TTL bilan o'z-o'zidan eskiradi (Firestore
- * konsolida `expiresAt` uchun TTL siyosatini yoqish tavsiya etiladi).
+ * Nega Firestore: server serversiz (Cloud Run) muhitda ishlaydi va
+ * har konteyner qayta ko'tarilganda xotira tozalanadi - shuning uchun
+ * xotiradagi hisoblagich ishonchsiz. Yozuvlar TTL bilan o'z-o'zidan
+ * eskiradi (Firestore konsolida `expiresAt` uchun TTL siyosatini
+ * yoqish tavsiya etiladi).
  */
 export async function checkRateLimit(params: {
   key: string;
@@ -19,10 +20,16 @@ export async function checkRateLimit(params: {
 }): Promise<{ allowed: boolean; remaining: number }> {
   const { key, limit, windowMs } = params;
   const now = Date.now();
-  const ref = getAdminDb().collection("rateLimits").doc(key.replace(/[^a-zA-Z0-9:._-]/g, "_"));
 
   try {
-    return await getAdminDb().runTransaction(async (tx) => {
+    // MUHIM: `getAdminDb()` ham SHU try ichida. Avval u tashqarida
+    // turardi va Admin SDK sozlanmagan bo'lsa (lokal ishlab chiqish)
+    // funksiya "fail-open" o'rniga xato tashlab, chaqirgan route'ni
+    // 500 qilib qo'yardi.
+    const db = getAdminDb();
+    const ref = db.collection("rateLimits").doc(key.replace(/[^a-zA-Z0-9:._-]/g, "_"));
+
+    return await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       const data = snap.data() as { count?: number; windowStart?: number } | undefined;
 
@@ -50,8 +57,8 @@ export async function checkRateLimit(params: {
   }
 }
 
-/** So'rov manbasini (IP) aniqlaydi - Netlify proksi headerlari orqali. */
+/** So'rov manbasini (IP) aniqlaydi - proksi headeri orqali. */
 export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-nf-client-connection-ip") ?? request.headers.get("x-forwarded-for");
+  const forwarded = request.headers.get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || "unknown";
 }

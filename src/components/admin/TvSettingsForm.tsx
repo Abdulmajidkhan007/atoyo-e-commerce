@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { DEFAULT_TV_SETTINGS, TV_SOURCE_LABELS, type TvSettings, type TvSlide, type TvSource } from "@/types/tv";
+import { formatSom } from "@/lib/format";
 
 /**
  * DO'KON TELEVIZORI (`/admin/tv`).
@@ -395,7 +396,7 @@ export function TvSettingsForm() {
                     {slide.name}
                   </p>
                   <p className="mt-1 text-xs font-bold text-aqua-600 dark:text-aqua-300">
-                    {slide.price.toLocaleString("uz-UZ")} so&apos;m
+                    {formatSom(slide.price)}
                   </p>
                 </div>
               </div>

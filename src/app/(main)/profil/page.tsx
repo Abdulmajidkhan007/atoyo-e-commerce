@@ -12,6 +12,7 @@ import { signOut as signOutAction } from "@/redux/slices/userSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { SavedCards } from "@/components/profile/SavedCards";
 import type { Order, OrderStatus } from "@/types/order";
+import { formatSom } from "@/lib/format";
 
 const STATUS_COLORS: Record<OrderStatus, "default" | "success" | "info" | "warning" | "error"> = {
   pending: "warning",
@@ -20,10 +21,6 @@ const STATUS_COLORS: Record<OrderStatus, "default" | "success" | "info" | "warni
   completed: "success",
   cancelled: "error",
 };
-
-function formatSom(amount: number): string {
-  return `${amount.toLocaleString("uz-UZ")} so'm`;
-}
 
 export default function ProfilePage() {
   const router = useRouter();

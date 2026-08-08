@@ -31,7 +31,7 @@ function getAdminApp(): App {
   const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
   // 1) Xizmat akkaunti kaliti env'da bo'lsa - o'shani ishlatamiz
-  //    (Netlify, lokal ishlab chiqish, boshqa hostinglar).
+  //    (lokal ishlab chiqish va Google Cloud'dan tashqari hostinglar).
   if (projectId && clientEmail && privateKey) {
     cachedApp = initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
     return cachedApp;

@@ -8,6 +8,7 @@ import { logAction } from "@/lib/telegram/action-log";
 import { sendPushToUser } from "@/lib/notifications/push";
 import { isSmsConfigured, sendSms } from "@/lib/sms/sender";
 import type { Order } from "@/types/order";
+import { formatSom } from "@/lib/format";
 
 export const runtime = "nodejs";
 
@@ -137,21 +138,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   );
 
   await logAction(
-    `↩️ Qaytarish (${admin.email ?? "admin"}): #${id.slice(0, 8)} — ${lines.length} qator, ${refundAmount.toLocaleString("uz-UZ")} so'm`
+    `↩️ Qaytarish (${admin.email ?? "admin"}): #${id.slice(0, 8)} — ${lines.length} qator, ${formatSom(refundAmount)}`
   );
 
   // Mijozga xabar - push va SMS (sozlangan bo'lsa).
   if (order.userId) {
     await sendPushToUser(order.userId, {
       title: `Buyurtma #${id.slice(0, 8)}`,
-      body: `Qaytarish qabul qilindi: ${refundAmount.toLocaleString("uz-UZ")} so'm`,
+      body: `Qaytarish qabul qilindi: ${formatSom(refundAmount)}`,
       data: { screen: "Buyurtmalarim", orderId: id },
     });
   }
   if (isSmsConfigured() && order.phoneNumber) {
     await sendSms(
       order.phoneNumber,
-      `Atoyo: buyurtma #${id.slice(0, 8)} bo'yicha qaytarish qabul qilindi. Summa: ${refundAmount.toLocaleString("uz-UZ")} so'm`
+      `Atoyo: buyurtma #${id.slice(0, 8)} bo'yicha qaytarish qabul qilindi. Summa: ${formatSom(refundAmount)}`
     );
   }
 
