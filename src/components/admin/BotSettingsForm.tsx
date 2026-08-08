@@ -59,26 +59,55 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
   };
 
   /**
-   * Kanaldagi eski postlarni joyida yangilaydi (havola eski domenga
-   * qarab qolgan bo'lsa). Yangi post tashlanmaydi.
+   * Kanaldagi postlarni mahsulotning HOZIRGI ma'lumotiga moslaydi:
+   * nom, narx, tavsif, zaxira va "Saytda ko'rish" havolasi qayta
+   * quriladi. Post joyida tahrirlanadi - yangi post tashlanmaydi.
+   *
+   * Server bir so'rovda 40 tasini oladi va kursor qaytaradi; shu
+   * yerda OXIRIGACHA aylanib chiqamiz - admin tugmani qayta-qayta
+   * bosib o'tirmasin (ilgari kursor yo'q edi va har bosishda aynan
+   * o'sha 40 tasi qayta ko'rilardi).
    */
   const refreshChannelPosts = async () => {
     setIsRefreshing(true);
     setRefreshNote(null);
     try {
-      const res = await fetch("/api/admin/telegram/refresh-channel", { method: "POST" });
-      const data = (await res.json().catch(() => ({}))) as {
-        scanned?: number;
-        updated?: number;
-        unchanged?: number;
-        failed?: number;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Yangilanmadi.");
+      let cursor: string | null = null;
+      let updated = 0;
+      let unchanged = 0;
+      let failed = 0;
+      let scanned = 0;
+
+      // Cheksiz aylanib qolmaslik uchun qat'iy chegara (40 x 100 = 4000).
+      for (let round = 0; round < 100; round++) {
+        const url = cursor
+          ? `/api/admin/telegram/refresh-channel?after=${encodeURIComponent(cursor)}`
+          : "/api/admin/telegram/refresh-channel";
+        const res = await fetch(url, { method: "POST" });
+        const data = (await res.json().catch(() => ({}))) as {
+          scanned?: number;
+          updated?: number;
+          unchanged?: number;
+          failed?: number;
+          nextCursor?: string | null;
+          error?: string;
+        };
+        if (!res.ok) throw new Error(data.error ?? "Yangilanmadi.");
+
+        scanned += data.scanned ?? 0;
+        updated += data.updated ?? 0;
+        unchanged += data.unchanged ?? 0;
+        failed += data.failed ?? 0;
+        setRefreshNote(`⏳ ${scanned} ta post ko'rildi, ${updated} tasi yangilandi…`);
+
+        cursor = data.nextCursor ?? null;
+        if (!cursor) break;
+      }
+
       setRefreshNote(
-        `✅ ${data.updated ?? 0} ta post yangilandi` +
-          (data.unchanged ? `, ${data.unchanged} tasi allaqachon joyida` : "") +
-          (data.failed ? `, ${data.failed} tasiga Telegram ruxsat bermadi` : "")
+        `✅ ${scanned} ta postdan ${updated} tasi yangilandi` +
+          (unchanged ? `, ${unchanged} tasida o'zgarish yo'q edi` : "") +
+          (failed ? `, ${failed} tasiga Telegram ruxsat bermadi` : "")
       );
     } catch (err) {
       setRefreshNote(`❌ ${err instanceof Error ? err.message : "Yangilanmadi."}`);
@@ -239,10 +268,13 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
 
         <div className="border-t border-navy-100 pt-3 dark:border-navy-500">
           <p className="mb-2 text-xs text-navy-300">
-            Kanaldagi <b>eski postlar</b> havolasi ham eski manzilda qolgan bo&apos;lishi mumkin.
-            Bu tugma ularni joyida tahrirlaydi — yangi post tashlanmaydi, obunachilarga
-            takror xabar bormaydi. Postlar ko&apos;p bo&apos;lsa bir necha marta bosing
-            (har safar 40 tasi yangilanadi).
+            Mahsulot ma&apos;lumoti o&apos;zgarganda (narx, nom, tavsif, zaxira) kanaldagi
+            <b> eski post</b> eski holida qolib ketadi. Bu tugma har bir postni
+            mahsulotning <b>hozirgi</b> holatidan qayta quradi va joyida tahrirlaydi —
+            yangi post tashlanmaydi, obunachilarga takror xabar bormaydi.
+            O&apos;zgarish bo&apos;lmagan postlarga tegilmaydi. Bir bosishda hammasi
+            oxirigacha aylanib chiqiladi, shuning uchun postlar ko&apos;p bo&apos;lsa
+            biroz kutish kerak.
           </p>
           <Button
             type="button"

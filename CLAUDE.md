@@ -110,6 +110,16 @@ Shu sababli:
   hisoblangan dona narx ko'rsatiladi (ustama `/api/admin/pricing`
   dan olinadi — mijozga beriladigan `/api/pricing` da yo'q).
 
+## Admin API xatolari
+
+Tekshiruv (Zod) yiqilganda javob **qaysi maydon va nima uchun** rad
+etilganini aytadi (`lib/http/validation.ts` → `validationMessage`,
+testi `validation.test.ts`). Ilgari hamma joyda quruq "Ma'lumotlar
+noto'g'ri." turardi va 30 dan ortiq maydonli formada sababni topib
+bo'lmasdi (bir marta "kalit so'zlar 10 tadan ko'p" degan sabab
+yashirinib qolgan). Yangi admin route yozilsa shu funksiyadan
+foydalaning.
+
 ## Import/kirimda turlar
 
 - Excel/CSV importda **har bir tur alohida qator**: `variantGroup`,
@@ -140,7 +150,10 @@ Shu sababli:
   tavsifning o'zi to'liq ko'rinadi. Mobil nusxasi -
   `mobile/src/types.ts`.
 - Kanalga e'lon: mahsulotda `channelMessageId` bo'lsa YANGI post
-  tashlanmaydi - eski post tahrirlanadi. `announceProduct` natija
+  tashlanmaydi - eski post tahrirlanadi. Sozlamalardagi "Kanal
+  postlarini yangilash" postni mahsulotning HOZIRGI holatidan qayta
+  quradi (narx/nom/tavsif/zaxira) va kursor bilan OXIRIGACHA aylanib
+  chiqadi - 40 tadan. `announceProduct` natija
   qaytaradi (`posted` / `edited` / `unchanged` / `skipped`), UI shuni
   ochiq yozadi. Haqiqatan yangi post kerak bo'lsa `"repost"` rejimi
   (eski post o'chiriladi).

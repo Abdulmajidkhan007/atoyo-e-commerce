@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { validationMessage } from "@/lib/http/validation";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens, normalizeKeywords } from "@/lib/search/tokens";
@@ -75,7 +76,6 @@ const productSchema = z.object({
         discountPrice: z.number().nonnegative().nullable().optional(),
         stock: z.number().int().nonnegative(),
         sku: z.string().max(60).optional(),
-  keywords: z.array(z.string().max(60)).max(10).optional(),
       })
     )
     .max(90)
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
   const parsed = productSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Mahsulot ma'lumotlari noto'g'ri." }, { status: 400 });
+    return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
   }
 
   const d = parsed.data;

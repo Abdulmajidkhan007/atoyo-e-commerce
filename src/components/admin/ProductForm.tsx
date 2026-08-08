@@ -50,6 +50,9 @@ const MAX_IMAGES = 10;
 /** Video og'ir bo'lgani uchun 3 tagacha, har biri 20MB gacha. */
 const MAX_VIDEOS = 3;
 
+/** Server sxemasidagi chegara (`/api/admin/products`). */
+const MAX_KEYWORDS = 10;
+
 const EMPTY_FORM = {
   name: "",
   sku: "",
@@ -409,7 +412,13 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       const payload = {
         name: form.name.trim(),
         sku: form.sku.trim(),
-        keywords: form.keywords.split(",").map((item) => item.trim()).filter(Boolean),
+        // Server 10 tadan ko'pini rad etadi - shu yerda kesamiz,
+        // aks holda saqlash "Ma'lumotlar noto'g'ri" bilan yiqilardi.
+        keywords: form.keywords
+          .split(",")
+          .map((item) => item.trim().slice(0, 60))
+          .filter(Boolean)
+          .slice(0, MAX_KEYWORDS),
         description: form.description.trim(),
         // Tarjimalar - bo'sh bo'lsa yuborilmaydi (o'zbekchasi ishlatiladi).
         nameRu: form.nameRu.trim() || undefined,
@@ -484,7 +493,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         placeholder="rakovina kalta smesitel, 7013 seriya"
         value={form.keywords}
         onChange={(e) => setForm({ ...form, keywords: e.target.value })}
-        helperText="Bir xil vazifadagi mahsulotlarga BIR XIL kalit yozing — mijoz bittasini qidirsa, o'shanga o'xshashlari ham chiqadi va tugab qolganda almashtiruvchisi ko'rsatiladi."
+        helperText={`Bir xil vazifadagi mahsulotlarga BIR XIL kalit yozing — mijoz bittasini qidirsa, o'shanga o'xshashlari ham chiqadi va tugab qolganda almashtiruvchisi ko'rsatiladi. ${MAX_KEYWORDS} tagacha.`}
         fullWidth
       />
 
@@ -772,7 +781,9 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
               // Kalit so'zlar qo'shiladi (bor yozuv o'chib ketmaydi).
               keywords: Array.from(
                 new Set([...prev.keywords.split(",").map((k) => k.trim()).filter(Boolean), ...suggestion.keywords])
-              ).join(", "),
+              )
+                .slice(0, MAX_KEYWORDS)
+                .join(", "),
               brand: prev.brand || suggestion.brand,
               // Tarjimalar: qo'lda yozilgani bo'lsa TEGILMAYDI.
               nameRu: prev.nameRu || (suggestion.nameRu ?? ""),
