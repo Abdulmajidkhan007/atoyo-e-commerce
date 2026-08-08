@@ -78,6 +78,15 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
   const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
+  /**
+   * BUTUN KATALOG bo'ylab qidiruv (nom / kod / artikul). Kategoriya
+   * va brend filtri kabi ishlaydi: topilganlar shu ro'yxatga tushadi
+   * va ularga ham ommaviy amallar (o'chirish, saytda ochish, kanalga
+   * e'lon, kategoriya almashtirish) qo'llanadi.
+   */
+  const [query, setQuery] = useState("");
+  /** Ro'yxat AYNAN shu qidiruv bilan yuklangan (izohda ko'rsatiladi). */
+  const [appliedQuery, setAppliedQuery] = useState("");
   const [onlyNoImage, setOnlyNoImage] = useState(false);
   const [onlyNotPosted, setOnlyNotPosted] = useState(false);
   /** Saytda hali ochilmaganlar (import qilinganlar shunday keladi). */
@@ -116,10 +125,15 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
         setPage(0);
       }
       let guard = 0;
+      const term = query.trim();
+      setAppliedQuery(reset ? term : appliedQuery);
 
       do {
         const params = new URLSearchParams({ limit: "300" });
-        if (category) params.set("category", category);
+        // Qidiruv berilsa u USTUN turadi (butun katalog bo'ylab
+        // qidiriladi), aks holda kategoriya/brend filtri.
+        if (term) params.set("q", term);
+        else if (category) params.set("category", category);
         else if (brand) params.set("brand", brand);
         if (next) params.set("after", next);
 
@@ -155,6 +169,10 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
       // filtr sifatida shu yerda qo'llanadi (ikkovi birga - indekssiz).
       if (category && brand && product.brand !== brand) return false;
       if (!term) return true;
+      // Ro'yxat SERVER QIDIRUVi bilan kelgan bo'lsa qayta
+      // filtrlanmaydi: server so'z bo'yicha ham topadi ("8276 dush"),
+      // oddiy `includes` esa bunday natijani yashirib qo'yardi.
+      if (appliedQuery) return true;
       return (
         product.name.toLowerCase().includes(term) ||
         product.sku.toLowerCase().includes(term) ||
@@ -162,7 +180,7 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
         String(product.code ?? "").includes(term)
       );
     });
-  }, [products, search, onlyNoImage, onlyNotPosted, onlyHidden, category, brand]);
+  }, [products, search, onlyNoImage, onlyNotPosted, onlyHidden, category, brand, appliedQuery]);
 
   const pageItems = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -552,6 +570,20 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
             ))}
           </TextField>
 
+          {/* Butun katalog bo'ylab qidiruv - kategoriya/brend kabi,
+              topilganlarga ham ommaviy amallar ishlaydi. */}
+          <TextField
+            size="small"
+            label="Qidiruv (nom, kod, artikul)"
+            placeholder="dush 8276 yoki ZP-E07"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void load(true);
+            }}
+            sx={{ minWidth: 220, flex: "1 1 220px" }}
+          />
+
           <Button variant="contained" onClick={() => void load(true)} disabled={loading}>
             {loading ? <CircularProgress size={20} color="inherit" /> : "Ro'yxatni olish"}
           </Button>
@@ -579,6 +611,13 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
           </Button>
         </div>
 
+        {appliedQuery && (
+          <p className="text-xs text-aqua-600 dark:text-aqua-300">
+            «{appliedQuery}» bo&apos;yicha butun katalogdan qidirildi — kategoriya va brend
+            filtri e&apos;tiborga olinmadi. Topilganlarga ham ommaviy amallar ishlaydi.
+          </p>
+        )}
+
         {products.length > 0 && (
           <div className="flex flex-wrap items-center gap-3">
             <TextField
@@ -605,7 +644,7 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
             </label>
             <span className="text-sm text-navy-300">
               Topildi: {filtered.length}
-              {loadedAll ? "" : "+"} • Belgilangan: {selectedIds.length}
+              {loadedAll || appliedQuery ? "" : "+"} • Belgilangan: {selectedIds.length}
             </span>
           </div>
         )}

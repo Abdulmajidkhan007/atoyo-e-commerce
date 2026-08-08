@@ -165,7 +165,11 @@ foydalaning.
   tayanadi) - yangi "yashirin" maydon QO'SHILMAYDI.
 - Ommaviy tozalash: `/admin/katalog/tartib` + `/api/admin/products/list`
   (bitta tenglik filtri + `__name__` tartibi - kompozit indekssiz) va
-  `/api/admin/products/bulk` (delete / update / announce). Kanalga
+  `/api/admin/products/bulk` (delete / update / announce). Ro'yxatni
+  KATEGORIYA, BREND yoki QIDIRUV (`?q=` - nom/kod/artikul, butun
+  katalog bo'ylab) bilan olish mumkin; uchalasi ham bir xil shaklda
+  qaytadi, shuning uchun topilganlarga ommaviy amallar o'zgarishsiz
+  ishlaydi. Kanalga
   ommaviy e'lon 10 tadan, orasida tanaffus bilan.
 - Kirimda 20 tadan ko'p mahsulot bo'lsa kanalga e'lon qilinmaydi
   (`announce: false`).
