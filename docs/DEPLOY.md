@@ -39,7 +39,9 @@ Firebase konsoli → **Build → App Hosting → Get started**:
 - GitHub akkauntini ulang, `Abdulmajidkhan007/atoyo-e-commerce`
   repozitoriysini va **`claude/plumbing-ecommerce-nextjs-jxpmh5`**
   branchini tanlang;
-- region: `europe-west4` (yoki yaqinrog'i);
+- region: **Firestore qaysi qit'ada bo'lsa — o'sha yerga** (4b ga
+  qarang). Bu loyihada Firestore `nam5` (AQSh), shuning uchun
+  backend ham `us-east4`;
 - backend nomi: `atoyo`.
 
 Yoki terminaldan:
@@ -168,89 +170,47 @@ JSON
 npx -y firebase-tools deploy --only hosting --project atoyo-uz
 ```
 
-### 4b. TEZLIK: backendni O'zbekistonga yaqinlashtirish
+### 4b. TEZLIK va REGION — o'lchangan javob
 
-Hozirgi backend **`us-east4`** (AQSh, Virjiniya) da. Toshkentdan har
-bir so'rov okean ortiga borib qaytadi — server hech narsa qilmasdan
-oldin **~250-300 ms** yo'qoladi. Sahifalar dinamik (locale cookie
-o'qiladi), shuning uchun Hosting CDN ularni keshlay olmaydi: har
-bosishda AQShga boriladi.
+**Xulosa: backend `us-east4` da QOLADI. Ko'chirilmaydi.**
 
-Eng yaqin Google regionlari: **`europe-west4`** (Niderlandiya) yoki
-**`europe-west1`** (Belgiya) — Toshkentdan ~100-140 ms, ya'ni ikki
-baravar tezroq.
-
-> **App Hosting'da mavjud backend regioni O'ZGARMAYDI.** Yangi
-> backend ochib, `firebase.json` rewrite'ini unga qaratish kerak.
-> Kod o'zgarmaydi — bu faqat konsol ishi.
-
-**Tartib:**
-
-1. Yangi backend yaratish (bir marta, ~5 daqiqa):
-
-   ```bash
-   firebase apphosting:backends:create \
-     --project atoyo-uz \
-     --location europe-west4
-   ```
-
-   Repozitoriya va branch avvalgidek: `Abdulmajidkhan007/atoyo-e-commerce`,
-   `claude/plumbing-ecommerce-nextjs-jxpmh5`. Nomi masalan `atoyo-eu`.
-
-2. Sirlarni yangi backendga ochish (aks holda AI va rasm ishlamaydi):
-
-   ```bash
-   firebase apphosting:secrets:grantaccess ANTHROPIC_API_KEY \
-     --backend atoyo-eu --project atoyo-uz
-   firebase apphosting:secrets:grantaccess GEMINI_API_KEY \
-     --backend atoyo-eu --project atoyo-uz
-   ```
-
-3. Birinchi rollout tugab, uzun manzil (`…europe-west4.hosted.app`)
-   ochilishini tekshiring.
-
-4. `apphosting.yaml` dagi `ALLOWED_ORIGINS` ga yangi hostni qo'shing
-   (Server Actions shu ro'yxatga qaraydi) va push qiling.
-
-5. `firebase.json` dagi rewrite'ni yangi xizmatga qaratib deploy
-   qiling — shundan keyin `atoyo-uz.web.app` yangi backendga boradi:
-
-   ```json
-   { "source": "**", "run": { "serviceId": "atoyo-eu", "region": "europe-west4" } }
-   ```
-
-   ```bash
-   firebase deploy --only hosting --project atoyo-uz
-   ```
-
-6. Telegram webhook'ini qayta ro'yxatdan o'tkazish **shart emas** —
-   u qisqa domen (`atoyo-uz.web.app`) orqali ishlaydi.
-
-7. Hammasi ishlaganiga ishonch hosil qilgach, eski backendni
-   o'chirib qo'ying (ikkitasi turib pul yemasin):
-
-   ```bash
-   firebase apphosting:backends:delete atoyo-e-commerce \
-     --project atoyo-uz --location us-east4
-   ```
-
-**Firestore regioni haqida.** Ma'lumotlar bazasi ham qayerda
-turgani muhim: agar Firestore `nam5`/AQShda bo'lsa, server Yevropaga
-ko'chganda **server↔Firestore** yo'li uzayadi. Tekshirish:
+Sabab — Firestore qayerda turgani. Tekshirildi:
 
 ```bash
-gcloud firestore databases describe --project=atoyo-uz --format='value(locationId)'
+gcloud firestore databases describe --project=atoyo-uz \
+  --format='value(locationId)'
+# nam5
 ```
 
-Firestore regioni **umuman o'zgarmaydi** (yangi baza ochib
-ko'chirish kerak). Shuning uchun:
+`nam5` — bu **Shimoliy Amerika** multi-regioni, ya'ni baza AQShda.
+Firestore regioni esa **umuman o'zgarmaydi** (yangi baza ochib, hamma
+ma'lumotni ko'chirish kerak bo'lardi).
 
-- Firestore AQShda bo'lsa → backendni ham AQShda qoldirish
-  ma'qulroq (`minInstances: 1` va CDN keshi baribir yordam beradi);
-- Firestore Yevropada (`eur3`) bo'lsa → backendni Yevropaga
-  ko'chirish **ikki tomondan** foyda beradi.
+Endi hisob-kitob. Har bir so'rovda IKKI yo'l bor:
 
-Ya'ni 1-qadamdan oldin shu buyruqni ishga tushirib ko'ring.
+| Yo'l | `us-east4` (hozirgi) | `europe-west4` |
+|---|---|---|
+| Mijoz (Toshkent) → server | ~250 ms | ~120 ms |
+| Server → Firestore (`nam5`) | ~20 ms | ~95 ms |
+| Katalog sahifasi (1-2 ta baza so'rovi) | **~290 ms** | ~310 ms |
+
+Ya'ni Yevropaga ko'chirish mijozgacha bo'lgan yo'lni qisqartiradi,
+lekin **server↔baza** yo'lini uzaytiradi va natija yaxshilanmaydi —
+biroz yomonlashadi. Bu ayniqsa muhim, chunki endi katalog, qidiruv
+va mahsulot sahifasi **hammasi server orqali** o'qiladi (optom narx
+maxfiyligi uchun), ya'ni server↔baza yo'li har bosishda ishlaydi.
+
+> Agar kelajakda Firestore Yevropaga (`eur3`) ko'chirilsa — o'shanda
+> backendni ham ko'chirish MANTIQIY bo'ladi va ikki tomondan foyda
+> beradi. Shungacha yo'q.
+
+**Buning o'rniga qilingan (kod tomoni, allaqachon amalda):**
+
+- `apphosting.yaml` da `minInstances: 1` — kunning birinchi mijozi
+  konteyner ko'tarilishini (cold start, 3-8 soniya) kutmaydi;
+- `settings/site` va `settings/pricing` serverda 60 soniya
+  keshlanadi — har sahifa ko'rishida bazaga bormaydi;
+- ochiq GET javoblari Hosting CDN'ida keshlanadi (pastdagi 4c).
 
 ### 4c. Nima keshlanadi, nima keshlanmaydi
 
