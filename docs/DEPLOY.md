@@ -329,6 +329,30 @@ firebase deploy --only firestore:rules,firestore:indexes,storage --project <PROJ
 
 (Bu buyruq sandboxdan ishlamaydi — gRPC bloklangan.)
 
+> ⚠️ **DIQQAT — optom narx himoyasi qoidalar deploy qilinmaguncha
+> ISHLAMAYDI.** CI'dagi avtomatik qadam faqat **asosiy branch**
+> (`main`) push'ida ishlaydi, ish branch'ida esa yo'q. Sayt kodi har
+> push'da yangilanadi, `firestore.rules` esa yo'q — ya'ni:
+>
+> - kod tomoni tayyor: sayt/ilova mahsulotni server orqali o'qiydi;
+> - lekin `products` kolleksiyasi qoidada **hali ochiq turadi**, ya'ni
+>   optom narx va tannarxni Firebase SDK bilan o'qib olish mumkin.
+>
+> Himoyani yoqish uchun yuqoridagi buyruqni **bir marta** ishga
+> tushiring (telefondan ham bo'ladi — Google Cloud Shell'da,
+> `console.cloud.google.com` → `>_`):
+>
+> ```bash
+> git clone -b claude/plumbing-ecommerce-nextjs-jxpmh5 \
+>   https://github.com/Abdulmajidkhan007/atoyo-e-commerce.git
+> cd atoyo-e-commerce
+> npx -y firebase-tools deploy --only firestore:rules --project atoyo-uz
+> ```
+>
+> Tartib MUHIM: avval kod (git push), keyin qoidalar. Aks holda
+> qoidalar yopilib, hali eski kod ishlab turgan mijozlarda katalog
+> ochilmay qolardi.
+
 ### 5a. Xizmat akkaunti huquqlari (push va Telegram kirish)
 
 App Hosting saytni Cloud Run'da, **xizmat akkaunti** nomidan ishlatadi.
