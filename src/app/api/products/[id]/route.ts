@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getProductById, getRelatedProducts } from "@/lib/firebase/admin-products";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
-import { toViewerProduct, toViewerProducts } from "@/lib/products/viewer";
+import { storefrontRole, toViewerProduct, toViewerProducts } from "@/lib/products/viewer";
 import { NO_STORE_HEADERS } from "@/lib/http/cache";
 
 export const runtime = "nodejs";
@@ -35,8 +35,8 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
   return NextResponse.json(
     {
-      product: toViewerProduct(raw, viewer?.role, pricing),
-      related: toViewerProducts(related, viewer?.role, pricing),
+      product: toViewerProduct(raw, storefrontRole(viewer?.role), pricing),
+      related: toViewerProducts(related, storefrontRole(viewer?.role), pricing),
     },
     { headers: NO_STORE_HEADERS }
   );

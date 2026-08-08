@@ -21,6 +21,8 @@ import { sendPushToTopic, PRODUCTS_TOPIC } from "@/lib/notifications/push";
 import type { Product } from "@/types/product";
 import type { BlogPost, ChannelPostFooter } from "@/types/content";
 import { formatSom } from "@/lib/format";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { toViewerProduct } from "@/lib/products/viewer";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
 
@@ -164,10 +166,27 @@ export function announceModeFor(before: Product, after: Product): AnnounceMode {
   return "refresh";
 }
 
+/**
+ * KANAL UCHUN MAHSULOT: narx DONA narxga o'giriladi.
+ *
+ * Bazadagi `price` - OPTOM narx. Kanal esa hammaga ochiq, ya'ni
+ * u yerda optom narx turishi ham xato, ham maxfiylikning buzilishi
+ * (bir marta shunday bo'lgan: kanalda 70 000 turgan, saytda esa
+ * dona narx 78 700). `undefined` rol - "oddiy mijoz", ya'ni dona narx.
+ */
+async function forChannel(product: Product): Promise<Product> {
+  return toViewerProduct(product, undefined, await getPricingSettings());
+}
+
 /** Kanal postida ko'rsatiladigan turlar soni (post juda uzun bo'lmasligi uchun). */
 const MAX_VARIANT_LINES = 15;
 
-/** Mahsulot e'loni matni (yangi post uchun ham, tahrir uchun ham bir xil). */
+/**
+ * Mahsulot e'loni matni (yangi post uchun ham, tahrir uchun ham bir xil).
+ *
+ * DIQQAT: bu yerga DONA NARXga o'girilgan mahsulot berilishi shart
+ * (`forChannel()`). Kanal ochiq - u yerda optom narx turmasligi kerak.
+ */
 function buildProductText(product: Product, mode: "new" | "updated"): string {
   const hasDiscount = isDiscountActive(product);
   // Sotish turi (dona/metr/kg...) - narx va zaxira shu birlikda.
@@ -254,7 +273,7 @@ export async function refreshChannelPost(
   ].slice(0, 10);
 
   const header: "new" | "updated" = product.channelMode ?? "new";
-  const body = buildProductText(product, header);
+  const body = buildProductText(await forChannel(product), header);
   const footer = buildFooter(await loadFooter());
   const budget = 850 - footer.length;
   const text =
@@ -306,11 +325,13 @@ export async function announceProduct(
   // undan bildirishnoma chiqmaydi.
   if (mode !== "refresh") {
     const hasDiscountNow = isDiscountActive(product);
+    // Push HAMMA ilova foydalanuvchisiga boradi - narx DONA narx.
+    const shown = await forChannel(product);
     await sendPushToTopic(PRODUCTS_TOPIC, {
       title: mode === "new" ? "Yangi mahsulot" : hasDiscountNow ? "Chegirma!" : "Narx yangilandi",
-      body: `${product.name} — ${formatSom(
-        hasVariants(product) ? (minVariantPrice(product) ?? product.price) : effectivePrice(product)
-      )}${hasVariants(product) ? " dan" : ""}`,
+      body: `${shown.name} — ${formatSom(
+        hasVariants(shown) ? (minVariantPrice(shown) ?? shown.price) : effectivePrice(shown)
+      )}${hasVariants(shown) ? " dan" : ""}`,
       data: { screen: "Mahsulot", productId: product.id },
     });
   }
@@ -320,7 +341,7 @@ export async function announceProduct(
     ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
     ...(product.videos ?? []).filter(Boolean).map((url) => ({ url, type: "video" as const })),
   ].slice(0, 10);
-  const body = buildProductText(product, header);
+  const body = buildProductText(await forChannel(product), header);
   const footer = buildFooter(await loadFooter());
   // Albom caption'i 1024 belgi bilan cheklangan - tavsif uzun bo'lsa
   // e'lon jimgina kesilib qolmasligi uchun mahsulot qismini qisqartiramiz

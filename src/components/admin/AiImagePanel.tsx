@@ -37,6 +37,11 @@ export interface AiSuggestion {
   category: string;
   material: string;
   brand: string;
+  /** Tarjimalar - bo'sh qolsa forma o'zgarmaydi. */
+  nameRu?: string;
+  nameEn?: string;
+  descriptionRu?: string;
+  descriptionEn?: string;
 }
 
 interface Props {
@@ -83,7 +88,10 @@ export function AiImagePanel({ productId, hasImage, onSuggestion, onImages }: Pr
 
       if (action === "analyze") {
         onSuggestion(data.suggestion as AiSuggestion);
-        setMessage({ type: "success", text: "Taklif formaga qo'yildi — tekshirib saqlang." });
+        setMessage({
+          type: "success",
+          text: "Taklif formaga qo'yildi (ruscha va inglizcha tarjima bilan) — tekshirib saqlang.",
+        });
       } else {
         onImages(data.urls as string[]);
         const failed = (data.failed as string[]) ?? [];

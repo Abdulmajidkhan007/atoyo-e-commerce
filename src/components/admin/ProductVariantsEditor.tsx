@@ -189,7 +189,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
                 <TextField
                   size="small"
                   type="number"
-                  label={`Narx (${unitLabel})`}
+                  label={`Optom narx (${unitLabel})`}
                   value={fillPrice}
                   onChange={(e) => setFillPrice(e.target.value)}
                   className="!w-36"
@@ -238,7 +238,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
                   <TextField
                     size="small"
                     type="number"
-                    label={`Narx (${unitLabel})`}
+                    label={`Optom narx (${unitLabel})`}
                     value={variant.price || ""}
                     onChange={(e) => updateVariant(variant.id, { price: Number(e.target.value) || 0 })}
                     className="!w-36"

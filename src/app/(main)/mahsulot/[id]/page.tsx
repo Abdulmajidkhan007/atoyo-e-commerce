@@ -8,7 +8,7 @@ import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { getLocale } from "@/lib/i18n/server";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
-import { toViewerProduct, toViewerProducts } from "@/lib/products/viewer";
+import { storefrontRole, toViewerProduct, toViewerProducts } from "@/lib/products/viewer";
 import { localizedDescription, localizedName } from "@/lib/products/i18n";
 import { labelOf } from "@/lib/products/taxonomy";
 import { hasVariants } from "@/lib/products/variants";
@@ -82,7 +82,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
   // tannarx va yetkazib beruvchi nomi HTML'ga ham, JSON-LD'ga ham
   // tushmasin (ilgari `productJsonLd` optom narxni Google'ga
   // e'lon qilib yuborardi).
-  const product = toViewerProduct(raw, viewer?.role, pricing);
+  const product = toViewerProduct(raw, storefrontRole(viewer?.role), pricing);
 
   // Nom va tavsif tanlangan tilda (tarjimasi yo'q bo'lsa - o'zbekchasi).
   const name = localizedName(product, locale);
@@ -94,7 +94,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
   // (almashtiriladigan mahsulotlar), keyin shu kategoriyadan.
   const related = toViewerProducts(
     await getRelatedProducts(raw, 8).catch(() => []),
-    viewer?.role,
+    storefrontRole(viewer?.role),
     pricing
   );
   // Mahsulot tugagan bo'lsa - zaxirada bori tepada ko'rsatiladi.

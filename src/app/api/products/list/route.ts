@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { queryProductsPage } from "@/lib/products/catalog-server";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
-import { filterPriceToWholesale, toViewerProducts } from "@/lib/products/viewer";
+import {
+  filterPriceToWholesale,
+  staffSeesInternal,
+  storefrontRole,
+  toViewerProducts,
+} from "@/lib/products/viewer";
 import { NO_STORE_HEADERS } from "@/lib/http/cache";
 import type { ProductFilterParams } from "@/types/product";
 
@@ -37,6 +42,12 @@ export async function GET(request: Request) {
     getPricingSettings(),
   ]);
 
+  // ADMIN PANEL `raw=1` bilan so'raydi - unga OPTOM narx kerak
+  // (u shu qiymatni tahrirlaydi). Vitrinada esa xodim ham mijoz
+  // ko'rgan narxni ko'radi.
+  const wantsRaw = params.get("raw") === "1" && staffSeesInternal(viewer?.role);
+  const role = wantsRaw ? viewer?.role : storefrontRole(viewer?.role);
+
   const sortParam = params.get("sortBy") as SortOption | null;
   const rawMin = numberParam(params.get("minPrice"));
   const rawMax = numberParam(params.get("maxPrice"));
@@ -48,8 +59,8 @@ export async function GET(request: Request) {
     manufacturerCountry: params.get("manufacturerCountry") ?? undefined,
     inStockOnly: params.get("inStockOnly") === "1",
     // Mijoz KO'RSATILGAN narxda o'ylaydi, bazada esa optom narx turadi.
-    minPrice: rawMin === undefined ? undefined : filterPriceToWholesale(rawMin, viewer?.role, pricing),
-    maxPrice: rawMax === undefined ? undefined : filterPriceToWholesale(rawMax, viewer?.role, pricing),
+    minPrice: rawMin === undefined ? undefined : filterPriceToWholesale(rawMin, role, pricing),
+    maxPrice: rawMax === undefined ? undefined : filterPriceToWholesale(rawMax, role, pricing),
     sortBy: sortParam && SORTS.includes(sortParam) ? sortParam : "newest",
   };
 
@@ -59,7 +70,7 @@ export async function GET(request: Request) {
     const page = await queryProductsPage(filters, pageSize, params.get("cursor"));
     return NextResponse.json(
       {
-        products: toViewerProducts(page.products, viewer?.role, pricing),
+        products: toViewerProducts(page.products, role, pricing),
         nextCursor: page.nextCursor,
         hasMore: page.hasMore,
       },

@@ -71,12 +71,12 @@ export function ProductTable() {
       setIsLoading(true);
       try {
         if (trimmedSearch) {
-          const results = await searchProductsByPrefix(trimmedSearch, PAGE_SIZE);
+          const results = await searchProductsByPrefix(trimmedSearch, PAGE_SIZE, true);
           if (cancelled) return;
           setProducts(results);
           setHasMore(false);
         } else {
-          const page = await getProductsPage({ sortBy: "newest" }, PAGE_SIZE, null);
+          const page = await getProductsPage({ sortBy: "newest" }, PAGE_SIZE, null, true);
           if (cancelled) return;
           setProducts(page.products);
           setCursor(page.lastCursor);
@@ -96,7 +96,7 @@ export function ProductTable() {
   const loadMore = async () => {
     setIsLoading(true);
     try {
-      const page = await getProductsPage({ sortBy: "newest" }, PAGE_SIZE, cursor);
+      const page = await getProductsPage({ sortBy: "newest" }, PAGE_SIZE, cursor, true);
       setProducts((prev) => [...prev, ...page.products]);
       setCursor(page.lastCursor);
       setHasMore(page.hasMore);

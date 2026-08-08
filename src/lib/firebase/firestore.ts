@@ -44,7 +44,13 @@ export interface ProductsPage {
 export async function getProductsPage(
   filters: ProductFilterParams,
   pageSize = 24,
-  cursor: string | null = null
+  cursor: string | null = null,
+  /**
+   * ADMIN PANEL uchun: OPTOM narx va tannarx bilan. Server buni
+   * faqat xodimga beradi, mijoz so'rasa e'tiborsiz qoladi.
+   * Vitrinada (katalog, qidiruv) ISHLATILMAYDI.
+   */
+  raw = false
 ): Promise<ProductsPage> {
   const params = new URLSearchParams();
   if (filters.category) params.set("category", filters.category);
@@ -59,6 +65,7 @@ export async function getProductsPage(
   if (filters.sortBy) params.set("sortBy", filters.sortBy);
   params.set("pageSize", String(pageSize));
   if (cursor) params.set("cursor", cursor);
+  if (raw) params.set("raw", "1");
 
   const res = await fetch(`/api/products/list?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Katalog o'qilmadi.");
@@ -82,11 +89,17 @@ export async function getProductsPage(
  * (`lib/products/catalog-server.ts`), natijalar keyin mijoz tomonda
  * `lib/search/fuzzy.ts` bilan xatoga chidamli tarzda saralanadi.
  */
-export async function searchProductsByPrefix(term: string, pageSize = 24): Promise<Product[]> {
+export async function searchProductsByPrefix(
+  term: string,
+  pageSize = 24,
+  /** ADMIN PANEL uchun - optom narx bilan (yuqoriga qarang). */
+  raw = false
+): Promise<Product[]> {
   const normalized = term.trim();
   if (!normalized) return [];
 
   const params = new URLSearchParams({ q: normalized, pageSize: String(pageSize) });
+  if (raw) params.set("raw", "1");
   const res = await fetch(`/api/products/search?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) return [];
 

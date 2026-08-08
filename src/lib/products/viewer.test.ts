@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { filterPriceToWholesale, staffSeesInternal, toViewerProduct } from "./viewer";
+import {
+  filterPriceToWholesale,
+  staffSeesInternal,
+  storefrontRole,
+  toViewerProduct,
+} from "./viewer";
 import type { Product } from "@/types/product";
 
 const PRICING = { retailMarkupPercent: 20 };
@@ -125,5 +130,32 @@ describe("staffSeesInternal", () => {
     expect(staffSeesInternal("client")).toBe(false);
     expect(staffSeesInternal("user")).toBe(false);
     expect(staffSeesInternal(undefined)).toBe(false);
+  });
+});
+
+describe("storefrontRole", () => {
+  /**
+   * Sabab: admin sifatida kirilgan holda SAYTDA optom narx (70 000)
+   * ko'rinardi, botda esa dona narx (78 700) - bu chalkashlik edi.
+   * Vitrina hamma uchun MIJOZ oynasi bo'lishi kerak.
+   */
+  it("xodim ham vitrinada mijoz narxini ko'radi", () => {
+    expect(storefrontRole("admin")).toBe("user");
+    expect(storefrontRole("owner")).toBe("user");
+  });
+
+  it("optom mijoz optom narxda qoladi", () => {
+    expect(storefrontRole("client")).toBe("client");
+  });
+
+  it("kirmagan mehmon - dona narx", () => {
+    expect(storefrontRole(undefined)).toBe("user");
+    expect(storefrontRole("user")).toBe("user");
+  });
+
+  it("vitrinada admin ham dona narx va tannarxsiz hujjat oladi", () => {
+    const view = toViewerProduct(makeProduct(), storefrontRole("admin"), PRICING);
+    expect(view.price).toBe(120_000);
+    expect(view).not.toHaveProperty("costPrice");
   });
 });

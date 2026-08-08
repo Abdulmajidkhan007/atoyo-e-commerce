@@ -96,7 +96,19 @@ Shu sababli:
   `toViewerProducts()` dan o'tkazing va `no-store` qo'ying
   (`lib/http/cache.ts`). Rolga bog'liq javob CDN'da keshlanmaydi.
 - Server tomoni (bot, AI, `/tv`, kanal posti, buyurtma) XOM hujjat
-  bilan ishlaydi va `priceForRole()` ni o'zi qo'llaydi — o'zgarmadi.
+  bilan ishlaydi va `priceForRole()` ni o'zi qo'llaydi.
+- **Vitrina hamma uchun MIJOZ oynasi** — `storefrontRole()`. Xodim
+  saytda/botda ham DONA narxni ko'radi, optom narx faqat optom
+  mijozga va ADMIN PANELGA (`/api/products/list?raw=1`) beriladi.
+  Aks holda "saytda 70 000, botda 78 700" degan chalkashlik chiqadi.
+- **Ochiq kanal va push — har doim DONA narx** (`forChannel()`
+  `lib/telegram/channel.ts` da). Kanalda optom narx turishi ham
+  xato, ham maxfiylikning buzilishi.
+- Botda ro'yxat ham, kartochka ham `shownPrice()` dan o'tadi —
+  ikkalasida bir xil raqam turishi shart.
+- Admin formada maydon **"Optom narx"** deb ataladi va ostida
+  hisoblangan dona narx ko'rsatiladi (ustama `/api/admin/pricing`
+  dan olinadi — mijozga beriladigan `/api/pricing` da yo'q).
 
 ## Import/kirimda turlar
 

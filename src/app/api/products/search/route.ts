@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { searchProductsServer } from "@/lib/products/catalog-server";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
-import { toViewerProducts } from "@/lib/products/viewer";
+import { staffSeesInternal, storefrontRole, toViewerProducts } from "@/lib/products/viewer";
 import { NO_STORE_HEADERS } from "@/lib/http/cache";
 
 export const runtime = "nodejs";
@@ -32,10 +32,14 @@ export async function GET(request: Request) {
     getPricingSettings(),
   ]);
 
+  // Admin panel `raw=1` bilan so'raydi - unga optom narx kerak.
+  const wantsRaw = params.get("raw") === "1" && staffSeesInternal(viewer?.role);
+  const role = wantsRaw ? viewer?.role : storefrontRole(viewer?.role);
+
   try {
     const products = await searchProductsServer(term, pageSize);
     return NextResponse.json(
-      { products: toViewerProducts(products, viewer?.role, pricing) },
+      { products: toViewerProducts(products, role, pricing) },
       { headers: NO_STORE_HEADERS }
     );
   } catch (error) {

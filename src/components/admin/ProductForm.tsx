@@ -112,6 +112,12 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const [newTypeLabel, setNewTypeLabel] = useState("");
   const [addingBusy, setAddingBusy] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  /**
+   * Dona (chakana) ustamasi, foizda. Admin panelga XOS - mijozga
+   * beriladigan `/api/pricing` bu qiymatni qaytarmaydi (u ma'lum
+   * bo'lsa dona narxdan optom narxni teskari hisoblab olish mumkin).
+   */
+  const [markupPercent, setMarkupPercent] = useState<number | null>(null);
   const [newImages, setNewImages] = useState<NewImage[]>([]);
   /** Buferdan rasm qo'yilganda chiqadigan qisqa izoh (4 soniya). */
   const [pasteNote, setPasteNote] = useState<string | null>(null);
@@ -131,6 +137,16 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { taxonomy?: Taxonomy } | null) => {
         if (data?.taxonomy) setTaxonomy(data.taxonomy);
+      })
+      .catch(() => {});
+
+    // Dona ustamasi - "Optom narx" yonida hisoblangan dona narxni
+    // ko'rsatish uchun. Faqat admin route'idan olinadi.
+    fetch("/api/admin/pricing")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { pricing?: { retailMarkupPercent?: number } } | null) => {
+        const value = data?.pricing?.retailMarkupPercent;
+        if (typeof value === "number" && value >= 0) setMarkupPercent(value);
       })
       .catch(() => {});
   }, []);
@@ -182,6 +198,22 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const totalVideos = existingVideos.length + newVideos.length;
 
   const unitLabel = taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit;
+
+  /**
+   * "Optom narx" maydoni ostidagi izoh: bazaga OPTOM narx yoziladi,
+   * mijoz esa ustama qo'shilgan DONA narxni ko'radi. Ilgari maydon
+   * shunchaki "Narx" deb turgani uchun chalkashlik chiqqan edi -
+   * saytda 70 000 kutilgan, botda esa 78 700 chiqqan.
+   */
+  const retailHint = (() => {
+    const wholesale = Number(form.price);
+    if (!Number.isFinite(wholesale) || wholesale <= 0) {
+      return "Bazaga OPTOM narx yoziladi. Dona narx ustama bilan o'zi hisoblanadi.";
+    }
+    if (markupPercent === null) return "Bazaga OPTOM narx yoziladi.";
+    const retail = Math.round((wholesale * (1 + markupPercent / 100)) / 100) * 100;
+    return `Mijoz ko'radigan DONA narx: ${retail.toLocaleString("uz-UZ")} so'm (ustama ${markupPercent}%). Optom mijoz ${wholesale.toLocaleString("uz-UZ")} so'm ko'radi.`;
+  })();
 
   /**
    * Ro'yxatda kerakli tur bo'lmasa - shu yerda qo'shiladi ("Turlar"
@@ -551,9 +583,10 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
           <TextField
             size="small"
             type="number"
-            label={`Narx (so'm / ${unitLabel}) *`}
+            label={`Optom narx (so'm / ${unitLabel}) *`}
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
+            helperText={retailHint}
           />
           {draft ? (
             <TextField
@@ -664,7 +697,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
             <TextField
               size="small"
               type="number"
-              label="Chegirma narxi"
+              label="Chegirma narxi (optom)"
               value={form.discountPrice}
               onChange={(e) => setForm({ ...form, discountPrice: e.target.value })}
             />
@@ -728,7 +761,10 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         <AiImagePanel
           productId={product.id}
           hasImage={existingImages.length > 0}
-          onSuggestion={(suggestion) =>
+          onSuggestion={(suggestion) => {
+            // Tarjimalar "Qo'shimcha ma'lumotlar" ichida - yopiq
+            // turgan bo'lsa admin AI nima yozganini ko'rmaydi.
+            if (suggestion.nameRu || suggestion.descriptionRu) setShowExtra(true);
             setForm((prev) => ({
               ...prev,
               name: suggestion.name || prev.name,
@@ -738,8 +774,13 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
                 new Set([...prev.keywords.split(",").map((k) => k.trim()).filter(Boolean), ...suggestion.keywords])
               ).join(", "),
               brand: prev.brand || suggestion.brand,
-            }))
-          }
+              // Tarjimalar: qo'lda yozilgani bo'lsa TEGILMAYDI.
+              nameRu: prev.nameRu || (suggestion.nameRu ?? ""),
+              nameEn: prev.nameEn || (suggestion.nameEn ?? ""),
+              descriptionRu: prev.descriptionRu || (suggestion.descriptionRu ?? ""),
+              descriptionEn: prev.descriptionEn || (suggestion.descriptionEn ?? ""),
+            }));
+          }}
           onImages={(urls) => setExistingImages((prev) => [...prev, ...urls].slice(0, MAX_IMAGES))}
         />
       )}

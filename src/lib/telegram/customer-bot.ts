@@ -952,8 +952,15 @@ async function runSearch(chatId: number, term: string, t: BotDict): Promise<void
     return;
   }
 
+  // Narx ro'yxatda ham, kartochkada ham BIR XIL bo'lishi kerak.
+  // Ilgari bu yerda XOM (optom) narx chiqardi: ro'yxatda 70 000,
+  // ochilganda esa 78 700 - mijoz uchun tushunarsiz edi.
+  const priceCtx = await priceContext(chatId);
   const rows: InlineButton[][] = products.map((p) => [
-    { text: `${p.name} — ${formatSom(p.discountPrice ?? p.price)}`, callback_data: `p|${p.id}` },
+    {
+      text: `${p.name} — ${formatSom(shownPrice(effectiveBotPrice(p), p, priceCtx))}`,
+      callback_data: `p|${p.id}`,
+    },
   ]);
   rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);
   await sendChatMessage(chatId, `🔍 "${term}":`, { replyMarkup: { inline_keyboard: rows } });

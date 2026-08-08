@@ -33,6 +33,24 @@ export function staffSeesInternal(role: UserRole | undefined): boolean {
   return role === "owner" || role === "admin";
 }
 
+/**
+ * DO'KON VITRINASI UCHUN ROL.
+ *
+ * Sayt, ilova, bot va kanal — bularning hammasi MIJOZ oynasi.
+ * Xodim ham o'sha yerda mijoz ko'rgan narxni ko'rishi kerak, aks
+ * holda "saytda 70 000, botda 78 700" degan chalkashlik chiqadi
+ * (aynan shunday bo'lgan: admin sifatida kirilganda vitrinada
+ * optom narx turgan).
+ *
+ * Optom narx faqat IKKI joyda ko'rinadi:
+ *   • optom mijozga (`role === "client"`) — u shunday narx bilan
+ *     ishlaydi;
+ *   • ADMIN PANELDA — u yerda so'rov `raw` bayrog'i bilan ketadi.
+ */
+export function storefrontRole(role: UserRole | undefined): UserRole {
+  return isWholesaleRole(role) ? "client" : "user";
+}
+
 function viewerVariant(
   variant: ProductVariant,
   role: UserRole | undefined,

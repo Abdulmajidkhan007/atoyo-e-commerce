@@ -3,7 +3,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { isSearchEngineConfigured, searchWithEngine } from "@/lib/search/engine";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
-import { toViewerProducts } from "@/lib/products/viewer";
+import { storefrontRole, toViewerProducts } from "@/lib/products/viewer";
 import { NO_STORE_HEADERS } from "@/lib/http/cache";
 import type { Product } from "@/types/product";
 
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     {
       engine: true,
       found: result.found,
-      products: toViewerProducts(products, viewer?.role, pricing),
+      products: toViewerProducts(products, storefrontRole(viewer?.role), pricing),
     },
     { headers: NO_STORE_HEADERS }
   );

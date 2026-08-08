@@ -304,6 +304,17 @@ export interface ImageAnalysis {
   category: string;
   material: string;
   brand: string;
+  /**
+   * TARJIMALAR. Sayt uch tilda (uz/ru/en), mahsulot nomi va tavsifi
+   * uchun ixtiyoriy `nameRu`/`nameEn`/`descriptionRu`/`descriptionEn`
+   * maydonlari bor (`lib/products/i18n.ts`). Tahlil paytida ularni
+   * ham to'ldirish arzon (bitta chaqiruv) va admin qo'lda tarjima
+   * qilib o'tirmaydi - ayniqsa ruscha nom O'zbekistonda muhim.
+   */
+  nameRu: string;
+  nameEn: string;
+  descriptionRu: string;
+  descriptionEn: string;
 }
 
 /**
@@ -317,12 +328,18 @@ export async function analyzeProductImage(imageUrl: string, hint?: string): Prom
   const source = await fetchSourceImage(imageUrl);
   const response = await getAnthropic().messages.create({
     model: AI_MODEL,
-    max_tokens: 700,
+    max_tokens: 1500,
     system:
       "Sen santexnika va isitish tizimlari do'koni uchun mahsulot kartochkasini to'ldiruvchi yordamchisan. " +
       "Faqat rasmda KO'RINGAN narsani yoz - o'lcham, kafolat yoki brendni taxmin qilma (ko'rinmasa bo'sh qoldir). " +
-      'Javobni FAQAT JSON ko\'rinishida ber: {"name":"","description":"","keywords":[],"category":"","material":"","brand":""}. ' +
-      "Nom va tavsif o'zbekcha bo'lsin; tavsif 2-4 gap. `keywords` - shu mahsulotni almashtira oladigan 3-6 ta umumiy nom.",
+      "Javobni FAQAT JSON ko'rinishida ber: " +
+      '{"name":"","description":"","keywords":[],"category":"","material":"","brand":"",' +
+      '"nameRu":"","nameEn":"","descriptionRu":"","descriptionEn":""}. ' +
+      "`name` va `description` O'ZBEKCHA (lotin) bo'lsin; tavsif 2-4 gap. " +
+      "`nameRu`/`descriptionRu` - o'shalarning RUSCHA tarjimasi, " +
+      "`nameEn`/`descriptionEn` - INGLIZCHA tarjimasi. Tarjima aynan " +
+      "shu mahsulot haqida bo'lsin, qo'shimcha ma'lumot o'ylab topma. " +
+      "`keywords` - shu mahsulotni almashtira oladigan 3-6 ta umumiy nom (o'zbekcha).",
     messages: [
       {
         role: "user",
@@ -358,5 +375,9 @@ export async function analyzeProductImage(imageUrl: string, hint?: string): Prom
     category: (parsed.category ?? "").slice(0, 60),
     material: (parsed.material ?? "").slice(0, 60),
     brand: (parsed.brand ?? "").slice(0, 120),
+    nameRu: (parsed.nameRu ?? "").slice(0, 200),
+    nameEn: (parsed.nameEn ?? "").slice(0, 200),
+    descriptionRu: (parsed.descriptionRu ?? "").slice(0, 2000),
+    descriptionEn: (parsed.descriptionEn ?? "").slice(0, 2000),
   };
 }
