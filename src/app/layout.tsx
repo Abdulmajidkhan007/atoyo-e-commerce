@@ -4,7 +4,8 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Providers } from "./providers";
 import { Analytics } from "@/components/analytics/Analytics";
 import { SITE_NAME, siteUrl } from "@/lib/seo/json-ld";
-import { ogImage, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_TITLE } from "@/lib/seo/metadata";
+import { ogImage, siteDescription, SITE_KEYWORDS, SITE_TITLE } from "@/lib/seo/metadata";
+import { getSiteSettings } from "@/lib/firebase/admin-content";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
@@ -17,51 +18,59 @@ const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" }
  * `metadataBase` bo'lmasa Open Graph rasmi nisbiy manzil bilan
  * qolib ketadi va Telegram kartochkani ko'rsatmaydi.
  */
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl()),
-  title: {
-    default: SITE_TITLE,
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: SITE_DESCRIPTION,
-  keywords: SITE_KEYWORDS,
-  applicationName: SITE_NAME,
-  authors: [{ name: SITE_NAME, url: siteUrl() }],
-  creator: SITE_NAME,
-  publisher: SITE_NAME,
-  category: "shopping",
-  alternates: {
-    canonical: "/",
-    languages: {
-      uz: "/",
-      "uz-UZ": "/",
-      ru: "/",
-      en: "/",
+export async function generateMetadata(): Promise<Metadata> {
+  // Tavsifdagi SHAHAR admin sozlamasidagi manzildan olinadi - u
+  // o'zgarsa Telegram/Google kartochkasi ham o'zgaradi. Sozlama
+  // serverda 60 soniya keshlangan, ya'ni bu qo'shimcha so'rov emas.
+  const settings = await getSiteSettings().catch(() => null);
+  const description = siteDescription(settings?.address);
+
+  return {
+    metadataBase: new URL(siteUrl()),
+    title: {
+      default: SITE_TITLE,
+      template: `%s | ${SITE_NAME}`,
     },
-  },
-  openGraph: {
-    type: "website",
-    siteName: SITE_NAME,
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    url: siteUrl(),
-    locale: "uz_UZ",
-    alternateLocale: ["ru_RU", "en_US"],
-    images: [ogImage()],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    images: [ogImage().url],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
-  },
-  formatDetection: { telephone: true, address: true, email: true },
-};
+    description,
+    keywords: SITE_KEYWORDS,
+    applicationName: SITE_NAME,
+    authors: [{ name: SITE_NAME, url: siteUrl() }],
+    creator: SITE_NAME,
+    publisher: SITE_NAME,
+    category: "shopping",
+    alternates: {
+      canonical: "/",
+      languages: {
+        uz: "/",
+        "uz-UZ": "/",
+        ru: "/",
+        en: "/",
+      },
+    },
+    openGraph: {
+      type: "website",
+      siteName: SITE_NAME,
+      title: SITE_TITLE,
+      description,
+      url: siteUrl(),
+      locale: "uz_UZ",
+      alternateLocale: ["ru_RU", "en_US"],
+      images: [ogImage()],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: SITE_TITLE,
+      description,
+      images: [ogImage().url],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+    },
+    formatDetection: { telephone: true, address: true, email: true },
+  };
+}
 
 /** Brauzer manzil satri rangi (mobil qurilmalarda ko'rinadi). */
 export const viewport: Viewport = {

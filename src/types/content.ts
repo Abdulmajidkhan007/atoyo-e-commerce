@@ -60,7 +60,8 @@ export interface SiteSettings {
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   phone: "+998 90 123 45 67",
   email: "info@atoyo-santexnika.uz",
-  address: "Toshkent shahri",
+  // Haqiqiy do'kon manzili (admin sozlamasi bo'sh bo'lsa shu ishlatiladi).
+  address: "Qo'qon, Navbahor ko'chasi 45p",
   socials: [
     { platform: "instagram", url: "" },
     { platform: "telegram", url: "" },

@@ -145,6 +145,19 @@ Shu sababli:
 - Kirimda 20 tadan ko'p mahsulot bo'lsa kanalga e'lon qilinmaydi
   (`announce: false`).
 
+## CSP qoidasi (buzilmasin)
+
+Sayt `Content-Security-Policy` yuboradi (`lib/http/csp.ts`, testi
+`csp.test.ts`). **CSP'da ko'rsatilmagan tur `default-src 'self'` ga
+tushadi va jimgina bloklanadi** - brauzer konsolisiz sezilmaydi.
+Shu sabab bir marta mahsulot VIDEOSI yo'qolgan edi (`media-src`
+yozilmagan edi, video esa Firebase Storage'da).
+
+Tashqi manba qo'shilsa (yangi rasm/video/skript/iframe hosti):
+`lib/http/csp.ts` dagi ro'yxatga qo'shing va `csp.test.ts` ga
+tekshiruv yozing. Rasm va video uchun `https:` ochiq qoldirilgan -
+Storage manzillari o'zgarib turadi.
+
 ## Cookie qoidasi (Firebase Hosting)
 
 Sayt Firebase Hosting rewrite orqali ochilgani uchun backendga **faqat
