@@ -19,6 +19,8 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import type { Taxonomy } from "@/lib/products/taxonomy";
 
 /**
@@ -81,6 +83,8 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
   const [search, setSearch] = useState("");
   const [onlyNoImage, setOnlyNoImage] = useState(false);
   const [onlyNotPosted, setOnlyNotPosted] = useState(false);
+  /** Saytda hali ochilmaganlar (import qilinganlar shunday keladi). */
+  const [onlyHidden, setOnlyHidden] = useState(false);
   const [page, setPage] = useState(0);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -149,6 +153,7 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
     return products.filter((product) => {
       if (onlyNoImage && product.imageCount > 0) return false;
       if (onlyNotPosted && product.posted) return false;
+      if (onlyHidden && product.isActive) return false;
       // Kategoriya serverda filtrlangan bo'lsa ham, brend qo'shimcha
       // filtr sifatida shu yerda qo'llanadi (ikkovi birga - indekssiz).
       if (category && brand && product.brand !== brand) return false;
@@ -160,7 +165,7 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
         String(product.code ?? "").includes(term)
       );
     });
-  }, [products, search, onlyNoImage, onlyNotPosted, category, brand]);
+  }, [products, search, onlyNoImage, onlyNotPosted, onlyHidden, category, brand]);
 
   const pageItems = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -185,6 +190,63 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
         : prev.map((item) => (ids.includes(item.id) ? { ...item, ...patch } : item))
     );
     setSelected(new Set());
+  };
+
+  /**
+   * RASMSIZLARNI SAYTDAN YASHIRISH - butun katalog bo'ylab.
+   *
+   * Katta importdan keyin minglab rasmsiz mahsulot katalogda
+   * "Rasm yo'q" bo'lib turadi. Bu tugma ularning hammasini bir
+   * bosishda yopadi; rasm qo'yilgach "Saytda ochish" bilan
+   * ochiladi.
+   */
+  const hideImageless = async () => {
+    if (
+      !confirm(
+        "Rasmi yo'q BARCHA mahsulotlar saytdan yashiriladi (o'chirilmaydi).\n\n" +
+          "Rasm qo'ygandan keyin ularni belgilab \"Saytda ochish\" bilan qaytarasiz. Davom etamizmi?"
+      )
+    ) {
+      return;
+    }
+
+    setBusy("hide-imageless");
+    setProgress(0);
+    let hidden = 0;
+    let scanned = 0;
+    try {
+      let after: string | null = null;
+      let guard = 0;
+      do {
+        const res: Response = await fetch("/api/admin/products/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "hide-imageless", after: after ?? undefined }),
+        });
+        if (!res.ok) throw new Error("Amal bajarilmadi.");
+        const data = (await res.json()) as {
+          hidden: number;
+          scanned: number;
+          nextCursor: string | null;
+        };
+        hidden += data.hidden;
+        scanned += data.scanned;
+        after = data.nextCursor;
+        guard += 1;
+        setProgress(Math.min(95, guard * 5));
+      } while (after && guard < 60);
+
+      setMessage({
+        kind: "ok",
+        text: `🙈 ${scanned} ta mahsulot ko'rildi, ${hidden} tasi (rasmsizlari) saytdan yashirildi.`,
+      });
+      await load(true);
+    } catch (error) {
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
+    } finally {
+      setBusy(null);
+      setProgress(0);
+    }
   };
 
   const runDelete = async () => {
@@ -501,6 +563,23 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
               Hammasini yuklash
             </Button>
           )}
+
+          {/* Butun katalog bo'ylab ishlaydi - filtr va belgilash
+              kerak emas. Katta importdan keyingi birinchi qadam. */}
+          <Button
+            variant="outlined"
+            color="warning"
+            size="small"
+            startIcon={<VisibilityOffOutlinedIcon />}
+            disabled={busy !== null || loading}
+            onClick={() => void hideImageless()}
+          >
+            {busy === "hide-imageless" ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              "Rasmsizlarni saytdan yashirish"
+            )}
+          </Button>
         </div>
 
         {products.length > 0 && (
@@ -522,6 +601,10 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
             <label className="flex items-center gap-1 text-sm text-navy-300">
               <Checkbox size="small" checked={onlyNotPosted} onChange={(e) => setOnlyNotPosted(e.target.checked)} />
               Kanalga chiqmaganlar
+            </label>
+            <label className="flex items-center gap-1 text-sm text-navy-300">
+              <Checkbox size="small" checked={onlyHidden} onChange={(e) => setOnlyHidden(e.target.checked)} />
+              Saytda yopiqlari
             </label>
             <span className="text-sm text-navy-300">
               Topildi: {filtered.length}
@@ -615,21 +698,26 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
             >
               Instagram/Facebook
             </Button>
+            {/* "Saytda ochish" - import qilingan mahsulotlar shu
+                tugma bosilgunicha katalogda ko'rinmaydi. */}
             <Button
               size="small"
-              variant="outlined"
+              variant="contained"
+              color="success"
+              startIcon={<VisibilityOutlinedIcon />}
               disabled={busy !== null}
-              onClick={() => void runUpdate({ isActive: false }, "sotuvdan olindi")}
+              onClick={() => void runUpdate({ isActive: true }, "saytda ochildi")}
             >
-              Sotuvdan olish
+              Saytda ochish
             </Button>
             <Button
               size="small"
               variant="outlined"
+              startIcon={<VisibilityOffOutlinedIcon />}
               disabled={busy !== null}
-              onClick={() => void runUpdate({ isActive: true }, "sotuvga qaytarildi")}
+              onClick={() => void runUpdate({ isActive: false }, "saytdan yashirildi")}
             >
-              Sotuvga qaytarish
+              Saytdan yashirish
             </Button>
             <Button
               size="small"
@@ -701,7 +789,9 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
                     {product.stock} {product.unit}
                   </td>
                   <td className="px-3 py-2 text-xs">
-                    {!product.isActive && <span className="text-navy-300">sotuvda emas</span>}
+                    {!product.isActive && (
+                      <span className="text-amber-600">saytda yopiq</span>
+                    )}
                     {product.isDraft && <span className="text-aqua-600">chernovik</span>}
                     {product.isActive && !product.isDraft && (
                       <span className={product.posted ? "text-green-600" : "text-navy-300"}>

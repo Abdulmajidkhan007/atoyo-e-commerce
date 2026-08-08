@@ -23,7 +23,7 @@ function formatSom(amount: number): string {
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();
   // Nom tanlangan tilda (tarjimasi bo'lmasa - o'zbekchasi).
-  const { locale } = useI18n();
+  const { locale, dict } = useI18n();
   const name = localizedName(product, locale);
   // Kategoriya nomi ro'yxatdan olinadi - admin qo'shgan yangi
   // kategoriyalar ham ko'rinadi (ilgari kodda 8 tasi yozilgan edi).
@@ -71,14 +71,22 @@ export function ProductCard({ product }: { product: Product }) {
         <FavoriteButton product={product} className="!bg-white/80 dark:!bg-navy-900/70" />
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+      {/* Ichki bo'shliq mobilda kichikroq - 2 ustunli panjarada
+          kartochka ichidagi joy tor. */}
+      <div className="flex flex-1 flex-col gap-1 p-2 sm:gap-1.5 sm:p-3">
         {categoryLabel && (
-          <Chip label={categoryLabel} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
+          <Chip
+            label={categoryLabel}
+            size="small"
+            className="!h-5 !w-fit !max-w-full !bg-aqua-50 !text-[10px] !text-aqua-700 sm:!h-6 sm:!text-xs dark:!bg-navy-500 dark:!text-aqua-100"
+          />
         )}
 
+        {/* Nom har doim IKKI QATOR joy egallaydi - shunda qo'shni
+            kartochkalarda narx va tugma bir chiziqda turadi. */}
         <Link
           href={`/mahsulot/${product.id}`}
-          className="line-clamp-2 text-[13px] font-medium leading-snug text-navy-900 hover:text-aqua-600 sm:text-sm dark:text-white"
+          className="line-clamp-2 min-h-[2.1rem] text-[13px] font-medium leading-snug text-navy-900 hover:text-aqua-600 sm:min-h-[2.3rem] sm:text-sm dark:text-white"
         >
           {name}
         </Link>
@@ -92,11 +100,13 @@ export function ProductCard({ product }: { product: Product }) {
           </p>
         )}
 
-        {/* Narx va tugma. `flex-wrap` MUHIM: tor ekranda (320px) uzun
-            narx va "Turini tanlash" tugmasi bir qatorga sig'may,
-            ustma-ust tushib qolardi - endi tugma pastga o'tadi. */}
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-2">
-          <div className="flex min-w-0 flex-col leading-tight">
+        {/* NARX VA TUGMA.
+            Tugma HAR DOIM narx ostida, butun kenglikda turadi -
+            ilgari u sig'sa yon tomonda, sig'masa pastda chiqib,
+            kartochkalar bir-biriga o'xshamas edi. Uzum va boshqa
+            marketpleyslarda ham shu yechim. */}
+        <div className="mt-auto flex flex-col gap-1.5 pt-1.5">
+          <div className="flex flex-col leading-tight">
             {hasDiscount && !withVariants && (
               <span className="text-[11px] leading-tight text-navy-300 line-through">
                 {formatSom(show(product.price))}
@@ -114,21 +124,24 @@ export function ProductCard({ product }: { product: Product }) {
               avval o'lchami/rangi tanlanishi kerak. */}
           {withVariants ? (
             <Button
+              fullWidth
               size="small"
               variant="contained"
               color="primary"
               component={Link}
               href={`/mahsulot/${product.id}`}
-              className="!min-w-0 !px-2.5 !py-1 !text-[11px] !font-semibold !leading-tight"
+              className="!h-7 !min-w-0 !whitespace-nowrap !py-0 !text-[10.5px] !font-semibold !leading-tight sm:!text-xs"
             >
-              Turini tanlash
+              {dict.product.chooseVariant}
             </Button>
           ) : (
             <Button
+              fullWidth
               size="small"
               variant="contained"
               color="primary"
               disabled={outOfStock}
+              startIcon={<AddShoppingCartIcon className="!text-base" />}
               onClick={() =>
                 dispatch(
                   addItem({
@@ -141,9 +154,11 @@ export function ProductCard({ product }: { product: Product }) {
                 )
               }
               aria-label={`${name} savatga qo'shish`}
-              className="!min-w-0 !px-2.5 !py-1"
+              className="!h-7 !min-w-0 !whitespace-nowrap !py-0 !text-[10.5px] !font-semibold !leading-tight sm:!text-xs"
             >
-              <AddShoppingCartIcon fontSize="small" />
+              {/* Qisqa yozuv - tugma HAR DOIM bitta qatorda qolsin,
+                  aks holda qo'shni kartochkalar bilan tenglashmaydi. */}
+              {dict.product.addToCartShort}
             </Button>
           )}
         </div>

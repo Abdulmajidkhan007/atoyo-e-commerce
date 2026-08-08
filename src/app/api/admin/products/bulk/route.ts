@@ -40,6 +40,19 @@ const schema = z.union([
       isActive: z.boolean().optional(),
     }),
   }),
+  /**
+   * RASMSIZLARNI SAYTDAN YASHIRISH.
+   *
+   * Katta import (1C narxnomasi) rasmsiz mahsulotlarni olib keladi -
+   * ular katalogda "Rasm yo'q" bo'lib turadi va sayt ko'rimsiz
+   * bo'ladi. Bu amal butun katalog bo'ylab yuradi, shuning uchun
+   * SAHIFALAB ishlaydi: har chaqiruvda bir bo'lak, keyingisi uchun
+   * kursor qaytadi.
+   */
+  z.object({
+    action: z.literal("hide-imageless"),
+    after: z.string().max(80).optional(),
+  }),
   z.object({
     action: z.literal("announce"),
     ids: z.array(z.string().min(1)).min(1).max(MAX_ANNOUNCE),
@@ -64,6 +77,14 @@ export async function POST(request: Request) {
 
   const db = getAdminDb();
   const who = admin.email ?? admin.displayName ?? "admin";
+
+  /* ------------- RASMSIZLARNI YASHIRISH -------------
+     Bu amal ro'yxat bilan emas, BUTUN katalog bo'ylab ishlaydi -
+     shuning uchun `ids` dan oldin turadi. */
+  if (parsed.data.action === "hide-imageless") {
+    return hideImageless(db, parsed.data.after, who);
+  }
+
   const refs = parsed.data.ids.map((id) => db.collection("products").doc(id));
 
   /* ---------------- O'CHIRISH ---------------- */
@@ -177,4 +198,40 @@ export async function POST(request: Request) {
     );
   }
   return NextResponse.json({ ok: true, posted, edited, unchanged, skipped });
+}
+
+/**
+ * Rasmsiz mahsulotlarni saytdan yashiradi (bir bo'lak).
+ * Katalog katta bo'lgani uchun sahifalab ishlaydi.
+ */
+async function hideImageless(
+  db: FirebaseFirestore.Firestore,
+  after: string | undefined,
+  who: string
+): Promise<NextResponse> {
+  const SCAN = 400;
+  let query: FirebaseFirestore.Query = db
+    .collection("products")
+    .select("images", "isActive")
+    .orderBy("__name__")
+    .limit(SCAN);
+  if (after) query = query.startAfter(db.collection("products").doc(after));
+
+  const snapshot = await query.get();
+  const batch = db.batch();
+  let hidden = 0;
+
+  for (const doc of snapshot.docs) {
+    const data = doc.data() as { images?: string[]; isActive?: boolean };
+    const hasImage = (data.images ?? []).some(Boolean);
+    if (hasImage || data.isActive === false) continue;
+    batch.update(doc.ref, { isActive: false, updatedAt: Date.now() });
+    hidden += 1;
+  }
+  if (hidden > 0) await batch.commit();
+
+  const nextCursor = snapshot.docs.length === SCAN ? (snapshot.docs.at(-1)?.id ?? null) : null;
+  if (hidden > 0) await logAction(`🙈 Rasmsiz mahsulotlar yashirildi (${who}): ${hidden} ta`);
+
+  return NextResponse.json({ ok: true, scanned: snapshot.docs.length, hidden, nextCursor });
 }

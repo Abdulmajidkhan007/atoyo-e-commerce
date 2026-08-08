@@ -180,6 +180,10 @@ export interface Dictionary {
     length: string;
     weight: string;
     addToCart: string;
+    /** Turlari bor mahsulot kartochkasidagi tugma. */
+    chooseVariant: string;
+    /** Kartochkadagi qisqa tugma - bitta qatorga sig'ishi kerak. */
+    addToCartShort: string;
     outOfStock: string;
     products: string;
     total: string;
@@ -403,6 +407,8 @@ const uz: Dictionary = {
     length: "Uzunligi",
     weight: "Vazni",
     addToCart: "Savatga qo'shish",
+    chooseVariant: "Turini tanlash",
+    addToCartShort: "Savatga",
     outOfStock: "Mahsulot tugagan",
     products: "Mahsulotlar",
     total: "Jami",
@@ -625,6 +631,8 @@ const en: Dictionary = {
     length: "Length",
     weight: "Weight",
     addToCart: "Add to cart",
+    chooseVariant: "Choose type",
+    addToCartShort: "Add",
     outOfStock: "Out of stock",
     products: "Products",
     total: "Total",
@@ -847,6 +855,8 @@ const ru: Dictionary = {
     length: "Длина",
     weight: "Вес",
     addToCart: "В корзину",
+    chooseVariant: "Выбрать вид",
+    addToCartShort: "В корзину",
     outOfStock: "Нет в наличии",
     products: "Товары",
     total: "Итого",

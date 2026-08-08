@@ -22,8 +22,8 @@ export const runtime = "nodejs";
  * nomlari CSV bilan bir xil (namuna: /namuna/atoyo-mahsulotlar.xlsx).
  */
 const bodySchema = z.union([
-  z.object({ csv: z.string().min(1).max(5_000_000) }),
-  z.object({ xlsx: z.string().min(1).max(12_000_000) }),
+  z.object({ csv: z.string().min(1).max(5_000_000), publish: z.boolean().optional() }),
+  z.object({ xlsx: z.string().min(1).max(12_000_000), publish: z.boolean().optional() }),
 ]);
 
 /** Excel katakchasidagi qiymatni CSV bilan bir xil matnga keltiradi. */
@@ -87,6 +87,10 @@ export async function POST(request: Request) {
   if (!parsedBody.success) {
     return NextResponse.json({ error: "CSV yoki Excel fayli yuborilmadi." }, { status: 400 });
   }
+
+  // Import qilinganlar darhol saytda ko'rinsinmi. Standart - YO'Q:
+  // katta importda rasmsiz/chala mahsulotlar katalogni buzadi.
+  const publish = parsedBody.data.publish === true;
 
   let rows: Record<string, string>[];
   if ("xlsx" in parsedBody.data) {
@@ -316,7 +320,21 @@ export async function POST(request: Request) {
       },
       images,
       thumbnailUrl: images[0] ?? "",
-      isActive: isDraftRow ? false : (row.isActive ?? "1").trim() !== "0",
+      /**
+       * SAYTDA KO'RINISHI.
+       *
+       * Katta import (masalan 1C narxnomasi) rasmsiz, kategoriyasi
+       * chala mahsulotlarni olib keladi - ular darhol katalogga
+       * chiqsa sayt ko'rimsiz bo'ladi. Shuning uchun standart holatda
+       * import qilinganlar YOPIQ keladi; admin katalogni tartibga
+       * solib bo'lgach "Saytda ochish" tugmasi bilan ochadi
+       * (`/admin/katalog/tartib`).
+       *
+       * Faylda `isActive` ustuni bo'lsa - u baribir kuchda qoladi.
+       */
+      isActive: isDraftRow
+        ? false
+        : publish && (row.isActive ?? "1").trim() !== "0",
       isDraft: isDraftRow,
       updatedAt: now,
     };
@@ -381,11 +399,14 @@ export async function POST(request: Request) {
 
   if (created + updated > 0) {
     await logAction(
-      `📤 ${"xlsx" in parsedBody.data ? "Excel" : "CSV"} import (${admin.email ?? "admin"}): ${created} ta yangi, ${updated} ta yangilangan mahsulot`
+      `📤 ${"xlsx" in parsedBody.data ? "Excel" : "CSV"} import (${admin.email ?? "admin"}): ` +
+        `${created} ta yangi, ${updated} ta yangilangan mahsulot` +
+        (publish ? " — saytda ochiq" : " — SAYTDA YOPIQ (tartibga solingach ochiladi)")
     );
   }
 
   return NextResponse.json({
+    published: publish,
     created,
     updated,
     skipped: errors.length,

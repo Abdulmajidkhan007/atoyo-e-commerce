@@ -82,6 +82,12 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
 - **Boshqa:** "Biz haqimizda", kontakt formasi (xodimlar guruhiga
   tushadi), yangiliklarga obuna, sitemap va robots, uch til (uz/ru/en),
   yorug'/qorong'i tema, mobil pastki menyu.
+- **Mahsulot kartochkasi (qat'iy tuzilish):** kategoriya yorlig'i →
+  nom (HAR DOIM ikki qator joy) → brend/davlat → narx → **butun
+  kenglikdagi tugma** ("Savatga" yoki "Turini tanlash", balandligi
+  qat'iy 28px, yozuvi bitta qatorda). Tugma hech qachon narx yoniga
+  o'tmaydi - shu sababli qo'shni kartochkalarda tugmalar bir
+  chiziqda turadi (Uzum kabi). Mobilda ichki bo'shliq kichikroq.
 - **Responsive:** 320px kenglikdagi telefonlarda ham gorizontal
   skroll BO'LMASLIGI shart. Savat qatori tor ekranda ikkiga bo'linadi
   (rasm+nom+o'chirish / son+summa), mahsulot kartochkasidagi narx va
@@ -331,6 +337,16 @@ tekshiradi.
   `lib/files/clipboard.ts`, va sudrab tashlash), ommaviy narx o'zgartirish,
   CSV/Excel import/eksport (10 000 ta nomni bir yo'la yaratish uchun),
   indeks/raqamlarni yangilash.
+- **Import qilinganlar SAYTDA DARHOL KO'RINMAYDI.** Import
+  formasida "darhol saytda ko'rinsin" belgisi bor va u standart
+  holatda O'CHIQ: 1C narxnomasidagi minglab mahsulot rasmsiz,
+  kategoriyasi chala keladi va katalogga tushsa sayt ko'rimsiz
+  bo'ladi. Ular `isActive: false` bilan yaratiladi; admin Katalog →
+  Tartib bo'limida kategoriya/brend bo'yicha filtrlab, rasm qo'shib
+  bo'lgach **"Saytda ochish"** tugmasi bilan ochadi. Shu yerda
+  "Saytda yopiqlari" filtri va butun katalog bo'ylab ishlaydigan
+  **"Rasmsizlarni saytdan yashirish"** tugmasi ham bor (sahifalab,
+  400 tadan).
 - **Import formati:** ustun nomlari inglizcha (`name`, `price`,
   `stock`...) yoki o'zbekcha (`Nomi`, `Narxi`, `Zaxira`, `Turi`,
   `Razmer`) bo'lishi mumkin. **Turlari bor mahsulot — har bir tur

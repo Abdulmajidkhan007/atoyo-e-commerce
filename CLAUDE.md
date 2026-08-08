@@ -102,6 +102,12 @@ serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
   qaytaradi (`posted` / `edited` / `unchanged` / `skipped`), UI shuni
   ochiq yozadi. Haqiqatan yangi post kerak bo'lsa `"repost"` rejimi
   (eski post o'chiriladi).
+- **Import qilingan mahsulot saytda darhol ko'rinmaydi**:
+  `/api/admin/products/import` `publish` bayrog'ini oladi (standart
+  `false`) va mahsulotlarni `isActive: false` bilan yaratadi. Ochish -
+  `/admin/katalog/tartib` dagi "Saytda ochish". `isActive` yagona
+  ko'rinish filtri (katalog, qidiruv, bot, ilova hammasi shunga
+  tayanadi) - yangi "yashirin" maydon QO'SHILMAYDI.
 - Ommaviy tozalash: `/admin/katalog/tartib` + `/api/admin/products/list`
   (bitta tenglik filtri + `__name__` tartibi - kompozit indekssiz) va
   `/api/admin/products/bulk` (delete / update / announce). Kanalga

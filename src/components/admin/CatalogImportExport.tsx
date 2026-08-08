@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Alert, Button, CircularProgress } from "@mui/material";
+import { Alert, Button, Checkbox, CircularProgress, FormControlLabel } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { fileToBase64 } from "@/lib/files/base64";
 
 interface ImportResult {
+  /** Import qilinganlar saytda ochiq holda yaratildimi. */
+  published?: boolean;
   created: number;
   updated: number;
   skipped: number;
@@ -24,6 +26,15 @@ export function CatalogImportExport() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Import qilinganlar DARHOL saytda ko'rinsinmi.
+   *
+   * Standart holatda YO'Q: katta narxnomada rasmsiz, kategoriyasi
+   * chala mahsulotlar bo'ladi va ular katalogga tushsa sayt
+   * ko'rimsiz bo'lib qoladi. Avval tartibga solinadi
+   * (Katalog → Tartib), keyin "Saytda ochish" bilan ochiladi.
+   */
+  const [publish, setPublish] = useState(false);
 
   async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -37,8 +48,8 @@ export function CatalogImportExport() {
       // o'qiladi), CSV esa matn sifatida - ikkalasi bir xil importga tushadi.
       const isExcel = /\.xlsx$/i.test(file.name);
       const payload = isExcel
-        ? { xlsx: await fileToBase64(file) }
-        : { csv: await file.text() };
+        ? { xlsx: await fileToBase64(file), publish }
+        : { csv: await file.text(), publish };
 
       const res = await fetch("/api/admin/products/import", {
         method: "POST",
@@ -76,6 +87,17 @@ export function CatalogImportExport() {
         >
           CSV yoki Excel yuklash
         </Button>
+        <FormControlLabel
+          control={
+            <Checkbox size="small" checked={publish} onChange={(e) => setPublish(e.target.checked)} />
+          }
+          label={
+            <span className="text-xs">
+              Import qilinganlar <b>darhol saytda</b> ko&apos;rinsin
+            </span>
+          }
+        />
+
         <input
           ref={fileInput}
           type="file"
@@ -127,6 +149,13 @@ export function CatalogImportExport() {
         <Alert severity={result.skipped > 0 ? "warning" : "success"}>
           {result.created} ta yangi, {result.updated} ta yangilandi
           {result.skipped > 0 && `, ${result.skipped} ta qator o'tkazib yuborildi`}.
+          {result.published === false && (
+            <div className="mt-1 text-xs">
+              Ular <b>saytda hali ko&apos;rinmaydi</b>. Katalog → <b>Tartib</b> bo&apos;limida
+              kategoriya yoki brend bo&apos;yicha filtrlab, rasm qo&apos;shib bo&apos;lgach
+              &quot;Saytda ochish&quot; tugmasi bilan oching.
+            </div>
+          )}
           {(result.newCategories?.length ?? 0) > 0 && (
             <div className="mt-1 text-xs">
               Yangi kategoriyalar ochildi: {result.newCategories!.join(", ")}
