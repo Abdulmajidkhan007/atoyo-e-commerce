@@ -530,9 +530,26 @@ biriktiriladi. Slot bo'sh bo'lsa bot avvalgidek faqat matn yuboradi.
   yozuv, oltin izoh, pastda oq linzada ATOYO logotipi (Λ + ikkita
   oltin to'lqin). Logotip ham, ikonkalar ham koddan SVG sifatida
   chiziladi — rasm fayli saqlanmaydi.
-- **Animatsiyali stiker:** `.tgs` (Lottie, 64KB) yoki `.webm`
-  (VP9+alfa, 256KB) — bularni sayt yasay olmaydi, tayyor fayl
-  yuklanadi va to'plamga qo'shiladi.
+- **Animatsiyali stiker (`.tgs`) — SAYTNING O'ZI yasaydi.** `.tgs`
+  bu gzip qilingan **Lottie JSON**, shuning uchun `ffmpeg`, After
+  Effects yoki tashqi kutubxona kerak emas: `node:zlib` yetadi
+  (`lib/stickers/animate.ts`). Bitta "sahna" tavsifidan ikkita
+  natija chiqadi — Telegram uchun `.tgs` (`tgsFromScene`) va admin
+  panelda ko'rinadigan **jonli SVG** (`svgFromScene`, SMIL
+  animatsiyasi, brauzerga Lottie kutubxonasi kerak emas). Ikkalasi
+  bir manbadan bo'lgani uchun ko'rinish bilan haqiqiy stiker farq
+  qilmaydi. Fayl ~1 KB chiqadi (chegara 64 KB).
+  Tayyor harakatlar (`lib/stickers/animations.ts`): puls, aylanuvchi
+  halqa, chizilib borish (trim paths), sakrash, tebranish, tomchi va
+  to'lqin; birinchi beshtasida 15 ta ikonkadan istalgani.
+  SVG yo'llari (`M L H V C S Q T Z`) Lottie egri chiziqlariga
+  `pathToBeziers()` bilan aylantiriladi — shu sabab mavjud ikonkalar
+  qayta chizilmaydi.
+  **Cheklov:** `.tgs` da matn qatlami, rasm, effekt va maska
+  TAQIQLANGAN — animatsiyali stikerda yozuv bo'lmaydi (yozuv kerak
+  bo'lsa statik shablon ishlatiladi).
+- **Video stiker `.webm`** (VP9+alfa, 256KB) — buni brauzer yasay
+  olmaydi, tayyor fayl yuklanadi va to'plamga qo'shiladi.
 - **Tarqatish:** to'plam tayyor bo'lgach havola botda (Kontakt ekrani
   tugmasi + `/stikerlar`) va saytda (`/kontakt` sahifasi) o'zi paydo
   bo'ladi — `/api/stickers` orqali, faqat to'plam HAQIQATAN mavjud

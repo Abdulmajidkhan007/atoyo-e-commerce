@@ -155,27 +155,51 @@ to'plamni qo'shib oladi.
 
 Telegram animatsiya uchun ikki format qabul qiladi:
 
-| Format | Talab |
-|---|---|
-| `.tgs` | Lottie animatsiyasi, **64KB gacha**, 512×512, 3 soniyagacha, 30/60 fps, matn qatlamlari bo'lmasligi kerak (harflar shakl bo'lishi shart) |
-| `.webm` | VP9 + alfa kanal, **256KB gacha**, 512×512, 3 soniyagacha |
+| Format | Talab | Kim yasaydi |
+|---|---|---|
+| `.tgs` | Lottie animatsiyasi, **64KB gacha**, 512×512, 3 soniyagacha, 30/60 fps, matn qatlami/rasm/effekt BO'LMAYDI | **Saytning o'zi** |
+| `.webm` | VP9 + alfa kanal, **256KB gacha**, 512×512, 3 soniyagacha | Dizayner (yuklab qo'shiladi) |
 
-Bu formatlarni brauzer ham, sayt ham yasay olmaydi — ular
-maxsus dastur (Adobe After Effects + Bodymovin, yoki
-`@art_focus` kabi dizayner) bilan tayyorlanadi. Tayyor faylni
-**Admin → Stikerlar → "Animatsiyali fayl yuklash"** orqali
-to'plamga qo'shasiz; sayt hajmini tekshiradi va Telegram'ga
-yuboradi.
+**`.tgs` ni sayt o'zi yasaydi.** `.tgs` — bu sirli format emas: u
+oddiy **Lottie JSON** ning gzip bilan siqilgani. Shuning uchun
+`ffmpeg`, After Effects yoki tashqi kutubxona kerak emas — JSON
+yasab, Node'ning `zlib` i bilan siqiladi (`lib/stickers/animate.ts`).
+Chiqadigan fayl **~1 KB** (chegara 64 KB).
+
+**Admin → Stikerlar → "Animatsiyali stiker"** bo'limida harakat turi
+va ikonka tanlanadi, yonida **jonli ko'rinish** turadi. Ko'rinish
+Telegramga ketadigan `.tgs` bilan **bir sahnadan** chiziladi
+(`svgFromScene`), faqat formati boshqa (SVG + SMIL) — shu sababli
+admin nimani ko'rsa, mijoz ham shuni oladi va brauzerga Lottie
+o'quvchi kutubxona kerak bo'lmaydi.
+
+Tayyor harakatlar: **puls** (nafas olish), **aylanuvchi halqa**
+(kutish), **chizilib borish** (tasdiq), **sakrash** (savatga
+qo'shildi), **tebranish** (xatolik), **tomchi va to'lqin**
+(santexnikaga xos). Birinchi beshtasida 15 ta ikonkadan istalgani
+qo'yiladi.
+
+> **Yozuv nega yo'q?** `.tgs` da matn qatlami taqiqlangan (harflar
+> vektor shaklga aylantirilishi kerak edi), shuning uchun
+> animatsiyali stiker do'kon ikonkasi va logotipi ustiga quriladi.
+> Yozuvli stiker kerak bo'lsa — statik shablon ishlatiladi.
+
+`.webm` (video stiker) esa brauzerda yasalmaydi: VP9 + alfa
+kodlash kerak. Uni dizayner tayyorlaydi, sayt
+**"Animatsiyali fayl yuklash"** orqali to'plamga qo'shadi.
 
 ## 5. Fayllar
 
 | Fayl | Vazifasi |
 |---|---|
-| `src/types/sticker.ts` | Slotlar, shablonlar, turlar |
+| `src/types/sticker.ts` | Slotlar, shablonlar, animatsiya turlari |
 | `src/lib/telegram/stickers.ts` | Sozlama, yuborish, to'plamga qo'shish |
 | `src/lib/telegram/sticker-commands.ts` | Guruhdagi `/stiker` buyruqlari |
-| `src/lib/stickers/render.tsx` | Stiker rasmini chizish (512×512 PNG) |
-| `src/app/api/admin/stickers/*` | Sozlama, rasm ko'rsatish, yasash |
+| `src/lib/stickers/render.tsx` | Statik stiker rasmi (512×512 PNG) |
+| `src/lib/stickers/art.ts` | Logotip va 15 ta ikonka (vektor) |
+| `src/lib/stickers/animate.ts` | Sahna → Lottie/`.tgs` va jonli SVG |
+| `src/lib/stickers/animations.ts` | Tayyor harakat shablonlari |
+| `src/app/api/admin/stickers/*` | Sozlama, ko'rinish, yasash |
 | `src/components/admin/StickerManager.tsx` | Admin paneldagi boshqaruv |
 
 Bot API qo'shimchalari (`src/lib/telegram/bot.ts`): `sendSticker`,

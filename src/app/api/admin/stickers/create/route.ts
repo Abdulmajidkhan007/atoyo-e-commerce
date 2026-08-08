@@ -3,8 +3,11 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/firebase/session";
 import { stickerPng } from "@/lib/stickers/render";
 import { ensureStickerWebp } from "@/lib/stickers/image";
+import { tgsFromScene } from "@/lib/stickers/animate";
+import { buildAnimationScene } from "@/lib/stickers/animations";
 import { addStickerToPack } from "@/lib/telegram/stickers";
 import { logAction } from "@/lib/telegram/action-log";
+import { STICKER_ANIMATIONS, type StickerAnimation } from "@/types/sticker";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,11 +15,13 @@ export const dynamic = "force-dynamic";
 /**
  * YANGI STIKER YASASH VA TO'PLAMGA QO'SHISH.
  *
- * Ikki xil manba bo'lishi mumkin:
- *   • `design` - saytda yasalgan statik stiker (PNG, `next/og`);
- *   • `upload` - tayyor fayl (animatsiyali `.tgs` yoki video `.webm`,
- *     dizayner tayyorlagan) - uni sayt yasay olmaydi, lekin
- *     to'plamga qo'sha oladi.
+ * Uch xil manba bo'lishi mumkin:
+ *   • `design`    - saytda yasalgan statik stiker (PNG, `next/og`);
+ *   • `animation` - saytda yasalgan ANIMATSIYALI stiker (`.tgs`,
+ *     ya'ni gzip qilingan Lottie - `lib/stickers/animate.ts`);
+ *   • `upload`    - tayyor fayl (dizayner tayyorlagan `.tgs` yoki
+ *     video `.webm`) - masalan animatsiyali video stiker, uni sayt
+ *     yasay olmaydi, lekin to'plamga qo'sha oladi.
  *
  * MUHIM: Bot faqat O'ZI yaratgan to'plamga stiker qo'sha oladi.
  * @Stickers bot orqali yasalgan eski to'plam tahrirlanmaydi.
@@ -32,6 +37,12 @@ const schema = z.union([
     artDataUrl: z.string().max(3_000_000).optional(),
     color: z.string().max(20).optional(),
     withLogo: z.boolean().optional(),
+    emoji: z.string().min(1).max(8),
+  }),
+  z.object({
+    kind: z.literal("animation"),
+    animation: z.enum(STICKER_ANIMATIONS as [string, ...string[]]),
+    icon: z.string().max(30).optional(),
     emoji: z.string().min(1).max(8),
   }),
   z.object({
@@ -91,6 +102,12 @@ export async function POST(request: Request) {
       );
       format = "static";
       fileName = "atoyo-sticker.webp";
+    } else if (input.kind === "animation") {
+      buffer = tgsFromScene(
+        buildAnimationScene(input.animation as StickerAnimation, input.icon || "star")
+      );
+      format = "animated";
+      fileName = "atoyo-sticker.tgs";
     } else {
       buffer = Buffer.from(input.data.replace(/^data:[^,]+,/, ""), "base64");
       format = input.format;
@@ -121,10 +138,17 @@ export async function POST(request: Request) {
       emoji: input.emoji,
     });
 
+    const what =
+      input.kind === "design"
+        ? `"${input.text}"`
+        : input.kind === "animation"
+          ? `animatsiya "${input.animation}"`
+          : fileName;
+
     await logAction(
-      `🎨 Yangi stiker qo'shildi (${admin.email ?? "admin"}): ${
-        input.kind === "design" ? `"${input.text}"` : fileName
-      } → t.me/addstickers/${result.packName}`
+      `🎨 Yangi stiker qo'shildi (${admin.email ?? "admin"}): ${what} → t.me/addstickers/${
+        result.packName
+      }`
     ).catch(() => {});
 
     return NextResponse.json({

@@ -20,6 +20,21 @@ function dataUri(svg: string): string {
 }
 
 /**
+ * LOGOTIP VEKTORLARI (viewBox 120x104).
+ *
+ * Alohida eksport qilingan, chunki ular ikki joyda ishlatiladi:
+ * statik stikerda (`logoMark`, SVG matn sifatida) va animatsiyali
+ * stikerda (`animate.ts`, Lottie egri chiziqlariga aylantiriladi).
+ */
+export const LOGO_VIEWBOX = { width: 120, height: 104 };
+export const LOGO_LETTER_PATH =
+  "M12 100 L44 20 C48 9 53 4 60 4 C67 4 72 9 76 20 L108 100 L84 100 L60 38 L36 100 Z";
+export const LOGO_WAVE_PATHS = [
+  "M4 70 C16 56 30 58 44 68 C58 78 70 78 84 66 L84 80 C70 92 56 92 42 82 C28 72 16 70 4 84 Z",
+  "M6 88 C18 76 30 78 42 86 C50 91 58 92 66 89 L66 99 C56 103 46 101 38 96 C28 90 18 89 6 100 Z",
+];
+
+/**
  * ATOYO LOGOTIPI: "Λ" shaklidagi qalin harf va uni kesib o'tuvchi
  * ikkita oltin to'lqin (do'kon logotipidagi kabi).
  */
@@ -27,12 +42,8 @@ export function logoMark(variant: "light" | "dark" = "light"): string {
   const letter = variant === "light" ? WHITE : NAVY_DARK;
   return dataUri(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 104" width="120" height="104">
-  <path fill="${letter}"
-        d="M12 100 L44 20 C48 9 53 4 60 4 C67 4 72 9 76 20 L108 100 L84 100 L60 38 L36 100 Z"/>
-  <path fill="${GOLD}"
-        d="M4 70 C16 56 30 58 44 68 C58 78 70 78 84 66 L84 80 C70 92 56 92 42 82 C28 72 16 70 4 84 Z"/>
-  <path fill="${GOLD}"
-        d="M6 88 C18 76 30 78 42 86 C50 91 58 92 66 89 L66 99 C56 103 46 101 38 96 C28 90 18 89 6 100 Z"/>
+  <path fill="${letter}" d="${LOGO_LETTER_PATH}"/>
+  ${LOGO_WAVE_PATHS.map((d) => `<path fill="${GOLD}" d="${d}"/>`).join("\n  ")}
 </svg>`);
 }
 
@@ -117,6 +128,15 @@ const ICON_PATHS: Record<string, string> = {
 };
 
 export { STICKER_ICONS, STICKER_ICON_LABELS } from "./icons";
+
+/**
+ * Ikonkaning XOM SVG bo'lagi (`<path>` / `<circle>` teglari, 100x100
+ * maydonda). Animatsiya moduli shu bo'lakni o'qib Lottie shakllariga
+ * aylantiradi - ikonkalar ikki marta chizilmasin.
+ */
+export function iconFragment(name: string): string | null {
+  return ICON_PATHS[name] ?? null;
+}
 
 /** Oltin chiziqli ikonka (SVG data URI). */
 export function iconArt(name: string, color = GOLD): string | null {

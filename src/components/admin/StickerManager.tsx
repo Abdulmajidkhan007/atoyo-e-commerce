@@ -24,9 +24,14 @@ import {
   type StickerAiMode,
 } from "@/lib/stickers/ai-modes";
 import {
+  ANIMATIONS_WITHOUT_ICON,
+  STICKER_ANIMATION_HINTS,
+  STICKER_ANIMATION_LABELS,
+  STICKER_ANIMATIONS,
   STICKER_SLOTS,
   STICKER_SLOT_INFO,
   STICKER_TEMPLATE_LABELS,
+  type StickerAnimation,
   type StickerInfo,
   type StickerSettings,
   type StickerSlot,
@@ -36,11 +41,12 @@ import {
 /**
  * BOT STIKERLARI.
  *
- * Ikki qism:
+ * Qismlari:
  *   1) SLOTLAR — qaysi daqiqada qaysi stiker yuborilishi;
- *   2) YASASH — saytda stiker chizib, bot to'plamiga qo'shish
- *      (animatsiyali stikerni tayyor `.tgs`/`.webm` fayl sifatida
- *      yuklash mumkin — uni brauzer yasay olmaydi).
+ *   2) YASASH — saytda stiker chizib, bot to'plamiga qo'shish;
+ *   3) ANIMATSIYA — saytning o'zi `.tgs` (Lottie) yasaydi;
+ *   4) tayyor `.webm` video stikerni yuklash (uni brauzer yasay
+ *      olmaydi — VP9 kodlash kerak).
  */
 
 interface Pack {
@@ -87,6 +93,13 @@ export function StickerManager() {
   });
   /** AI chizgan rasm shablon ichiga qo'yilganda shu yerda turadi. */
   const [designArt, setDesignArt] = useState<string | null>(null);
+
+  /** Animatsiyali stiker (.tgs) formasi. */
+  const [animation, setAnimation] = useState({
+    kind: "puls" as StickerAnimation,
+    icon: "heart",
+    emoji: "✨",
+  });
 
   const load = async () => {
     try {
@@ -182,6 +195,41 @@ export function StickerManager() {
       setMessage({
         kind: "ok",
         text: `${data.created ? "To'plam yaratildi va stiker qo'shildi" : "Stiker to'plamga qo'shildi"}: ${data.link}`,
+      });
+      await load();
+    } catch (error) {
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  /** Saytda yasalgan ANIMATSIYALI stikerni (.tgs) to'plamga qo'shish. */
+  const createAnimation = async () => {
+    setBusy("animation");
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/stickers/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "animation",
+          animation: animation.kind,
+          icon: animation.icon,
+          emoji: animation.emoji,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        link?: string;
+        created?: boolean;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Stiker qo'shilmadi.");
+      setMessage({
+        kind: "ok",
+        text: `${
+          data.created ? "To'plam yaratildi va animatsiyali stiker qo'shildi" : "Animatsiyali stiker to'plamga qo'shildi"
+        }: ${data.link}`,
       });
       await load();
     } catch (error) {
@@ -289,6 +337,9 @@ export function StickerManager() {
       setBusy(null);
     }
   };
+
+  /** Animatsiya ko'rinishi - `.tgs` bilan bir sahnadan chizilgan SVG. */
+  const animationPreviewUrl = `/api/admin/stickers/animate?animation=${animation.kind}&icon=${animation.icon}`;
 
   const previewUrl = `/api/admin/stickers/preview?template=${design.template}&text=${encodeURIComponent(
     design.text
@@ -409,12 +460,14 @@ export function StickerManager() {
 
         {packs.map((pack) => (
           <div key={pack.name} className="mb-4">
-            <p className="mb-2 text-sm font-semibold text-navy-900 dark:text-white">
+            {/* MUI `Chip` <div> chizadi - u <p> ichida turolmaydi
+                (hydration xatosi). Shu sababli o'rovchi <div>. */}
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-navy-900 dark:text-white">
               {pack.name}
               {pack.name === settings?.packName && (
-                <Chip size="small" label="bot to'plami" className="!ml-2" color="primary" />
+                <Chip size="small" label="bot to'plami" color="primary" />
               )}
-            </p>
+            </div>
             {pack.error ? (
               <Alert severity="warning">{pack.error}</Alert>
             ) : (
@@ -455,9 +508,17 @@ export function StickerManager() {
             avval ko&apos;rasiz.
           </p>
 
-          <div className="grid gap-4 md:grid-cols-[280px_1fr]">
+          {/*
+            `min-w-0` MAJBURIY: grid/flex bolasining standart eni
+            `min-width: auto` - ya'ni ichidagi eng keng element
+            bo'yicha CHO'ZILADI. Pastdagi namuna stikerlar qatori 40
+            tagacha element chizadi, shuning uchun `overflow-x-auto`
+            ishlamay, butun admin sahifasi ~2600px bo'lib ketardi va
+            telefonda kontent ingichka ustunga qisilib qolardi.
+          */}
+          <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)]">
             {/* Natija */}
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex min-w-0 flex-col items-center gap-2">
               <div className="h-[240px] w-[240px] rounded-xl2 bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:24px_24px] p-2">
                 {aiResult ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -502,7 +563,7 @@ export function StickerManager() {
             </div>
 
             {/* Sozlamalari */}
-            <div className="flex flex-col gap-3">
+            <div className="flex min-w-0 flex-col gap-3">
               <FormControl size="small" fullWidth>
                 <InputLabel id="ai-mode">Nimadan yasalsin</InputLabel>
                 <Select
@@ -557,7 +618,7 @@ export function StickerManager() {
                   <p className="mb-1 text-xs font-medium text-navy-500 dark:text-navy-100">
                     Namuna stiker (bosib tanlang)
                   </p>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
+                  <div className="flex w-full min-w-0 gap-2 overflow-x-auto pb-1">
                     {packs.flatMap((pack) => pack.stickers).slice(0, 40).map((sticker) => (
                       <button
                         key={sticker.fileId}
@@ -618,7 +679,109 @@ export function StickerManager() {
         </section>
       )}
 
-      {/* ---------- 4) YOZUVLI STIKER (SHABLON) ---------- */}
+      {/* ---------- 4) ANIMATSIYALI STIKER (.tgs) ---------- */}
+      <section>
+        <h2 className="mb-1 text-lg font-bold text-navy-900 dark:text-white">
+          Animatsiyali stiker
+        </h2>
+        <p className="mb-4 text-sm text-navy-300">
+          Sayt <b>haqiqiy animatsiyali Telegram stikerini</b> (<code>.tgs</code>) o&apos;zi
+          yasaydi — tashqi dastur, dizayner yoki video kodlash kerak emas. Pastdagi ko&apos;rinish
+          jonli: to&apos;plamga tushadigan stiker aynan shunday harakatlanadi.
+        </p>
+
+        <Alert severity="info" className="!mb-4">
+          Telegram animatsiyali stikerda <b>yozuv chizishga ruxsat bermaydi</b> (matn qatlami
+          taqiqlangan) — shuning uchun animatsiya do&apos;kon ikonkasi va logotipi ustiga
+          quriladi. Yozuvli stiker kerak bo&apos;lsa pastdagi statik shablondan foydalaning.
+        </Alert>
+
+        <div className="grid gap-6 md:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="flex min-w-0 flex-col items-center gap-2">
+            <div className="h-[280px] w-[280px] max-w-full rounded-xl2 bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:24px_24px] p-2">
+              {/* SVG animatsiyasi <img> ichida ham o'z-o'zidan yuradi. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={animationPreviewUrl}
+                alt="Animatsiya ko'rinishi"
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <p className="text-xs text-navy-300">512×512 · 2 soniya · takrorlanadi</p>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-3">
+            <FormControl size="small" fullWidth>
+              <InputLabel id="anim-kind">Harakat turi</InputLabel>
+              <Select
+                labelId="anim-kind"
+                label="Harakat turi"
+                value={animation.kind}
+                onChange={(event) =>
+                  setAnimation({ ...animation, kind: event.target.value as StickerAnimation })
+                }
+              >
+                {STICKER_ANIMATIONS.map((kind) => (
+                  <MenuItem key={kind} value={kind}>
+                    {STICKER_ANIMATION_LABELS[kind]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <p className="-mt-2 text-xs text-navy-300">
+              {STICKER_ANIMATION_HINTS[animation.kind]}
+            </p>
+
+            {!ANIMATIONS_WITHOUT_ICON.includes(animation.kind) && (
+              <FormControl size="small" fullWidth>
+                <InputLabel id="anim-icon">Ikonka</InputLabel>
+                <Select
+                  labelId="anim-icon"
+                  label="Ikonka"
+                  value={animation.icon}
+                  onChange={(event) => setAnimation({ ...animation, icon: event.target.value })}
+                >
+                  {STICKER_ICONS.map((icon) => (
+                    <MenuItem key={icon} value={icon}>
+                      {STICKER_ICON_LABELS[icon] ?? icon}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            <div className="flex flex-wrap items-center gap-3">
+              <TextField
+                size="small"
+                label="Emoji (kayfiyat)"
+                value={animation.emoji}
+                onChange={(event) =>
+                  setAnimation({ ...animation, emoji: event.target.value.slice(0, 8) })
+                }
+                className="w-[160px]"
+              />
+              <Button
+                variant="contained"
+                onClick={() => void createAnimation()}
+                disabled={busy !== null || !animation.emoji.trim()}
+              >
+                {busy === "animation" ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  "To'plamga qo'shish"
+                )}
+              </Button>
+            </div>
+
+            <p className="text-xs text-navy-300">
+              Fayl ~1 KB chiqadi (Telegram chegarasi — 64 KB), shuning uchun sekin internetda
+              ham bir zumda ochiladi.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- 5) YOZUVLI STIKER (SHABLON) ---------- */}
       <section>
         <h2 className="mb-1 text-lg font-bold text-navy-900 dark:text-white">Yozuvli stiker (shablon)</h2>
         <p className="mb-4 text-sm text-navy-300">
@@ -651,10 +814,10 @@ export function StickerManager() {
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-[320px_1fr]">
+        <div className="grid gap-6 md:grid-cols-[320px_minmax(0,1fr)]">
           {/* Ko'rinishi */}
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-[280px] w-[280px] rounded-xl2 bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:24px_24px] p-2">
+          <div className="flex min-w-0 flex-col items-center gap-2">
+            <div className="h-[280px] w-[280px] max-w-full rounded-xl2 bg-[repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)] bg-[length:24px_24px] p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={previewUrl} alt="Stiker ko'rinishi" className="h-full w-full object-contain" />
             </div>
@@ -662,7 +825,7 @@ export function StickerManager() {
           </div>
 
           {/* Sozlamalari */}
-          <div className="flex flex-col gap-3">
+          <div className="flex min-w-0 flex-col gap-3">
             <FormControl size="small" fullWidth>
               <InputLabel id="st-template">Shablon</InputLabel>
               <Select
@@ -773,10 +936,10 @@ export function StickerManager() {
             </div>
 
             <p className="text-xs text-navy-300">
-              <b>Animatsiya haqida:</b> Telegram animatsiyali stiker uchun <code>.tgs</code> (Lottie,
-              64KB gacha) yoki <code>.webm</code> (VP9, 256KB gacha, 3 soniya) formatini talab qiladi
-              — ularni brauzer yasay olmaydi. Dizayner tayyorlagan faylni shu yerda yuklang, sayt uni
-              to&apos;plamga qo&apos;shadi.
+              <b>Fayl yuklash haqida:</b> <code>.tgs</code> (Lottie) stikerni sayt yuqoridagi
+              bo&apos;limda o&apos;zi yasaydi — bu yerga faqat tashqarida tayyorlangan fayl
+              yuklanadi. <code>.webm</code> (VP9 video stiker, 256KB gacha, 3 soniya) esa
+              brauzerda yasalmaydi: uni dizayner tayyorlaydi, sayt to&apos;plamga qo&apos;shadi.
             </p>
           </div>
         </div>

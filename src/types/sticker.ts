@@ -95,3 +95,48 @@ export const STICKER_TEMPLATE_LABELS: Record<StickerTemplate, string> = {
   badge: "Nishon (to'rtburchak)",
   banner: "Lenta (keng yozuv)",
 };
+
+/**
+ * ANIMATSIYALI STIKER SHABLONLARI.
+ *
+ * Telegram `.tgs` (Lottie) formatida MATN QATLAMI ishlatilmaydi -
+ * shuning uchun animatsiyali stikerda yozuv bo'lmaydi, harakat
+ * do'kon ikonkasi va logotipi ustiga quriladi.
+ */
+export type StickerAnimation =
+  | "puls"
+  | "aylanish"
+  | "chizish"
+  | "sakrash"
+  | "tebranish"
+  | "tomchi";
+
+export const STICKER_ANIMATIONS: StickerAnimation[] = [
+  "puls",
+  "aylanish",
+  "chizish",
+  "sakrash",
+  "tebranish",
+  "tomchi",
+];
+
+export const STICKER_ANIMATION_LABELS: Record<StickerAnimation, string> = {
+  puls: "Puls (nafas olish)",
+  aylanish: "Aylanuvchi halqa",
+  chizish: "Chizilib borish",
+  sakrash: "Sakrash",
+  tebranish: "Tebranish",
+  tomchi: "Tomchi va to'lqin",
+};
+
+export const STICKER_ANIMATION_HINTS: Record<StickerAnimation, string> = {
+  puls: "Ikonka asta kattalashib-kichrayadi. Salomlashuv va “rahmat” uchun mos.",
+  aylanish: "Ikonka atrofida oltin halqa aylanadi. “Kutib turing” slotiga eng mos.",
+  chizish: "Ikonka chiziqlari ko'z oldida chiziladi. “Tasdiqlandi” uchun chiroyli.",
+  sakrash: "Ikonka sakrab tushadi. “Savatga qo'shildi” uchun.",
+  tebranish: "Ikonka chapga-o'ngga tebranadi. “Xatolik” yoki diqqat uchun.",
+  tomchi: "Suv tomchisi tushib, to'lqin tarqaladi. Ikonka tanlanmaydi.",
+};
+
+/** Ikonka tanlanmaydigan shablonlar. */
+export const ANIMATIONS_WITHOUT_ICON: StickerAnimation[] = ["tomchi"];

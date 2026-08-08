@@ -217,12 +217,22 @@ yutadi). Biriktirish: xodimlar guruhida stikerga reply qilib
 `/stiker <slot>`, yoki `/admin/stikerlar`. Yangi stiker saytda
 chiziladi (`lib/stickers/render.tsx`, `next/og`, 512x512 PNG) va
 BOT YARATGAN to'plamga qo'shiladi — @Stickers orqali yasalgan eski
-to'plamni Bot API tahrirlay olmaydi (faqat o'qiydi). Animatsiyali
-`.tgs`/`.webm` sayt tomonidan yasalmaydi, faqat yuklab qo'shiladi.
+to'plamni Bot API tahrirlay olmaydi (faqat o'qiydi).
 Statik stikerni AI ham yasaydi (`lib/stickers/ai.ts` - Gemini rasm,
 `image.ts` - `sharp` bilan fon olib tashlash + oq chegara + WEBP).
 Logotip va 15 ta ikonka koddan vektor sifatida chiziladi
 (`lib/stickers/art.ts`) - rasm fayli yo'q. Tartib: `docs/STICKERS.md`.
+
+**Animatsiyali `.tgs` ni ham sayt o'zi yasaydi** (`lib/stickers/`
+`animate.ts` + `animations.ts`): `.tgs` = gzip qilingan Lottie JSON,
+shuning uchun `ffmpeg`/tashqi kutubxona KERAK EMAS - `node:zlib`
+yetadi. Bitta "sahna" tavsifidan ikki natija chiqadi: Telegram uchun
+`.tgs` (`tgsFromScene`) va admin panelda ko'rinadigan jonli SVG
+(`svgFromScene`, SMIL) - ikkalasi bir manbadan, shuning uchun
+ko'rinish bilan stiker farq qilmaydi. `.tgs` da MATN QATLAMI,
+rasm, effekt va maska TAQIQLANGAN - animatsiyali stikerda yozuv
+bo'lmaydi, faqat ikonka/logotip harakati. Video `.webm` (VP9+alfa)
+hamon yasalmaydi, faqat yuklab qo'shiladi.
 
 ## AI qatlami (`src/lib/ai/`)
 
