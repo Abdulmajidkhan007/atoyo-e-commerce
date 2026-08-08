@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 import { FilterDialog } from "@/components/product/FilterDialog";
 import { SearchBar } from "@/components/product/SearchBar";
 import { ProductGrid } from "@/components/product/ProductGrid";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 function CatalogContent() {
   const searchParams = useSearchParams();
@@ -16,6 +17,21 @@ function CatalogContent() {
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-6">
+      {/* Filtrlangan bo'lsa zanjirda kategoriya ham ko'rinadi. */}
+      <Breadcrumbs
+        items={
+          filters.category
+            ? [
+                { name: dict.nav.catalog, href: "/katalog" },
+                {
+                  name:
+                    (dict.categories as Record<string, string>)[filters.category] ??
+                    filters.category,
+                },
+              ]
+            : [{ name: dict.nav.catalog }]
+        }
+      />
       <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">{dict.nav.catalog}</h1>
 
       {/* Qidiruv + filtr tugmasi. Filtrlar sahifada doim turmaydi -

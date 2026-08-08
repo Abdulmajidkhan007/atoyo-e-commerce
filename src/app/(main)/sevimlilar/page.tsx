@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { removeFavorite } from "@/redux/slices/favoritesSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { formatSom } from "@/lib/format";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 /** Sevimli mahsulotlar ro'yxati (localStorage'da saqlanadi). */
 export default function FavoritesPage() {
@@ -18,6 +19,7 @@ export default function FavoritesPage() {
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-8">
+      <Breadcrumbs items={[{ name: dict.favorites.title }]} />
       <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold text-navy-900 dark:text-white">
         <FavoriteBorderIcon className="text-red-500" /> {dict.favorites.title}
       </h1>

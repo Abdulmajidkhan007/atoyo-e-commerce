@@ -125,6 +125,24 @@ function attachGuards(win) {
     void shell.openExternal(url);
   });
 
+  // Sichqonchaning yon tugmalari (Windows) va macOS'dagi ikki barmoq
+  // surish - brauzerdagi kabi orqaga/oldinga.
+  win.on("app-command", (event, command) => {
+    if (command === "browser-backward" && win.webContents.navigationHistory.canGoBack()) {
+      win.webContents.navigationHistory.goBack();
+    } else if (command === "browser-forward" && win.webContents.navigationHistory.canGoForward()) {
+      win.webContents.navigationHistory.goForward();
+    }
+  });
+
+  win.on("swipe", (event, direction) => {
+    if (direction === "left" && win.webContents.navigationHistory.canGoBack()) {
+      win.webContents.navigationHistory.goBack();
+    } else if (direction === "right" && win.webContents.navigationHistory.canGoForward()) {
+      win.webContents.navigationHistory.goForward();
+    }
+  });
+
   win.webContents.on("did-fail-load", (event, code, description, url, isMainFrame) => {
     // -3 = so'rov bekor qilindi (oddiy holat, xato emas).
     if (!isMainFrame || code === -3) return;
@@ -194,6 +212,35 @@ function buildMenu() {
         { label: "Sayt manzili…", click: () => void changeUrl() },
         { type: "separator" },
         { role: "quit", label: "Chiqish" },
+      ],
+    },
+    {
+      label: "O'tish",
+      submenu: [
+        {
+          // Windows/Linux standarti. Ctrl+←/→ esa `preload.js` da
+          // (u matn maydonida yozayotganda tegmasligi kerak).
+          label: "Orqaga",
+          accelerator: "Alt+Left",
+          click: () => {
+            const history = mainWindow?.webContents.navigationHistory;
+            if (history?.canGoBack()) history.goBack();
+          },
+        },
+        {
+          label: "Oldinga",
+          accelerator: "Alt+Right",
+          click: () => {
+            const history = mainWindow?.webContents.navigationHistory;
+            if (history?.canGoForward()) history.goForward();
+          },
+        },
+        { type: "separator" },
+        {
+          label: "Bosh sahifa",
+          accelerator: "Alt+Home",
+          click: () => void mainWindow?.loadURL(siteUrl()),
+        },
       ],
     },
     {

@@ -21,6 +21,7 @@ import { ProductReviews } from "@/components/product/ProductReviews";
 import { StarRating } from "@/components/product/StarRating";
 import { ShareButton } from "@/components/product/ShareButton";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { productJsonLd } from "@/lib/seo/json-ld";
 import { formatSom } from "@/lib/format";
 
@@ -113,6 +114,20 @@ export default async function ProductPage({ params }: ProductPageParams) {
     <section className="mx-auto max-w-5xl px-4 py-8">
       {/* Google uchun: narx, mavjudlik, reyting (rich result). */}
       <JsonLd data={productJsonLd(product, categoryLabel)} />
+
+      {/* Qayerdaman: Bosh sahifa › Katalog › <kategoriya> › <mahsulot>.
+          Desktop ilovada va telefonda manzil paneli ko'rinmaydi -
+          bo'lim ichidan chiqishning yagona ko'rinadigan yo'li shu. */}
+      <Breadcrumbs
+        items={[
+          { name: dict.nav.catalog, href: "/katalog" },
+          {
+            name: (dict.categories as Record<string, string>)[product.category] ?? categoryLabel,
+            href: `/katalog?category=${encodeURIComponent(product.category)}`,
+          },
+          { name },
+        ]}
+      />
 
       {/* Tugagan mahsulot - mijoz bo'sh qaytmasin: shu vazifadagi
           mavjud mahsulotlar darrov ko'rsatiladi. */}

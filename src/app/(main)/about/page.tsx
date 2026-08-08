@@ -7,6 +7,7 @@ import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function AboutPage() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-10">
+      <Breadcrumbs items={[{ name: settings.about.title }]} />
       <h1 className="text-3xl font-bold text-navy-900 dark:text-white sm:text-4xl">{settings.about.title}</h1>
 
       <div className="mt-8 grid gap-8 md:grid-cols-2 md:items-start">

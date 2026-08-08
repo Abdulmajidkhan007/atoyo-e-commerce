@@ -43,6 +43,29 @@ https://github.com/<owner>/<repo>/releases/tag/desktop-latest
 > bilan imzolanmagan. "Batafsil" → "Baribir ishga tushirish".
 > Imzo sertifikati (~yiliga $200-400) olinsa, ogohlantirish yo'qoladi.
 
+## Klaviatura va sichqoncha
+
+Ilovada brauzerdagi manzil paneli ham, orqaga tugmasi ham yo'q -
+shuning uchun harakat quyidagicha:
+
+| Nima | Qanday |
+|---|---|
+| Orqaga | `Ctrl+←` yoki `Alt+←`, sichqonchaning yon tugmasi |
+| Oldinga | `Ctrl+→` yoki `Alt+→`, sichqonchaning yon tugmasi |
+| Bosh sahifa | `Alt+Home` |
+| Chek chop etish | `Ctrl+P` |
+| Yangilash | `F5` / `Ctrl+R` |
+
+`Alt+←/→` menyudagi "O'tish" bo'limida turadi (Windows standarti).
+`Ctrl+←/→` esa `preload.js` da ushlanadi va **matn maydonida
+yozayotganda ishlamaydi** - u yerda `Ctrl+←` "bir so'z chapga"
+degani, admin formada yozayotgan odam sahifadan uchib ketmasligi
+kerak.
+
+Saytning o'zida esa har sahifa tepasida **"qayerdaman" zanjiri**
+turadi (Bosh sahifa › Katalog › Kategoriya › Mahsulot) - istalgan
+bosqichga bir bosishda qaytish mumkin.
+
 ## Yig'ish — GitHub Actions
 
 Sandbox'da yig'ilmaydi (Windows kerak, electron-builder ~200 MB

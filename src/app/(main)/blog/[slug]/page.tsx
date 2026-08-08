@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { getPostBySlug } from "@/lib/firebase/admin-content";
 import { BlogContent } from "@/components/blog/BlogContent";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { articleJsonLd } from "@/lib/seo/json-ld";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,7 @@ export default async function BlogPostPage({ params }: BlogPostPageParams) {
           createdAt: post.createdAt,
         })}
       />
+      <Breadcrumbs items={[{ name: "Blog", href: "/blog" }, { name: post.title }]} />
       <Link href="/blog" className="text-sm text-aqua-600 hover:underline dark:text-aqua-300">← Blogga qaytish</Link>
       <h1 className="mt-4 text-3xl font-bold text-navy-900 dark:text-white">{post.title}</h1>
       <p className="mt-2 text-sm text-navy-300">{new Date(post.createdAt).toLocaleDateString("uz-UZ")}</p>

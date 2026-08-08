@@ -6,6 +6,7 @@ import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { CartItemRow } from "@/components/cart/CartItemRow";
 import { CartSummary } from "@/components/cart/CartSummary";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 export default function CartPage() {
   const { dict } = useI18n();
@@ -13,6 +14,7 @@ export default function CartPage() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">
+      <Breadcrumbs items={[{ name: dict.cart.title }]} />
       <h1 className="mb-6 text-2xl font-bold text-navy-900 dark:text-white">{dict.cart.title}</h1>
 
       {items.length === 0 ? (

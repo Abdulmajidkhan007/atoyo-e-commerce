@@ -36,6 +36,7 @@ import {
   variantPrice,
 } from '../variants';
 import {Icon} from '../components/Icon';
+import {Breadcrumbs} from '../components/Breadcrumbs';
 
 /** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
 export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>) {
@@ -183,6 +184,18 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
       )}
 
       <View style={{padding: spacing.lg, gap: spacing.sm}}>
+        {/* Qayerdaman: Bosh › Katalog › <kategoriya> › <mahsulot>.
+            "Orqaga" faqat bitta qadam qaytaradi - zanjir esa butun
+            yo'lni ko'rsatadi va istalgan bosqichga olib boradi. */}
+        <Breadcrumbs
+          items={[
+            {name: t.tabCatalog, toCatalog: {}},
+            ...(product.category
+              ? [{name: product.category, toCatalog: {category: product.category}}]
+              : []),
+            {name: localizedName(product, locale)},
+          ]}
+        />
         <View style={styles.titleRow}>
           <Text style={styles.title}>{localizedName(product, locale)}</Text>
           {/* Ulashish - Telegram/WhatsApp orqali havola yuborish. */}

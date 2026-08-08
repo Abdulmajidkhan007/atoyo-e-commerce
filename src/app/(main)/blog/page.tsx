@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getPublishedPosts } from "@/lib/firebase/admin-content";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function BlogPage() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-10">
+      <Breadcrumbs items={[{ name: "Blog" }]} />
       <h1 className="mb-6 text-3xl font-bold text-navy-900 dark:text-white">Blog va yangiliklar</h1>
 
       {posts.length === 0 ? (
