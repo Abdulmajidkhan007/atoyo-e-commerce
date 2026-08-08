@@ -37,6 +37,100 @@ export async function fetchShowcase(): Promise<AdminProduct[]> {
   return data.products ?? [];
 }
 
+// ---------------------------------------------------------------------------
+// KATALOG. Ilova ilgari Firestore'dan TO'G'RIDAN-TO'G'RI o'qirdi, lekin
+// mahsulot hujjatida OPTOM narx (`price`) va TANNARX (`costPrice`) turadi -
+// ular ochiq o'qilsa raqobatchi ham ko'raverardi. Endi `products`
+// kolleksiyasi Firestore qoidalarida YOPIQ va katalog saytning API'si
+// orqali o'qiladi: narx serverda rolga qarab beriladi (optom mijozga
+// optom, qolganlarga dona), tannarx esa umuman yuborilmaydi.
+// ---------------------------------------------------------------------------
+
+export interface CatalogFilters {
+  category?: string;
+  brand?: string;
+  /** Material slug'i (metadata/taxonomy dagi kabi). */
+  material?: string;
+  /** Ishlab chiqarilgan davlat. */
+  country?: string;
+  /** Narx oralig'i (so'mda, KO'RSATILGAN narxda - server o'giradi). */
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: 'newest' | 'price-asc' | 'price-desc' | 'popular';
+}
+
+/** Bosh sahifa uchun eng yangi mahsulotlar. */
+export async function fetchNewProducts(limit = 10): Promise<AdminProduct[]> {
+  const data = await request<{products?: AdminProduct[]}>(
+    `/api/products/list?sortBy=newest&pageSize=${limit}`,
+  );
+  return data.products ?? [];
+}
+
+/** Katalog sahifasi (filtr va saralash server tomonida). */
+export async function fetchCatalog(
+  filters: CatalogFilters,
+  limit = 20,
+  cursor?: string | null,
+): Promise<{products: AdminProduct[]; nextCursor: string | null; hasMore: boolean}> {
+  const params = new URLSearchParams({pageSize: String(limit)});
+  if (filters.category) params.set('category', filters.category);
+  if (filters.brand) params.set('brand', filters.brand);
+  if (filters.material) params.set('material', filters.material);
+  if (filters.country) params.set('manufacturerCountry', filters.country);
+  if (filters.minPrice) params.set('minPrice', String(filters.minPrice));
+  if (filters.maxPrice) params.set('maxPrice', String(filters.maxPrice));
+  params.set('sortBy', filters.sort ?? 'newest');
+  if (cursor) params.set('cursor', cursor);
+
+  const data = await request<{
+    products?: AdminProduct[];
+    nextCursor?: string | null;
+    hasMore?: boolean;
+  }>(`/api/products/list?${params.toString()}`);
+
+  return {
+    products: data.products ?? [],
+    nextCursor: data.nextCursor ?? null,
+    hasMore: Boolean(data.hasMore),
+  };
+}
+
+/** Nom bo'yicha qidiruv (prefiks + so'z indeksi - saytdagi bilan bir xil). */
+export async function searchProducts(term: string, limit = 20): Promise<AdminProduct[]> {
+  const trimmed = term.trim();
+  if (!trimmed) return [];
+  const params = new URLSearchParams({q: trimmed, pageSize: String(limit)});
+  const data = await request<{products?: AdminProduct[]}>(
+    `/api/products/search?${params.toString()}`,
+  );
+  return data.products ?? [];
+}
+
+/** Bitta mahsulot va o'xshashlari (bitta so'rovda). */
+export async function fetchProductWithRelated(
+  id: string,
+): Promise<{product: AdminProduct; related: AdminProduct[]} | null> {
+  try {
+    const data = await request<{product: AdminProduct; related?: AdminProduct[]}>(
+      `/api/products/${id}`,
+    );
+    return {product: data.product, related: data.related ?? []};
+  } catch {
+    return null;
+  }
+}
+
+/** Sevimlilar uchun: ID lar bo'yicha (narx yangilanadi). */
+export async function fetchProductsByIds(ids: string[]): Promise<AdminProduct[]> {
+  if (ids.length === 0) return [];
+  const params = new URLSearchParams({ids: ids.slice(0, 30).join(',')});
+  const data = await request<{products?: AdminProduct[]}>(
+    `/api/products/by-ids?${params.toString()}`,
+  );
+  return data.products ?? [];
+}
+
 export interface DeliverySettings {
   fee: number;
   freeFrom: number;

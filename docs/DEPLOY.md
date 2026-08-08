@@ -168,6 +168,108 @@ JSON
 npx -y firebase-tools deploy --only hosting --project atoyo-uz
 ```
 
+### 4b. TEZLIK: backendni O'zbekistonga yaqinlashtirish
+
+Hozirgi backend **`us-east4`** (AQSh, Virjiniya) da. Toshkentdan har
+bir so'rov okean ortiga borib qaytadi — server hech narsa qilmasdan
+oldin **~250-300 ms** yo'qoladi. Sahifalar dinamik (locale cookie
+o'qiladi), shuning uchun Hosting CDN ularni keshlay olmaydi: har
+bosishda AQShga boriladi.
+
+Eng yaqin Google regionlari: **`europe-west4`** (Niderlandiya) yoki
+**`europe-west1`** (Belgiya) — Toshkentdan ~100-140 ms, ya'ni ikki
+baravar tezroq.
+
+> **App Hosting'da mavjud backend regioni O'ZGARMAYDI.** Yangi
+> backend ochib, `firebase.json` rewrite'ini unga qaratish kerak.
+> Kod o'zgarmaydi — bu faqat konsol ishi.
+
+**Tartib:**
+
+1. Yangi backend yaratish (bir marta, ~5 daqiqa):
+
+   ```bash
+   firebase apphosting:backends:create \
+     --project atoyo-uz \
+     --location europe-west4
+   ```
+
+   Repozitoriya va branch avvalgidek: `Abdulmajidkhan007/atoyo-e-commerce`,
+   `claude/plumbing-ecommerce-nextjs-jxpmh5`. Nomi masalan `atoyo-eu`.
+
+2. Sirlarni yangi backendga ochish (aks holda AI va rasm ishlamaydi):
+
+   ```bash
+   firebase apphosting:secrets:grantaccess ANTHROPIC_API_KEY \
+     --backend atoyo-eu --project atoyo-uz
+   firebase apphosting:secrets:grantaccess GEMINI_API_KEY \
+     --backend atoyo-eu --project atoyo-uz
+   ```
+
+3. Birinchi rollout tugab, uzun manzil (`…europe-west4.hosted.app`)
+   ochilishini tekshiring.
+
+4. `apphosting.yaml` dagi `ALLOWED_ORIGINS` ga yangi hostni qo'shing
+   (Server Actions shu ro'yxatga qaraydi) va push qiling.
+
+5. `firebase.json` dagi rewrite'ni yangi xizmatga qaratib deploy
+   qiling — shundan keyin `atoyo-uz.web.app` yangi backendga boradi:
+
+   ```json
+   { "source": "**", "run": { "serviceId": "atoyo-eu", "region": "europe-west4" } }
+   ```
+
+   ```bash
+   firebase deploy --only hosting --project atoyo-uz
+   ```
+
+6. Telegram webhook'ini qayta ro'yxatdan o'tkazish **shart emas** —
+   u qisqa domen (`atoyo-uz.web.app`) orqali ishlaydi.
+
+7. Hammasi ishlaganiga ishonch hosil qilgach, eski backendni
+   o'chirib qo'ying (ikkitasi turib pul yemasin):
+
+   ```bash
+   firebase apphosting:backends:delete atoyo-e-commerce \
+     --project atoyo-uz --location us-east4
+   ```
+
+**Firestore regioni haqida.** Ma'lumotlar bazasi ham qayerda
+turgani muhim: agar Firestore `nam5`/AQShda bo'lsa, server Yevropaga
+ko'chganda **server↔Firestore** yo'li uzayadi. Tekshirish:
+
+```bash
+gcloud firestore databases describe --project=atoyo-uz --format='value(locationId)'
+```
+
+Firestore regioni **umuman o'zgarmaydi** (yangi baza ochib
+ko'chirish kerak). Shuning uchun:
+
+- Firestore AQShda bo'lsa → backendni ham AQShda qoldirish
+  ma'qulroq (`minInstances: 1` va CDN keshi baribir yordam beradi);
+- Firestore Yevropada (`eur3`) bo'lsa → backendni Yevropaga
+  ko'chirish **ikki tomondan** foyda beradi.
+
+Ya'ni 1-qadamdan oldin shu buyruqni ishga tushirib ko'ring.
+
+### 4c. Nima keshlanadi, nima keshlanmaydi
+
+Sahifalar keshlanmaydi: `(main)/layout.tsx` cookie'dan tilni o'qiydi
+va `Footer` admin sozlamalarini ko'rsatadi. Buning o'rniga:
+
+- **Sozlamalar serverda 60 soniya keshlanadi** (`settings/site`,
+  `settings/pricing`) — har sahifa ko'rishida Firestore'ga
+  bormaydi, admin saqlaganda kesh bekor qilinadi.
+- **Ochiq GET API javoblari Hosting CDN'ida keshlanadi**
+  (`lib/http/cache.ts` → `publicCacheHeaders`): `/api/facets` va
+  `/api/taxonomy` 10 daqiqa, `/api/pricing` va `/api/delivery`
+  5 daqiqa, `/api/products/showcase` 5 daqiqa. Bu javoblar
+  hammaga bir xil, shuning uchun keshlash xavfsiz.
+- **Rolga bog'liq narsalar HECH QACHON `public` keshlanmaydi**
+  (`/api/products/prices`, savat, profil, buyurtma) — CDN cookie
+  bo'yicha ajratmaydi, bir mijozning javobi boshqasiga ketib
+  qolardi.
+
 Lokal kompyuterda repozitoriya bo'lsa, o'sha papkadan:
 
 ```bash

@@ -59,14 +59,44 @@ Untracked fayllar recycle'da yo'qoladi — ishni tez-tez commit + push qiling.
 
 ## Narx qoidasi (buzilmasin)
 
-Bazadagi `price` — **OPTOM** narx. Dona narx `lib/products/wholesale.ts`
-dagi `priceForRole()` orqali hisoblanadi (`settings/pricing` dagi ustama,
-standart 5%). Katalog narxini ko'rsatadigan HAR QANDAY yangi joy shu
-funksiyadan o'tishi shart: sayt (`lib/products/usePricing.ts`), ilova
-(`mobile/src/pricing.ts`), bot (`priceContext`/`shownPrice`), AI qatlami
-(`searchCatalog`, `findRelevantProducts` — `viewerRole`). Optom mijoz
-dona narxni, dona mijoz optom narxni ko'rmasligi kerak. Buyurtmada narx
-serverda rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
+Bazadagi `price` — **OPTOM** narx, `costPrice` — **TANNARX**. Dona narx
+`lib/products/wholesale.ts` dagi `priceForRole()` orqali hisoblanadi
+(`settings/pricing` dagi ustama, standart 5%). Optom mijoz dona narxni,
+dona mijoz optom narxni ko'rmasligi kerak. Buyurtmada narx serverda
+rolga qarab qayta hisoblanadi (`lib/orders/create-order.ts`).
+
+### Narx hisobi FAQAT SERVERDA (buzilmasin)
+
+Mahsulot hujjati mijozga chiqishdan oldin **`lib/products/viewer.ts`
+dagi `toViewerProduct()` / `toViewerProducts()` dan o'tishi SHART**. U:
+
+- `price` / `discountPrice` ni rolga mos qiymatga almashtiradi
+  (turlarning narxi ham);
+- `costPrice`, `retailMarkupPercent`, `supplier` ni **olib tashlaydi**.
+
+Ustama foizi mijozga BERILMAYDI (`/api/pricing` faqat `minOrderAmount`
+qaytaradi): u ma'lum bo'lsa dona narxdan optom narx teskari
+hisoblanardi (`optom = dona / (1 + ustama/100)`).
+
+Shu sababli:
+
+- **`products` kolleksiyasi `firestore.rules` da YOPIQ**
+  (`allow read, write: if false`). Mijoz — sayt ham, ilova ham —
+  Firestore'dan mahsulot o'qimaydi.
+- Katalog/qidiruv server orqali: `lib/products/catalog-server.ts` +
+  `/api/products/list`, `/api/products/search`, `/api/products/[id]`,
+  `/api/products/by-ids`, `/api/products/showcase`, `/api/search`.
+  Filtr va saralash avvalgidek BAZA tomonida qoladi; kursor —
+  oxirgi hujjatning ID si (snapshot JSON'da uzatilmaydi).
+- Mijoz tomonidagi hook'lar (`lib/products/usePricing.ts`,
+  `mobile/src/pricing.ts`) **hisob qilmaydi** — serverdan kelgan
+  narxni faqat yaxlitlaydi. Imzo (signature) o'zgarmagan, shuning
+  uchun chaqiruv joylari avvalgidek.
+- Mahsulot qaytaradigan YANGI route yozilsa — javobni albatta
+  `toViewerProducts()` dan o'tkazing va `no-store` qo'ying
+  (`lib/http/cache.ts`). Rolga bog'liq javob CDN'da keshlanmaydi.
+- Server tomoni (bot, AI, `/tv`, kanal posti, buyurtma) XOM hujjat
+  bilan ishlaydi va `priceForRole()` ni o'zi qo'llaydi — o'zgarmadi.
 
 ## Import/kirimda turlar
 

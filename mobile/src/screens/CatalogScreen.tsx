@@ -4,8 +4,7 @@ import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {type Product, type ProductCategory} from '../types';
 import {useCategories} from '../categories';
-import {fetchCatalog, searchProducts} from '../firebase';
-import {fetchFacets, fetchTaxonomy} from '../api';
+import {fetchFacets, fetchTaxonomy, fetchCatalog, searchProducts} from '../api';
 import {ProductCard} from '../components/ProductCard';
 import {Button, Chip, EmptyState, Loading} from '../components/ui';
 import type {TabScreenProps} from '../navigation/types';
@@ -61,15 +60,17 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
     try {
       const items = term.trim()
         ? await searchProducts(term)
-        : await fetchCatalog({
-            category,
-            brand,
-            material,
-            country,
-            minPrice: Number(minPrice) || undefined,
-            maxPrice: Number(maxPrice) || undefined,
-            sort,
-          });
+        : (
+            await fetchCatalog({
+              category,
+              brand,
+              material,
+              country,
+              minPrice: Number(minPrice) || undefined,
+              maxPrice: Number(maxPrice) || undefined,
+              sort,
+            })
+          ).products;
       setProducts(items);
     } catch {
       setProducts([]);

@@ -18,8 +18,7 @@ import {
   type Product,
   type Review,
 } from '../types';
-import {fetchProduct, fetchRelatedProducts} from '../firebase';
-import {fetchReviews, submitReview, SITE_URL} from '../api';
+import {fetchReviews, submitReview, SITE_URL, fetchProductWithRelated} from '../api';
 import {useAppDispatch, useAppSelector} from '../store';
 import {useDisplayPrice, useIsWholesale, useListPrice} from '../pricing';
 import {addItem} from '../store/cartSlice';
@@ -79,18 +78,14 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
 
   useEffect(() => {
     let active = true;
-    fetchProduct(productId)
-      .catch((): Product | null => null)
-      .then(item => {
+    // Mahsulot va o'xshashlari BITTA so'rovda keladi - narx serverda
+    // rolga qarab hisoblanadi.
+    fetchProductWithRelated(productId)
+      .catch(() => null)
+      .then(result => {
         if (!active) return;
-        setProduct(item);
-        if (item) {
-          fetchRelatedProducts(item)
-            .catch((): Product[] => [])
-            .then(items => {
-              if (active) setRelated(items);
-            });
-        }
+        setProduct(result?.product ?? null);
+        setRelated(result?.related ?? []);
       });
     loadReviews().then(items => {
       if (active) setReviews(items);

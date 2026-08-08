@@ -2,13 +2,34 @@ import "server-only";
 import { getAdminDb } from "./admin";
 import { DEFAULT_SITE_SETTINGS, type BlogPost, type SiteSettings } from "@/types/content";
 
+/**
+ * SAYT SOZLAMALARI KESHI.
+ *
+ * `Footer` bu sozlamani `(main)/layout.tsx` ichida o'qiydi - ya'ni
+ * saytdagi HAR BIR sahifa ko'rishida Firestore'ga bitta so'rov
+ * ketardi. Sozlama esa yiliga bir-ikki marta o'zgaradi. Shuning
+ * uchun 60 soniya keshlanadi (`settings/pricing` bilan bir xil
+ * tartib) va admin saqlaganda `clearSiteSettingsCache()` bilan
+ * bekor qilinadi.
+ */
+let siteCache: { value: SiteSettings; at: number } | null = null;
+const SITE_TTL = 60_000;
+
+/** Sozlama saqlangandan keyin kesh bekor qilinadi. */
+export function clearSiteSettingsCache(): void {
+  siteCache = null;
+}
+
 /** Sayt sozlamalari (kontakt, ijtimoiy tarmoqlar, about). Yo'q bo'lsa default. */
 export async function getSiteSettings(): Promise<SiteSettings> {
+  if (siteCache && Date.now() - siteCache.at < SITE_TTL) return siteCache.value;
+
   try {
     const snap = await getAdminDb().doc("settings/site").get();
     const data = snap.data() as Partial<SiteSettings> | undefined;
     if (!data) return DEFAULT_SITE_SETTINGS;
-    return {
+
+    const value: SiteSettings = {
       phone: data.phone ?? DEFAULT_SITE_SETTINGS.phone,
       email: data.email ?? DEFAULT_SITE_SETTINGS.email,
       address: data.address ?? DEFAULT_SITE_SETTINGS.address,
@@ -25,6 +46,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
         links: Array.isArray(data.channelFooter?.links) ? data.channelFooter.links : [],
       },
     };
+    siteCache = { value, at: Date.now() };
+    return value;
   } catch {
     return DEFAULT_SITE_SETTINGS;
   }

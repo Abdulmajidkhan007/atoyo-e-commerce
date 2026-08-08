@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { clearSiteSettingsCache } from "@/lib/firebase/admin-content";
 import { requirePermission } from "@/lib/firebase/session";
 
 export const runtime = "nodejs";
@@ -47,5 +48,7 @@ export async function PATCH(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
 
   await getAdminDb().doc("settings/site").set(parsed.data, { merge: true });
+  // Footer bu sozlamani keshdan o'qiydi - saqlangach kesh bekor qilinadi.
+  clearSiteSettingsCache();
   return NextResponse.json({ ok: true });
 }

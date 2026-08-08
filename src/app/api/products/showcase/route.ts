@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { toViewerProducts } from "@/lib/products/viewer";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
+import { NO_STORE_HEADERS } from "@/lib/http/cache";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -28,9 +32,23 @@ const TTL = 5 * 60 * 1000;
 
 let cache: { at: number; products: Product[] } | null = null;
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Kesh XOM mahsulotlarni saqlaydi; javob esa har so'rovda
+  // ko'ruvchining roliga moslanadi - optom mijoz optom narxni,
+  // qolganlar dona narxni ko'radi. Shuning uchun javob HTTP
+  // darajasida keshlanmaydi (CDN cookie bo'yicha ajratmaydi).
+  const [viewer, pricing] = await Promise.all([
+    getAppUserFromRequest(request).catch(() => null),
+    getPricingSettings(),
+  ]);
+  const respond = (products: Product[]) =>
+    NextResponse.json(
+      { products: toViewerProducts(products, viewer?.role, pricing) },
+      { headers: NO_STORE_HEADERS }
+    );
+
   if (cache && Date.now() - cache.at < TTL) {
-    return NextResponse.json({ products: cache.products });
+    return respond(cache.products);
   }
 
   try {
@@ -60,10 +78,10 @@ export async function GET() {
     }
 
     cache = { at: Date.now(), products: picked };
-    return NextResponse.json({ products: picked });
+    return respond(picked);
   } catch (error) {
     console.error("Bosh sahifa namunasini olishda xato:", error);
     // Bosh sahifa baribir ochilishi kerak - bo'sh ro'yxat qaytadi.
-    return NextResponse.json({ products: [] });
+    return respond([]);
   }
 }

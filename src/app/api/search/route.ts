@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { isSearchEngineConfigured, searchWithEngine } from "@/lib/search/engine";
+import { getAppUserFromRequest } from "@/lib/firebase/session";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { toViewerProducts } from "@/lib/products/viewer";
+import { NO_STORE_HEADERS } from "@/lib/http/cache";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -38,5 +42,18 @@ export async function GET(request: Request) {
     .map((doc) => ({ id: doc.id, ...doc.data() }) as Product)
     .filter((product) => product.isActive !== false && !product.isDraft);
 
-  return NextResponse.json({ engine: true, found: result.found, products });
+  // Narx ko'ruvchining roliga moslanadi, optom narx/tannarx berilmaydi.
+  const [viewer, pricing] = await Promise.all([
+    getAppUserFromRequest(request).catch(() => null),
+    getPricingSettings(),
+  ]);
+
+  return NextResponse.json(
+    {
+      engine: true,
+      found: result.found,
+      products: toViewerProducts(products, viewer?.role, pricing),
+    },
+    { headers: NO_STORE_HEADERS }
+  );
 }

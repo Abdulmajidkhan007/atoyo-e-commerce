@@ -14,135 +14,84 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { getFirebaseDb } from "./client";
-import { searchTermVariants } from "@/lib/search/tokens";
 import type { Product, ProductFilterParams } from "@/types/product";
 import type { Order, OrderStatus } from "@/types/order";
 
-const PRODUCTS_COLLECTION = "products";
 const ORDERS_COLLECTION = "orders";
 
 export interface ProductsPage {
   products: Product[];
-  lastCursor: QueryDocumentSnapshot<DocumentData> | null;
+  /**
+   * Keyingi sahifa kursori. Ilgari bu Firestore hujjat snapshot'i edi;
+   * endi so'rov server orqali ketgani uchun oddiy satr - oxirgi
+   * hujjatning ID si.
+   */
+  lastCursor: string | null;
   hasMore: boolean;
 }
 
 /**
- * 10,000+ mahsulot orasidan sahifalab (cursor-based) yuklaydi.
- * Hech qachon to'liq kolleksiyani bir yo'la o'qimaydi - har doim
- * `limit()` va oldingi sahifaning oxirgi hujjatidan `startAfter()` bilan
- * cheklanadi. Filtrlar Firestore composite indekslari orqali qo'llaniladi
- * (bunday indekslar firestore.indexes.json faylida e'lon qilinishi shart).
+ * MAHSULOTLAR SERVER ORQALI O'QILADI.
+ *
+ * Avval bu funksiya Firestore'ga to'g'ridan-to'g'ri borardi. Lekin
+ * mahsulot hujjatida OPTOM narx (`price`) va TANNARX (`costPrice`)
+ * turadi - ular ochiq o'qilsa raqobatchi ham ko'raverardi. Endi
+ * `products` kolleksiyasi qoidalarda YOPIQ, o'qish esa
+ * `/api/products/list` orqali: filtr va saralash avvalgidek BAZA
+ * TOMONIDA qoladi, javobdagi narx esa rolga moslab beriladi
+ * (`lib/products/viewer.ts`).
  */
 export async function getProductsPage(
   filters: ProductFilterParams,
   pageSize = 24,
-  cursor: QueryDocumentSnapshot<DocumentData> | null = null
+  cursor: string | null = null
 ): Promise<ProductsPage> {
-  const constraints: QueryConstraint[] = [where("isActive", "==", true)];
-
-  if (filters.category) constraints.push(where("category", "==", filters.category));
-  if (filters.brand) constraints.push(where("brand", "==", filters.brand));
-  if (filters.material) constraints.push(where("material", "==", filters.material));
+  const params = new URLSearchParams();
+  if (filters.category) params.set("category", filters.category);
+  if (filters.brand) params.set("brand", filters.brand);
+  if (filters.material) params.set("material", filters.material);
   if (filters.manufacturerCountry) {
-    constraints.push(where("manufacturerCountry", "==", filters.manufacturerCountry));
+    params.set("manufacturerCountry", filters.manufacturerCountry);
   }
-  if (filters.inStockOnly) constraints.push(where("stock", ">", 0));
-  if (filters.minPrice !== undefined) constraints.push(where("price", ">=", filters.minPrice));
-  if (filters.maxPrice !== undefined) constraints.push(where("price", "<=", filters.maxPrice));
+  if (filters.inStockOnly) params.set("inStockOnly", "1");
+  if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
+  if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
+  if (filters.sortBy) params.set("sortBy", filters.sortBy);
+  params.set("pageSize", String(pageSize));
+  if (cursor) params.set("cursor", cursor);
 
-  switch (filters.sortBy) {
-    case "price-asc":
-      constraints.push(orderBy("price", "asc"));
-      break;
-    case "price-desc":
-      constraints.push(orderBy("price", "desc"));
-      break;
-    case "popular":
-      constraints.push(orderBy("salesCount", "desc"));
-      break;
-    default:
-      constraints.push(orderBy("createdAt", "desc"));
-  }
+  const res = await fetch(`/api/products/list?${params.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Katalog o'qilmadi.");
 
-  constraints.push(limit(pageSize));
-  if (cursor) constraints.push(startAfter(cursor));
-
-  const q = query(collection(getFirebaseDb(), PRODUCTS_COLLECTION), ...constraints);
-  const snapshot = await getDocs(q);
+  const data = (await res.json()) as {
+    products?: Product[];
+    nextCursor?: string | null;
+    hasMore?: boolean;
+  };
 
   return {
-    products: snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as Product),
-    lastCursor: snapshot.docs.at(-1) ?? null,
-    hasMore: snapshot.docs.length === pageSize,
+    products: data.products ?? [],
+    lastCursor: data.nextCursor ?? null,
+    hasMore: Boolean(data.hasMore),
   };
 }
 
 /**
- * Tezkor prefiks-qidiruv: `nameSearchIndex` (kichik harfli, indekslangan
- * maydon) bo'yicha Firestore range so'rovi. Bu server tomonidagi birinchi
- * bosqich - natijalar keyin `lib/search/fuzzy.ts` yordamida
- * typo-tolerant tarzda mijoz tomonda qayta saralanadi.
+ * Qidiruvning birinchi bosqichi. Baza tomonida `nameSearchIndex`
+ * prefiksi va `nameTokens` so'zlari bo'yicha qidiriladi
+ * (`lib/products/catalog-server.ts`), natijalar keyin mijoz tomonda
+ * `lib/search/fuzzy.ts` bilan xatoga chidamli tarzda saralanadi.
  */
 export async function searchProductsByPrefix(term: string, pageSize = 24): Promise<Product[]> {
-  const normalized = term.trim().toLowerCase();
+  const normalized = term.trim();
   if (!normalized) return [];
 
-  const q = query(
-    collection(getFirebaseDb(), PRODUCTS_COLLECTION),
-    where("isActive", "==", true),
-    orderBy("nameSearchIndex"),
-    where("nameSearchIndex", ">=", normalized),
-    where("nameSearchIndex", "<=", normalized + ""),
-    limit(pageSize)
-  );
+  const params = new URLSearchParams({ q: normalized, pageSize: String(pageSize) });
+  const res = await fetch(`/api/products/search?${params.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
 
-  // Prefiks (nom boshidan) va token (nomning istalgan so'zi) qidiruvlari
-  // parallel yuboriladi, natijalar birlashtiriladi.
-  //
-  // Token so'rovi HAR BIR so'z bo'yicha ishlaydi (`array-contains-any`):
-  // "8276 dush" deb qidirilsa ham, "dush 8276" deb qidirilsa ham
-  // "Boou dush 8276" topiladi. So'zlarning hammasi mos kelishi (AND)
-  // keyin mijoz tomonda tekshiriladi (lib/search/fuzzy.ts).
-  // So'zlar asl va "tekislangan" (kirill->lotin, apostrofsiz) ko'rinishda
-  // yuboriladi - "душ" deb qidirgan odam "Dush" ni ham topadi.
-  const tokenTerms = searchTermVariants(normalized);
-  const tokenQuery = query(
-    collection(getFirebaseDb(), PRODUCTS_COLLECTION),
-    where("isActive", "==", true),
-    where("nameTokens", "array-contains-any", tokenTerms),
-    limit(pageSize)
-  );
-
-  const [prefixSnap, tokenSnap] = await Promise.all([
-    getDocs(q).catch(() => null),
-    getDocs(tokenQuery).catch(() => null),
-  ]);
-
-  // Kompozit indeks (isActive + nameTokens) hali yaratilmagan bo'lsa
-  // yuqoridagi so'rov xato beradi - o'shanda indekssiz (faqat nameTokens
-  // bo'yicha) qayta so'raymiz va isActive ni mijoz tomonda filtrlaymiz.
-  const fallbackSnap =
-    tokenSnap === null
-      ? await getDocs(
-          query(
-            collection(getFirebaseDb(), PRODUCTS_COLLECTION),
-            where("nameTokens", "array-contains-any", tokenTerms),
-            limit(pageSize)
-          )
-        ).catch(() => null)
-      : null;
-
-  const seen = new Set<string>();
-  const results: Product[] = [];
-  for (const d of [...(prefixSnap?.docs ?? []), ...(tokenSnap?.docs ?? []), ...(fallbackSnap?.docs ?? [])]) {
-    if (seen.has(d.id)) continue;
-    seen.add(d.id);
-    const product = { id: d.id, ...d.data() } as Product;
-    if (product.isActive === false) continue;
-    results.push(product);
-  }
-  return results.slice(0, pageSize);
+  const data = (await res.json()) as { products?: Product[] };
+  return data.products ?? [];
 }
 
 /** Mijoz o'z buyurtmasi statusini real-vaqtda kuzatishi uchun. */

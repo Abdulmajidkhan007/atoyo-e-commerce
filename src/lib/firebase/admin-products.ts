@@ -4,10 +4,11 @@ import type { Product } from "@/types/product";
 
 /**
  * Mahsulot sahifasini server tomonida (SEO va tezkor birinchi render
- * uchun) Admin SDK bilan o'qiydi. Mahsulotlar ochiq o'qish uchun
- * (`firestore.rules`da `allow read: if true`) ruxsat etilgan, shuning
- * uchun Admin SDK'dan foydalanish xavfsizlik qoidalarini chetlab
- * o'tmaydi - shunchaki server-side so'rovni soddalashtiradi.
+ * uchun) Admin SDK bilan o'qiydi.
+ *
+ * DIQQAT: bu funksiya XOM hujjatni qaytaradi - unda OPTOM narx va
+ * TANNARX bor. Mijozga ko'rsatishdan oldin `toViewerProduct()`
+ * (`lib/products/viewer.ts`) dan o'tkazish SHART.
  */
 export async function getProductById(id: string): Promise<Product | null> {
   const snapshot = await getAdminDb().collection("products").doc(id).get();

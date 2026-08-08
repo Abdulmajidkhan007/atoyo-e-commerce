@@ -3,7 +3,7 @@ import {FlatList, View} from 'react-native';
 import {makeStyles, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {useAppSelector} from '../store';
-import {fetchProductsByIds} from '../firebase';
+import {fetchProductsByIds} from '../api';
 import type {Product} from '../types';
 import {ProductCard} from '../components/ProductCard';
 import {Button, EmptyState, Loading} from '../components/ui';

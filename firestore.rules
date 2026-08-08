@@ -19,9 +19,23 @@ service cloud.firestore {
     }
 
     // Mahsulotlar - hamma o'qiy oladi, faqat admin yoza oladi.
+    // MAHSULOTLAR - MIJOZ TO'G'RIDAN-TO'G'RI O'QIMAYDI.
+    //
+    // Hujjat ichida OPTOM narx (`price`), TANNARX (`costPrice`) va
+    // yetkazib beruvchi nomi (`supplier`) turadi. Ilgari bu yerda
+    // `allow read: if true` edi - ya'ni istalgan odam Firebase SDK
+    // bilan raqobatchining optom narxini ham, tannarxini ham o'qib
+    // olardi (dona narx faqat EKRANDA hisoblanardi, ma'lumotning
+    // o'zi ochiq edi).
+    //
+    // Endi katalog, qidiruv, sayt, ilova va bot - hammasi server
+    // orqali o'qiydi (`/api/products/*`), server esa mahsulotni
+    // ko'ruvchining roliga moslab tozalab beradi
+    // (`lib/products/viewer.ts`). Admin SDK bu qoidalarga
+    // bo'ysunmaydi, shuning uchun server ishlayveradi.
     match /products/{productId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read: if false;
+      allow write: if false;
     }
 
     // Blog postlari - hamma o'qiy oladi (public sahifa), faqat admin yoza

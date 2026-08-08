@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
-import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { Button, IconButton, TextField, CircularProgress } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
@@ -17,7 +16,8 @@ const PAGE_SIZE = 20;
 
 export function ProductTable() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  // Kursor - oxirgi hujjatning ID si (so'rov server orqali ketadi).
+  const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");

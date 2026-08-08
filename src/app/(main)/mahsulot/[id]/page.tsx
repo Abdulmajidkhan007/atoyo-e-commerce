@@ -8,7 +8,7 @@ import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { getLocale } from "@/lib/i18n/server";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
-import { markupFor, priceForRole } from "@/lib/products/wholesale";
+import { toViewerProduct, toViewerProducts } from "@/lib/products/viewer";
 import { localizedDescription, localizedName } from "@/lib/products/i18n";
 import { labelOf } from "@/lib/products/taxonomy";
 import { hasVariants } from "@/lib/products/variants";
@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
 
 export default async function ProductPage({ params }: ProductPageParams) {
   const { id } = await params;
-  const [product, dict, taxonomy, locale, viewer, pricing] = await Promise.all([
+  const [raw, dict, taxonomy, locale, viewer, pricing] = await Promise.all([
     getProductById(id),
     getDictionary(),
     getTaxonomy(),
@@ -76,17 +76,27 @@ export default async function ProductPage({ params }: ProductPageParams) {
     getPricingSettings(),
   ]);
 
-  if (!product) notFound();
+  if (!raw) notFound();
+
+  // MUHIM: hujjat mijozga chiqishdan OLDIN tozalanadi - optom narx,
+  // tannarx va yetkazib beruvchi nomi HTML'ga ham, JSON-LD'ga ham
+  // tushmasin (ilgari `productJsonLd` optom narxni Google'ga
+  // e'lon qilib yuborardi).
+  const product = toViewerProduct(raw, viewer?.role, pricing);
 
   // Nom va tavsif tanlangan tilda (tarjimasi yo'q bo'lsa - o'zbekchasi).
   const name = localizedName(product, locale);
   const description = localizedDescription(product, locale);
-  /** Bazadagi optom narxni ko'rsatiladigan narxga o'giradi. */
-  const show = (wholesale: number) => priceForRole(wholesale, viewer?.role, markupFor(product, pricing));
+  /** Narx allaqachon rolga mos - faqat yaxlitlanadi. */
+  const show = (value: number) => Math.round(value);
 
   // O'xshash mahsulotlar: avval MAXSUS KALIT SO'Z bo'yicha
   // (almashtiriladigan mahsulotlar), keyin shu kategoriyadan.
-  const related = await getRelatedProducts(product, 8).catch(() => []);
+  const related = toViewerProducts(
+    await getRelatedProducts(raw, 8).catch(() => []),
+    viewer?.role,
+    pricing
+  );
   // Mahsulot tugagan bo'lsa - zaxirada bori tepada ko'rsatiladi.
   const outOfStock = (product.stock ?? 0) <= 0;
   const replacements = outOfStock ? related.filter((item) => item.stock > 0).slice(0, 4) : [];

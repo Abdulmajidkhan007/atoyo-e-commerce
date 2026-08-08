@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { getProductsPage, searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { createFuzzySearcher } from "@/lib/search/fuzzy";
 import { useI18n } from "@/lib/i18n/LocaleContext";
@@ -20,7 +19,8 @@ interface ProductGridProps {
 export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
   const { dict } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
-  const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  // Kursor - oxirgi hujjatning ID si (so'rov server orqali ketadi).
+  const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

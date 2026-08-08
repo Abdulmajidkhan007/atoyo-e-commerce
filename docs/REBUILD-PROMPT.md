@@ -269,6 +269,22 @@ Do'kon ham do'konlarga (optom), ham oddiy xaridorga (dona) sotadi va
   aytgan narx chegarasi ham u ko'radigan narx ustida ishlaydi).
   Buyurtma narxi ham serverda rolga qarab qayta hisoblanadi — mijoz
   yuborgan narxga ishonilmaydi.
+- **NARX FAQAT SERVERDA HISOBLANADI.** `products` kolleksiyasi
+  `firestore.rules` da **butunlay yopiq** (`allow read, write: if
+  false`) — mijoz na saytdan, na ilovadan Firestore'ga bormaydi.
+  Katalog/qidiruv `lib/products/catalog-server.ts` orqali serverda
+  o'qiladi (`/api/products/list|search|[id]|by-ids|showcase`,
+  `/api/search`), javob esa `lib/products/viewer.ts` dagi
+  `toViewerProduct()` dan o'tadi: `price`/`discountPrice` rolga mos
+  qiymatga almashadi, `costPrice` (tannarx), `retailMarkupPercent`
+  va `supplier` esa **umuman yuborilmaydi**. `/api/pricing` ham
+  ustama foizini bermaydi — u ma'lum bo'lsa dona narxdan optom narx
+  teskari hisoblanardi. Mijoz tomonidagi hook'lar
+  (`usePricing.ts`, `mobile/src/pricing.ts`) endi hisob qilmaydi,
+  faqat yaxlitlaydi. Xodim (owner/admin) uchun hujjat o'zgarmasdan
+  beriladi. Filtr/saralash avvalgidek baza tomonida; kursor —
+  oxirgi hujjatning ID si. Testlari: `viewer.test.ts`,
+  `catalog-server.test.ts`.
 - **Eng kam buyurtma summasi** (standart 100 000 so'm): savatda
   ogohlantirish chiqadi va rasmiylashtirish tugmasi bloklanadi,
   server esa buyurtmani baribir tekshiradi.
@@ -746,10 +762,11 @@ Hammasi env orqali yoqiladi; sozlanmasa tizim avvalgidek ishlayveradi:
   akkauntlarga post uchun) va YouTube consent screen'ni "Publish"
   qilish foydalanuvchi zimmasida; navbatni avtomatik bo'shatadigan
   cron ham qo'yilmagan (hozir "Navbatni yuborish" tugmasi bilan).
-- Optom narx himoyasi: interfeysning hamma joyida rol bo'yicha
-  to'g'ri narx ko'rsatiladi, lekin `products` hujjati ochiq
-  o'qilgani uchun optom narx bazada texnik jihatdan ko'rinadi -
-  uni alohida yopiq kolleksiyaga chiqarish qoldi.
+- Optom narx himoyasi **bajarildi**: `products` kolleksiyasi
+  qoidalarda yopildi, o'qish serverga ko'chdi, tannarx va ustama
+  foizi mijozga umuman ketmaydi (yuqoridagi narx bo'limiga qara).
+  Qolgani — `firestore.rules` ni deploy qilish (sandbox'dan
+  qilinmaydi, keyingi Firebase deploy'ida qo'llanadi).
 - iOS build (Mac + Xcode kerak).
 - Play Store uchun o'z keystore va AAB.
 - To'liq offline rejim.

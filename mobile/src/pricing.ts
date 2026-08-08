@@ -4,21 +4,28 @@ import {useAuth} from './auth';
 import type {Product, ProductVariant} from './types';
 
 /**
- * OPTOM VA DONA NARX (ilova tomoni).
+ * KO'RSATILADIGAN NARX (ilova tomoni).
  *
- * Bazadagi narx - OPTOM. Oddiy mijozga ustama qo'shilgan dona narx
- * ko'rsatiladi, optom mijozga (`role === 'client'`) esa optom narx.
- * Ustama foizi saytdagi `/api/pricing` dan olinadi va ilova ishlagan
- * davomida keshlanadi - saytdagi `lib/products/wholesale.ts` bilan
- * bir xil qoida.
+ * MUHIM O'ZGARISH: narx endi ilovada HISOBLANMAYDI.
+ *
+ * Ilgari ilova katalogni Firestore'dan to'g'ridan-to'g'ri o'qirdi va
+ * OPTOM narxga ustama foizini o'zi qo'shardi. Ya'ni optom narx ham,
+ * ustama foizi ham qurilmaga ochiq ketardi - ustama ma'lum bo'lsa dona
+ * narxdan optom narxni teskari hisoblab olish mumkin edi.
+ *
+ * Endi mahsulot saytning API'sidan KO'RUVCHINING ROLIGA moslangan
+ * holda keladi (`/api/products/*`): `price` va `discountPrice` - bu
+ * allaqachon ko'rsatiladigan narx. Shuning uchun bu funksiyalar
+ * hisob qilmaydi, faqat yaxlitlaydi. Chaqiruv joylari o'zgarmasligi
+ * uchun imzo (signature) avvalgidek qoldirilgan.
  */
 
+/** Mijozga ochiq narx sozlamasi (ustama foizi BERILMAYDI). */
 export interface PricingSettings {
-  retailMarkupPercent: number;
   minOrderAmount: number;
 }
 
-const DEFAULTS: PricingSettings = {retailMarkupPercent: 5, minOrderAmount: 100000};
+const DEFAULTS: PricingSettings = {minOrderAmount: 100000};
 
 let cache: PricingSettings | null = null;
 let inflight: Promise<PricingSettings> | null = null;
@@ -28,13 +35,19 @@ async function loadPricing(): Promise<PricingSettings> {
   if (!inflight) {
     inflight = fetch(`${SITE_URL}/api/pricing`)
       .then(res => (res.ok ? res.json() : null))
-      .then((data: {pricing?: PricingSettings} | null) => {
-        cache = data?.pricing ?? DEFAULTS;
-        return cache;
+      .then((data: {pricing?: Partial<PricingSettings>} | null) => {
+        const value: PricingSettings = {
+          minOrderAmount:
+            typeof data?.pricing?.minOrderAmount === 'number'
+              ? data.pricing.minOrderAmount
+              : DEFAULTS.minOrderAmount,
+        };
+        cache = value;
+        return value;
       })
       .catch(() => {
         cache = DEFAULTS;
-        return cache;
+        return DEFAULTS;
       })
       .finally(() => {
         inflight = null;
@@ -43,13 +56,7 @@ async function loadPricing(): Promise<PricingSettings> {
   return inflight;
 }
 
-/** Dona narx: optom × (1 + ustama%), 100 so'mgacha yaxlitlangan. */
-export function retailFromWholesale(wholesale: number, markupPercent: number): number {
-  if (!Number.isFinite(wholesale) || wholesale <= 0) return 0;
-  return Math.round((wholesale * (1 + markupPercent / 100)) / 100) * 100;
-}
-
-/** Sozlamalarni (ustama, minimal buyurtma) o'qish. */
+/** Sozlamalar (hozircha faqat minimal buyurtma summasi). */
 export function usePricingSettings(): PricingSettings {
   const [settings, setSettings] = useState<PricingSettings>(cache ?? DEFAULTS);
 
@@ -66,35 +73,15 @@ export function usePricingSettings(): PricingSettings {
   return settings;
 }
 
-/**
- * Narxni rolga moslovchi funksiya. Mahsulotning o'z ustamasi bo'lsa
- * (`retailMarkupPercent`) umumiy sozlamadan ustun turadi.
- */
-export function useDisplayPrice(product?: Pick<Product, 'retailMarkupPercent'>) {
-  const settings = usePricingSettings();
-  const isWholesale = useIsWholesale();
-
-  const own = product?.retailMarkupPercent;
-  const markup = typeof own === 'number' && own >= 0 ? own : settings.retailMarkupPercent;
-
-  return (wholesale: number) =>
-    isWholesale ? Math.round(wholesale) : retailFromWholesale(wholesale, markup);
+/** Narxni ko'rsatishga tayyorlaydi (server allaqachon rolga moslagan). */
+export function useDisplayPrice(_product?: Pick<Product, 'id'>) {
+  return (value: number) => (Number.isFinite(value) ? Math.round(value) : 0);
 }
 
-/**
- * Ro'yxatlar uchun: har bir mahsulotning o'z ustamasi hisobga olinsin
- * (bitta hook bilan bir nechta mahsulot narxi ko'rsatiladi).
- */
+/** Ro'yxatlar uchun - xuddi shu qoida. */
 export function useListPrice() {
-  const settings = usePricingSettings();
-  const isWholesale = useIsWholesale();
-
-  return (product: Pick<Product, 'retailMarkupPercent'>, wholesale: number) => {
-    if (isWholesale) return Math.round(wholesale);
-    const own = product.retailMarkupPercent;
-    const markup = typeof own === 'number' && own >= 0 ? own : settings.retailMarkupPercent;
-    return retailFromWholesale(wholesale, markup);
-  };
+  return (_product: Pick<Product, 'id'>, value: number) =>
+    Number.isFinite(value) ? Math.round(value) : 0;
 }
 
 /** Optom mijozmi (UI da "optom" belgisi uchun). */
@@ -103,7 +90,7 @@ export function useIsWholesale(): boolean {
   return user?.role === 'client';
 }
 
-/** Turning narxi (chegirma hisobga olingan holda) - xom, optom qiymat. */
+/** Turning amaldagi narxi (chegirma hisobga olingan holda). */
 export function rawVariantPrice(variant: ProductVariant): number {
   const active = !!variant.discountPrice && variant.discountPrice < variant.price;
   return active ? variant.discountPrice! : variant.price;

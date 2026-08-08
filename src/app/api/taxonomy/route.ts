@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { publicCacheHeaders } from "@/lib/http/cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,5 +10,9 @@ export const dynamic = "force-dynamic";
  * filtrlar uchun (ochiq ma'lumot, maxfiy narsa yo'q).
  */
 export async function GET() {
-  return NextResponse.json({ taxonomy: await getTaxonomy() });
+  // Kategoriya/material ro'yxati - ochiq va kam o'zgaradi.
+  return NextResponse.json(
+    { taxonomy: await getTaxonomy() },
+    { headers: publicCacheHeaders(600) }
+  );
 }

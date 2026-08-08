@@ -1,5 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getProductById } from "@/lib/firebase/admin-products";
+import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { toViewerProduct } from "@/lib/products/viewer";
 import { effectivePrice } from "@/lib/products/pricing";
 import { formatSom } from "@/lib/format";
 
@@ -12,7 +14,11 @@ export const runtime = "nodejs";
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await getProductById(id);
+  const raw = await getProductById(id);
+  // OG rasmi ijtimoiy tarmoqlarda HAMMAGA ko'rinadi - unda
+  // faqat DONA narx bo'lishi kerak (rol yo'q = dona narx).
+  const pricing = await getPricingSettings();
+  const product = raw ? toViewerProduct(raw, undefined, pricing) : null;
   const name = product?.name ?? "Atoyo Santexnika";
   const price = product ? formatSom(effectivePrice(product)) : "";
 

@@ -2,7 +2,9 @@
 # Hujjat: https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  minInstances: 0
+  # `0` bo'lganda kunning BIRINCHI mijozi konteyner ko'tarilishini
+  # kutardi (cold start - 3-8 soniya). Bitta nusxa doim tirik turadi.
+  minInstances: 1
   maxInstances: 3
   # Next.js SSR + firebase-admin + MUI uchun 512 MiB tor keladi -
   # konteyner xotiradan yiqilsa brauzer "This page couldn't load" deydi.
