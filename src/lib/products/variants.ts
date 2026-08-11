@@ -82,16 +82,19 @@ export function totalVariantStock(product: Pick<Product, "variants">): number {
  */
 export function normalizeVariants(
   axes: VariantAxis[],
-  variants: ProductVariant[]
-): {axes: VariantAxis[]; variants: ProductVariant[]} {
+  variants: ProductVariant[],
+  /** Haqiqatda mavjud bo'lmagan kombinatsiyalar (o'chirilganlari). */
+  excluded: string[] = []
+): { axes: VariantAxis[]; variants: ProductVariant[]; variantsExcluded: string[] } {
   const usable = axes
     .map((axis) => ({ ...axis, values: axis.values.map((v) => v.trim()).filter(Boolean) }))
     .filter((axis) => axis.key && axis.label.trim() && axis.values.length > 0);
 
-  if (usable.length === 0) return { axes: [], variants: [] };
+  if (usable.length === 0) return { axes: [], variants: [], variantsExcluded: [] };
 
   const byId = new Map(variants.map((variant) => [variant.id, variant]));
-  const next = allCombinations(usable).map((options) => {
+  const skip = new Set(excluded);
+  const all = allCombinations(usable).map((options) => {
     const id = variantIdOf(usable, options);
     const previous = byId.get(id);
     return previous
@@ -99,7 +102,13 @@ export function normalizeVariants(
       : { id, options, price: 0, discountPrice: null, stock: 0 };
   });
 
-  return { axes: usable, variants: next };
+  return {
+    axes: usable,
+    variants: all.filter((variant) => !skip.has(variant.id)),
+    // Qatorlar o'zgargan bo'lsa endi mavjud bo'lmagan kalitlar
+    // ro'yxatda qolib ketmasin - faqat hozirgi kombinatsiyalar.
+    variantsExcluded: all.filter((variant) => skip.has(variant.id)).map((variant) => variant.id),
+  };
 }
 
 /** Kalit (slug) yasash: "O'lcham" -> "olcham". */

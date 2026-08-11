@@ -22,12 +22,18 @@ const MAX_AXES = 3;
 interface Props {
   axes: VariantAxis[];
   variants: ProductVariant[];
-  onChange: (next: { axes: VariantAxis[]; variants: ProductVariant[] }) => void;
+  /** Mavjud bo'lmagani uchun o'chirilgan kombinatsiyalar. */
+  excluded: string[];
+  onChange: (next: {
+    axes: VariantAxis[];
+    variants: ProductVariant[];
+    excluded: string[];
+  }) => void;
   /** Narx maydonining izohi uchun: "so'm / metr". */
   unitLabel: string;
 }
 
-export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: Props) {
+export function ProductVariantsEditor({ axes, variants, excluded, onChange, unitLabel }: Props) {
   const enabled = axes.length > 0;
   /**
    * YOZILAYOTGAN MATN (qator raqami bo'yicha).
@@ -51,6 +57,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
     if (price === null && stock === null) return;
     onChange({
       axes,
+      excluded,
       variants: variants.map((variant) => ({
         ...variant,
         ...(price !== null && Number.isFinite(price) ? { price } : {}),
@@ -63,8 +70,31 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
   const rebuild = (nextAxes: VariantAxis[]) => {
     // Turlar ro'yxati HAR DOIM qatorlardan qayta yasaladi - yarim
     // yozilgan qiymatlardan qolgan eski turlar saqlanib qolmaydi.
-    const { variants: nextVariants } = normalizeVariants(nextAxes, variants);
-    onChange({ axes: nextAxes, variants: nextVariants });
+    // O'chirilgan (mavjud bo'lmagan) kombinatsiyalar qayta tiklanmaydi.
+    const clean = normalizeVariants(nextAxes, variants, excluded);
+    onChange({ axes: nextAxes, variants: clean.variants, excluded: clean.variantsExcluded });
+  };
+
+  /**
+   * MAVJUD BO'LMAGAN KOMBINATSIYANI O'CHIRISH.
+   *
+   * Qatorlardan hamma kombinatsiya yasaladi, lekin ba'zisi haqiqatda
+   * bo'lmaydi (masalan "3 talik" filtri ishlab chiqarilmaydi). Bunday
+   * qator o'chiriladi va qayta yasalganda TIKLANMAYDI - kaliti
+   * "mavjud emas" ro'yxatida qoladi.
+   */
+  const removeCombination = (id: string) => {
+    onChange({
+      axes,
+      variants: variants.filter((variant) => variant.id !== id),
+      excluded: [...excluded, id],
+    });
+  };
+
+  /** O'chirilgan kombinatsiyalarni qaytarish (xato bosilgan bo'lsa). */
+  const restoreCombinations = () => {
+    const clean = normalizeVariants(axes, variants, []);
+    onChange({ axes, variants: clean.variants, excluded: [] });
   };
 
   /** Qator qo'shilsa/o'chirilsa yozilayotgan matnlar boshqa qatorga tushmasligi uchun. */
@@ -92,6 +122,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
   const updateVariant = (id: string, patch: Partial<ProductVariant>) => {
     onChange({
       axes,
+      excluded,
       variants: variants.map((variant) => (variant.id === id ? { ...variant, ...patch } : variant)),
     });
   };
@@ -111,7 +142,7 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
           onChange={(e) =>
             e.target.checked
               ? rebuildRows([{ key: "olcham", label: "O'lcham", values: [] }])
-              : onChange({ axes: [], variants: [] })
+              : onChange({ axes: [], variants: [], excluded: [] })
           }
         />
       </div>
@@ -251,6 +282,16 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
                     onChange={(e) => updateVariant(variant.id, { stock: Number(e.target.value) || 0 })}
                     className="!w-28"
                   />
+                  {/* Bunday kombinatsiya umuman bo'lmasa - o'chiriladi
+                      (masalan "3 talik" filtri ishlab chiqarilmaydi). */}
+                  <IconButton
+                    size="small"
+                    aria-label="Bunday turi yo'q"
+                    title="Bunday turi yo'q — ro'yxatdan olib tashlash"
+                    onClick={() => removeCombination(variant.id)}
+                  >
+                    <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+                  </IconButton>
                 </div>
               ))}
 
@@ -259,6 +300,17 @@ export function ProductVariantsEditor({ axes, variants, onChange, unitLabel }: P
                 yig&apos;indisidan olinadi. Kod (artikul) har bir tur uchun alohida yoziladi —
                 u Telegram e&apos;lonida va qidiruvda ishlatiladi.
               </p>
+            </div>
+          )}
+
+          {/* Hamma kombinatsiya o'chirilgan bo'lsa ham "Qaytarish"
+              ko'rinib tursin - shu sabab jadvaldan TASHQARIDA. */}
+          {excluded.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-navy-300">
+              <span>{excluded.length} ta kombinatsiya &laquo;bunday turi yo&apos;q&raquo; deb belgilangan.</span>
+              <Button type="button" size="small" onClick={restoreCombinations}>
+                Qaytarish
+              </Button>
             </div>
           )}
         </>

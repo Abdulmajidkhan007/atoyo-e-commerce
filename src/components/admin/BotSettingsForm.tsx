@@ -76,7 +76,10 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
       let updated = 0;
       let unchanged = 0;
       let failed = 0;
+      let missing = 0;
       let scanned = 0;
+      // Sabab -> nechta post (serverdan o'zbekcha qisqartirilgan holda keladi).
+      const reasons: Record<string, number> = {};
 
       // Cheksiz aylanib qolmaslik uchun qat'iy chegara (40 x 100 = 4000).
       for (let round = 0; round < 100; round++) {
@@ -89,6 +92,8 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
           updated?: number;
           unchanged?: number;
           failed?: number;
+          missing?: number;
+          reasons?: Record<string, number>;
           nextCursor?: string | null;
           error?: string;
         };
@@ -98,16 +103,28 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
         updated += data.updated ?? 0;
         unchanged += data.unchanged ?? 0;
         failed += data.failed ?? 0;
+        missing += data.missing ?? 0;
+        for (const [reason, count] of Object.entries(data.reasons ?? {})) {
+          reasons[reason] = (reasons[reason] ?? 0) + count;
+        }
         setRefreshNote(`⏳ ${scanned} ta post ko'rildi, ${updated} tasi yangilandi…`);
 
         cursor = data.nextCursor ?? null;
         if (!cursor) break;
       }
 
+      // Sabablarni ko'pdan ozga qarab yozamiz - eng ko'p uchragani birinchi.
+      const reasonText = Object.entries(reasons)
+        .sort((a, b) => b[1] - a[1])
+        .map(([reason, count]) => `${reason} — ${count} ta`)
+        .join("; ");
+
       setRefreshNote(
         `✅ ${scanned} ta postdan ${updated} tasi yangilandi` +
           (unchanged ? `, ${unchanged} tasida o'zgarish yo'q edi` : "") +
-          (failed ? `, ${failed} tasiga Telegram ruxsat bermadi` : "")
+          (missing ? `, ${missing} tasining posti o'chirilgan (bog'lanish uzildi, qayta e'lon qilsa bo'ladi)` : "") +
+          (failed ? `, ${failed} tasi yiqildi` : "") +
+          (reasonText ? `.\nSabab: ${reasonText}` : "")
       );
     } catch (err) {
       setRefreshNote(`❌ ${err instanceof Error ? err.message : "Yangilanmadi."}`);
@@ -285,7 +302,10 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
           >
             {isRefreshing ? <CircularProgress size={20} /> : "Kanal postlarini yangilash"}
           </Button>
-          {refreshNote && <p className="mt-2 text-xs text-navy-300">{refreshNote}</p>}
+          {refreshNote && (
+            // Sabablar ro'yxati yangi qatorda chiqadi - `whitespace-pre-line`.
+            <p className="mt-2 whitespace-pre-line text-xs text-navy-300">{refreshNote}</p>
+          )}
         </div>
       </div>
 

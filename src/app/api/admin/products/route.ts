@@ -34,7 +34,11 @@ const productSchema = z.object({
   // Kategoriya/material admin qo'shgan yangi turlar ham bo'lishi mumkin
   // (metadata/taxonomy) - shuning uchun ro'yxat emas, slug tekshiriladi.
   category: z.string().min(1).max(60),
-  material: z.string().min(1).max(60),
+  /**
+   * Material - MAJBURIY EMAS: 1C narxnomasidan kelgan mahsulotlarning
+   * ko'pchiligida u umuman yozilmagan, talab qilinsa kirim to'xtardi.
+   */
+  material: z.string().max(60).default(""),
   /** Sotish turi: dona / metr / kg ... - majburiy. */
   unit: z.string().min(1).max(30),
   brand: z.string().max(120).default(""),
@@ -66,6 +70,8 @@ const productSchema = z.object({
     )
     .max(3)
     .optional(),
+  /** Haqiqatda mavjud bo'lmagan kombinatsiyalar (o'chirilganlari). */
+  variantsExcluded: z.array(z.string().max(300)).max(90).optional(),
   variants: z
     .array(
       z.object({
@@ -134,7 +140,7 @@ export async function POST(request: Request) {
     material: d.material,
     unit: d.unit,
     // Turlar qatorlarga qarab tozalanadi (mos kelmagan turlar tushmaydi).
-    ...normalizeVariants(d.variantAxes ?? [], d.variants ?? []),
+    ...normalizeVariants(d.variantAxes ?? [], d.variants ?? [], d.variantsExcluded ?? []),
     dimensions: {
       ...(d.diameterMm !== undefined ? { diameterMm: d.diameterMm } : {}),
       ...(d.lengthMm !== undefined ? { lengthMm: d.lengthMm } : {}),

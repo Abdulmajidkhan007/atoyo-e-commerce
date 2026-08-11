@@ -136,6 +136,41 @@ foydalaning.
   `node scripts/convert-price-list.js <fayl.xlsx> [chiqish.xlsx]
   [--kurs=12600]`. Excel o'qish/yozish - `scripts/lib/xlsx.js`
   (tashqi kutubxonasiz).
+- **Mavjud bo'lmagan kombinatsiya**: qatorlardan hamma kombinatsiya
+  yasaladi, lekin ba'zisi ishlab chiqarilmaydi. Jadvaldagi 🗑 bilan
+  o'chirilgan qator kaliti `Product.variantsExcluded` ga tushadi va
+  `normalizeVariants(axes, variants, excluded)` uni QAYTA YASAMAYDI
+  (aks holda har tahrirda tiklanib turardi). Qatorlar o'zgarsa
+  eskirgan kalitlar tozalanadi; testlari `variants.test.ts` da.
+
+## Mahsulot formasidagi majburiy maydonlar
+
+Majburiy: **Nomi, Kodi/artikul, Tannarx, Optom narx, Soni (zaxira),
+Kategoriya** (+ sotish turi - u "dona" bilan to'la keladi). **Material
+MAJBURIY EMAS** - 1C narxnomasidan kelgan mahsulotlarning ko'pchiligida
+u yozilmagan, talab qilinsa kirim to'xtardi (`material: z.string()
+.max(60).default("")`). Tekshiruv formada (`ProductForm.handleSave`);
+server bag'rikeng qoladi - bot kirimi va import ham shu route'lardan
+o'tadi.
+
+**Brend va ishlab chiqarilgan davlat qo'lda yozilmaydi** - ro'yxatdan
+tanlanadi. Ro'yxat `metadata/facets` da (`lib/products/facets.ts`),
+boshqaruvi `/admin/katalog/turlar` + `/api/admin/facets`. Mahsulotda
+slug emas, MATNNING O'ZI saqlanadi, shuning uchun qayta nomlash
+mahsulotlarni ham yangilaydi (`renameFacetValue`, 400 tadan bo'lib);
+o'chirish faqat ishlatilmayotgan bo'lsa.
+
+## Tahrirdan qayerga qaytish (`?qayt=`)
+
+Mahsulot tahrir sahifasi saqlagach doim `/admin/katalog` ga otardi va
+"Katalogni tartibga solish" da ishlayotgan xodim filtr/qidiruv/sahifani
+qaytadan tiklashga majbur bo'lardi. Endi havola
+`?qayt=<manzil>` bilan keladi (`EditProductClient` uni `/admin/` bilan
+boshlanishiga tekshiradi - ochiq redirect bo'lmasin). Tartiblash
+sahifasi holatini manzilga yozadi (`?q=`, `?kategoriya=`, `?brend=`,
+`?sahifa=`) va server `searchParams` orqali `CatalogCleanup` ga
+`initial` bo'lib uzatiladi. Kirim sahifasidagi ✏️ ham shu bilan
+qaytadi.
 
 ## Katta katalog bilan ishlash
 
@@ -157,6 +192,14 @@ foydalaning.
   qaytaradi (`posted` / `edited` / `unchanged` / `skipped`), UI shuni
   ochiq yozadi. Haqiqatan yangi post kerak bo'lsa `"repost"` rejimi
   (eski post o'chiriladi).
+- **Yangilash SABABINI aytadi.** `refreshChannelPost` endi
+  `{status, reason}` qaytaradi (`updated` / `unchanged` / `missing` /
+  `skipped` / `failed`): Telegram xatosi `classify()` bilan tanib
+  olinadi - "post o'chirilgan" bo'lsa `channelMessageId` uzatiladi
+  (mahsulotni qayta e'lon qilsa bo'ladi), "matn yo'q / izoh yo'q"
+  bo'lsa teskari usul bilan qayta uriniladi. Sabablar route'da
+  guruhlanib UI'da o'zbekcha yoziladi - ilgari hammasi "Telegram
+  ruxsat bermadi" bo'lib chiqardi va nima bo'lganini bilib bo'lmasdi.
 - **Import qilingan mahsulot saytda darhol ko'rinmaydi**:
   `/api/admin/products/import` `publish` bayrog'ini oladi (standart
   `false`) va mahsulotlarni `isActive: false` bilan yaratadi. Ochish -

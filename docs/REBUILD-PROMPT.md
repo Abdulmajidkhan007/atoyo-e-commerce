@@ -388,7 +388,16 @@ tekshiradi.
 - **Turlar (variantlar):** bitta mahsulotda o'lcham/rang/qalinlik
   qatorlari; qatorlarning dekart ko'paytmasi bo'yicha har bir turga
   alohida narx va zaxira; mahsulot narxi — eng arzon tur, zaxirasi —
-  yig'indi. "Hammasiga birdek" tugmasi.
+  yig'indi. "Hammasiga birdek" tugmasi. **Haqiqatda bo'lmagan
+  kombinatsiya** (masalan "3 talik filtr" ishlab chiqarilmaydi)
+  jadvaldan o'chiriladi va `variantsExcluded` ga yoziladi — qayta
+  yasalganda tiklanmaydi ("Qaytarish" tugmasi bilan qaytariladi).
+- **Mahsulot formasidagi majburiy maydonlar:** nomi, kodi/artikul,
+  tannarx, optom narx, soni, kategoriya. Material MAJBURIY EMAS
+  (narxnomalarda ko'rsatilmaydi). **Brend va ishlab chiqarilgan
+  davlat qo'lda yozilmaydi** — ro'yxatdan tanlanadi, yonidagi "+"
+  bilan yangisi qo'shiladi; ro'yxat "Turlar" bo'limida boshqariladi
+  (qayta nomlansa mahsulotlardagi qiymat ham yangilanadi).
 - **Katalogni tartibga solish** (`/admin/katalog/tartib`): katta
   importdan keyin xatolarni tozalash uchun. Brend yoki kategoriya
   bo'yicha ro'yxat olinadi (sahifalab), ustiga qidiruv / "rasmi
@@ -407,6 +416,14 @@ tekshiradi.
   kerak bo'lsa **"Qayta post qilish"** belgisi qo'yiladi — eski post
   o'chirilib, yangisi tashlanadi (`announceProduct(..., "repost")`). Har bir ommaviy amal "actions"
   topikka yoziladi.
+- **Tahrirdan shu ro'yxatga qaytish.** Tartiblash sahifasi filtrni,
+  qidiruvni va sahifa raqamini manzilga yozadi, tahrir havolasi esa
+  `?qayt=` bilan ketadi — mahsulot saqlangach xodim AYNAN o'sha
+  ro'yxatga qaytadi (ilgari katalog bosh sahifasiga otib yuborardi va
+  filtrni qaytadan yig'ishga to'g'ri kelardi). Kirim ro'yxatidagi
+  har bir qatorda ham ✏️ bor: mahsulotning hammasi joyida bo'lsa
+  shunchaki kirim qilinadi, bir joyi noto'g'ri bo'lsa tahrirlanadi va
+  kirim sahifasiga qaytiladi.
 - **Zaxirasiz mahsulotlar ro'yxati** (kirim sahifasida): `stock == 0`
   bo'lgan mahsulotlar ro'yxat bo'lib chiqadi (sahifalab yuklanadi),
   har biriga son yoziladi yoki "hammasiga bir xil son" qo'yiladi va
@@ -426,6 +443,14 @@ tekshiradi.
   maxfiy kalitlar (Firestore'da, env'dan ustun), **tizim tekshiruvi**
   (Firestore, custom token, FCM, bot tokeni, SMTP, SMS + sinov
   bildirishnomasi).
+- **"Kanal postlarini yangilash"** — kanaldagi eski postlarni
+  mahsulotning HOZIRGI holatidan qayta quradi (nom, narx, tavsif,
+  zaxira, havola). Post joyida tahrirlanadi, obunachilarga takror
+  xabar bormaydi; 40 tadan, kursor bilan oxirigacha. Natijada
+  yiqilganlarning SABABI o'zbekcha guruhlanib chiqadi ("post
+  kanaldan o'chirilgan — 12 ta" kabi); posti o'chirilgan mahsulotning
+  bog'lanishi uziladi, shunda uni qaytadan e'lon qilish mumkin
+  bo'ladi.
 - **Yetkazib berish:** standart narx va "shu summadan bepul", hamda
   **hududlar** ro'yxati (tuman → o'z narxi). Mijoz checkout'da hududni
   tanlaydi, narx shunga qarab hisoblanadi.
@@ -641,8 +666,10 @@ bo'lardi.
   `wholesaleClientId` ham yoziladi.
 - `botUsers` — Telegram foydalanuvchilari (telefon, holat, savat, til).
 - `metadata/taxonomy` — admin qo'shgan kategoriya/material/sotish turi
-  (standartlari kodda, birlashtiriladi); `metadata/facets` — brend va
-  davlat ro'yxati.
+  (standartlari kodda, birlashtiriladi); `metadata/facets` — brend,
+  davlat va yetkazib beruvchi ro'yxati. Ikkalasi ham
+  `/admin/katalog/turlar` da boshqariladi (`/api/admin/taxonomy`,
+  `/api/admin/facets`).
 - `stockMoves` — ombor harakatlari (kirim/sotuv/qaytish/chiqim/sanoq).
 - `settings/*` — sayt, yetkazish, telegram topic, `settings/pricing`
   (dona ustamasi va eng kam buyurtma), `settings/social` (qaysi

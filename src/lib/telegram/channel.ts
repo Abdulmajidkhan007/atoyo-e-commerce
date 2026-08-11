@@ -1,4 +1,5 @@
 import "server-only";
+import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import {
   sendChatMessage,
@@ -262,10 +263,32 @@ const MATERIAL_LABELS: Record<string, string> = {
  * `skipped` - postga bog'lanmagan mahsulot, `failed` - Telegram rad etdi
  * (masalan post juda eski yoki o'chirilgan).
  */
-export async function refreshChannelPost(
-  product: Product
-): Promise<"updated" | "unchanged" | "skipped" | "failed"> {
-  if (!product.channelChatId || !product.channelMessageId) return "skipped";
+export interface RefreshResult {
+  status: "updated" | "unchanged" | "skipped" | "missing" | "failed";
+  /** Yiqilgan bo'lsa - Telegram aytgan sabab (adminga ko'rsatiladi). */
+  reason?: string;
+}
+
+/**
+ * Telegram xatosini tanib olish. Sabab MUHIM: "post o'chirilgan" va
+ * "rasm o'rniga matn tahrirlanmoqda" mutlaqo boshqa narsalar, lekin
+ * ilgari ikkalasi ham "Telegram ruxsat bermadi" bo'lib chiqardi.
+ */
+function classify(message: string): "not-modified" | "missing" | "wrong-kind" | "other" {
+  if (/not modified/i.test(message)) return "not-modified";
+  if (/message to edit not found|MESSAGE_ID_INVALID|message can't be edited|message identifier is not specified/i.test(message)) {
+    return "missing";
+  }
+  // Post rasm bilan yuborilgan, biz esa matnini tahrirlamoqchimiz
+  // (yoki teskarisi) - mahsulotdan rasm olib tashlanganda shunday bo'ladi.
+  if (/there is no text in the message|there is no caption in the message|MESSAGE_CAPTION|message to edit has no text/i.test(message)) {
+    return "wrong-kind";
+  }
+  return "other";
+}
+
+export async function refreshChannelPost(product: Product): Promise<RefreshResult> {
+  if (!product.channelChatId || !product.channelMessageId) return { status: "skipped" };
 
   const gallery: MediaItem[] = [
     ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
@@ -282,20 +305,60 @@ export async function refreshChannelPost(
   const buttonUrl = `${siteUrl()}/mahsulot/${product.id}`;
   const buttonText = "🛒 Saytda ko'rish";
 
-  try {
-    await editMessageCaptionOrText({
-      chatId: product.channelChatId,
-      messageId: product.channelMessageId,
-      hasPhoto: gallery.length > 0,
-      text: gallery.length > 1 ? `${caption}\n\n<a href="${buttonUrl}">${buttonText}</a>` : caption,
-      replyMarkup:
-        gallery.length > 1 ? undefined : { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] },
+  const finalText = gallery.length > 1 ? `${caption}\n\n<a href="${buttonUrl}">${buttonText}</a>` : caption;
+  const replyMarkup =
+    gallery.length > 1 ? undefined : { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
+
+  const edit = (hasPhoto: boolean) =>
+    editMessageCaptionOrText({
+      chatId: product.channelChatId!,
+      messageId: product.channelMessageId!,
+      hasPhoto,
+      text: finalText,
+      replyMarkup,
     });
-    return "updated";
+
+  // Postda rasm bor-yo'qligini MAHSULOTDAN taxmin qilamiz. Lekin
+  // mahsulotdan keyinchalik rasm olib tashlangan bo'lsa taxmin
+  // noto'g'ri chiqadi - o'shanda Telegram "matn yo'q" deydi va biz
+  // ikkinchi usul bilan qayta urinamiz.
+  const guess = gallery.length > 0;
+
+  try {
+    await edit(guess);
+    return { status: "updated" };
   } catch (error) {
-    if (error instanceof Error && /not modified/i.test(error.message)) return "unchanged";
+    const message = error instanceof Error ? error.message : String(error);
+    const kind = classify(message);
+
+    if (kind === "not-modified") return { status: "unchanged" };
+
+    if (kind === "wrong-kind") {
+      try {
+        await edit(!guess);
+        return { status: "updated" };
+      } catch (retryError) {
+        const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+        if (classify(retryMessage) === "not-modified") return { status: "unchanged" };
+        console.error(`Kanaldagi postni yangilashda xato (${product.id}):`, retryError);
+        return { status: "failed", reason: retryMessage };
+      }
+    }
+
+    if (kind === "missing") {
+      // Post kanaldan o'chirilgan - bog'lanishni uzamiz, shunda
+      // mahsulotni QAYTADAN e'lon qilish mumkin bo'ladi (aks holda
+      // u "kanalda bor" deb hisoblanib, hech qachon chiqmasdi).
+      await getAdminDb()
+        .collection("products")
+        .doc(product.id)
+        .update({ channelMessageId: FieldValue.delete(), channelChatId: FieldValue.delete() })
+        .catch(() => {});
+      return { status: "missing", reason: message };
+    }
+
     console.error(`Kanaldagi postni yangilashda xato (${product.id}):`, error);
-    return "failed";
+    return { status: "failed", reason: message };
   }
 }
 

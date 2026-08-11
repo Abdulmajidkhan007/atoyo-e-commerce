@@ -7,6 +7,7 @@ import { Button, TextField, CircularProgress, Alert, IconButton, Snackbar, MenuI
 import AddIcon from "@mui/icons-material/Add";
 import PlaylistAddIcon from "@mui/icons-material/PlaylistAdd";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { SearchBar } from "@/components/product/SearchBar";
 import { IntakeHistoryList } from "@/components/admin/IntakeHistoryList";
 import { ZeroStockIntake } from "@/components/admin/ZeroStockIntake";
@@ -434,7 +435,16 @@ function IntakeContent() {
       {/* 2) Kirim ro'yxati */}
       {rows.length > 0 && (
         <div className="mt-6 flex flex-col gap-3">
-          <h2 className="text-lg font-semibold text-navy-900 dark:text-white">Kirim ro&apos;yxati ({rows.length})</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-navy-900 dark:text-white">
+              Kirim ro&apos;yxati ({rows.length})
+            </h2>
+            <p className="mt-1 text-xs text-navy-300">
+              Mahsulotning hamma ma&apos;lumoti to&apos;g&apos;ri bo&apos;lsa — shunchaki sonini
+              yozib saqlang. Bir joyi noto&apos;g&apos;ri bo&apos;lsa ✏️ tugmasi bilan
+              tahrirlang, saqlagandan keyin shu sahifaga qaytasiz.
+            </p>
+          </div>
           {rows.map((row) => (
             <div key={row.productId} className="rounded-xl2 border border-navy-100 bg-white p-3 dark:border-navy-500 dark:bg-navy-700">
               <div className="mb-2 flex items-center justify-between gap-2">
@@ -446,9 +456,24 @@ function IntakeContent() {
                     </span>
                   )}
                 </p>
-                <IconButton size="small" aria-label="O'chirish" onClick={() => setRows((prev) => prev.filter((r) => r.productId !== row.productId))}>
-                  <DeleteOutlineIcon fontSize="small" className="text-red-400" />
-                </IconButton>
+                <div className="flex shrink-0 items-center">
+                  {/* MAVJUD MAHSULOT: hammasi joyida bo'lsa shunchaki
+                      kirim qilinadi. Nomi/narxi/rasmi to'g'rilanishi
+                      kerak bo'lsa - shu tugma tahrirga olib boradi va
+                      saqlangach AYNAN shu kirim sahifasiga qaytaradi. */}
+                  <IconButton
+                    size="small"
+                    aria-label="Mahsulotni tahrirlash"
+                    title="Mahsulotni tahrirlash (nomi, narxi, rasmi)"
+                    component={Link}
+                    href={`/admin/katalog/${row.productId}/tahrir?qayt=${encodeURIComponent("/admin/katalog/kirim")}`}
+                  >
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" aria-label="O'chirish" onClick={() => setRows((prev) => prev.filter((r) => r.productId !== row.productId))}>
+                    <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+                  </IconButton>
+                </div>
               </div>
               {/* Turlari bo'lsa - kirim aynan qaysi turga tushishi. */}
               {(row.variants?.length ?? 0) > 0 && (

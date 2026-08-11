@@ -71,6 +71,94 @@ function dedupe(values: string[]): string[] {
   return [...seen.values()].sort((a, b) => a.localeCompare(b));
 }
 
+/**
+ * BOSHQARILADIGAN RO'YXATLAR (admin panelidagi "Turlar" bo'limi).
+ *
+ * Brend va ishlab chiqarilgan davlat ilgari mahsulot formasida QO'LDA
+ * yozilardi: bitta brend "Valtec", "VALTEC", "valtek" bo'lib uch xil
+ * yozilib ketardi va filtr chalkashardi. Endi ular ham ro'yxatdan
+ * tanlanadi, ro'yxatning o'zi esa shu yerdan boshqariladi.
+ *
+ * Kategoriya/materialdan farqi: mahsulotda slug emas, KO'RINADIGAN
+ * MATNNING o'zi saqlanadi (`brand: "Valtec"`), shuning uchun qayta
+ * nomlaganda mahsulotlar ham yangilanadi.
+ */
+export type FacetKind = "brands" | "countries" | "suppliers";
+
+/** Facet turi -> mahsulotdagi maydon nomi. */
+const FACET_FIELD: Record<FacetKind, string> = {
+  brands: "brand",
+  countries: "manufacturerCountry",
+  suppliers: "supplier",
+};
+
+/** Ro'yxatga yangi qiymat qo'shadi. Bor bo'lsa `false` qaytaradi. */
+export async function addFacetValue(kind: FacetKind, value: string): Promise<boolean> {
+  const clean = value.trim();
+  if (!clean) return false;
+  const existing = await getFacets();
+  if (existing[kind].some((item) => item.toLowerCase() === clean.toLowerCase())) return false;
+
+  await getAdminDb()
+    .doc(FACETS_DOC.join("/"))
+    .set({ [kind]: FieldValue.arrayUnion(clean) }, { merge: true });
+  return true;
+}
+
+/**
+ * Qiymatni qayta nomlaydi va MAHSULOTLARNI ham yangilaydi - aks holda
+ * eski nom mahsulotlarda qolib, ro'yxatga qaytadan qo'shilib ketardi.
+ * Qaytaradi: nechta mahsulot yangilandi.
+ */
+export async function renameFacetValue(
+  kind: FacetKind,
+  from: string,
+  to: string
+): Promise<number> {
+  const db = getAdminDb();
+  const field = FACET_FIELD[kind];
+  let touched = 0;
+
+  // Ko'p mahsulotli brend ham bo'lishi mumkin - bo'laklab yangilaymiz.
+  for (let round = 0; round < 20; round++) {
+    const snap = await db.collection("products").where(field, "==", from).limit(400).get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    snap.docs.forEach((doc) => batch.update(doc.ref, { [field]: to }));
+    await batch.commit();
+    touched += snap.size;
+    if (snap.size < 400) break;
+  }
+
+  const existing = await getFacets();
+  const next = existing[kind].filter((item) => item !== from);
+  if (!next.some((item) => item.toLowerCase() === to.toLowerCase())) next.push(to);
+  await db.doc(FACETS_DOC.join("/")).set({ [kind]: next }, { merge: true });
+
+  return touched;
+}
+
+/**
+ * Ro'yxatdan o'chiradi. Mahsulotlarda ishlatilayotgan bo'lsa
+ * o'chirilmaydi (aks holda mahsulotda "ko'rinmas" qiymat qolardi).
+ */
+export async function removeFacetValue(
+  kind: FacetKind,
+  value: string
+): Promise<{ ok: boolean; used?: boolean }> {
+  const used = await getAdminDb()
+    .collection("products")
+    .where(FACET_FIELD[kind], "==", value)
+    .limit(1)
+    .get();
+  if (!used.empty) return { ok: false, used: true };
+
+  await getAdminDb()
+    .doc(FACETS_DOC.join("/"))
+    .set({ [kind]: FieldValue.arrayRemove(value) }, { merge: true });
+  return { ok: true };
+}
+
 /** Filtr paneli uchun brend/davlat ro'yxati (alifbo tartibida, takrorsiz). */
 export async function getFacets(): Promise<ProductFacets> {
   try {

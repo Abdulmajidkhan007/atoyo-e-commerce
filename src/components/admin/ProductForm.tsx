@@ -53,6 +53,18 @@ const MAX_VIDEOS = 3;
 /** Server sxemasidagi chegara (`/api/admin/products`). */
 const MAX_KEYWORDS = 10;
 
+/** "+" tugmasi qaysi ro'yxatga qo'shishi mumkin. */
+type AddableKind = TaxonomyKind | "brands" | "countries";
+
+/** Yangi qiymat qo'shish oynasidagi sarlavha. */
+const ADD_TITLE: Record<AddableKind, string> = {
+  categories: "Yangi kategoriya",
+  materials: "Yangi material",
+  units: "Yangi sotish turi",
+  brands: "Yangi brend",
+  countries: "Yangi davlat",
+};
+
 const EMPTY_FORM = {
   name: "",
   sku: "",
@@ -110,8 +122,18 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const [taxonomy, setTaxonomy] = useState<Taxonomy>(FALLBACK_TAXONOMY);
   /** Ixtiyoriy maydonlar bo'limi yopiq turadi - forma qisqa ko'rinadi. */
   const [showExtra, setShowExtra] = useState(false);
+  /**
+   * Brend va ishlab chiqarilgan davlat ro'yxatlari (`metadata/facets`).
+   * Ilgari bu ikkisi QO'LDA yozilardi va bitta brend "Valtec", "VALTEC",
+   * "valtek" bo'lib uch xil tushardi. Endi ro'yxatdan tanlanadi,
+   * ro'yxat esa "Turlar" bo'limida boshqariladi.
+   */
+  const [facetOptions, setFacetOptions] = useState<{ brands: string[]; countries: string[] }>({
+    brands: [],
+    countries: [],
+  });
   /** "+" bosilganda: qaysi ro'yxatga yangi tur qo'shilyapti. */
-  const [addingKind, setAddingKind] = useState<TaxonomyKind | null>(null);
+  const [addingKind, setAddingKind] = useState<AddableKind | null>(null);
   const [newTypeLabel, setNewTypeLabel] = useState("");
   const [addingBusy, setAddingBusy] = useState(false);
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -132,6 +154,8 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   /** Turlari (o'lcham/rang/qalinlik) - bo'sh bo'lsa oddiy mahsulot. */
   const [variantAxes, setVariantAxes] = useState<VariantAxis[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
+  /** Mavjud bo'lmagani uchun o'chirilgan kombinatsiyalar (kalitlari). */
+  const [variantsExcluded, setVariantsExcluded] = useState<string[]>([]);
   const hasVariantRows = variantAxes.length > 0 && variants.length > 0;
 
   useEffect(() => {
@@ -140,6 +164,18 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { taxonomy?: Taxonomy } | null) => {
         if (data?.taxonomy) setTaxonomy(data.taxonomy);
+      })
+      .catch(() => {});
+
+    // Brend / davlat ro'yxati (admin panelidagi "Turlar" bo'limidan).
+    fetch("/api/admin/facets")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { facets?: { brands?: string[]; countries?: string[] } } | null) => {
+        if (!data?.facets) return;
+        setFacetOptions({
+          brands: data.facets.brands ?? [],
+          countries: data.facets.countries ?? [],
+        });
       })
       .catch(() => {});
 
@@ -192,6 +228,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       setNewVideos([]);
       setVariantAxes(product?.variantAxes ?? []);
       setVariants(product?.variants ?? []);
+      setVariantsExcluded(product?.variantsExcluded ?? []);
       setError(null);
     }
     resetForTarget();
@@ -201,6 +238,16 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
   const totalVideos = existingVideos.length + newVideos.length;
 
   const unitLabel = taxonomy.units.find((u) => u.slug === form.unit)?.label ?? form.unit;
+
+  /**
+   * Ro'yxatda yo'q, lekin mahsulotda turgan qiymat ham ko'rinishi kerak
+   * (eski mahsulotlar qo'lda yozilgan brend bilan saqlangan) - aks holda
+   * tahrirlashda brend jimgina yo'qolib qolardi.
+   */
+  const withCurrent = (list: string[], current: string) =>
+    current && !list.includes(current) ? [current, ...list] : list;
+  const brandOptions = withCurrent(facetOptions.brands, form.brand);
+  const countryOptions = withCurrent(facetOptions.countries, form.manufacturerCountry);
 
   /**
    * "Optom narx" maydoni ostidagi izoh: bazaga OPTOM narx yoziladi,
@@ -230,6 +277,29 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
     setAddingBusy(true);
     setError(null);
     try {
+      // Brend va davlat boshqa ro'yxatda (`metadata/facets`) turadi va
+      // mahsulotda MATNNING o'zi saqlanadi - slug yasalmaydi.
+      if (kind === "brands" || kind === "countries") {
+        const res = await fetch("/api/admin/facets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind, value: label }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "Qo'shilmadi.");
+
+        setFacetOptions((prev) => ({
+          ...prev,
+          [kind]: [...prev[kind], label].sort((a, b) => a.localeCompare(b)),
+        }));
+        setForm((prev) =>
+          kind === "brands" ? { ...prev, brand: label } : { ...prev, manufacturerCountry: label }
+        );
+        setAddingKind(null);
+        setNewTypeLabel("");
+        return;
+      }
+
       const res = await fetch("/api/admin/taxonomy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -348,25 +418,39 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
     setNewVideos((prev) => [...prev, ...picked.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))]);
   };
 
+  /**
+   * MAJBURIY MAYDONLAR: nomi, kodi, tannarx, optom narx, soni,
+   * kategoriya (+ sotish turi - u standart "dona" bilan to'la keladi).
+   * Material, brend, davlat, tavsif va rasm ixtiyoriy.
+   *
+   * Turlari (o'lcham/rang) bo'lsa narx va zaxira har bir tur uchun
+   * alohida yoziladi, chernovikda esa zaxira kirim orqali keladi.
+   */
   const handleSave = async () => {
     setError(null);
-    // Chernovikda zaxira so'ralmaydi - u kirim orqali keladi.
-    // Turlari bo'lsa narx va zaxira har bir tur uchun alohida yoziladi.
+    if (!form.name.trim()) {
+      setError("Mahsulot nomini kiriting.");
+      return;
+    }
+    if (!form.sku.trim()) {
+      setError("Mahsulot kodini (artikul) kiriting.");
+      return;
+    }
+    if (!form.costPrice) {
+      setError("Tannarxni (bizga tushgan narx) kiriting.");
+      return;
+    }
     if (hasVariantRows) {
-      if (!form.name.trim()) {
-        setError("Mahsulot nomini kiriting.");
-        return;
-      }
       if (variants.some((variant) => variant.price <= 0)) {
         setError("Har bir turning narxini kiriting.");
         return;
       }
-    } else if (!form.name.trim() || !form.price || (!draft && !form.stock)) {
-      setError(draft ? "Nomi va narxini kiriting." : "Nomi, narxi va zaxira miqdorini kiriting.");
+    } else if (!form.price || (!draft && !form.stock)) {
+      setError(draft ? "Optom narxni kiriting." : "Optom narx va soni (zaxira) kiritilishi shart.");
       return;
     }
-    if (!form.category || !form.material || !form.unit) {
-      setError("Kategoriya, material va sotish turini tanlang.");
+    if (!form.category || !form.unit) {
+      setError("Kategoriya va sotish turini tanlang.");
       return;
     }
 
@@ -407,7 +491,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
 
       // Turlar ro'yxati saqlashdan oldin qatorlarga qarab tozalanadi:
       // yarim yozilgan qiymatlardan qolgan turlar bazaga tushmaydi.
-      const clean = normalizeVariants(variantAxes, variants);
+      const clean = normalizeVariants(variantAxes, variants, variantsExcluded);
 
       const payload = {
         name: form.name.trim(),
@@ -442,6 +526,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         stock: hasVariantRows ? totalVariantStock({ variants: clean.variants }) : draft ? 0 : Number(form.stock),
         variantAxes: clean.axes,
         variants: clean.variants,
+        variantsExcluded: clean.variantsExcluded,
         ...(draft ? { isDraft: true } : {}),
         diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
         lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
@@ -499,11 +584,11 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
 
       <TextField
         size="small"
-        label="Kodi / artikul"
+        label="Kodi / artikul *"
         placeholder="HS897"
         value={form.sku}
         onChange={(e) => setForm({ ...form, sku: e.target.value })}
-        helperText="Ixtiyoriy. Kod bo'yicha ham qidirish mumkin bo'ladi."
+        helperText="Majburiy. Kod bo'yicha ham qidirish mumkin bo'ladi (sayt, bot, kirim)."
         fullWidth
       />
 
@@ -528,15 +613,21 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         </IconButton>
       </div>
 
+      {/* MATERIAL - MAJBURIY EMAS: 1C narxnomasidan kelgan minglab
+          mahsulotning materiali noma'lum, shu sabab uni talab qilish
+          kirimni to'xtatib qo'yardi. */}
       <div className="flex items-start gap-2">
-        <FormControl size="small" fullWidth required>
-          <InputLabel id="pf-material">Material *</InputLabel>
+        <FormControl size="small" fullWidth>
+          <InputLabel id="pf-material">Material</InputLabel>
           <Select
             labelId="pf-material"
-            label="Material *"
+            label="Material"
             value={form.material}
             onChange={(e) => setForm({ ...form, material: e.target.value })}
           >
+            <MenuItem value="">
+              <em>— tanlanmagan —</em>
+            </MenuItem>
             {taxonomy.materials.map((item) => (
               <MenuItem key={item.slug} value={item.slug}>{item.label}</MenuItem>
             ))}
@@ -566,20 +657,67 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         </IconButton>
       </div>
 
+      {/* BREND va DAVLAT - ro'yxatdan (qo'lda yozilmaydi: bir nom uch
+          xil yozilib ketmasin). Ro'yxatda yo'q bo'lsa yonidagi "+" bilan
+          qo'shiladi va darhol tanlanadi. */}
       <div className="grid grid-cols-2 gap-3">
-        <TextField size="small" label="Brend" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
-        <TextField
-          size="small"
-          label="Ishlab chiqaruvchi davlat"
-          value={form.manufacturerCountry}
-          onChange={(e) => setForm({ ...form, manufacturerCountry: e.target.value })}
-        />
+        <div className="flex items-start gap-1">
+          <FormControl size="small" fullWidth>
+            <InputLabel id="pf-brand">Brend</InputLabel>
+            <Select
+              labelId="pf-brand"
+              label="Brend"
+              value={form.brand}
+              onChange={(e) => setForm({ ...form, brand: e.target.value })}
+            >
+              <MenuItem value="">
+                <em>— tanlanmagan —</em>
+              </MenuItem>
+              {brandOptions.map((item) => (
+                <MenuItem key={item} value={item}>
+                  {item}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <IconButton aria-label="Yangi brend" onClick={() => setAddingKind("brands")} className="!mt-0.5">
+            <AddIcon />
+          </IconButton>
+        </div>
+
+        <div className="flex items-start gap-1">
+          <FormControl size="small" fullWidth>
+            <InputLabel id="pf-country">Ishlab chiqarilgan davlat</InputLabel>
+            <Select
+              labelId="pf-country"
+              label="Ishlab chiqarilgan davlat"
+              value={form.manufacturerCountry}
+              onChange={(e) => setForm({ ...form, manufacturerCountry: e.target.value })}
+            >
+              <MenuItem value="">
+                <em>— tanlanmagan —</em>
+              </MenuItem>
+              {countryOptions.map((item) => (
+                <MenuItem key={item} value={item}>
+                  {item}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <IconButton
+            aria-label="Yangi davlat"
+            onClick={() => setAddingKind("countries")}
+            className="!mt-0.5"
+          >
+            <AddIcon />
+          </IconButton>
+        </div>
       </div>
 
       <TextField
         size="small"
         type="number"
-        label={`Tannarx (so'm / ${unitLabel})`}
+        label={`Tannarx (so'm / ${unitLabel}) *`}
         value={form.costPrice}
         onChange={(e) => setForm({ ...form, costPrice: e.target.value })}
         helperText="Bizga tushgan narx. Mijozga ko'rinmaydi — foyda hisoboti uchun."
@@ -620,10 +758,12 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
       <ProductVariantsEditor
         axes={variantAxes}
         variants={variants}
+        excluded={variantsExcluded}
         unitLabel={unitLabel}
-        onChange={({ axes, variants: nextVariants }) => {
+        onChange={({ axes, variants: nextVariants, excluded }) => {
           setVariantAxes(axes);
           setVariants(nextVariants);
+          setVariantsExcluded(excluded);
         }}
       />
 
@@ -730,13 +870,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
 
       {/* Yangi kategoriya/material/sotish turi qo'shish oynasi */}
       <Dialog open={addingKind !== null} onClose={() => setAddingKind(null)} fullWidth maxWidth="xs">
-        <DialogTitle>
-          {addingKind === "categories"
-            ? "Yangi kategoriya"
-            : addingKind === "materials"
-              ? "Yangi material"
-              : "Yangi sotish turi"}
-        </DialogTitle>
+        <DialogTitle>{addingKind ? ADD_TITLE[addingKind] : ""}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus

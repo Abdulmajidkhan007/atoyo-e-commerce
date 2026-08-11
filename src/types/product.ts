@@ -106,6 +106,15 @@ export interface Product {
   variantAxes?: VariantAxis[];
   variants?: ProductVariant[];
   /**
+   * MAVJUD BO'LMAGAN KOMBINATSIYALAR (tur kalitlari ro'yxati).
+   *
+   * Qatorlardan hamma kombinatsiya avtomatik yasaladi, lekin ularning
+   * ba'zisi haqiqatda bo'lmaydi (masalan "80x100" o'lchamning "0.2mm"
+   * qalinligi ishlab chiqarilmaydi). Shunday qator o'chirilganda
+   * kaliti shu ro'yxatga tushadi va qayta yasalganda TIKLANMAYDI.
+   */
+  variantsExcluded?: string[];
+  /**
    * OPTOM narx (so'm). Admin faqat shuni kiritadi; dona (chakana) narx
    * bundan ustama foizi bilan hisoblanadi - `lib/products/wholesale.ts`.
    */

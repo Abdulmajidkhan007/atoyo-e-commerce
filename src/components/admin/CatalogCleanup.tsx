@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import NextLink from "next/link";
 import {
@@ -67,11 +67,17 @@ const PAGE_SIZE = 50;
 interface Props {
   taxonomy: Taxonomy;
   brands: string[];
+  /**
+   * Manzildan (URL) kelgan boshlang'ich holat - tahrirdan qaytganda
+   * o'sha filtr/qidiruv/sahifa tiklanadi. Server sahifa `searchParams`
+   * dan beradi (client'da o'qilsa SSR bilan mos kelmasdi).
+   */
+  initial?: { category: string; brand: string; query: string; page: number };
 }
 
-export function CatalogCleanup({ taxonomy, brands }: Props) {
-  const [category, setCategory] = useState("");
-  const [brand, setBrand] = useState("");
+export function CatalogCleanup({ taxonomy, brands, initial }: Props) {
+  const [category, setCategory] = useState(initial?.category ?? "");
+  const [brand, setBrand] = useState(initial?.brand ?? "");
   const [products, setProducts] = useState<ListProduct[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loadedAll, setLoadedAll] = useState(false);
@@ -84,7 +90,7 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
    * va ularga ham ommaviy amallar (o'chirish, saytda ochish, kanalga
    * e'lon, kategoriya almashtirish) qo'llanadi.
    */
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initial?.query ?? "");
   /** Ro'yxat AYNAN shu qidiruv bilan yuklangan (izohda ko'rsatiladi). */
   const [appliedQuery, setAppliedQuery] = useState("");
   const [onlyNoImage, setOnlyNoImage] = useState(false);
@@ -112,8 +118,18 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
   const categoryLabel = (slug: string) =>
     taxonomy.categories.find((item) => item.slug === slug)?.label ?? slug;
 
-  /** Ro'yxatni (filtr bo'yicha) yuklaydi. */
-  const load = async (reset: boolean, all = false) => {
+  /**
+   * Ro'yxatni (filtr bo'yicha) yuklaydi.
+   *
+   * `override` - manzildagi (URL) filtrni qo'llash uchun: `setState`
+   * darhol ta'sir qilmaydi, shuning uchun tahrirdan qaytganda filtr
+   * to'g'ridan-to'g'ri uzatiladi.
+   */
+  const load = async (
+    reset: boolean,
+    all = false,
+    override?: { category?: string; brand?: string; query?: string }
+  ) => {
     setLoading(true);
     setMessage(null);
     try {
@@ -125,7 +141,9 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
         setPage(0);
       }
       let guard = 0;
-      const term = query.trim();
+      const term = (override?.query ?? query).trim();
+      const filterCategory = override?.category ?? category;
+      const filterBrand = override?.brand ?? brand;
       setAppliedQuery(reset ? term : appliedQuery);
 
       do {
@@ -133,8 +151,8 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
         // Qidiruv berilsa u USTUN turadi (butun katalog bo'ylab
         // qidiriladi), aks holda kategoriya/brend filtri.
         if (term) params.set("q", term);
-        else if (category) params.set("category", category);
-        else if (brand) params.set("brand", brand);
+        else if (filterCategory) params.set("category", filterCategory);
+        else if (filterBrand) params.set("brand", filterBrand);
         if (next) params.set("after", next);
 
         const res = await fetch(`/api/admin/products/list?${params.toString()}`);
@@ -158,6 +176,48 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
       setLoading(false);
     }
   };
+
+  /**
+   * TAHRIRDAN KEYIN SHU YERGA QAYTISH.
+   *
+   * Ilgari mahsulot nomini to'g'rilab yoki rasm yuklab bo'lgach
+   * `/admin/katalog` ga o'tib ketardi va tartiblash sahifasini,
+   * filtrni, qidiruvni qaytadan tiklashga to'g'ri kelardi. Endi
+   * tahrir havolasi joriy holatni o'zi bilan olib ketadi va
+   * "Saqlash"/"Bekor qilish" AYNAN shu ro'yxatga qaytaradi.
+   */
+  const backTo = useMemo(() => {
+    const params = new URLSearchParams();
+    if (appliedQuery) params.set("q", appliedQuery);
+    else {
+      if (category) params.set("kategoriya", category);
+      if (brand) params.set("brend", brand);
+    }
+    if (page > 0) params.set("sahifa", String(page + 1));
+    const qs = params.toString();
+    return `/admin/katalog/tartib${qs ? `?${qs}` : ""}`;
+  }, [appliedQuery, category, brand, page]);
+
+  // Manzildagi filtr bilan ochilgan bo'lsa (tahrirdan qaytish) -
+  // ro'yxat darhol o'sha holatda yuklanadi.
+  useEffect(() => {
+    if (!initial || (!initial.query && !initial.category && !initial.brand)) return;
+    const startPage = initial.page;
+    // Yuklash renderdan KEYIN boshlanadi (effekt ichida to'g'ridan-to'g'ri
+    // `setState` chaqirilsa React ortiqcha renderlar haqida ogohlantiradi).
+    const timer = setTimeout(() => {
+      void load(true, false, {
+        query: initial.query,
+        category: initial.category,
+        brand: initial.brand,
+      }).then(() => {
+        if (startPage > 0) setPage(startPage);
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+    // Faqat ochilganda bir marta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -865,7 +925,7 @@ export function CatalogCleanup({ taxonomy, brands }: Props) {
                         size="small"
                         aria-label="Tahrirlash"
                         component={NextLink}
-                        href={`/admin/katalog/${product.id}/tahrir`}
+                        href={`/admin/katalog/${product.id}/tahrir?qayt=${encodeURIComponent(backTo)}`}
                       >
                         <EditOutlinedIcon fontSize="small" />
                       </IconButton>

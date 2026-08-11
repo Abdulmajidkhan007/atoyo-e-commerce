@@ -23,7 +23,8 @@ const updateSchema = z.object({
   keywords: z.array(z.string().max(60)).max(10).optional(),
   // Admin qo'shgan yangi turlar ham bo'lishi mumkin (metadata/taxonomy).
   category: z.string().min(1).max(60).optional(),
-  material: z.string().min(1).max(60).optional(),
+  // Material majburiy emas - bo'sh matn ham qabul qilinadi.
+  material: z.string().max(60).optional(),
   /** Sotish turi: dona / metr / kg ... */
   unit: z.string().min(1).max(30).optional(),
   brand: z.string().max(120).optional(),
@@ -53,6 +54,8 @@ const updateSchema = z.object({
     )
     .max(3)
     .optional(),
+  /** Haqiqatda mavjud bo'lmagan kombinatsiyalar (o'chirilganlari). */
+  variantsExcluded: z.array(z.string().max(300)).max(90).optional(),
   variants: z
     .array(
       z.object({
@@ -146,10 +149,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.variantAxes !== undefined || d.variants !== undefined) {
     const clean = normalizeVariants(
       d.variantAxes ?? existing.variantAxes ?? [],
-      d.variants ?? existing.variants ?? []
+      d.variants ?? existing.variants ?? [],
+      d.variantsExcluded ?? existing.variantsExcluded ?? []
     );
     updates.variantAxes = clean.axes;
     updates.variants = clean.variants;
+    // "Bunday turi yo'q" deb belgilanganlar qayta yasalmasin.
+    updates.variantsExcluded = clean.variantsExcluded;
   }
   if (d.isActive !== undefined) updates.isActive = d.isActive;
   if (d.isDraft !== undefined) {

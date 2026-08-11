@@ -62,6 +62,24 @@ describe("normalizeVariants", () => {
     expect(clean.axes).toHaveLength(0);
     expect(clean.variants).toHaveLength(0);
   });
+
+  // "Bunday turi yo'q" deb belgilangan kombinatsiya har qayta
+  // yasalganda tiklanib turardi - endi ro'yxatda qolib ketadi.
+  it("mavjud bo'lmagan kombinatsiyani qaytarmaydi", () => {
+    const clean = normalizeVariants(axes, variants, ["55x45|qora"]);
+    expect(clean.variants.map((v) => v.id)).toEqual(["50x45|qora"]);
+    expect(clean.variantsExcluded).toEqual(["55x45|qora"]);
+  });
+
+  it("qatorlar o'zgarsa eskirgan 'yo'q' kalitlarini tozalaydi", () => {
+    const narrower: VariantAxis[] = [
+      { key: "olcham", label: "O'lcham", values: ["50x45"] },
+      { key: "rang", label: "Rangi", values: ["qora"] },
+    ];
+    const clean = normalizeVariants(narrower, variants, ["55x45|qora"]);
+    expect(clean.variants).toHaveLength(1);
+    expect(clean.variantsExcluded).toEqual([]);
+  });
 });
 
 describe("narx va zaxira", () => {

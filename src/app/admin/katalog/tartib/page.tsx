@@ -13,7 +13,19 @@ export const dynamic = "force-dynamic";
  * belgilab, bir yo'la tuzatish yoki o'chirish mumkin; tayyor bo'lganini
  * esa TANLAB kanalga e'lon qilinadi.
  */
-export default async function CatalogCleanupPage() {
+export default async function CatalogCleanupPage({
+  searchParams,
+}: {
+  // Tahrirdan qaytishda filtr/qidiruv/sahifa manzil orqali keladi -
+  // xodim ro'yxatni qaytadan yig'ib o'tirmasin.
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const one = (key: string) => {
+    const value = params[key];
+    return (Array.isArray(value) ? value[0] : value) ?? "";
+  };
+
   const [taxonomy, facets] = await Promise.all([getTaxonomy(), getFacets()]);
 
   return (
@@ -30,7 +42,16 @@ export default async function CatalogCleanupPage() {
         </p>
       </div>
 
-      <CatalogCleanup taxonomy={taxonomy} brands={facets.brands} />
+      <CatalogCleanup
+        taxonomy={taxonomy}
+        brands={facets.brands}
+        initial={{
+          query: one("q"),
+          category: one("kategoriya"),
+          brand: one("brend"),
+          page: Math.max(0, Number(one("sahifa") || 1) - 1),
+        }}
+      />
     </div>
   );
 }
