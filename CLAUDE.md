@@ -291,7 +291,12 @@ Loyihaga yangi imkoniyat qo'shilsa yoki mavjudi sezilarli o'zgarsa,
   beriladigan topshiriq). Foydalanuvchi buni doim yangi holatda
   bo'lishini so'ragan;
 - `docs/DEPLOY.md` — yangi env/secret yoki sozlash qadami paydo bo'lsa;
-- `CLAUDE.md` — arxitektura qoidasi yoki ish tartibi o'zgarsa.
+- `CLAUDE.md` — arxitektura qoidasi yoki ish tartibi o'zgarsa;
+- `README.md` — imkoniyatlar/stack/ishga tushirish o'zgarsa;
+- bo'limga xos hujjat (`docs/KIRIM-VA-IMPORT.md`, `docs/TV.md`,
+  `docs/DESKTOP.md`, `docs/STICKERS.md`, `mobile/README.md` ...);
+- `docs/SESSION-PROMPT.md` — yangi sessiyaga beriladigan tayyor
+  prompt (ish tartibi o'zgarsa u ham yangilanadi).
 
 ## Commit konvensiyasi
 

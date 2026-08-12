@@ -22,7 +22,8 @@
 - **Telegram bot** — har bir buyurtma/kontakt/obuna guruhning tegishli forum topic'iga boradi; buyurtma xabari ostidagi [✅ Qabul qilish] [🚚 Yetkazishda] [🎉 Yakunlandi] tugmalari webhook orqali Firestore statusini yangilaydi
 - **Auth** — Sign in with Google + Email/Parol; birinchi kirishda Firestore `users`ga `{role:'user'}` yoziladi
 - **Admin panel** (`/admin`) — dashboard (tushum/eng ko'p sotilganlar), katalog boshqaruvi (inline narx/zaxira, bulk narx, rasm yuklash), buyurtmalar nazorati, foydalanuvchi rollari, bot Thread ID sozlamalari
-- **Xavfsizlik** — ikki qatlamli himoya: `src/proxy.ts` (Node runtime, session cookie + Firestore rol tekshiruvi) va `admin/layout.tsx`da mustaqil qayta tekshiruv (middleware-bypass sinfidagi zaifliklarga qarshi defense-in-depth)
+- **Xavfsizlik** — ikki qatlamli himoya: `src/proxy.ts` (edge-safe, faqat session cookie borligini tekshiradi) va `admin/layout.tsx`da haqiqiy `role: admin` tekshiruvi (Node); mahsulot narxi mijozga faqat `lib/products/viewer.ts` orqali chiqadi (optom narx va tannarx olib tashlanadi), `products` kolleksiyasi Firestore qoidalarida clientga yopiq
+- **Boshqa kanallar** — mijoz-bot (katalog/savat/checkout Telegramda), do'kon televizori uchun `/tv` sahifasi, Android ilova (`mobile/`, React Native), Windows/Linux ilova (`desktop/`, Electron — saytning o'zini ochadi), AI yordamchisi (`src/lib/ai/`, rasmdan qidiruv ham)
 
 ## Ishga tushirish
 
@@ -69,8 +70,25 @@ src/
 ├── app/admin/         # Admin panel (rol bilan himoyalangan)
 ├── app/api/           # Route handlers (orders, contact, subscribe, telegram-webhook...)
 ├── components/        # UI komponentlar (layout, product, cart, auth, admin)
-├── lib/firebase/      # Client/Admin SDK, session, firestore, storage
+├── lib/firebase/      # Client/Admin SDK, session, firestore
+├── lib/products/      # Narx (viewer/wholesale), turlar, taxonomy, facets, CSV
 ├── lib/telegram/      # Bot API, topic routing, xabar shablonlari, inline tugmalar
 ├── redux/             # Store + slice'lar (cart, user, filters, ui)
 └── proxy.ts           # /admin himoyasi (Next.js 16 proxy konvensiyasi)
+
+mobile/                # React Native ilova (mijozlar uchun)
+desktop/               # Electron ilova (saytni ochadi)
+docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 ```
+
+## Hujjatlar
+
+| Fayl | Nima haqida |
+|---|---|
+| `CLAUDE.md` | Arxitektura qoidalari, narx maxfiyligi, CSP, bot xaritasi |
+| `docs/REBUILD-PROMPT.md` | Loyihaning to'liq holati (boshqa AI ga topshiriq) |
+| `docs/SESSION-PROMPT.md` | Yangi ish sessiyasi uchun tayyor prompt |
+| `docs/DEPLOY.md` | Hosting, env va secret sozlash tartibi |
+| `docs/KIRIM-VA-IMPORT.md` | Kirim, Excel/CSV import, 1C narxnomasi |
+| `docs/TV.md` / `docs/DESKTOP.md` / `docs/STICKERS.md` | Do'kon ekrani, Electron, stikerlar |
+| `docs/BACKUP.md` / `docs/PLAY-STORE.md` / `docs/TYPESENSE.md` | Zaxira, ilova relizi, qidiruv motori |
