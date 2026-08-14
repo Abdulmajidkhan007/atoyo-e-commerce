@@ -45,6 +45,8 @@ export interface Product {
   brand: string;
   manufacturerCountry: string;
   material: string;
+  /** Do'kon kodi / artikul (turlari bo'lsa har turning o'z kodi bor). */
+  sku?: string;
   /** OPTOM narx - dona narx ustama bilan hisoblanadi (`pricing.ts`). */
   price: number;
   /** Shu mahsulotga alohida ustama foizi (bo'lmasa - umumiy sozlama). */

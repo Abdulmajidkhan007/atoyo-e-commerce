@@ -96,6 +96,18 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
         )}
       </div>
 
+      {/* TANLANGAN TURNING KODI - mijoz shu kod bilan buyurtma beradi
+          (kanal postida ham shu kod turadi). Turlari yo'q mahsulotda
+          umumiy kod ko'rsatiladi. */}
+      {(variant?.sku || product.sku) && (
+        <p className="text-sm text-navy-300">
+          Kod:{" "}
+          <span className="font-medium text-navy-900 dark:text-white">
+            {variant?.sku || product.sku}
+          </span>
+        </p>
+      )}
+
       <p className="text-sm text-navy-300">
         {dict.product.inStock}:{" "}
         <span className="font-medium text-navy-900 dark:text-white">

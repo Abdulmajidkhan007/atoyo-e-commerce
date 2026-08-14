@@ -295,7 +295,13 @@ Nozik joylar: yostiq tugmalarning ORQASIDA turadi (matn ustiga
 chiqmasligi uchun), shuning uchun sudrash track ustida ushlanadi va
 bosish yostiq chegarasida ekani tekshiriladi; sudrashdan keyingi
 "click" o'tkazib yuboriladi (aks holda barmoq ostidagi tugma
-tanlanib qolardi). Klaviaturada ← → ishlaydi.
+tanlanib qolardi). Klaviaturada ← → ishlaydi. **Track'da
+`touch-pan-y` bo'lishi SHART** — busiz telefonda brauzer barmoqni
+o'zi oladi va sudrash umuman ishlamaydi (bir marta shunday bo'lgan);
+u bilan vertikal varaqlash ham saqlanadi.
+
+Tanlangan turning KODI mahsulot sahifasida ko'rsatiladi (kanal
+postidagi kod bilan bir xil) — mijoz shu kod bilan buyurtma beradi.
 
 ## Server komponentda MUI (buzilmasin)
 

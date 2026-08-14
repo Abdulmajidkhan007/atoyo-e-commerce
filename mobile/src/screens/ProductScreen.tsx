@@ -273,6 +273,11 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           {isWholesale && <Text style={styles.wholesaleTag}>optom</Text>}
         </View>
 
+        {/* Tanlangan turning KODI - mijoz shu kod bilan buyurtma beradi. */}
+        {!!(variant?.sku || product.sku) && (
+          <Text style={styles.muted}>Kod: {variant?.sku || product.sku}</Text>
+        )}
+
         <Text style={styles.muted}>
           {stock > 0 ? t.inStockCount(stock) : t.notAvailable}
         </Text>

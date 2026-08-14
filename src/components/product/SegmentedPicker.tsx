@@ -173,7 +173,10 @@ export function SegmentedPicker({
       // qatorga o'tadi (ilgari gorizontal aylanardi va oxirgi variant
       // yarim ko'rinib turardi). Shu sabab burchak ham "pill" emas,
       // yumshoq rounded - ikki qatorda dumaloq ramka xunuk ko'rinardi.
-      className="relative w-full rounded-3xl border border-navy-100 p-1 dark:border-navy-500"
+      // `touch-pan-y`: telefonda VERTIKAL varaqlash ishlayveradi, lekin
+      // gorizontal harakat bizga keladi - busiz brauzer barmoqni o'zi
+      // "varaqlash" deb olib, yostiqni sudrab bo'lmasdi.
+      className="relative w-full touch-pan-y rounded-3xl border border-navy-100 p-1 dark:border-navy-500"
     >
       {/* Suriladigan yostiq. Tugmalardan PASTDA turadi (matn ustiga
           chiqmasligi uchun), sudrash esa track ustida ushlanadi. */}
