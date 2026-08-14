@@ -723,14 +723,20 @@ Chegara: bitta yuklash 1600 birlik, kunlik kvota 10 000 — ya'ni kuniga
 ## AI rasm generatsiyasi: to'lov va chegara
 
 Rasm chizish (`GEMINI_API_KEY`) **pullik** — bitta rasm taxminan
-**0.04 $**. Bepul kvota tugagach Google Cloud billing hisobi kerak:
+**0.04 $**.
 
-1. `console.cloud.google.com/billing` → hisob yaratiladi (yoki mavjudi
-   `atoyo-uz` loyihasiga bog'lanadi) va xalqaro Visa/Mastercard qo'shiladi.
-   Uzcard/Humo ishlamaydi.
-2. `generativelanguage.googleapis.com` API yoqilgan bo'lsin.
-3. Google shaxsni tasdiqlashni so'rashi mumkin (pasport + manzil
-   hujjati). Tasdiqlanmasa hisob to'xtatiladi.
+**DIQQAT: Gemini API "prepay" bilan ishlaydi.** Cloud Billing hisobi
+ochiq bo'lishining O'ZI yetmaydi — kredit alohida sotib olinadi, aks
+holda `429: Your prepayment credits are depleted` xatosi chiqadi.
+
+1. `https://ai.studio/projects` → loyiha (`atoyo-uz`) → Billing/Plan →
+   **kredit qo'shish** (5–10 $). "Auto-recharge" yoqilsa o'zi to'ldiradi.
+2. To'lov usuli: `console.cloud.google.com/billing` da xalqaro
+   Visa/Mastercard bo'lsin (Uzcard/Humo ishlamaydi).
+3. `generativelanguage.googleapis.com` API yoqilgan bo'lsin.
+4. Google shaxsni tasdiqlashni so'rashi mumkin (pasportning rasmli
+   sahifasi + manzil hujjati). Tasdiqlanmaguncha kredit sotib
+   bo'lmasligi va hisob to'xtatilishi mumkin.
 4. **Budget alert**: Billing → Budgets & alerts (masalan 10 $/oy).
    Qattiq to'xtatish uchun: APIs & Services → Generative Language API →
    Quotas → kunlik so'rov chegarasi.

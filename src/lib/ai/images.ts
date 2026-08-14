@@ -185,8 +185,20 @@ function extractMessage(body: string): string {
  * shuning uchun yoniga aniq qadam yoziladi.
  */
 function uzbekHint(message: string): string | null {
-  if (/prepayment credits|depleted|billing account.*(closed|disabled)|insufficient funds/i.test(message)) {
-    return "➜ Google hisobidagi oldindan to'langan kredit tugagan. console.cloud.google.com/billing sahifasida hisobni to'ldiring (5-10 $ bir necha yuz rasmga yetadi).";
+  if (/prepayment credits|depleted|insufficient funds/i.test(message)) {
+    // MUHIM: Gemini API "prepay" bilan ishlaydi - Cloud Billing hisobi
+    // ochiq bo'lsa ham KREDIT alohida sotib olinadi. Ilgari bu yerda
+    // console.cloud.google.com/billing ko'rsatilgan edi va u yerdan
+    // kredit qo'shib bo'lmasdi.
+    return (
+      "➜ Gemini krediti tugagan. https://ai.studio/projects sahifasini oching → " +
+      "loyihani (atoyo-uz) tanlang → Billing/Plan bo'limidan kredit qo'shing " +
+      "(5-10 $ bir necha yuz rasmga yetadi; \"auto-recharge\" ni yoqsangiz o'zi to'ldirib turadi). " +
+      "Agar Google shaxsni tasdiqlashni so'rayotgan bo'lsa - avval o'shani yakunlang."
+    );
+  }
+  if (/billing account.*(closed|disabled)|billing.*not.*active/i.test(message)) {
+    return "➜ To'lov hisobi o'chirilgan yoki tasdiqlanmagan. console.cloud.google.com/billing da hisob holatini tekshiring (shaxsni tasdiqlash so'ralgan bo'lishi mumkin).";
   }
   if (/API key not valid|API_KEY_INVALID|invalid api key/i.test(message)) {
     return "➜ Kalit noto'g'ri. Secret Manager'da GEMINI_API_KEY ga yangi versiya qo'shing (bo'sh joysiz yopishtiring).";
