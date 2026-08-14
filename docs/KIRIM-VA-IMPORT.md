@@ -13,7 +13,7 @@
 Xodimlar guruhidagi **Kirim** topic'iga (thread ID **151**, admin panelda
 o'zgartiriladi) rasm(lar) tashlanadi va rasm **izohiga** ma'lumot yoziladi.
 
-### Majburiy 8 ta narsa
+### Majburiy 7 ta narsa
 
 1. kamida **1 ta rasm** (10 tagacha — albom qilib tashlang; **video** ham
    qo'shsa bo'ladi, u ham albomga tushadi)
@@ -23,7 +23,10 @@ o'zgartiriladi) rasm(lar) tashlanadi va rasm **izohiga** ma'lumot yoziladi.
 5. **soni**
 6. **sotish turi** (dona / metr / kg / litr ...)
 7. **kimdan kelgani**
-8. **materiali**
+
+**Material MAJBURIY EMAS** — bilinsa yozing (`Material: po'lat`),
+bilinmasa bo'sh qoldiring. Narxnomalardan kelgan mahsulotlarning
+ko'pchiligida u ko'rsatilmaydi, talab qilinsa kirim to'xtab qolardi.
 
 ### Izoh namunasi
 
@@ -59,6 +62,54 @@ shu yerda ishlaydi.
 
 Majburiy maydon yozilmasa bot mahsulotni yaratmaydi va javobida
 mavjud kategoriyalar/sotish turlari ro'yxatini ham yozib beradi.
+
+### Turlari bor mahsulotni Telegramdan kirim qilish
+
+Bitta qator (faqat o'lcham):
+
+```
+Basu moyka
+Kategoriya: santexnika
+Sotish turi: dona
+Kimdan: Akmal aka
+Tur nomi: O'lcham
+Turlar:
+50x60 - 850000 - 4 - BS-5060
+60x80 - 990000 - 2
+```
+
+Har bir tur qatori: **`qiymat - narx - soni - kod`** (kod ixtiyoriy).
+
+**O'lcham + rang + qalinlik** kabi bir nechta qator bo'lsa — `Tur nomi:`
+da qatorlar `|` bilan sanaladi va har bir tur qatorida qiymatlar
+**shu tartibda** `|` bilan yoziladi:
+
+```
+Basu moyka
+Kategoriya: santexnika
+Sotish turi: dona
+Kimdan: Akmal aka
+Tur nomi: O'lcham|Rangi|Qalinlik
+Turlar:
+50x60|Oq|0.8mm - 96000 - 3 - BS7677
+50x60|Qora|0.8mm - 96000 - 2 - BS7678
+60x80|Oq|1.0mm - 128000 - 4 - BS7690
+```
+
+Muhim qoidalar:
+
+- **3 tagacha qator** bo'ladi (sayt formasi ham shunday). To'rttasi
+  yozilsa bot qabul qilmaydi va sababini aytadi — ikkitasini
+  birlashtiring (`Rangi: Oq matt`).
+- Har bir tur qatoridagi qiymatlar soni `Tur nomi:` dagi qatorlar
+  soniga **teng** bo'lishi shart; mos kelmagan qator tashlab
+  yuboriladi va bot ogohlantiradi.
+- Chiziqchaning **atrofida bo'shliq** qoldiring — shunda kod
+  ichidagi chiziqcha (`BS-5060`) buzilmaydi.
+- Turlar yozilsa umumiy `Narxi:` va `Soni:` **kerak emas**: narx eng
+  arzon turdan, zaxira esa turlar yig'indisidan olinadi.
+- Hamma kombinatsiyani yozish shart emas — faqat **haqiqatda bor**
+  turlarini yozing.
 
 Ixtiyoriy qatorlar ham darhol yozilsa bo'ladi: `Brend:`, `Davlat:`,
 `Kategoriya:`, `Tavsif:`, `Chegirma:`, `Chegirma muddati: 31.12.2026`,
@@ -326,8 +377,14 @@ Natijada:
 - **Kanal postida** turlar ro'yxati va "… dan" narx ko'rsatiladi.
 - **Botda** turli mahsulotni to'g'ridan-to'g'ri savatga qo'shib
   bo'lmaydi — "Turini tanlash (saytda)" tugmasi chiqadi.
-- **Kirimda** qaysi turga tovar kelgani tanlanadi — o'sha turning
-  zaxirasi ko'payadi.
+- **Kirimda** (sayt: `/admin/katalog/kirim`) qaysi turga tovar kelgani
+  tanlanadi — o'sha turning zaxirasi ko'payadi. **Telegramdagi
+  `/zaxira` buyrug'i turlarni bilmaydi** — u faqat umumiy sonni
+  yozadi, shuning uchun turlari bor mahsulotga zaxira SAYTDAN
+  qo'shiladi.
+- **Mavjud bo'lmagan kombinatsiya** (masalan 80x100 o'lcham 0.2mm
+  qalinlikda ishlab chiqarilmaydi) formadagi 🗑 tugmasi bilan
+  jadvaldan olib tashlanadi va qayta yasalmaydi.
 - **Buyurtmada** narx va zaxira serverda aynan o'sha tur bo'yicha
   tekshiriladi (mijoz yuborgan narxga ishonilmaydi).
 

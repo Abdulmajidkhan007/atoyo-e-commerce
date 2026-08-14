@@ -129,6 +129,11 @@ foydalaning.
   testlari `csv.test.ts`. Namuna fayl: `scripts/make-sample-xlsx.js`.
 - Telegram kirim izohida `Tur nomi:` + `Turlar:` bloki
   (`lib/telegram/intake-parser.ts`, testlari `intake-parser.test.ts`).
+  Bir nechta qator `|` bilan: `Tur nomi: O'lcham|Rangi|Qalinlik` va
+  `50x60|Oq|0.8mm - 96000 - 3 - BS7677`. **3 qatordan ko'p bo'lmaydi**
+  (mahsulot sxemasi ham `max(3)`), qiymatlar soni mos kelmasa o'sha
+  qator tashlanadi va bot sababini aytadi. Telegram kirimida ham
+  MATERIAL majburiy emas.
 - Importda `retailMarkupPercent` (dona ustamasi, foizda) ustuni bor;
   notanish kategoriya/material avtomatik ochiladi, material esa
   ixtiyoriy.

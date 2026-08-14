@@ -269,6 +269,12 @@ export function parseDate(text: string): number | null {
   return null;
 }
 
+/**
+ * Mahsulotdagi tur qatorlarining eng ko'p soni. Sayt formasi
+ * (`ProductVariantsEditor`) va `/api/admin/products` ham shu chegarada.
+ */
+const MAX_VARIANT_AXES = 3;
+
 /** Kirim izohidagi bitta tur (variant). */
 /**
  * Tur qatorini bo'laklarga ajratadi: "50x60 - 850000 - 4 - BS-5060".
@@ -482,11 +488,23 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
 
   // Qiymatlar soni qatorlar soniga mos kelmasa - o'sha tur tashlanadi.
   const axisCount = variantAxisLabels.length || (variants[0]?.values.length ?? 1);
-  const usableVariants = variants.filter((variant) => {
-    if (variant.values.length === axisCount) return true;
-    warnings.push(`Tur qiymatlari soni mos emas: "${variant.values.join("|")}"`);
-    return false;
-  });
+  // Mahsulotda 3 tadan ko'p tur qatori bo'lmaydi (sayt formasi va
+  // /api/admin/products ham shu chegarada) - aks holda botdan kelgan
+  // mahsulotni keyin saytda tahrirlab bo'lmasdi.
+  const tooManyAxes = axisCount > MAX_VARIANT_AXES;
+  if (tooManyAxes) {
+    warnings.push(
+      `Tur qatorlari ${MAX_VARIANT_AXES} tadan ko'p bo'lmasin (${axisCount} ta yozilgan) — ` +
+        "ikkitasini birlashtiring, masalan \"Rangi: Oq matt\"."
+    );
+  }
+  const usableVariants = tooManyAxes
+    ? []
+    : variants.filter((variant) => {
+        if (variant.values.length === axisCount) return true;
+        warnings.push(`Tur qiymatlari soni mos emas: "${variant.values.join("|")}"`);
+        return false;
+      });
 
   /**
    * Turlari bor mahsulotda narx va zaxira TURLARDAN olinadi - izohda
@@ -505,7 +523,8 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
   if (effectivePrice === null || effectivePrice <= 0) missing.push("price");
   if (effectiveStock === null || effectiveStock < 0) missing.push("stock");
   if (!supplier) missing.push("supplier");
-  if (!material) missing.push("material");
+  // MATERIAL MAJBURIY EMAS - saytdagi forma bilan bir xil qoida
+  // (1C narxnomasidan kelgan mahsulotlarning ko'pchiligida u yo'q).
   if (!category) missing.push("category");
   if (!unit) missing.push("unit");
 
@@ -575,6 +594,26 @@ export const INTAKE_VARIANT_TEMPLATE = [
   "50x60 - 850000 - 4 - BS-5060",
   "60x80 - 990000 - 2",
   "80x100 - 1150000 - 0",
+].join("\n");
+
+/**
+ * IKKI-UCH QATORLI TUR (o'lcham + rang + qalinlik).
+ *
+ * "Tur nomi:" da qatorlar "|" bilan sanaladi, har bir tur qatorida ham
+ * qiymatlar SHU TARTIBDA "|" bilan yoziladi. Qiymatlar soni qatorlar
+ * soniga teng bo'lishi shart - aks holda o'sha tur qabul qilinmaydi.
+ * Uch qatorgacha ishlaydi (mahsulotdagi chegara).
+ */
+export const INTAKE_MULTI_AXIS_TEMPLATE = [
+  "Basu moyka",
+  "Kategoriya: santexnika",
+  "Sotish turi: dona",
+  "Kimdan: Akmal aka",
+  "Tur nomi: O'lcham|Rangi|Qalinlik",
+  "Turlar:",
+  "50x60|Oq|0.8mm - 96000 - 3 - BS7677",
+  "50x60|Qora|0.8mm - 96000 - 2 - BS7678",
+  "60x80|Oq|1.0mm - 128000 - 4 - BS7690",
 ].join("\n");
 
 /** Xato bo'lganda ko'rsatiladigan namuna. */

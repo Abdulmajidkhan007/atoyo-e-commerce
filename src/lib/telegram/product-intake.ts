@@ -11,6 +11,7 @@ import { startOptionalFieldsFlow } from "./admin-session";
 import {
   INTAKE_FIELD_LABELS,
   INTAKE_TEMPLATE,
+  INTAKE_MULTI_AXIS_TEMPLATE,
   INTAKE_VARIANT_TEMPLATE,
   parseIntakeCaption,
   guessCategory,
@@ -34,7 +35,9 @@ import { formatSom } from "@/lib/format";
  *   Kimdan: Akmal aka
  *   Material: polipropilen
  *
- * Majburiy: kamida 1 ta rasm, nom, narx, soni, kimdan kelgani, materiali.
+ * Majburiy: kamida 1 ta rasm, nom, narx, soni, kimdan kelgani,
+ * kategoriya va sotish turi. Material MAJBURIY EMAS (narxnomalarda
+ * ko'rsatilmaydi) - yozilsa qabul qilinadi.
  * Hammasi joyida bo'lsa mahsulot darhol katalogga tushadi va bot
  * "qolgan ma'lumotlarni to'ldirasizmi?" deb tugmali savol beradi
  * (kategoriya, brend, davlat, tavsif, chegirma... - ixtiyoriy).
@@ -257,6 +260,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
         `<pre>${escapeHtml(INTAKE_TEMPLATE)}</pre>`,
         "Turlari (o'lcham/rang) bo'lsa:",
         `<pre>${escapeHtml(INTAKE_VARIANT_TEMPLATE)}</pre>`,
+        "O'lcham + rang + qalinlik kabi bir nechta qator bo'lsa:",
+        `<pre>${escapeHtml(INTAKE_MULTI_AXIS_TEMPLATE)}</pre>`,
       ].join("\n"),
       { threadId }
     );
@@ -361,6 +366,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
         `<pre>${escapeHtml(INTAKE_TEMPLATE)}</pre>`,
         "Turlari (o'lcham/rang) bo'lsa:",
         `<pre>${escapeHtml(INTAKE_VARIANT_TEMPLATE)}</pre>`,
+        "O'lcham + rang + qalinlik kabi bir nechta qator bo'lsa:",
+        `<pre>${escapeHtml(INTAKE_MULTI_AXIS_TEMPLATE)}</pre>`,
         "Rasmni izohi bilan qaytadan tashlang.",
       ]
         .filter(Boolean)
@@ -417,7 +424,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     brand: parsed.brand,
     manufacturerCountry: parsed.manufacturerCountry,
     supplier: parsed.supplier,
-    material: parsed.material!,
+    // Material MAJBURIY EMAS - bilinmasa bo'sh qoladi.
+    material: parsed.material ?? "",
     unit: parsed.unit!,
     dimensions: {
       ...(parsed.diameterMm !== null ? { diameterMm: parsed.diameterMm } : {}),
@@ -485,7 +493,8 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     `📝 <b>Chernovik tayyor:</b> ${escapeHtml(saved.name)}`,
     `🆔 ID: <b>${saved.code ?? "-"}</b>`,
     saved.sku ? `#️⃣ Kodi: ${escapeHtml(saved.sku)}` : "",
-    `🏷 ${labelOf(taxonomy.categories, saved.category)} | 🧱 ${labelOf(taxonomy.materials, saved.material)}`,
+    `🏷 ${labelOf(taxonomy.categories, saved.category)}` +
+      (saved.material ? ` | 🧱 ${labelOf(taxonomy.materials, saved.material)}` : ""),
     variants.length > 0
       ? `💰 ${formatSom(saved.price)} dan / ${unitLabel} | 📦 jami ${saved.stock} ${unitLabel}`
       : `💰 ${formatSom(saved.price)} / ${unitLabel} | 📦 ${saved.stock} ${unitLabel}`,

@@ -139,4 +139,91 @@ describe("parseIntakeCaption", () => {
     expect(parsed.missing).toEqual([]);
     expect(parsed.variantAxisLabels).toEqual(["Turi"]);
   });
+  // Uch qatorli tur: o'lcham + rang + qalinlik. Qiymatlar "|" bilan
+  // va TARTIBI "Tur nomi:" dagi bilan bir xil bo'lishi shart.
+  it("uch qatorli turni o'qiydi", () => {
+    const parsed = parseIntakeCaption(
+      [
+        "Basu moyka",
+        "Kategoriya: santexnika",
+        "Sotish turi: dona",
+        "Kimdan: Akmal aka",
+        "Tur nomi: O'lcham|Rangi|Qalinlik",
+        "Turlar:",
+        "50x60|Oq|0.8mm - 96000 - 3 - BS7677",
+        "60x80|Qora|1.0mm - 128000 - 4",
+      ].join("\n"),
+      taxonomy
+    );
+
+    expect(parsed.missing).toEqual([]);
+    expect(parsed.variantAxisLabels).toEqual(["O'lcham", "Rangi", "Qalinlik"]);
+    expect(parsed.variants).toHaveLength(2);
+    expect(parsed.variants[0]).toMatchObject({
+      values: ["50x60", "Oq", "0.8mm"],
+      price: 96000,
+      stock: 3,
+      sku: "BS7677",
+    });
+    // Narx eng arzonidan, zaxira yig'indidan.
+    expect(parsed.price).toBe(96000);
+    expect(parsed.stock).toBe(7);
+  });
+
+  it("qiymatlari kam qatorni tashlab, ogohlantiradi", () => {
+    const parsed = parseIntakeCaption(
+      [
+        "Basu moyka",
+        "Kategoriya: santexnika",
+        "Sotish turi: dona",
+        "Kimdan: Akmal aka",
+        "Tur nomi: O'lcham|Rangi",
+        "Turlar:",
+        "50x60|Oq - 96000 - 3",
+        "60x80 - 128000 - 4",
+      ].join("\n"),
+      taxonomy
+    );
+
+    expect(parsed.variants).toHaveLength(1);
+    expect(parsed.warnings.join(" ")).toContain("mos emas");
+  });
+
+  // Material 1C narxnomasidan kelgan mahsulotlarda yozilmaydi -
+  // uni talab qilish kirimni to'xtatib qo'yardi.
+  it("material yozilmasa ham qabul qiladi", () => {
+    const parsed = parseIntakeCaption(
+      [
+        "PPR quvur 25mm",
+        "Kategoriya: quvurlar",
+        "Narxi: 45 000",
+        "Soni: 120",
+        "Sotish turi: metr",
+        "Kimdan: Akmal aka",
+      ].join("\n"),
+      taxonomy
+    );
+
+    expect(parsed.missing).toEqual([]);
+    expect(parsed.material).toBeNull();
+  });
+  it("uch qatordan ko'pi qabul qilinmaydi", () => {
+    const parsed = parseIntakeCaption(
+      [
+        "Basu moyka",
+        "Kategoriya: santexnika",
+        "Sotish turi: dona",
+        "Kimdan: Akmal aka",
+        "Tur nomi: O'lcham|Rangi|Qalinlik|Turi",
+        "Turlar:",
+        "50x60|Oq|0.8mm|Chuqur - 96000 - 3",
+      ].join("\n"),
+      taxonomy
+    );
+
+    expect(parsed.variants).toEqual([]);
+    expect(parsed.warnings.join(" ")).toContain("3 tadan ko'p bo'lmasin");
+    // Turlar qabul qilinmagani uchun narx/soni yetishmaydi deb aytiladi.
+    expect(parsed.missing).toContain("price");
+  });
 });
