@@ -8,8 +8,19 @@ import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
 
-/** Bir so'rovda shuncha post yangilanadi (Telegram limitiga urilmaslik uchun). */
-const BATCH = 40;
+/**
+ * Bir so'rovda shuncha post yangilanadi.
+ *
+ * TELEGRAM LIMITI: bitta kanalga daqiqasiga ~20 ta xabar yuborish/
+ * tahrirlash mumkin. Ilgari 40 ta post 120 ms oraliq bilan ketardi va
+ * 65 tadan 45 tasi "Too Many Requests" bo'lib yiqilardi. Endi oraliq
+ * 3 soniya (daqiqasiga 20 ta) va bir so'rovda 15 ta - ya'ni ~45
+ * soniya, so'rov timeoutiga ham urilmaydi. Qolganini panel kursor
+ * bilan davom ettiradi.
+ */
+const BATCH = 15;
+/** Ikki tahrir orasidagi tanaffus (daqiqasiga ~20 ta). */
+const GAP_MS = 3000;
 
 /**
  * KANALDAGI POSTLARNI MAHSULOT MA'LUMOTIGA MOSLASH.
@@ -24,9 +35,10 @@ const BATCH = 40;
  * takror xabar bormaydi. Matn o'zgarmagan bo'lsa Telegram uni rad
  * etadi va `unchanged` deb sanaladi (bu xato emas).
  *
- * Katalog katta bo'lishi mumkin, shuning uchun bir so'rovda 40 tasi
+ * Katalog katta bo'lishi mumkin, shuning uchun bir so'rovda 15 tasi
  * yangilanadi va `nextCursor` qaytariladi - admin paneli qolganini
- * shu kursor bilan davom ettiradi.
+ * shu kursor bilan davom ettiradi. Telegram limitiga urilmaslik uchun
+ * har tahrir orasida 3 soniya kutiladi (kanalga daqiqasiga ~20 ta).
  */
 export async function POST(request: Request) {
   const admin = await requirePermission("settings");
@@ -43,7 +55,7 @@ export async function POST(request: Request) {
   }
 
   // Kursor - oxirgi ko'rilgan hujjatning ID si. Busiz har bosishda
-  // AYNAN O'SHA 40 ta hujjat qayta ko'rilardi va qolganiga navbat
+  // AYNAN O'SHA bo'lak qayta ko'rilardi va qolganiga navbat
   // hech qachon yetmasdi.
   const after = new URL(request.url).searchParams.get("after");
   const collection = getAdminDb().collection("products");
@@ -88,8 +100,8 @@ export async function POST(request: Request) {
       const reason = cleanReason(result.reason);
       reasons[reason] = (reasons[reason] ?? 0) + 1;
     }
-    // Telegram sekunddagi so'rovlar sonini cheklaydi - ozgina kutamiz.
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    // Telegram limiti: kanalga daqiqasiga ~20 ta tahrir.
+    await new Promise((resolve) => setTimeout(resolve, GAP_MS));
   }
 
   if (updated > 0) {

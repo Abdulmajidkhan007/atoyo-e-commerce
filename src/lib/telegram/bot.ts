@@ -22,31 +22,63 @@ async function getChatId(): Promise<string> {
   return chatId;
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Telegram limiti (429) da bot NECHTA marta kutib qayta uriniladi.
+ *
+ * Bir kanalga ketma-ket tahrir yuborilganda Telegram "Too Many
+ * Requests: retry after N" deydi va NECHA soniya kutish kerakligini
+ * o'zi aytadi. Ilgari bu xato shundoq yuqoriga chiqib ketardi va
+ * ommaviy yangilashda 65 postdan 45 tasi "yiqildi" bo'lib qolardi.
+ */
+const RATE_LIMIT_RETRIES = 3;
+/** Telegram aytgan kutishdan ham uzun kutmaymiz (so'rov osilib qolmasin). */
+const MAX_RETRY_WAIT_SECONDS = 30;
+
 async function callTelegramApi<T>(method: string, payload: Record<string, unknown>): Promise<T> {
-  const response = await fetch(`${TELEGRAM_API_BASE}/bot${await getBotToken()}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    // Bot API'ga navigatsiya - keshlanmasin.
-    cache: "no-store",
-  });
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(`${TELEGRAM_API_BASE}/bot${await getBotToken()}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      // Bot API'ga navigatsiya - keshlanmasin.
+      cache: "no-store",
+    });
 
-  // Telegram har doim JSON qaytaradi, lekin oradagi proksi/firewall
-  // xato holatida oddiy matn qaytarishi mumkin - JSON.parse yiqilib,
-  // asl sababni yashirib qo'ymasligi uchun avval matn sifatida o'qiymiz.
-  const rawBody = await response.text();
-  let data: { ok: boolean; description?: string; result?: T };
-  try {
-    data = JSON.parse(rawBody);
-  } catch {
-    throw new Error(`Telegram API'dan kutilmagan javob (${method}, HTTP ${response.status}): ${rawBody.slice(0, 120)}`);
-  }
+    // Telegram har doim JSON qaytaradi, lekin oradagi proksi/firewall
+    // xato holatida oddiy matn qaytarishi mumkin - JSON.parse yiqilib,
+    // asl sababni yashirib qo'ymasligi uchun avval matn sifatida o'qiymiz.
+    const rawBody = await response.text();
+    let data: {
+      ok: boolean;
+      description?: string;
+      result?: T;
+      parameters?: { retry_after?: number };
+    };
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      throw new Error(`Telegram API'dan kutilmagan javob (${method}, HTTP ${response.status}): ${rawBody.slice(0, 120)}`);
+    }
 
-  if (!data.ok) {
+    if (data.ok) return data.result as T;
+
+    // LIMIT: Telegram necha soniya kutishni o'zi aytadi - kutib qayta
+    // uriniladi, xato sifatida chiqarilmaydi.
+    const retryAfter = data.parameters?.retry_after;
+    if (
+      response.status === 429 &&
+      typeof retryAfter === "number" &&
+      retryAfter <= MAX_RETRY_WAIT_SECONDS &&
+      attempt < RATE_LIMIT_RETRIES
+    ) {
+      await sleep((retryAfter + 1) * 1000);
+      continue;
+    }
+
     throw new Error(`Telegram API xatosi (${method}): ${data.description ?? "noma'lum xato"}`);
   }
-
-  return data.result as T;
 }
 
 interface SentMessage {

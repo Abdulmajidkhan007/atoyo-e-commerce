@@ -63,10 +63,14 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
    * nom, narx, tavsif, zaxira va "Saytda ko'rish" havolasi qayta
    * quriladi. Post joyida tahrirlanadi - yangi post tashlanmaydi.
    *
-   * Server bir so'rovda 40 tasini oladi va kursor qaytaradi; shu
+   * Server bir so'rovda 15 tasini oladi va kursor qaytaradi; shu
    * yerda OXIRIGACHA aylanib chiqamiz - admin tugmani qayta-qayta
    * bosib o'tirmasin (ilgari kursor yo'q edi va har bosishda aynan
-   * o'sha 40 tasi qayta ko'rilardi).
+   * o'sha bo'lak qayta ko'rilardi).
+   *
+   * TELEGRAM LIMITI sababli har tahrir orasida 3 soniya kutiladi -
+   * ya'ni 60 ta post ~3 daqiqa oladi. Shuning uchun jarayon
+   * davomida "nechtasi ko'rildi" yozib turiladi.
    */
   const refreshChannelPosts = async () => {
     setIsRefreshing(true);
@@ -81,8 +85,8 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
       // Sabab -> nechta post (serverdan o'zbekcha qisqartirilgan holda keladi).
       const reasons: Record<string, number> = {};
 
-      // Cheksiz aylanib qolmaslik uchun qat'iy chegara (40 x 100 = 4000).
-      for (let round = 0; round < 100; round++) {
+      // Cheksiz aylanib qolmaslik uchun qat'iy chegara (15 x 300 = 4500).
+      for (let round = 0; round < 300; round++) {
         const url = cursor
           ? `/api/admin/telegram/refresh-channel?after=${encodeURIComponent(cursor)}`
           : "/api/admin/telegram/refresh-channel";
@@ -107,7 +111,10 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
         for (const [reason, count] of Object.entries(data.reasons ?? {})) {
           reasons[reason] = (reasons[reason] ?? 0) + count;
         }
-        setRefreshNote(`⏳ ${scanned} ta post ko'rildi, ${updated} tasi yangilandi…`);
+        setRefreshNote(
+          `⏳ ${scanned} ta post ko'rildi, ${updated} tasi yangilandi… ` +
+            "(Telegram limiti sababli sekin ketadi — sahifani yopmang)"
+        );
 
         cursor = data.nextCursor ?? null;
         if (!cursor) break;
@@ -290,8 +297,9 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
             mahsulotning <b>hozirgi</b> holatidan qayta quradi va joyida tahrirlaydi —
             yangi post tashlanmaydi, obunachilarga takror xabar bormaydi.
             O&apos;zgarish bo&apos;lmagan postlarga tegilmaydi. Bir bosishda hammasi
-            oxirigacha aylanib chiqiladi, shuning uchun postlar ko&apos;p bo&apos;lsa
-            biroz kutish kerak.
+            oxirigacha aylanib chiqiladi, lekin Telegram bitta kanalga daqiqasiga
+            ~20 ta tahrirga ruxsat beradi — shuning uchun jarayon sekin ketadi
+            (60 ta post ≈ 3 daqiqa). Tugagunicha sahifani yopmang.
           </p>
           <Button
             type="button"

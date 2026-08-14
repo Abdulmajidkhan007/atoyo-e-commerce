@@ -214,6 +214,11 @@ qaytadi.
   qaytaradi (`posted` / `edited` / `unchanged` / `skipped`), UI shuni
   ochiq yozadi. Haqiqatan yangi post kerak bo'lsa `"repost"` rejimi
   (eski post o'chiriladi).
+- **Telegram limiti**: bitta kanalga daqiqasiga ~20 ta tahrir.
+  Shuning uchun `refresh-channel` bir so'rovda 15 tadan oladi va har
+  tahrir orasida 3 s kutadi; `callTelegramApi` esa 429 javobidagi
+  `retry_after` ni o'qib o'zi kutib qayta uriniladi (3 martagacha).
+  Ilgari 120 ms oraliq edi va 65 postdan 45 tasi yiqilardi.
 - **Yangilash SABABINI aytadi.** `refreshChannelPost` endi
   `{status, reason}` qaytaradi (`updated` / `unchanged` / `missing` /
   `skipped` / `failed`): Telegram xatosi `classify()` bilan tanib
