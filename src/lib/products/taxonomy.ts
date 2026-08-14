@@ -117,21 +117,121 @@ export function labelOf(items: TaxonomyItem[], slug: string | undefined): string
   return items.find((item) => item.slug === slug)?.label ?? slug;
 }
 
-/** Matnni (masalan Telegram izohidagi "polipropilen") slugga aylantirish. */
+/**
+ * KIRILL "EGIZAK" HARFLAR.
+ *
+ * 1C narxnomasidan kelgan nomlarda lotincha so'z ichida kirill harfi
+ * uchraydi: "Smestitellar" so'zidagi "е" yoki "а" kirillcha bo'lishi
+ * mumkin. Ekranda farqi BILINMAYDI, lekin solishtirganda ikki xil
+ * matn bo'lib chiqadi - shuning uchun bot ro'yxatda TURGAN
+ * kategoriyani "tanilmadi" deb rad etardi.
+ */
+const LOOKALIKE: Record<string, string> = {
+  а: "a", в: "b", е: "e", ё: "e", к: "k", м: "m", н: "h", о: "o", р: "p",
+  с: "c", т: "t", у: "y", х: "x", і: "i", ј: "j", ѕ: "s", ԁ: "d", ԛ: "q", ԝ: "w",
+};
+
+/**
+ * Solishtirish uchun matnni bir ko'rinishga keltiradi: kichik harf,
+ * apostrofsiz, kirill egizaklari lotinga o'girilgan, harf va raqamdan
+ * boshqasi olib tashlangan ("Smestitellar!" va "smestitellar" bir xil).
+ */
+function foldForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[’'`ʻʼ]/g, "")
+    .replace(/[Ѐ-ӿԀ-ԯ]/g, (ch) => LOOKALIKE[ch] ?? ch)
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .trim();
+}
+
+/** Ikki matn orasidagi tahrir masofasi (Levenshtein). */
+function editDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length || !b.length) return Math.max(a.length, b.length);
+
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        (current[j - 1] ?? 0) + 1,
+        (previous[j] ?? 0) + 1,
+        (previous[j - 1] ?? 0) + cost
+      );
+    }
+    previous = current;
+  }
+  return previous[b.length] ?? 0;
+}
+
+/**
+ * Matnni (masalan Telegram izohidagi "polipropilen") slugga aylantirish.
+ *
+ * Tartib: to'liq moslik → ichida uchrashi → BIR-IKKI HARF xato bilan
+ * yozilgani ("smestitelar", "smesitellar"). Oxirgisi bo'lmasa bot bitta
+ * harf xatosi uchun butun kirimni rad etardi.
+ */
 export function matchTaxonomy(items: TaxonomyItem[], text: string): string | null {
-  const clean = text.toLowerCase().replace(/[’'`ʻʼ]/g, "").trim();
+  const clean = foldForMatch(text);
   if (!clean) return null;
 
-  const direct = items.find(
-    (item) =>
-      item.slug === clean ||
-      item.label.toLowerCase().replace(/[’'`ʻʼ]/g, "") === clean
-  );
+  const folded = items.map((item) => ({
+    slug: item.slug,
+    label: foldForMatch(item.label),
+    key: foldForMatch(item.slug),
+  }));
+
+  const direct = folded.find((item) => item.key === clean || item.label === clean);
   if (direct) return direct.slug;
 
-  const partial = items.find((item) => {
-    const label = item.label.toLowerCase().replace(/[’'`ʻʼ]/g, "");
-    return clean.includes(label) || clean.includes(item.slug);
-  });
-  return partial?.slug ?? null;
+  const partial = folded.find(
+    (item) =>
+      (item.label.length >= 3 && clean.includes(item.label)) ||
+      (item.key.length >= 3 && clean.includes(item.key))
+  );
+  if (partial) return partial.slug;
+
+  // Kichik xatoga yo'l qo'yamiz: 5-7 harfli nomda 1 ta, undan
+  // uzunida 2 ta. Qisqa nomlarda ("mis", "pvx") umuman qo'ymaymiz -
+  // ular bir-biriga aylanib ketardi.
+  if (clean.length < 5) return null;
+  const allowed = clean.length >= 8 ? 2 : 1;
+
+  let best: { slug: string; distance: number } | null = null;
+  for (const item of folded) {
+    for (const candidate of [item.label, item.key]) {
+      if (!candidate) continue;
+      const distance = editDistance(clean, candidate);
+      if (distance <= allowed && (!best || distance < best.distance)) {
+        best = { slug: item.slug, distance };
+      }
+    }
+  }
+  return best?.slug ?? null;
+}
+
+/**
+ * Tanilmagan qiymatga ENG YAQIN nomlar (botning xato xabari uchun).
+ *
+ * Ro'yxatda 40 dan ortiq kategoriya bo'lsa, hammasini yozib tashlash
+ * xodimga yordam bermaydi - "shulardan birini nazarda tutdingizmi?"
+ * degan qisqa ro'yxat foydaliroq.
+ */
+export function suggestTaxonomy(items: TaxonomyItem[], text: string, limit = 5): string[] {
+  const clean = foldForMatch(text);
+  if (!clean) return [];
+
+  return items
+    .map((item) => ({
+      label: item.label,
+      distance: Math.min(
+        editDistance(clean, foldForMatch(item.label)),
+        editDistance(clean, foldForMatch(item.slug))
+      ),
+    }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, limit)
+    .map((item) => item.label);
 }

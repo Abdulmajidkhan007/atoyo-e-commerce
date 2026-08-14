@@ -148,6 +148,18 @@ foydalaning.
   (aks holda har tahrirda tiklanib turardi). Qatorlar o'zgarsa
   eskirgan kalitlar tozalanadi; testlari `variants.test.ts` da.
 
+## Kategoriya/material nomini tanish (`matchTaxonomy`)
+
+Bot va import kategoriyani NOMI bo'yicha topadi. Solishtirish oldidan
+ikkala tomon `foldForMatch()` dan o'tadi: kichik harf, apostrofsiz,
+harf/raqamdan boshqasi olib tashlangan va **kirill egizak harflari
+lotinga o'girilgan** (`е→e`, `а→a`, `о→o` ...). 1C narxnomasidan
+kelgan nomlarda lotin so'z ichida kirill harfi bo'ladi — ekranda
+bilinmaydi, lekin bot ro'yxatda TURGAN kategoriyani "tanilmadi" deb
+rad etardi. Keyin: ichida uchrashi → 1-2 harf xatosi (Levenshtein,
+5-7 harfda 1 ta, undan uzunida 2 ta). Topilmasa `suggestTaxonomy()`
+bilan eng yaqin 5 ta nom xato xabarida ko'rsatiladi.
+
 ## Mahsulot formasidagi majburiy maydonlar
 
 Majburiy: **Nomi, Kodi/artikul, Tannarx, Optom narx, Soni (zaxira),

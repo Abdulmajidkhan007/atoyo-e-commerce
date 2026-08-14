@@ -18,7 +18,7 @@ import {
 } from "./intake-parser";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { nextProductCode } from "@/lib/products/product-code";
-import { labelOf } from "@/lib/products/taxonomy";
+import { labelOf, suggestTaxonomy } from "@/lib/products/taxonomy";
 import { axisKeyOf, variantIdOf } from "@/lib/products/variants";
 import type { Product, ProductVariant, VariantAxis } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
@@ -343,6 +343,9 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     }
 
     const guess = guessCategory(parsed.name);
+    // Xodim yozgan kategoriyaga eng yaqin nomlar (xato yozilgan bo'lsa).
+    const typedCategory = caption.match(/^\s*(?:kategoriya|turkum|bo['’]?lim|category|категория)\s*[:=]\s*(.+)$/im)?.[1] ?? "";
+    const closeCategories = typedCategory ? suggestTaxonomy(taxonomy.categories, typedCategory, 5) : [];
     await sendChatMessage(
       chatId,
       [
@@ -350,10 +353,21 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
         ...parsed.missing.map((field) => `• ${INTAKE_FIELD_LABELS[field]}`),
         ...parsed.warnings.map((warning) => `⚠️ ${warning}`),
         "",
+        // Kategoriya ro'yxati 40 tadan oshdi - hammasini yozib tashlash
+        // yordam bermaydi. Avval YOZILGANIGA eng yaqin nomlar, keyin
+        // nomdan taxmin, oxirida to'liq ro'yxat.
         parsed.missing.includes("category")
-          ? `🏷 Kategoriyalar: ${taxonomy.categories.map((c) => c.label).join(", ")}${
-              guess ? `\n(nomiga qaraganda "${labelOf(taxonomy.categories, guess)}" bo'lsa kerak)` : ""
-            }`
+          ? [
+              closeCategories.length > 0
+                ? `🏷 Shulardan birimi? ${closeCategories.join(", ")}`
+                : "",
+              guess
+                ? `(nomiga qaraganda "${labelOf(taxonomy.categories, guess)}" bo'lsa kerak)`
+                : "",
+              `Hammasi: ${taxonomy.categories.map((c) => c.label).join(", ")}`,
+            ]
+              .filter(Boolean)
+              .join("\n")
           : "",
         parsed.missing.includes("unit")
           ? `📐 Sotish turlari: ${taxonomy.units.map((u) => u.label).join(", ")}`

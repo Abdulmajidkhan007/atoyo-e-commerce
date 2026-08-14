@@ -61,7 +61,13 @@ Kategoriya va sotish turi ham nomi bilan yoziladi (`Kategoriya: kranlar`,
 shu yerda ishlaydi.
 
 Majburiy maydon yozilmasa bot mahsulotni yaratmaydi va javobida
-mavjud kategoriyalar/sotish turlari ro'yxatini ham yozib beradi.
+**yozganingizga eng yaqin nomlarni**, keyin to'liq ro'yxatni yozib
+beradi.
+
+Kategoriya nomini tanishda bot bag'rikeng: katta-kichik harf,
+ortiqcha belgi, 1-2 harflik xato (`Kranler` → `Kranlar`) va
+**lotin so'z ichidagi kirill harfi** (narxnomadan kelgan nomlarda
+tez-tez uchraydi — ekranda bilinmaydi) e'tiborga olinmaydi.
 
 ### Turlari bor mahsulotni Telegramdan kirim qilish
 
