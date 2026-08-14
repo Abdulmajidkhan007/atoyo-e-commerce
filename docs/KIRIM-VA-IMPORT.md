@@ -383,6 +383,12 @@ Natijada:
 - **Kanal postida** turlar ro'yxati va "… dan" narx ko'rsatiladi.
 - **Botda** turli mahsulotni to'g'ridan-to'g'ri savatga qo'shib
   bo'lmaydi — "Turini tanlash (saytda)" tugmasi chiqadi.
+- **Telegramda `/tahrir <ID>`** menyusida **🔀 Turlar** tugmasi bor:
+  turlar ro'yxati ko'rinadi, har birining narxi/zaxirasi/kodi
+  o'zgartiriladi, **➕ Yangi tur** bilan yangisi qo'shiladi
+  (`qiymat - narx - soni - kod`), 🗑 bilan esa "bunday turi yo'q"
+  deb olib tashlanadi. Turlari yo'q mahsulotda bot avval qator
+  nomini so'raydi ("Rangi"), keyin birinchi turni.
 - **Kirimda** (sayt: `/admin/katalog/kirim`) qaysi turga tovar kelgani
   tanlanadi — o'sha turning zaxirasi ko'payadi. **Telegramdagi
   `/zaxira` buyrug'i turlarni bilmaydi** — u faqat umumiy sonni

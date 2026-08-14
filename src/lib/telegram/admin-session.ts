@@ -9,8 +9,22 @@ import { registerFacets } from "@/lib/products/facets";
 import { logAction } from "./action-log";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { DEFAULT_UNIT, labelOf, type TaxonomyItem } from "@/lib/products/taxonomy";
-import { parseDate } from "./intake-parser";
-import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
+import { parseDate, parseVariantLine } from "./intake-parser";
+import {
+  axisKeyOf,
+  minVariantPrice,
+  normalizeVariants,
+  totalVariantStock,
+  variantIdOf,
+  variantLabel,
+} from "@/lib/products/variants";
+import type {
+  Product,
+  ProductCategory,
+  ProductMaterial,
+  ProductVariant,
+  VariantAxis,
+} from "@/types/product";
 import { formatSom } from "@/lib/format";
 
 /**
@@ -89,6 +103,8 @@ interface AdminSession {
   draft: Partial<Product>;
   productId?: string;
   editField?: string;
+  /** "Turlar" oynasida tanlangan tur (ro'yxatdagi tartib raqami). */
+  variantIndex?: number;
   updatedAt: number;
 }
 
@@ -373,6 +389,16 @@ async function sendEditMenu(session: AdminSession, product: Product): Promise<vo
   for (let i = 0; i < EDIT_FIELDS.length; i += 2) {
     rows.push(EDIT_FIELDS.slice(i, i + 2).map((f) => ({ text: f.label, callback_data: `ap|ef|${f.field}` })));
   }
+  // TURLARI (o'lcham/rang/qalinlik) - alohida oyna: ro'yxat va
+  // "yangi tur qo'shish". Turlari yo'q mahsulotda ham ko'rinadi -
+  // birinchi turni shu yerdan boshlash mumkin.
+  const variantCount = product.variants?.length ?? 0;
+  rows.push([
+    {
+      text: variantCount > 0 ? `🔀 Turlar (${variantCount} ta)` : "🔀 Turlar qo'shish",
+      callback_data: "ap|vr|list",
+    },
+  ]);
   rows.push([{ text: "✅ Tugatish", callback_data: "ap|done" }]);
 
   await sendChatMessage(
@@ -380,7 +406,9 @@ async function sendEditMenu(session: AdminSession, product: Product): Promise<vo
     [
       `✏️ <b>Tahrirlash:</b> ${product.name}`,
       `🆔 ID: <b>${product.code ?? "-"}</b>`,
-      `Narx: ${formatSom(product.price)} | Zaxira: ${product.stock} dona`,
+      variantCount > 0
+        ? `Narx: ${formatSom(product.price)} dan | Jami zaxira: ${product.stock} | Turlari: ${variantCount} ta`
+        : `Narx: ${formatSom(product.price)} | Zaxira: ${product.stock} dona`,
       product.isActive ? "" : "🚫 Yashirin",
       "",
       "O'zgartirmoqchi bo'lgan maydonni tanlang:",
@@ -582,6 +610,13 @@ async function advanceNewProduct(userId: number, session: AdminSession): Promise
 }
 
 async function applyEditValue(userId: number, session: AdminSession, field: string, value: string): Promise<void> {
+  // Turlar (o'lcham/rang) alohida oqim: qator nomi, yangi tur qatori
+  // va mavjud turning narx/zaxira/kodi.
+  if (field === "variant_axis" || field === "variant_add" || field.startsWith("v:")) {
+    await applyVariantValue(userId, session, field, value);
+    return;
+  }
+
   const updates: Record<string, unknown> = { updatedAt: Date.now() };
   if (field === "name") {
     if (!value) {
@@ -646,6 +681,279 @@ async function applyEditValue(userId: number, session: AdminSession, field: stri
     await announceProduct(product, before ? announceModeFor(before, product) : "refresh");
     await sendEditMenu(session, product);
   }
+}
+
+// ---------------------------------------------------------------------------
+// TURLAR (o'lcham / rang / qalinlik) - botdan boshqarish
+// ---------------------------------------------------------------------------
+
+/** Bir oynada ko'rsatiladigan turlar soni (tugmalar juda ko'payib ketmasin). */
+const MAX_VARIANT_BUTTONS = 12;
+
+/** Turlar ro'yxati: har birining nomi, narxi, kodi va zaxirasi. */
+async function sendVariantMenu(session: AdminSession, product: Product): Promise<void> {
+  const axes = product.variantAxes ?? [];
+  const variants = product.variants ?? [];
+
+  const lines = [`🔀 <b>Turlari:</b> ${product.name}`];
+  if (axes.length > 0) lines.push(`Qatorlar: ${axes.map((axis) => axis.label).join(" • ")}`);
+  lines.push("");
+  if (variants.length === 0) {
+    lines.push("Hali tur qo'shilmagan.");
+  } else {
+    variants.slice(0, MAX_VARIANT_BUTTONS).forEach((variant, index) => {
+      const label = variantLabel(product, variant) || variant.id;
+      const code = variant.sku ? ` · kod: ${variant.sku}` : "";
+      lines.push(`${index + 1}. ${label} — ${formatSom(variant.price)}${code} · ${variant.stock} ta`);
+    });
+    if (variants.length > MAX_VARIANT_BUTTONS) {
+      lines.push(`...va yana ${variants.length - MAX_VARIANT_BUTTONS} ta (saytda ko'rinadi)`);
+    }
+  }
+
+  const rows: InlineButton[][] = [];
+  const shown = variants.slice(0, MAX_VARIANT_BUTTONS);
+  for (let i = 0; i < shown.length; i += 2) {
+    rows.push(
+      shown.slice(i, i + 2).map((variant, j) => ({
+        text: `✏️ ${(variantLabel(product, variant) || variant.id).slice(0, 20)}`,
+        callback_data: `ap|vr|i:${i + j}`,
+      }))
+    );
+  }
+  rows.push([{ text: "➕ Yangi tur", callback_data: "ap|vr|add" }]);
+  rows.push([{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]);
+
+  await sendChatMessage(session.chatId, lines.join("\n"), {
+    replyMarkup: { inline_keyboard: rows },
+    threadId: session.threadId,
+  });
+}
+
+/** Bitta turning ustidagi amallar. */
+async function sendVariantActions(
+  session: AdminSession,
+  product: Product,
+  index: number
+): Promise<void> {
+  const variant = (product.variants ?? [])[index];
+  if (!variant) {
+    await sendVariantMenu(session, product);
+    return;
+  }
+
+  await sendChatMessage(
+    session.chatId,
+    [
+      `🔀 <b>${variantLabel(product, variant) || variant.id}</b>`,
+      `Narx: ${formatSom(variant.price)} | Zaxira: ${variant.stock}${variant.sku ? ` | Kod: ${variant.sku}` : ""}`,
+      "",
+      "Nimani o'zgartiramiz?",
+    ].join("\n"),
+    {
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            { text: "💰 Narx", callback_data: `ap|vf|price:${index}` },
+            { text: "📦 Zaxira", callback_data: `ap|vf|stock:${index}` },
+          ],
+          [
+            { text: "#️⃣ Kod", callback_data: `ap|vf|sku:${index}` },
+            { text: "🗑 Bunday turi yo'q", callback_data: `ap|vf|del:${index}` },
+          ],
+          [{ text: "⬅️ Orqaga", callback_data: "ap|vr|list" }],
+        ],
+      },
+      threadId: session.threadId,
+    }
+  );
+}
+
+/** Mahsulotni bazadan o'qish (turlar bilan ishlashda tez-tez kerak). */
+async function loadProduct(productId: string): Promise<Product | null> {
+  const snap = await getAdminDb().collection("products").doc(productId).get();
+  return snap.exists ? ({ id: snap.id, ...snap.data() } as Product) : null;
+}
+
+/**
+ * Turlar ro'yxatini saqlaydi va mahsulotning UMUMIY narx/zaxirasini
+ * qayta hisoblaydi (narx - eng arzon tur, zaxira - yig'indi).
+ *
+ * Yangi qiymat qo'shilganda dekart ko'paytmasidan paydo bo'ladigan,
+ * lekin HALI KIRITILMAGAN kombinatsiyalar "bunday turi yo'q" deb
+ * belgilanadi - aks holda ular kanalda 0 so'm bo'lib chiqib ketardi.
+ */
+async function saveVariants(
+  productId: string,
+  axes: VariantAxis[],
+  variants: ProductVariant[],
+  excluded: string[]
+): Promise<void> {
+  const filled = normalizeVariants(axes, variants, excluded);
+  const blank = filled.variants.filter((variant) => variant.price <= 0).map((variant) => variant.id);
+  const clean = blank.length > 0 ? normalizeVariants(axes, variants, [...excluded, ...blank]) : filled;
+
+  const hasRows = clean.variants.length > 0;
+  await getAdminDb()
+    .collection("products")
+    .doc(productId)
+    .update({
+      variantAxes: hasRows ? clean.axes : [],
+      variants: clean.variants,
+      variantsExcluded: clean.variantsExcluded,
+      ...(hasRows
+        ? {
+            price: minVariantPrice({ variants: clean.variants }) ?? 0,
+            stock: totalVariantStock({ variants: clean.variants }),
+          }
+        : {}),
+      updatedAt: Date.now(),
+    });
+}
+
+/** "➕ Yangi tur" va tur maydonlariga kelgan matn. */
+async function applyVariantValue(
+  userId: number,
+  session: AdminSession,
+  field: string,
+  value: string
+): Promise<void> {
+  if (!session.productId) return;
+  const product = await loadProduct(session.productId);
+  if (!product) return;
+
+  const reply = (text: string) => sendChatMessage(session.chatId, text, { threadId: session.threadId });
+
+  // 1) Turlari yo'q mahsulotda avval QATOR NOMI so'raladi ("Rangi").
+  if (field === "variant_axis") {
+    const label = value.trim();
+    if (label.length < 2) {
+      await reply("Qator nomini yozing (masalan <b>Rangi</b>):");
+      return;
+    }
+    session.draft = { ...session.draft, variantAxes: [{ key: axisKeyOf(label), label, values: [] }] };
+    session.editField = "variant_add";
+    await saveSession(userId, session);
+    await reply(
+      [
+        `✅ Qator: <b>${label}</b>`,
+        "",
+        "Endi birinchi turni yuboring:",
+        "<code>qiymat - narx - soni - kod</code>",
+        "Masalan: <code>Satin Gold - 91400 - 5 - SJ-03</code>",
+      ].join("\n")
+    );
+    return;
+  }
+
+  // 2) Yangi tur qatori.
+  if (field === "variant_add") {
+    const parsed = parseVariantLine(value);
+    if (!parsed) {
+      await reply(
+        "Tushunmadim. Shu ko'rinishda yuboring:\n<code>Satin Gold - 91400 - 5 - SJ-03</code>"
+      );
+      return;
+    }
+    const axes = (product.variantAxes?.length ? product.variantAxes : session.draft.variantAxes) ?? [];
+    if (axes.length === 0) {
+      await reply("Avval qator nomini yuboring.");
+      return;
+    }
+    if (parsed.values.length !== axes.length) {
+      await reply(
+        `Qiymatlar soni mos emas: ${axes.length} ta kerak (${axes
+          .map((axis) => axis.label)
+          .join("|")}), siz ${parsed.values.length} ta yubordingiz.`
+      );
+      return;
+    }
+
+    const nextAxes = axes.map((axis, index) => {
+      const item = parsed.values[index] ?? "";
+      return axis.values.includes(item) ? axis : { ...axis, values: [...axis.values, item] };
+    });
+    const options: Record<string, string> = {};
+    nextAxes.forEach((axis, index) => {
+      options[axis.key] = parsed.values[index] ?? "";
+    });
+    const id = variantIdOf(nextAxes, options);
+
+    const existing = product.variants ?? [];
+    const already = existing.some((variant) => variant.id === id);
+    const variants = already
+      ? existing.map((variant) =>
+          variant.id === id
+            ? { ...variant, price: parsed.price, stock: parsed.stock, sku: parsed.sku || variant.sku }
+            : variant
+        )
+      : [
+          ...existing,
+          {
+            id,
+            options,
+            price: parsed.price,
+            discountPrice: null,
+            stock: parsed.stock,
+            ...(parsed.sku ? { sku: parsed.sku } : {}),
+          },
+        ];
+
+    // Qo'shilgan tur "yo'q" ro'yxatida turgan bo'lsa - qaytariladi.
+    const excluded = (product.variantsExcluded ?? []).filter((item) => item !== id);
+    await saveVariants(product.id, nextAxes, variants, excluded);
+    await reply(already ? "✅ Tur yangilandi." : "✅ Yangi tur qo'shildi.");
+    await finishVariantEdit(userId, session);
+    return;
+  }
+
+  // 3) Mavjud turning narxi / zaxirasi / kodi.
+  const [, action, rawIndex] = field.split(":");
+  const index = Number(rawIndex);
+  const variants = [...(product.variants ?? [])];
+  const target = variants[index];
+  if (!target) {
+    await reply("Bu tur topilmadi.");
+    await finishVariantEdit(userId, session);
+    return;
+  }
+
+  if (action === "price" || action === "stock") {
+    const number = parseNumber(value);
+    if (Number.isNaN(number) || number < 0) {
+      await reply("Faqat musbat son yuboring:");
+      return;
+    }
+    variants[index] =
+      action === "price" ? { ...target, price: number } : { ...target, stock: Math.round(number) };
+  } else if (action === "sku") {
+    variants[index] = { ...target, sku: value.trim() };
+  }
+
+  await saveVariants(
+    product.id,
+    product.variantAxes ?? [],
+    variants,
+    product.variantsExcluded ?? []
+  );
+  await reply("✅ Yangilandi.");
+  await finishVariantEdit(userId, session);
+}
+
+/** Tur o'zgargach: kanaldagi post yangilanadi va turlar oynasi qayta chiziladi. */
+async function finishVariantEdit(userId: number, session: AdminSession): Promise<void> {
+  session.step = "menu";
+  session.editField = undefined;
+  session.draft = {};
+  await saveSession(userId, session);
+  if (!session.productId) return;
+
+  const product = await loadProduct(session.productId);
+  if (!product) return;
+  await announceProduct(product, "refresh").catch((error) =>
+    console.error("Kanaldagi e'lonni yangilashda xato:", error)
+  );
+  await sendVariantMenu(session, product);
 }
 
 // ---------------------------------------------------------------------------
@@ -771,6 +1079,102 @@ export async function handleAdminSessionCallback(params: {
   if (action === "skip" && session.flow === "new_product") {
     await answerCallbackQuery(callbackQueryId, "O'tkazildi");
     await advanceNewProduct(userId, session);
+    return;
+  }
+
+  // TURLAR oynasi
+  if (action === "vr") {
+    await answerCallbackQuery(callbackQueryId);
+    if (!session.productId) return;
+    const product = await loadProduct(session.productId);
+    if (!product) return;
+
+    if (value === "list") {
+      session.step = "menu";
+      session.editField = undefined;
+      await saveSession(userId, session);
+      await sendVariantMenu(session, product);
+      return;
+    }
+
+    if (value === "add") {
+      session.step = "edit_value";
+      // Turlari yo'q mahsulotda avval QATOR NOMI so'raladi.
+      const hasAxes = (product.variantAxes?.length ?? 0) > 0;
+      session.editField = hasAxes ? "variant_add" : "variant_axis";
+      await saveSession(userId, session);
+      await sendChatMessage(
+        session.chatId,
+        hasAxes
+          ? [
+              "Yangi turni bitta qatorda yuboring:",
+              "<code>qiymat - narx - soni - kod</code>",
+              `Qatorlar: <b>${(product.variantAxes ?? []).map((axis) => axis.label).join("|")}</b>`,
+              (product.variantAxes?.length ?? 0) > 1
+                ? "Qiymatlarni <code>|</code> bilan ajrating: <code>50x60|Oq - 96000 - 3 - BS7677</code>"
+                : "Masalan: <code>Satin Gold - 91400 - 5 - SJ-03</code>",
+            ].join("\n")
+          : [
+              "Bu mahsulotda hali turlar yo'q.",
+              "",
+              "Qator nomini yuboring — mijoz nimani tanlaydi?",
+              "Masalan: <b>Rangi</b>, <b>O'lcham</b>, <b>Qalinlik</b>",
+            ].join("\n"),
+        { threadId: session.threadId }
+      );
+      return;
+    }
+
+    if (value.startsWith("i:")) {
+      const index = Number(value.slice(2));
+      session.variantIndex = index;
+      await saveSession(userId, session);
+      await sendVariantActions(session, product, index);
+      return;
+    }
+    return;
+  }
+
+  // Bitta tur ustidagi amal
+  if (action === "vf") {
+    await answerCallbackQuery(callbackQueryId);
+    if (!session.productId) return;
+    const product = await loadProduct(session.productId);
+    if (!product) return;
+
+    const [what, rawIndex] = value.split(":");
+    const index = Number(rawIndex);
+    const variant = (product.variants ?? [])[index];
+    if (!variant) {
+      await sendVariantMenu(session, product);
+      return;
+    }
+
+    // "Bunday turi yo'q": ro'yxatdan olib tashlanadi va QAYTA
+    // yasalmaydi (kaliti `variantsExcluded` ga tushadi).
+    if (what === "del") {
+      const variants = (product.variants ?? []).filter((item) => item.id !== variant.id);
+      await saveVariants(
+        product.id,
+        product.variantAxes ?? [],
+        variants,
+        [...(product.variantsExcluded ?? []), variant.id]
+      );
+      await sendChatMessage(session.chatId, "🗑 Tur olib tashlandi.", { threadId: session.threadId });
+      await finishVariantEdit(userId, session);
+      return;
+    }
+
+    session.step = "edit_value";
+    session.editField = `v:${what}:${index}`;
+    await saveSession(userId, session);
+    const prompt =
+      what === "price"
+        ? "Shu turning yangi <b>narx</b>ini yuboring (so'mda):"
+        : what === "stock"
+          ? "Shu turning <b>zaxira</b> sonini yuboring:"
+          : "Shu turning <b>kodi</b>ni (artikul) yuboring:";
+    await sendChatMessage(session.chatId, prompt, { threadId: session.threadId });
     return;
   }
 

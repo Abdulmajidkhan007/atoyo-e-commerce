@@ -106,6 +106,11 @@ Shu sababli:
   xato, ham maxfiylikning buzilishi.
 - Botda ro'yxat ham, kartochka ham `shownPrice()` dan o'tadi —
   ikkalasida bir xil raqam turishi shart.
+- **Kanal postida tur qatori**: avval QIYMAT, keyin NARX, oxirida
+  KOD (`Satin Gold — 91 400 so'm · kod: SJ-03`). Ilgari kod oldida
+  turardi va qaysi narx qaysi kodga tegishli ekani bilinmasdi.
+  Tartib: nomi → brend/davlat → kategoriya → narx → turlar → material
+  (`buildProductText`, testi `channel.test.ts`).
 - Admin formada maydon **"Optom narx"** deb ataladi va ostida
   hisoblangan dona narx ko'rsatiladi (ustama `/api/admin/pricing`
   dan olinadi — mijozga beriladigan `/api/pricing` da yo'q).

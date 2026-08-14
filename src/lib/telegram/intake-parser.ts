@@ -283,7 +283,7 @@ const MAX_VARIANT_AXES = 3;
  * kod ichidagi chiziqcha ("BS-5060") saqlanib qoladi. Bo'shliqsiz
  * yozilgan bo'lsa ("50x60-850000-4") oddiy chiziqcha ham ishlaydi.
  */
-function splitVariantLine(line: string): string[] {
+export function splitVariantLine(line: string): string[] {
   const spaced = line
     .split(/\s+[-—–]\s+|\s*[;\t]+\s*/)
     .map((part) => part.trim())
@@ -294,6 +294,33 @@ function splitVariantLine(line: string): string[] {
     .split(/[-—–;]/)
     .map((part) => part.trim())
     .filter(Boolean);
+}
+
+/**
+ * BITTA tur qatorini o'qiydi: "Satin Gold - 91400 - 5 - SJ-03".
+ * Botdagi "➕ Yangi tur" tugmasi ham, kirim izohi ham shuni ishlatadi -
+ * format ikkalasida bir xil bo'lishi uchun.
+ */
+export function parseVariantLine(line: string): ParsedVariant | null {
+  const parts = splitVariantLine(line);
+  if (parts.length < 2) return null;
+
+  const [rawValues, rawPrice, rawStock, rawSku] = parts;
+  const price = parseAmount(rawPrice!);
+  if (price === null || price <= 0) return null;
+
+  const values = rawValues!
+    .split("|")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (values.length === 0) return null;
+
+  return {
+    values,
+    price,
+    stock: Math.max(0, Math.round(parseAmount(rawStock ?? "") ?? 0)),
+    sku: (rawSku ?? "").trim(),
+  };
 }
 
 export interface ParsedVariant {

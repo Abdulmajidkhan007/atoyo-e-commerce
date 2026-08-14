@@ -11,6 +11,7 @@ import {
 import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import { publicDescription } from "@/lib/products/description";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
+import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import {
   hasVariants,
   minVariantPrice,
@@ -179,6 +180,26 @@ async function forChannel(product: Product): Promise<Product> {
   return toViewerProduct(product, undefined, await getPricingSettings());
 }
 
+/**
+ * Kategoriya nomi (post sarlavhasidan keyin turadi). Ro'yxat kam
+ * o'zgaradi, e'lon esa ommaviy ketadi (40 tadan) - shuning uchun
+ * bir daqiqa keshlanadi.
+ */
+let taxonomyCache: { at: number; categories: { slug: string; label: string }[] } | null = null;
+
+async function categoryLabelOf(product: Product): Promise<string> {
+  if (!product.category) return "";
+  try {
+    if (!taxonomyCache || Date.now() - taxonomyCache.at > 60_000) {
+      const taxonomy = await getTaxonomy();
+      taxonomyCache = { at: Date.now(), categories: taxonomy.categories };
+    }
+    return labelOf(taxonomyCache.categories, product.category);
+  } catch {
+    return product.category;
+  }
+}
+
 /** Kanal postida ko'rsatiladigan turlar soni (post juda uzun bo'lmasligi uchun). */
 const MAX_VARIANT_LINES = 15;
 
@@ -188,7 +209,11 @@ const MAX_VARIANT_LINES = 15;
  * DIQQAT: bu yerga DONA NARXga o'girilgan mahsulot berilishi shart
  * (`forChannel()`). Kanal ochiq - u yerda optom narx turmasligi kerak.
  */
-function buildProductText(product: Product, mode: "new" | "updated"): string {
+export function buildProductText(
+  product: Product,
+  mode: "new" | "updated",
+  categoryLabel = ""
+): string {
   const hasDiscount = isDiscountActive(product);
   // Sotish turi (dona/metr/kg...) - narx va zaxira shu birlikda.
   const unit = labelOf(BUILTIN_UNITS, product.unit) || product.unit || DEFAULT_UNIT;
@@ -205,25 +230,36 @@ function buildProductText(product: Product, mode: "new" | "updated"): string {
     ``,
     `<b>${escapeHtml(product.name)}</b>`,
   ];
-  if (product.sku) lines.push(`#️⃣ Kod: <code>${escapeHtml(product.sku)}</code>`);
+  // TARTIB: nomi → brend/davlat → kategoriya → narx → turlar → material.
+  // Mahsulot kodi turlari bor mahsulotda ro'yxatning ichida turadi
+  // (har turning o'z kodi bor), shuning uchun yuqorida takrorlanmaydi.
   if (product.brand || product.manufacturerCountry) {
     lines.push(`🏷 ${escapeHtml([product.brand, product.manufacturerCountry].filter(Boolean).join(" • "))}`);
   }
+  if (categoryLabel) lines.push(`📂 ${escapeHtml(categoryLabel)}`);
+  if (product.sku && !withVariants) lines.push(`#️⃣ Kod: <code>${escapeHtml(product.sku)}</code>`);
   lines.push(priceLine);
   if (withVariants) {
-    // Har bir turning KODI va O'Z NARXI ro'yxat bo'lib chiqadi -
-    // do'kondagi eski qo'lyozma postlar shaklida:
-    //   39302 · Oddiy • 120 — 7 $
-    //   39305 · Jalyuzi • 120 — 8.1 $
+    /**
+     * TUR QATORI: avval TANLOV (rang/o'lcham), keyin NARX, oxirida KOD.
+     *
+     * Ilgari kod eng oldida turardi va qator "SJ-03 Ruskin · Satin Gold
+     * — 91 400" bo'lib chiqardi: qaysi narx qaysi kodga tegishli ekani
+     * bilinmasdi. Endi mijoz avval o'zi tanlaydigan narsani, keyin
+     * uning narxini ko'radi; kod esa "kod:" deb alohida yoziladi.
+     */
     const axes = product.variantAxes ?? [];
-    lines.push(`🔀 <b>${escapeHtml(axes.map((axis) => axis.label).join(" • "))}:</b>`);
+    // Bitta qator bo'lsa uning nomi ("Rangi:"), ko'p bo'lsa - "Turlari:"
+    // (ikki-uch nomni "•" bilan qo'shib yozish chalkash ko'rinardi).
+    const header = axes.length === 1 ? (axes[0]?.label ?? "Turlari") : "Turlari";
+    lines.push(`🔀 <b>${escapeHtml(header)}:</b>`);
     const rows = product.variants ?? [];
     for (const row of rows.slice(0, MAX_VARIANT_LINES)) {
       const label = variantLabel(product, row) || Object.values(row.options).join(" • ");
-      // Turning o'z kodi bo'lsa - eng oldida turadi (mijoz kod bo'yicha buyuradi).
-      const code = row.sku ? `<code>${escapeHtml(row.sku)}</code> · ` : "";
-      const note = row.stock > 0 ? "" : " — tugagan";
-      lines.push(`   • ${code}${escapeHtml(label)} — <b>${formatSom(variantPrice(row))}</b>${escapeHtml(note)}`);
+      const parts = [`   • ${escapeHtml(label)} — <b>${formatSom(variantPrice(row))}</b>`];
+      if (row.sku) parts.push(`kod: <code>${escapeHtml(row.sku)}</code>`);
+      if (row.stock <= 0) parts.push("tugagan");
+      lines.push(parts.join(" · "));
     }
     if (rows.length > MAX_VARIANT_LINES) {
       lines.push(`   • ...va yana ${rows.length - MAX_VARIANT_LINES} ta tur (saytda)`);
@@ -296,7 +332,7 @@ export async function refreshChannelPost(product: Product): Promise<RefreshResul
   ].slice(0, 10);
 
   const header: "new" | "updated" = product.channelMode ?? "new";
-  const body = buildProductText(await forChannel(product), header);
+  const body = buildProductText(await forChannel(product), header, await categoryLabelOf(product));
   const footer = buildFooter(await loadFooter());
   const budget = 850 - footer.length;
   const text =
@@ -404,7 +440,7 @@ export async function announceProduct(
     ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
     ...(product.videos ?? []).filter(Boolean).map((url) => ({ url, type: "video" as const })),
   ].slice(0, 10);
-  const body = buildProductText(await forChannel(product), header);
+  const body = buildProductText(await forChannel(product), header, await categoryLabelOf(product));
   const footer = buildFooter(await loadFooter());
   // Albom caption'i 1024 belgi bilan cheklangan - tavsif uzun bo'lsa
   // e'lon jimgina kesilib qolmasligi uchun mahsulot qismini qisqartiramiz
