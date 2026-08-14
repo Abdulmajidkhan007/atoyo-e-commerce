@@ -17,6 +17,8 @@ import { AI_MODEL, getAnthropic, isAiConfigured } from "./config";
  * aks holda mijoz suratdagi narsani olmaydi (bu qonuniy muammo ham).
  */
 
+import { assertImageQuota, recordImageUse } from "./usage";
+
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /**
@@ -210,6 +212,10 @@ export async function generateImage(params: {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error("GEMINI_API_KEY sozlanmagan.");
 
+  // Rasm PULLIK chiziladi - oylik chegara to'lgan bo'lsa to'xtaymiz
+  // (balans sezilmay tugab qolmasin).
+  await assertImageQuota();
+
   const models = workingModel ? [workingModel] : MODEL_CANDIDATES;
   let lastError: Error | null = null;
 
@@ -217,6 +223,8 @@ export async function generateImage(params: {
     try {
       const image = await callModel(model, params.sources ?? [], params.prompt, apiKey);
       workingModel = model;
+      // Sarf hisoblagichi - admin panelda "shu oyda N ta" ko'rinadi.
+      await recordImageUse(1);
       return image;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));

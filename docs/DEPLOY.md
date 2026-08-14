@@ -718,3 +718,25 @@ Eski (qo'lda) tartib:
 
 Chegara: bitta yuklash 1600 birlik, kunlik kvota 10 000 — ya'ni kuniga
 ~6 ta video. Shu sabab YouTube avtomatik emas, admin tanlaganda ishlaydi.
+
+
+## AI rasm generatsiyasi: to'lov va chegara
+
+Rasm chizish (`GEMINI_API_KEY`) **pullik** — bitta rasm taxminan
+**0.04 $**. Bepul kvota tugagach Google Cloud billing hisobi kerak:
+
+1. `console.cloud.google.com/billing` → hisob yaratiladi (yoki mavjudi
+   `atoyo-uz` loyihasiga bog'lanadi) va xalqaro Visa/Mastercard qo'shiladi.
+   Uzcard/Humo ishlamaydi.
+2. `generativelanguage.googleapis.com` API yoqilgan bo'lsin.
+3. Google shaxsni tasdiqlashni so'rashi mumkin (pasport + manzil
+   hujjati). Tasdiqlanmasa hisob to'xtatiladi.
+4. **Budget alert**: Billing → Budgets & alerts (masalan 10 $/oy).
+   Qattiq to'xtatish uchun: APIs & Services → Generative Language API →
+   Quotas → kunlik so'rov chegarasi.
+
+Saytning O'ZIDA ham chegara bor: **Sozlamalar → "AI rasm sarfi"**.
+Shu oyda nechta rasm chizilgani ko'rinadi va oylik chegara qo'yiladi
+(standart 200 ta; 0 — cheksiz). Chegara to'lganda generatsiya
+to'xtaydi va sababi o'zbekcha aytiladi. Hisob `aiUsage/<YYYY-MM>`
+hujjatida, sozlama `settings/ai` da.

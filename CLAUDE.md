@@ -400,6 +400,13 @@ hamon yasalmaydi, faqat yuklab qo'shiladi.
   ("Nano Banana", `GEMINI_API_KEY`) bilan rasm generatsiyasi. Prompt
   har doim "mahsulot o'zgarmasin" cheklovi bilan ketadi.
 
+- `usage.ts` — **AI rasm sarfi va oylik chegara**. Rasm PULLIK
+  (~0.04 $), shuning uchun har chizilgan rasm `aiUsage/<YYYY-MM>`
+  hujjatida sanaladi va `settings/ai.monthlyImageLimit` (standart
+  200, 0 — cheksiz) to'lganda `generateImage()` TO'XTAYDI.
+  Boshqaruvi: Sozlamalar → "AI rasm sarfi" (`/api/admin/ai/usage`).
+  Hisoblagich o'zi yiqilsa ish to'xtamaydi (u yordamchi vosita).
+
 Kirish yo'llari (`NEXT_PUBLIC_AUTH_PROVIDERS`) — Firebase konsolida
 yoqilgan provayderlargina ro'yxatga qo'shiladi.
 

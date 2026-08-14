@@ -126,6 +126,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // AI rasm sarfi hisoblagichi (oylik) - faqat server (Admin SDK).
+    // Mijozga umuman kerak emas.
+    match /aiUsage/{month} {
+      allow read, write: if false;
+    }
+
     // Bot sozlamalari (topic thread ID lar) - faqat admin.
     match /settings/{settingId} {
       allow read: if isAdmin();

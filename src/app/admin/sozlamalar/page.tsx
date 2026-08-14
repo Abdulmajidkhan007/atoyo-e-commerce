@@ -13,6 +13,7 @@ import { SecretsForm } from "@/components/admin/SecretsForm";
 import { SocialSettingsForm } from "@/components/admin/SocialSettingsForm";
 import { EmailSettingsForm } from "@/components/admin/EmailSettingsForm";
 import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
+import { AiUsagePanel } from "@/components/admin/AiUsagePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,15 @@ export default async function AdminSettingsPage() {
           Optom narxdan dona narx qanday hisoblanishi va buyurtmaning eng kam summasi.
         </p>
         <PricingSettingsForm />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">AI rasm sarfi</h2>
+        <p className="mb-6 text-sm text-navy-300">
+          Har bir chizilgan rasm Google hisobidan pul yechadi. Shu oyda nechta rasm
+          chizilgani va oylik chegara — chegara to&apos;lganda generatsiya to&apos;xtaydi.
+        </p>
+        <AiUsagePanel />
       </section>
 
       {isOwner(user) && (
