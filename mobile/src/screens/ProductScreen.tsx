@@ -37,6 +37,7 @@ import {
 } from '../variants';
 import {Icon} from '../components/Icon';
 import {Breadcrumbs} from '../components/Breadcrumbs';
+import {SegmentedPicker} from '../components/SegmentedPicker';
 
 /** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
 export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>) {
@@ -235,27 +236,20 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           (product.variantAxes ?? []).map(axis => (
             <View key={axis.key} style={{gap: spacing.xs}}>
               <Text style={styles.muted}>{axis.label}</Text>
-              {/* Segment tanlagich: ramka butun kenglikda, variantlar
-                  teng bo'linadi; ko'p bo'lsa ramka ichida aylanadi. */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.variantGroup}
-                contentContainerStyle={styles.variantGroupInner}>
-                {axis.values.map(value => {
-                  const selected = selection[axis.key] === value;
-                  return (
-                    <Pressable
-                      key={value}
-                      onPress={() => setSelection(prev => ({...prev, [axis.key]: value}))}
-                      style={[styles.variant, selected && styles.variantOn]}>
-                      <Text style={[styles.variantText, selected && styles.variantTextOn]}>
-                        {value}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
+              {/* Segment tanlagich: tanlangan variantning orqasidagi
+                  yostiq surilib boradi va uni sudrab ham tanlash
+                  mumkin (saytdagi bilan bir xil). */}
+              <SegmentedPicker
+                value={selection[axis.key] ?? ''}
+                onChange={value => setSelection(prev => ({...prev, [axis.key]: value}))}
+                options={axis.values.map(value => ({
+                  value,
+                  label: value,
+                  dimmed: !(product.variants ?? []).some(
+                    v => v.options[axis.key] === value && v.stock > 0,
+                  ),
+                }))}
+              />
             </View>
           ))}
 
@@ -392,31 +386,6 @@ const useStyles = makeStyles(c => ({
   },
   zoomImage: {width: '100%', height: '100%'},
   zoomClose: {position: 'absolute', top: 40, right: 20},
-  variantGroup: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: 999,
-    borderBottomLeftRadius: 0,
-  },
-  /** Ichki qator: kamida to'liq kenglik, ko'p bo'lsa aylanadi. */
-  variantGroupInner: {
-    flexGrow: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    padding: 4,
-  },
-  variant: {
-    flexGrow: 1,
-    alignItems: 'center',
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-  },
-  variantOn: {backgroundColor: c.accent},
-  variantText: {color: c.text, fontSize: 13, fontWeight: '600'},
-  variantTextOn: {color: c.onAccent},
   screen: {flex: 1, backgroundColor: c.bg},
   center: {flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg},
   /* Eni ekran kengligiga teng: gorizontal ScrollView ichida foiz

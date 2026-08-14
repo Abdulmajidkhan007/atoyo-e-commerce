@@ -270,6 +270,20 @@ urinish). Kalitlar `secrets/social`, sozlama `settings/social`.
 Kanalga e'lon qilingan mahsulot navbatga tushadi (`announceProduct`
 ichida, `refresh` rejimida emas). Ijtimoiy tarmoqda faqat DONA narx.
 
+## Tur tanlagich (segment) — sayt va ilova bir xil
+
+Mahsulot sahifasidagi "Rangi / O'lcham" tanlagichi
+`components/product/SegmentedPicker.tsx` (sayt) va
+`mobile/src/components/SegmentedPicker.tsx` (ilova) da. Tanlangan
+variantning orqasidagi rangli "yostiq" SAKRAMAYDI — surilib boradi
+(260 ms) va uni ushlab chapga-o'ngga SUDRAB ham tanlash mumkin.
+
+Nozik joylar: yostiq tugmalarning ORQASIDA turadi (matn ustiga
+chiqmasligi uchun), shuning uchun sudrash track ustida ushlanadi va
+bosish yostiq chegarasida ekani tekshiriladi; sudrashdan keyingi
+"click" o'tkazib yuboriladi (aks holda barmoq ostidagi tugma
+tanlanib qolardi). Klaviaturada ← → ishlaydi.
+
 ## Server komponentda MUI (buzilmasin)
 
 Server komponentga `component={Link}` kabi FUNKSIYA prop berilmaydi —

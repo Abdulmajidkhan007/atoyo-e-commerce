@@ -10,6 +10,7 @@ import { defaultVariant, findVariant, variantLabel, variantPrice } from "@/lib/p
 import { useDisplayPrice, useIsWholesale } from "@/lib/products/usePricing";
 import type { Product } from "@/types/product";
 import { formatSom } from "@/lib/format";
+import { SegmentedPicker } from "./SegmentedPicker";
 
 /**
  * TUR TANLASH (o'lcham / qalinlik / rang...) va savatga qo'shish.
@@ -45,36 +46,19 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
         <div key={axis.key} className="flex flex-col gap-1.5">
           <span className="text-sm text-navy-300">{axis.label}</span>
           {/* Segment tanlagich: ramka BUTUN KENGLIKDA, variantlar teng
-              bo'linadi. Variant ko'p bo'lib sig'masa ramka ichida
-              gorizontal aylanadi - ekrandan chiqib ketmaydi.
-              Pastki-chap burchak to'g'ri qoldirilgan (brend uslubi). */}
-          <div className="w-full overflow-x-auto rounded-full rounded-bl-none border border-navy-100 p-1 dark:border-navy-500">
-            <div className="flex min-w-full items-center gap-1">
-            {axis.values.map((value) => {
-              const isSelected = selection[axis.key] === value;
-              const available = isValueAvailable(axis.key, value);
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setSelection((prev) => ({ ...prev, [axis.key]: value }))}
-                  aria-pressed={isSelected}
-                  className={[
-                    "flex-1 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition",
-                    // Tanlangan variant ostidagi rangli "yostiq" - shu
-                    // tugmaning orqasiga o'tadi.
-                    isSelected
-                      ? "bg-aqua-500 font-semibold text-white shadow-sm"
-                      : "text-navy-900 hover:bg-aqua-500/15 dark:text-white",
-                    available ? "" : "opacity-50",
-                  ].join(" ")}
-                >
-                  {value}
-                </button>
-              );
-            })}
-            </div>
-          </div>
+              bo'linadi. Tanlangan variantning orqasidagi "yostiq"
+              surilib boradi va uni ushlab chapga-o'ngga sudrab ham
+              tanlash mumkin (`SegmentedPicker`). */}
+          <SegmentedPicker
+            ariaLabel={axis.label}
+            value={selection[axis.key] ?? ""}
+            onChange={(value) => setSelection((prev) => ({ ...prev, [axis.key]: value }))}
+            options={axis.values.map((value) => ({
+              value,
+              label: value,
+              dimmed: !isValueAvailable(axis.key, value),
+            }))}
+          />
         </div>
       ))}
 
