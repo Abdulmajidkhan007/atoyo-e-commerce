@@ -14,6 +14,7 @@ import { SocialSettingsForm } from "@/components/admin/SocialSettingsForm";
 import { EmailSettingsForm } from "@/components/admin/EmailSettingsForm";
 import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
 import { AiUsagePanel } from "@/components/admin/AiUsagePanel";
+import { AppUpdateForm } from "@/components/admin/AppUpdateForm";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,19 @@ export default async function AdminSettingsPage() {
           Optom narxdan dona narx qanday hisoblanishi va buyurtmaning eng kam summasi.
         </p>
         <PricingSettingsForm />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">
+          Ilova yangilanishi (Android)
+        </h2>
+        <p className="mb-6 text-sm text-navy-300">
+          Ilova Play Market&apos;da emas — APK to&apos;g&apos;ridan-to&apos;g&apos;ri yuklab olinadi,
+          ya&apos;ni telefon uni o&apos;zi yangilamaydi. Yangi APK chiqarilgach shu yerga versiya va
+          &laquo;nima o&apos;zgardi&raquo; ni yozing: ilova ochilganda foydalanuvchiga oyna
+          chiqadi va bir bosishda yangi versiya yuklanadi.
+        </p>
+        <AppUpdateForm />
       </section>
 
       <section>

@@ -20,6 +20,12 @@ import {useToast} from './components/Toast';
  */
 
 const PRODUCTS_TOPIC = 'products';
+/**
+ * ILOVA YANGILANISHI mavzusi. Alohida: mahsulot e'lonlari kerak
+ * bo'lmasa ham, yangi APK chiqqanini bilish kerak - Play Market
+ * yo'q, ilova o'zi yangilanmaydi.
+ */
+const APP_TOPIC = 'app-updates';
 
 export interface PushStatus {
   /** Bildirishnomaga ruxsat berilganmi. */
@@ -42,6 +48,7 @@ export async function refreshPushRegistration(signedIn: boolean): Promise<PushSt
   if (!allowed) return {allowed: false, hasToken: false, saved: false};
 
   await messaging().subscribeToTopic(PRODUCTS_TOPIC).catch(() => {});
+  await messaging().subscribeToTopic(APP_TOPIC).catch(() => {});
 
   let token: string | null = null;
   try {
@@ -108,6 +115,9 @@ export function usePushNotifications(): void {
       const screen = typeof data?.screen === 'string' ? data.screen : null;
       const productId = typeof data?.productId === 'string' ? data.productId : null;
       const go = navigation as unknown as {navigate: (name: string, params?: object) => void};
+      // "update" - yangilanish bildirishnomasi: alohida ekran yo'q,
+      // ilova ochilganda yangilanish oynasi o'zi chiqadi.
+      if (screen === 'update') return;
       if (screen === 'Mahsulot' && productId) go.navigate('Mahsulot', {productId});
       else if (screen) go.navigate(screen);
     };
@@ -117,6 +127,7 @@ export function usePushNotifications(): void {
 
       // Umumiy e'lonlar - hamma qurilmaga.
       await messaging().subscribeToTopic(PRODUCTS_TOPIC).catch(() => {});
+      await messaging().subscribeToTopic(APP_TOPIC).catch(() => {});
 
       const token = await messaging().getToken().catch(() => null);
       if (!active || !token) return;

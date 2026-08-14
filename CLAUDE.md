@@ -461,6 +461,26 @@ yoqilgan provayderlargina ro'yxatga qo'shiladi.
   (Android APK relizi `latest` alohida). Ikonka koddan chiziladi:
   `node desktop/build/make-icon.js`. Tartib: `docs/DESKTOP.md`.
 
+## Ilova yangilanishi (Play Market'siz)
+
+APK to'g'ridan-to'g'ri tarqatilgani uchun telefon ilovani O'ZI
+yangilamaydi. Shuning uchun:
+
+- versiya + "nima o'zgardi" `settings/appUpdate` da (`lib/app/version.ts`),
+  boshqaruvi **Sozlamalar → "Ilova yangilanishi"** (`/api/admin/app-update`);
+- ilova har ochilganda `/api/app/version` (ochiq, 10 daq. kesh) dan
+  o'qiydi va o'zinikidan yangi bo'lsa **oyna** ko'rsatadi: versiya,
+  bandlar ro'yxati, "Yangilash" (APK brauzerda ochiladi) va
+  "Keyinroq" (o'sha versiya 24 soat bezovta qilmaydi, tepada kichik
+  chiziq qoladi). `mandatory` bo'lsa "Keyinroq" chiqmaydi;
+- "Bildirishnoma yuborilsin" belgilansa `app-updates` mavzusiga push
+  ketadi — ilova shu mavzuga obuna (`mobile/src/push.ts`);
+- ilovadagi versiya `mobile/src/update.ts` dagi `APP_VERSION` — u
+  `android/app/build.gradle` dagi `versionName` bilan BIR XIL bo'lishi
+  shart, aks holda eslatma noto'g'ri chiqadi. Solishtirish
+  `mobile/src/version.ts` da (testi `version.test.ts`, sayt
+  vitest'ida ishlaydi).
+
 ## Mobil ilova (`mobile/`)
 
 React Native CLI (bare, RN 0.76) — **faqat mijozlar uchun**. Sayt bilan

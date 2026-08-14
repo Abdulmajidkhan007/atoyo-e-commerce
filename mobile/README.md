@@ -188,3 +188,24 @@ soniyada shu turdagi nomuvofiqlikni topadi.
 
 React Native'ni yangilaganda: `npm run check-codegen` ni ishga tushirib,
 keyin native paketlarni bittalab yangilash mumkin.
+
+
+## Yangilanish chiqarish (Play Market'siz)
+
+APK to'g'ridan-to'g'ri tarqatiladi, ya'ni telefon ilovani o'zi
+yangilamaydi. Yangi versiya chiqarish tartibi:
+
+1. `mobile/android/app/build.gradle` da `versionCode` ni +1 qiling va
+   `versionName` ni oshiring (masalan `1.1`).
+2. **`mobile/src/update.ts` dagi `APP_VERSION` ni ham o'sha raqamga
+   moslang** — ilova o'zini shu bilan solishtiradi.
+3. Commit + push. CI APK yig'adi; `main` ga tushganda
+   `releases/latest/download/app-release.apk` havolasi yangilanadi
+   (boshqa branchda APK — Actions ishining "Artifacts" bo'limida).
+4. Saytda **Sozlamalar → "Ilova yangilanishi"**: versiya raqami va
+   "nima o'zgardi" bandlarini yozing, kerak bo'lsa "Majburiy
+   yangilanish" va "Bildirishnoma yuborilsin" ni belgilab **Saqlash**.
+
+Shundan keyin foydalanuvchi ilovani ochganda oyna chiqadi va
+"Yangilash" tugmasi APK ni brauzerda yuklab beradi; bildirishnoma
+belgilangan bo'lsa ilovani ochmaganlar ham xabar oladi.

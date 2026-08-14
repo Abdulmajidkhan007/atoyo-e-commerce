@@ -33,6 +33,10 @@ export interface Dict {
   /** Yangi versiya eslatmasi (APK Play Market'siz tarqatilgani uchun). */
   updateAvailable: string;
   updateDownload: string;
+  updateTitle: string;
+  updateWhatsNew: string;
+  updateLater: string;
+  updateHint: string;
   adminPanel: string;
   adminPanelHint: string;
   send: string;
@@ -195,6 +199,10 @@ const uz: Dict = {
   similarProducts: 'O‘xshash mahsulotlar',
   updateAvailable: 'Ilovaning yangi versiyasi chiqdi.',
   updateDownload: 'Yangilash',
+  updateTitle: 'Yangi versiya',
+  updateWhatsNew: 'Nima o‘zgardi:',
+  updateLater: 'Keyinroq',
+  updateHint: 'Yuklab olingach faylni oching va o‘rnating — ma’lumotlaringiz saqlanib qoladi.',
   adminPanel: 'Boshqaruv paneli',
   adminPanelHint: 'Admin panel brauzerda ochiladi',
   send: 'Yuborish',
@@ -363,6 +371,10 @@ const en: Dict = {
   similarProducts: 'Similar products',
   updateAvailable: 'A new version of the app is available.',
   updateDownload: 'Update',
+  updateTitle: 'New version',
+  updateWhatsNew: 'What\'s new:',
+  updateLater: 'Later',
+  updateHint: 'Open the downloaded file to install — your data stays in place.',
   adminPanel: 'Admin panel',
   adminPanelHint: 'Opens in the browser',
   send: 'Send',
@@ -528,6 +540,10 @@ const ru: Dict = {
   similarProducts: 'Похожие товары',
   updateAvailable: 'Вышла новая версия приложения.',
   updateDownload: 'Обновить',
+  updateTitle: 'Новая версия',
+  updateWhatsNew: 'Что нового:',
+  updateLater: 'Позже',
+  updateHint: 'Откройте загруженный файл для установки — данные сохранятся.',
   adminPanel: 'Панель управления',
   adminPanelHint: 'Откроется в браузере',
   send: 'Отправить',

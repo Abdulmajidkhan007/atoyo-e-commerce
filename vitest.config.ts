@@ -14,7 +14,9 @@ import { fileURLToPath } from "node:url";
  */
 export default defineConfig({
   test: {
-    include: ["src/**/*.test.ts"],
+    // Ilovaning SOF (React Native'siz) modullari ham shu yerda
+    // sinaladi - `mobile/` alohida tooling'da, lekin mantiq bir xil.
+    include: ["src/**/*.test.ts", "mobile/src/version.test.ts"],
     environment: "node",
   },
   resolve: {

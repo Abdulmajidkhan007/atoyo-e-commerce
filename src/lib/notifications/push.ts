@@ -22,6 +22,13 @@ import type { AppUser } from "@/types/user";
 /** Ilova obuna bo'ladigan umumiy mavzu. */
 export const PRODUCTS_TOPIC = "products";
 
+/**
+ * ILOVA YANGILANISHI mavzusi. Alohida turadi: mahsulot e'lonlarini
+ * o'chirgan odam ham yangilanish haqida bilishi kerak (APK Play
+ * Market orqali kelmaydi, ya'ni o'zi yangilanmaydi).
+ */
+export const APP_TOPIC = "app-updates";
+
 export interface PushMessage {
   title: string;
   body: string;
