@@ -102,9 +102,29 @@ export function normalizeVariants(
       : { id, options, price: 0, discountPrice: null, stock: 0 };
   });
 
+  const kept = all.filter((variant) => !skip.has(variant.id));
+
+  /**
+   * QATORDAGI QIYMAT ham tozalanadi.
+   *
+   * Tur o'chirilganda (masalan sinov uchun qo'shilgan "Tets") u
+   * `variants` dan chiqardi, lekin `axes[].values` da qolib ketardi -
+   * saytda o'sha tugma turaverar, bosilganda esa mos tur topilmay
+   * "Mahsulot tugagan" deb ko'rinardi. Endi hech qaysi turda
+   * ishlatilmayotgan qiymat qatordan ham olib tashlanadi.
+   */
+  const cleanAxes = usable
+    .map((axis) => ({
+      ...axis,
+      values: axis.values.filter((value) =>
+        kept.some((variant) => variant.options[axis.key] === value)
+      ),
+    }))
+    .filter((axis) => axis.values.length > 0);
+
   return {
-    axes: usable,
-    variants: all.filter((variant) => !skip.has(variant.id)),
+    axes: cleanAxes,
+    variants: kept,
     // Qatorlar o'zgargan bo'lsa endi mavjud bo'lmagan kalitlar
     // ro'yxatda qolib ketmasin - faqat hozirgi kombinatsiyalar.
     variantsExcluded: all.filter((variant) => skip.has(variant.id)).map((variant) => variant.id),

@@ -39,7 +39,9 @@ export function SegmentedPicker({
   const trackRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
+  const [pill, setPill] = useState<{ left: number; top: number; width: number; height: number } | null>(
+    null
+  );
   /** Sudralayotganda yostiqning qo'shimcha siljishi (px). */
   const [dragDx, setDragDx] = useState(0);
   /** Sudrash holati render paytida ham kerak (transition o'chishi uchun). */
@@ -56,7 +58,12 @@ export function SegmentedPicker({
   const measure = useCallback(() => {
     const button = buttonsRef.current[index];
     if (!button) return;
-    setPill({ left: button.offsetLeft, width: button.offsetWidth });
+    setPill({
+      left: button.offsetLeft,
+      top: button.offsetTop,
+      width: button.offsetWidth,
+      height: button.offsetHeight,
+    });
   }, [index]);
 
   // Render bo'lgach o'lchaymiz (shrift yuklangach kenglik o'zgaradi).
@@ -70,13 +77,19 @@ export function SegmentedPicker({
     return () => observer.disconnect();
   }, [measure]);
 
-  /** Yostiq markaziga eng yaqin variant. */
-  const nearest = (center: number) => {
+  /**
+   * Yostiq markaziga eng yaqin variant. Turlar bir necha QATORGA
+   * bo'linishi mumkin, shuning uchun masofa ikki o'lchamda o'lchanadi
+   * (aks holda pastdagi qator ustidagiga aralashib ketardi).
+   */
+  const nearest = (centerX: number, centerY: number) => {
     let best = index;
     let bestDistance = Infinity;
     buttonsRef.current.forEach((button, i) => {
       if (!button) return;
-      const distance = Math.abs(button.offsetLeft + button.offsetWidth / 2 - center);
+      const dx = button.offsetLeft + button.offsetWidth / 2 - centerX;
+      const dy = button.offsetTop + button.offsetHeight / 2 - centerY;
+      const distance = Math.hypot(dx, dy);
       if (distance < bestDistance) {
         bestDistance = distance;
         best = i;
@@ -111,10 +124,10 @@ export function SegmentedPicker({
     const dx = event.clientX - state.startX;
     if (Math.abs(dx) > 3) moved.current = true;
     // Yostiq ramkadan chiqib ketmasin.
-    const maxLeft = track.scrollWidth - pill.width;
+    const maxLeft = track.clientWidth - pill.width;
     const next = Math.min(Math.max(state.baseLeft + dx, 0), Math.max(0, maxLeft));
     setDragDx(next - pill.left);
-    setHoverIndex(nearest(next + pill.width / 2));
+    setHoverIndex(nearest(next + pill.width / 2, pill.top + pill.height / 2));
   };
 
   const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -123,12 +136,13 @@ export function SegmentedPicker({
     dragging.current = null;
     setIsDragging(false);
     setHoverIndex(null);
-    const center = pill.left + dragDx + pill.width / 2;
+    const centerX = pill.left + dragDx + pill.width / 2;
+    const centerY = pill.top + pill.height / 2;
     setDragDx(0);
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     if (!moved.current) return;
 
-    const target = options[nearest(center)];
+    const target = options[nearest(centerX, centerY)];
     if (target && target.value !== value) onChange(target.value);
   };
 
@@ -155,7 +169,11 @@ export function SegmentedPicker({
           step(1);
         }
       }}
-      className="relative w-full touch-pan-y overflow-x-auto rounded-full border border-navy-100 p-1 dark:border-navy-500"
+      // Turlar ko'p bo'lsa ular ekrandan CHIQIB KETMAYDI - keyingi
+      // qatorga o'tadi (ilgari gorizontal aylanardi va oxirgi variant
+      // yarim ko'rinib turardi). Shu sabab burchak ham "pill" emas,
+      // yumshoq rounded - ikki qatorda dumaloq ramka xunuk ko'rinardi.
+      className="relative w-full rounded-3xl border border-navy-100 p-1 dark:border-navy-500"
     >
       {/* Suriladigan yostiq. Tugmalardan PASTDA turadi (matn ustiga
           chiqmasligi uchun), sudrash esa track ustida ushlanadi. */}
@@ -163,16 +181,17 @@ export function SegmentedPicker({
         <div
           ref={pillRef}
           style={{
-            transform: `translateX(${pill.left + dragDx}px)`,
+            transform: `translate(${pill.left + dragDx}px, ${pill.top}px)`,
             width: pill.width,
+            height: pill.height,
             transition: isDragging ? "none" : "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
-          className="absolute inset-y-1 left-0 z-0 rounded-full bg-aqua-500 shadow-sm"
+          className="absolute left-0 top-0 z-0 rounded-full bg-aqua-500 shadow-sm"
           aria-hidden
         />
       )}
 
-      <div className="relative flex min-w-full items-center gap-1">
+      <div className="relative flex flex-wrap items-center gap-1">
         {options.map((option, i) => {
           // Sudralayotganda oq matn yostiq bilan BIRGA yuradi -
           // yostiq qaysi variant ustida turgani ko'rinib tursin.

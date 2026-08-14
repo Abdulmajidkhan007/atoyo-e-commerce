@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {Animated, Easing, PanResponder, Pressable, ScrollView, Text} from 'react-native';
+import {Animated, Easing, PanResponder, Pressable, Text, View} from 'react-native';
 import {makeStyles, spacing} from '../theme';
 
 /**
@@ -22,7 +22,9 @@ export interface SegmentOption {
 
 interface Box {
   x: number;
+  y: number;
   width: number;
+  height: number;
 }
 
 export function SegmentedPicker({
@@ -45,7 +47,8 @@ export function SegmentedPicker({
   );
   const current = boxes[index];
 
-  // Tanlov o'zgarganda yostiq SURILIB boradi.
+  // Tanlov o'zgarganda yostiq SURILIB boradi (gorizontal), qatordan
+  // qatorga o'tsa esa vertikal joyi darhol qo'yiladi.
   useEffect(() => {
     if (!current) return;
     Animated.timing(translate, {
@@ -67,11 +70,17 @@ export function SegmentedPicker({
 
     const snap = (dx: number) => {
       if (!box) return;
-      const center = box.x + dx + box.width / 2;
+      const centerX = box.x + dx + box.width / 2;
+      const centerY = box.y + box.height / 2;
       let best = index;
       let bestDistance = Infinity;
       Object.entries(boxes).forEach(([key, item]) => {
-        const distance = Math.abs(item.x + item.width / 2 - center);
+        // Turlar bir necha QATORGA bo'linishi mumkin - masofa ikki
+        // o'lchamda o'lchanadi.
+        const distance = Math.hypot(
+          item.x + item.width / 2 - centerX,
+          item.y + item.height / 2 - centerY,
+        );
         if (distance < bestDistance) {
           bestDistance = distance;
           best = Number(key);
@@ -96,10 +105,10 @@ export function SegmentedPicker({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 3,
       onPanResponderMove: (_event, gesture) => {
-        const last = list[list.length - 1];
-        if (!box || !last) return;
-        // Yostiq ramkadan chiqib ketmasin.
-        const maxX = Math.max(0, last.x + last.width - box.width);
+        if (!box || list.length === 0) return;
+        // Yostiq ramkadan chiqib ketmasin (eng o'ngdagi tugmagacha).
+        const rightmost = Math.max(...list.map(item => item.x + item.width));
+        const maxX = Math.max(0, rightmost - box.width);
         translate.setValue(Math.min(Math.max(box.x + gesture.dx, 0), maxX));
       },
       onPanResponderRelease: (_event, gesture) => snap(gesture.dx),
@@ -108,24 +117,30 @@ export function SegmentedPicker({
   }, [boxes, index, options, value, onChange, translate]);
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.track}
-      contentContainerStyle={styles.inner}>
+    <View style={[styles.track, styles.inner]}>
       {current && (
         <Animated.View
           {...responder.panHandlers}
-          style={[styles.pill, {width: current.width, transform: [{translateX: translate}]}]}
+          style={[
+            styles.pill,
+            {
+              width: current.width,
+              height: current.height,
+              top: current.y,
+              transform: [{translateX: translate}],
+            },
+          ]}
         />
       )}
       {options.map((option, i) => (
         <Pressable
           key={option.value}
           onLayout={event => {
-            const {x, width} = event.nativeEvent.layout;
+            const {x, y, width, height} = event.nativeEvent.layout;
             setBoxes(prev =>
-              prev[i]?.x === x && prev[i]?.width === width ? prev : {...prev, [i]: {x, width}},
+              prev[i]?.x === x && prev[i]?.y === y && prev[i]?.width === width
+                ? prev
+                : {...prev, [i]: {x, y, width, height}},
             );
           }}
           onPress={() => onChange(option.value)}
@@ -140,7 +155,7 @@ export function SegmentedPicker({
           </Text>
         </Pressable>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -149,11 +164,14 @@ const useStyles = makeStyles(c => ({
     width: '100%' as const,
     borderWidth: 1,
     borderColor: c.border,
-    borderRadius: 999,
+    // Turlar ko'p bo'lsa ikkinchi qatorga o'tadi - shunda to'liq
+    // dumaloq ramka xunuk ko'rinardi.
+    borderRadius: 24,
   },
+  /** Turlar sig'masa keyingi qatorga o'tadi (ekrandan chiqib ketmaydi). */
   inner: {
-    flexGrow: 1,
     flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
     alignItems: 'center' as const,
     gap: spacing.xs,
     padding: 4,
@@ -161,8 +179,6 @@ const useStyles = makeStyles(c => ({
   /** Suriladigan rangli yostiq - tugmalarning ORQASIDA turadi. */
   pill: {
     position: 'absolute' as const,
-    top: 4,
-    bottom: 4,
     left: 0,
     borderRadius: 999,
     backgroundColor: c.accent,

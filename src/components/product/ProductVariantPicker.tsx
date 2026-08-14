@@ -40,9 +40,24 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
   const isValueAvailable = (axisKey: string, value: string) =>
     (product.variants ?? []).some((v) => v.options[axisKey] === value && v.stock > 0);
 
+  /**
+   * Qatorda faqat HAQIQATAN turi bor qiymatlar ko'rsatiladi.
+   *
+   * Tur o'chirilganda (masalan sinov uchun qo'shilgani) qiymat
+   * qatorda qolib ketishi mumkin edi - o'sha tugma bosilsa mos tur
+   * topilmay, mahsulot "tugagan" bo'lib ko'rinardi.
+   */
+  const usableValues = (axis: (typeof axes)[number]) =>
+    axis.values.filter((value) =>
+      (product.variants ?? []).some((v) => v.options[axis.key] === value)
+    );
+
   return (
     <div className="flex flex-col gap-4">
-      {axes.map((axis) => (
+      {axes.map((axis) => {
+        const values = usableValues(axis);
+        if (values.length === 0) return null;
+        return (
         <div key={axis.key} className="flex flex-col gap-1.5">
           <span className="text-sm text-navy-300">{axis.label}</span>
           {/* Segment tanlagich: ramka BUTUN KENGLIKDA, variantlar teng
@@ -53,14 +68,15 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
             ariaLabel={axis.label}
             value={selection[axis.key] ?? ""}
             onChange={(value) => setSelection((prev) => ({ ...prev, [axis.key]: value }))}
-            options={axis.values.map((value) => ({
+            options={values.map((value) => ({
               value,
               label: value,
               dimmed: !isValueAvailable(axis.key, value),
             }))}
           />
         </div>
-      ))}
+        );
+      })}
 
       <div className="flex items-baseline gap-2">
         {variant?.discountPrice ? (

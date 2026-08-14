@@ -283,6 +283,14 @@ Mahsulot sahifasidagi "Rangi / O'lcham" tanlagichi
 variantning orqasidagi rangli "yostiq" SAKRAMAYDI — surilib boradi
 (260 ms) va uni ushlab chapga-o'ngga SUDRAB ham tanlash mumkin.
 
+Turlar ko'p bo'lsa ular ekrandan chiqib ketmaydi — **keyingi qatorga
+o'tadi** (`flex-wrap`), yostiq esa qator bo'ylab ham, qatordan qatorga
+ham ko'chadi. **O'chirilgan tur qiymati qatorda qolmaydi**:
+`normalizeVariants` uni `axes[].values` dan ham olib tashlaydi, sayt
+va ilova esa qo'shimcha himoya sifatida turi yo'q qiymatni umuman
+chizmaydi (aks holda tugma bosilganda mahsulot "tugagan" bo'lib
+ko'rinardi).
+
 Nozik joylar: yostiq tugmalarning ORQASIDA turadi (matn ustiga
 chiqmasligi uchun), shuning uchun sudrash track ustida ushlanadi va
 bosish yostiq chegarasida ekani tekshiriladi; sudrashdan keyingi

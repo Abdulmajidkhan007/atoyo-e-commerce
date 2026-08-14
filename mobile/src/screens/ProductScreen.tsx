@@ -233,7 +233,17 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
 
         {/* Tur tanlash tugmalari (o'lcham/rang/qalinlik) */}
         {withVariants &&
-          (product.variantAxes ?? []).map(axis => (
+          (product.variantAxes ?? []).map(axis => {
+            /**
+             * Faqat HAQIQATAN turi bor qiymatlar ko'rsatiladi: tur
+             * o'chirilganda qiymat qatorda qolib ketishi mumkin edi va
+             * bosilganda mahsulot "tugagan" bo'lib ko'rinardi.
+             */
+            const values = axis.values.filter(value =>
+              (product.variants ?? []).some(v => v.options[axis.key] === value),
+            );
+            if (values.length === 0) return null;
+            return (
             <View key={axis.key} style={{gap: spacing.xs}}>
               <Text style={styles.muted}>{axis.label}</Text>
               {/* Segment tanlagich: tanlangan variantning orqasidagi
@@ -242,7 +252,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
               <SegmentedPicker
                 value={selection[axis.key] ?? ''}
                 onChange={value => setSelection(prev => ({...prev, [axis.key]: value}))}
-                options={axis.values.map(value => ({
+                options={values.map(value => ({
                   value,
                   label: value,
                   dimmed: !(product.variants ?? []).some(
@@ -251,7 +261,8 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
                 }))}
               />
             </View>
-          ))}
+            );
+          })}
 
         <View style={{flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm}}>
           {price < (variant?.price ?? product.price) && (

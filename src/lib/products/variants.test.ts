@@ -71,6 +71,13 @@ describe("normalizeVariants", () => {
     expect(clean.variantsExcluded).toEqual(["55x45|qora"]);
   });
 
+  // O'chirilgan tur qatorda ham qolmasin: aks holda saytda tugma
+  // turaverardi va bosilganda "Mahsulot tugagan" deb ko'rinardi.
+  it("o'chirilgan turning qiymatini qatordan ham olib tashlaydi", () => {
+    const clean = normalizeVariants(axes, variants, ["55x45|qora"]);
+    expect(clean.axes[0]?.values).toEqual(["50x45"]);
+  });
+
   it("qatorlar o'zgarsa eskirgan 'yo'q' kalitlarini tozalaydi", () => {
     const narrower: VariantAxis[] = [
       { key: "olcham", label: "O'lcham", values: ["50x45"] },
