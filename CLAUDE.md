@@ -346,8 +346,14 @@ o'tkazib yuboriladi, e'lon natijasida sababi yoziladi.
 
 ```bash
 pkill -f next-server 2>/dev/null   # build OOM bo'lmasligi uchun
-npx tsc --noEmit && npx eslint <o'zgargan fayllar> && npm run build
+npx tsc --noEmit && npx eslint <o'zgargan fayllar> && npm test && npm run build
 ```
+
+**Diqqat:** sayt vitest'i ilovaning sof modulini ham sinaydi
+(`mobile/src/version.test.ts`), shuning uchun `mobile/node_modules`
+o'rnatilgan bo'lishi kerak — aks holda vite `mobile/tsconfig.json`
+dagi `extends` ni yechа olmay yiqiladi (CI'da ham shu sabab
+"Ilova paketlari" qadami sayt testlaridan OLDIN turadi).
 Test framework yo'q — tekshiruv = typecheck + lint + build (+ kerak bo'lsa
 `npm run start` bilan runtime tekshiruv).
 

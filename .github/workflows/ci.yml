@@ -30,6 +30,16 @@ jobs:
       - name: Sayt paketlari
         run: npm ci
 
+      # ILOVA PAKETLARI SAYT TESTLARIDAN OLDIN o'rnatiladi: sayt
+      # vitest'i ilovaning SOF modulini ham sinaydi
+      # (`mobile/src/version.test.ts`), vite esa uni o'girishdan oldin
+      # `mobile/tsconfig.json` ni o'qiydi - u `@react-native/typescript-config`
+      # ga tayanadi. Paketlar bo'lmasa test "failed to resolve extends"
+      # bilan yiqilardi.
+      - name: Ilova paketlari
+        working-directory: mobile
+        run: npm ci
+
       - name: Sayt - typecheck
         run: npx tsc --noEmit
 
@@ -41,10 +51,6 @@ jobs:
 
       - name: Sayt - build
         run: npm run build
-
-      - name: Ilova paketlari
-        working-directory: mobile
-        run: npm ci
 
       - name: Ilova - typecheck
         working-directory: mobile
