@@ -194,6 +194,20 @@ sahifasi holatini manzilga yozadi (`?q=`, `?kategoriya=`, `?brend=`,
 `initial` bo'lib uzatiladi. Kirim sahifasidagi ✏️ ham shu bilan
 qaytadi.
 
+## Katalog indekslari (buzilmasin)
+
+Katalog so'rovi `where isActive == true` + `orderBy` (createdAt/price/
+salesCount) — bunga **kompozit indeks kerak** (`firestore.indexes.json`).
+Indeks deploy qilinmagan bo'lsa Firestore `FAILED_PRECONDITION` beradi
+va katalog BO'SH ko'rinadi (bosh sahifa esa ishlayveradi — u boshqa
+indeksdan foydalanadi). Shu sabab `queryProductsPage` endi indeks
+yo'qligini tanib, **zaxira so'rovga** o'tadi: faqat tenglik filtrlari
++ `__name__` tartibi (indekssiz ishlaydi), saralash sahifa ichida
+xotirada. Katalog ishlaydi, lekin tartib to'liq to'g'ri emas —
+haqiqiy yechim: `firebase deploy --only firestore:indexes`.
+Tekshirish: Sozlamalar → Tizim tekshiruvi → "Katalog so'rovi"
+(indeks yo'q bo'lsa Firestore havolasini ko'rsatadi).
+
 ## Katta katalog bilan ishlash
 
 - Bosh sahifada faqat **6 ta namuna mahsulot** (har kategoriyadan

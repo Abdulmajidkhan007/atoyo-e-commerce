@@ -68,12 +68,29 @@ export async function POST(request: Request) {
         .then((snap) => snap.data().count)
         .catch(() => -1);
 
-      // Katalog sahifasi AYNAN shu so'rovni yuboradi.
+      // Katalog sahifasi AYNAN shu so'rovni yuboradi. Kompozit indeks
+      // yo'q bo'lsa `queryProductsPage` zaxira so'rovga o'tadi, shuning
+      // uchun bu yerda XOM so'rovni ham sinaymiz - indeks yetishmasa
+      // Firestore havolasi bilan aytamiz.
+      let indexNote = "indeks joyida";
+      try {
+        await db
+          .collection("products")
+          .where("isActive", "==", true)
+          .orderBy("createdAt", "desc")
+          .limit(1)
+          .get();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        indexNote = `INDEKS YO'Q → ${message.slice(0, 300)}`;
+      }
+
       const page = await queryProductsPage({ sortBy: "newest" }, 3, null);
       return (
         `saytda ochiq: ${active === -1 ? "?" : active} ta; ` +
         `so'rov ${page.products.length} ta qaytardi` +
-        (page.products[0] ? ` (birinchisi: ${page.products[0].name})` : "")
+        (page.products[0] ? ` (birinchisi: ${page.products[0].name})` : "") +
+        `; ${indexNote}`
       );
     })
   );

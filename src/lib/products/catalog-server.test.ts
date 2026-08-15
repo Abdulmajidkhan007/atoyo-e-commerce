@@ -20,6 +20,8 @@ interface Call {
 let calls: Call[] = [];
 let docs: { id: string; data: () => Record<string, unknown> }[] = [];
 let cursorDocExists = true;
+/** `true` bo'lsa `createdAt` bo'yicha saralangan so'rov "indeks yo'q" deb yiqiladi. */
+let missingIndex = false;
 
 function fakeQuery() {
   const chain: Record<string, unknown> = {};
@@ -29,7 +31,17 @@ function fakeQuery() {
       return chain;
     };
   }
-  chain.get = () => Promise.resolve({ docs });
+  chain.get = () => {
+    // OXIRGI `orderBy` ni qaraymiz: zaxira so'rov `__name__` bo'yicha
+    // tartiblaydi va u yiqilmasligi kerak.
+    const lastOrder = [...calls].reverse().find((call) => call.method === "orderBy");
+    if (missingIndex && lastOrder?.args[0] === "createdAt") {
+      return Promise.reject(
+        new Error("9 FAILED_PRECONDITION: The query requires an index. Create it here: https://...")
+      );
+    }
+    return Promise.resolve({ docs });
+  };
   return chain;
 }
 
@@ -54,6 +66,7 @@ beforeEach(() => {
   calls = [];
   docs = [];
   cursorDocExists = true;
+  missingIndex = false;
 });
 
 describe("queryProductsPage", () => {
@@ -171,5 +184,35 @@ describe("searchProductsServer", () => {
   it("saytda yopiq mahsulot natijaga tushmaydi", async () => {
     docs = [{ id: "a", data: () => ({ isActive: false }) }];
     expect(await searchProductsServer("dush", 10)).toEqual([]);
+  });
+});
+
+/**
+ * INDEKS YO'Q bo'lganda katalog bo'sh qolmasligi kerak: bosh sahifa
+ * ishlab turib, katalogda "Hech qanday mahsulot topilmadi" chiqishi
+ * aynan shundan bo'lgan edi.
+ */
+describe("indekssiz zaxira so'rov", () => {
+  it("kompozit indeks yo'q bo'lsa soddaroq so'rov bilan qaytaradi", async () => {
+    missingIndex = true;
+    docs = [
+      { id: "b", data: () => ({ name: "Ikkinchi", price: 200, createdAt: 2 }) },
+      { id: "a", data: () => ({ name: "Birinchi", price: 100, createdAt: 9 }) },
+    ];
+
+    const page = await queryProductsPage({ sortBy: "newest" }, 10, null);
+
+    expect(page.products).toHaveLength(2);
+    // Sahifa ichida yangisi (createdAt katta) oldinda turadi.
+    expect(page.products[0]?.id).toBe("a");
+    // Zaxira so'rov hujjat ID si bo'yicha tartiblanadi (indekssiz).
+    expect(argsOf("orderBy").some((args) => args[0] === "__name__")).toBe(true);
+  });
+
+  it("indeks bilan hammasi avvalgidek - saralash bazada", async () => {
+    docs = [{ id: "a", data: () => ({ name: "Birinchi", createdAt: 1 }) }];
+    const page = await queryProductsPage({ sortBy: "newest" }, 10, null);
+    expect(page.products).toHaveLength(1);
+    expect(argsOf("orderBy").some((args) => args[0] === "__name__")).toBe(false);
   });
 });

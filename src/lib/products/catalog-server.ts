@@ -83,11 +83,86 @@ export async function queryProductsPage(
     if (cursorDoc.exists) q = q.startAfter(cursorDoc);
   }
 
+  try {
+    const snapshot = await q.limit(pageSize).get();
+    const products = snapshot.docs.map(docToProduct);
+
+    return {
+      products,
+      nextCursor: snapshot.docs.at(-1)?.id ?? null,
+      hasMore: snapshot.docs.length === pageSize,
+    };
+  } catch (error) {
+    // INDEKS YO'Q bo'lsa katalog BUTUNLAY bo'sh qolmasin: soddaroq
+    // so'rov bilan (saralashsiz) o'qib, tartibni xotirada beramiz.
+    // Bosh sahifa ishlab, katalog "Hech qanday mahsulot topilmadi"
+    // deb turishi aynan shundan bo'lgan edi.
+    if (!isMissingIndex(error)) throw error;
+    console.error("Katalog indeksi yo'q - zaxira so'rov ishlatilyapti:", error);
+    return fallbackPage(filters, pageSize, cursorId);
+  }
+}
+
+/** Firestore "kompozit indeks kerak" deb yiqilganmi? */
+function isMissingIndex(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /requires an index|FAILED_PRECONDITION/i.test(message);
+}
+
+/**
+ * ZAXIRA SO'ROV: faqat tenglik filtrlari + hujjat ID si bo'yicha
+ * tartib (bunga kompozit indeks KERAK EMAS). Saralash sahifa ichida,
+ * xotirada bajariladi - ya'ni tartib to'liq to'g'ri bo'lmasligi
+ * mumkin, lekin katalog ishlaydi va mijoz mahsulotni ko'radi.
+ *
+ * To'g'ri tartib uchun indekslarni deploy qiling:
+ *   firebase deploy --only firestore:indexes
+ */
+async function fallbackPage(
+  filters: ProductFilterParams,
+  pageSize: number,
+  cursorId: string | null
+): Promise<ServerProductsPage> {
+  const collection = getAdminDb().collection(COLLECTION);
+  let q: Query = collection.where("isActive", "==", true);
+
+  if (filters.category) q = q.where("category", "==", filters.category);
+  if (filters.brand) q = q.where("brand", "==", filters.brand);
+  if (filters.material) q = q.where("material", "==", filters.material);
+  if (filters.manufacturerCountry) {
+    q = q.where("manufacturerCountry", "==", filters.manufacturerCountry);
+  }
+
+  q = q.orderBy("__name__");
+  if (cursorId) {
+    const cursorDoc = await collection.doc(cursorId).get();
+    if (cursorDoc.exists) q = q.startAfter(cursorDoc);
+  }
+
   const snapshot = await q.limit(pageSize).get();
-  const products = snapshot.docs.map(docToProduct);
+  const products = snapshot.docs.map(docToProduct).filter((product) => {
+    if (filters.inStockOnly && (product.stock ?? 0) <= 0) return false;
+    if (filters.minPrice !== undefined && product.price < filters.minPrice) return false;
+    if (filters.maxPrice !== undefined && product.price > filters.maxPrice) return false;
+    return true;
+  });
+
+  // Sahifa ichida saralash (butun katalog bo'ylab emas).
+  const sorted = [...products].sort((a, b) => {
+    switch (filters.sortBy) {
+      case "price-asc":
+        return a.price - b.price;
+      case "price-desc":
+        return b.price - a.price;
+      case "popular":
+        return (b.salesCount ?? 0) - (a.salesCount ?? 0);
+      default:
+        return (b.createdAt ?? 0) - (a.createdAt ?? 0);
+    }
+  });
 
   return {
-    products,
+    products: sorted,
     nextCursor: snapshot.docs.at(-1)?.id ?? null,
     hasMore: snapshot.docs.length === pageSize,
   };
