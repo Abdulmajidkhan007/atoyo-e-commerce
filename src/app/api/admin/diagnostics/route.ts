@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMessaging } from "firebase-admin/messaging";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { queryProductsPage } from "@/lib/products/catalog-server";
 import { requirePermission } from "@/lib/firebase/session";
 import { PRODUCTS_TOPIC, sendPushToTopic, sendPushToUser } from "@/lib/notifications/push";
 import { getTelegramSecrets } from "@/lib/telegram/secrets";
@@ -48,6 +49,32 @@ export async function POST(request: Request) {
     await run("Firestore", async () => {
       const snap = await getAdminDb().collection("products").limit(1).get();
       return `o'qildi (${snap.size} ta hujjat)`;
+    })
+  );
+
+  /**
+   * KATALOG: saytda/ilovada "Hech qanday mahsulot topilmadi" chiqsa
+   * sababi shu yerda ko'rinadi - indeks yo'qmi, yoki hamma mahsulot
+   * "saytda yopiq" (`isActive: false`) turibdimi.
+   */
+  checks.push(
+    await run("Katalog so'rovi", async () => {
+      const db = getAdminDb();
+      const active = await db
+        .collection("products")
+        .where("isActive", "==", true)
+        .count()
+        .get()
+        .then((snap) => snap.data().count)
+        .catch(() => -1);
+
+      // Katalog sahifasi AYNAN shu so'rovni yuboradi.
+      const page = await queryProductsPage({ sortBy: "newest" }, 3, null);
+      return (
+        `saytda ochiq: ${active === -1 ? "?" : active} ta; ` +
+        `so'rov ${page.products.length} ta qaytardi` +
+        (page.products[0] ? ` (birinchisi: ${page.products[0].name})` : "")
+      );
     })
   );
 

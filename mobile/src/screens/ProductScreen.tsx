@@ -37,6 +37,7 @@ import {
 } from '../variants';
 import {Icon} from '../components/Icon';
 import {Breadcrumbs} from '../components/Breadcrumbs';
+import {fetchTaxonomy} from '../api';
 import {SegmentedPicker} from '../components/SegmentedPicker';
 
 /** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
@@ -62,6 +63,8 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   const [picked, setPicked] = useState<Record<string, string> | null>(null);
   /** O'xshash mahsulotlar - sahifaning pastida (saytdagi kabi). */
   const [related, setRelated] = useState<Product[]>([]);
+  /** Kategoriyaning ko'rinadigan nomi ("faucets" emas, "Kranlar"). */
+  const [categoryLabel, setCategoryLabel] = useState('');
   /** Galereyada ochiq turgan rasm (to'liq ekran uchun). */
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
   /** Galereya rasmi ekran kengligida bo'ladi (foiz bilan ishlamaydi). */
@@ -77,6 +80,24 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
     () => fetchReviews(productId).catch((): Review[] => []),
     [productId],
   );
+
+  // Kategoriya nomlari ro'yxati kam o'zgaradi - bir marta o'qiymiz.
+  useEffect(() => {
+    let active = true;
+    if (!product?.category) return;
+    fetchTaxonomy()
+      .then(taxonomy => {
+        if (!active) return;
+        const found = taxonomy.categories.find(item => item.slug === product.category);
+        setCategoryLabel(found?.label ?? product.category);
+      })
+      .catch(() => {
+        if (active) setCategoryLabel(product.category);
+      });
+    return () => {
+      active = false;
+    };
+  }, [product?.category]);
 
   useEffect(() => {
     let active = true;
@@ -191,8 +212,9 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         <Breadcrumbs
           items={[
             {name: t.tabCatalog, toCatalog: {}},
+            // Zanjirda "faucets" emas, "Kranlar" tursin.
             ...(product.category
-              ? [{name: product.category, toCatalog: {category: product.category}}]
+              ? [{name: categoryLabel, toCatalog: {category: product.category}}]
               : []),
             {name: localizedName(product, locale)},
           ]}

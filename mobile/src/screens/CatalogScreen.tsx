@@ -33,6 +33,8 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
   const [countries, setCountries] = useState<string[]>([]);
   const [materials, setMaterials] = useState<{slug: string; label: string}[]>([]);
   const [products, setProducts] = useState<Product[] | null>(null);
+  /** So'rov yiqilgan bo'lsa sababi (bo'sh ro'yxatdan farqlash uchun). */
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
 
   // Bosh sahifadan kategoriya/qidiruv bilan kelinganda holatni yangilaymiz.
@@ -57,6 +59,7 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
 
   const load = useCallback(async () => {
     setProducts(null);
+    setLoadError(null);
     try {
       const items = term.trim()
         ? await searchProducts(term)
@@ -72,7 +75,11 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
             })
           ).products;
       setProducts(items);
-    } catch {
+    } catch (error) {
+      // Sabab YASHIRILMAYDI: ilgari har qanday xato "Hech qanday
+      // mahsulot topilmadi" bo'lib chiqardi va internet yo'qmi yoki
+      // server yiqilganmi - bilib bo'lmasdi.
+      setLoadError(error instanceof Error ? error.message : String(error));
       setProducts([]);
     }
   }, [term, category, brand, material, country, minPrice, maxPrice, sort]);
@@ -108,7 +115,7 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
       {!products ? (
         <Loading />
       ) : products.length === 0 ? (
-        <EmptyState text={t.nothingFound} />
+        <EmptyState text={loadError ? `${t.loadFailed}\n\n${loadError}` : t.nothingFound} />
       ) : (
         <FlatList
           data={products}

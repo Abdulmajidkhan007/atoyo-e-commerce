@@ -31,6 +31,8 @@ export interface Dict {
   priceTo: string;
   similarProducts: string;
   /** Yangi versiya eslatmasi (APK Play Market'siz tarqatilgani uchun). */
+  /** Katalog/qidiruv so'rovi yiqilganda. */
+  loadFailed: string;
   updateAvailable: string;
   updateDownload: string;
   updateTitle: string;
@@ -197,6 +199,7 @@ const uz: Dict = {
   priceFrom: 'dan',
   priceTo: 'gacha',
   similarProducts: 'O‘xshash mahsulotlar',
+  loadFailed: 'Ma’lumot yuklanmadi. Internetni tekshiring.',
   updateAvailable: 'Ilovaning yangi versiyasi chiqdi.',
   updateDownload: 'Yangilash',
   updateTitle: 'Yangi versiya',
@@ -369,6 +372,7 @@ const en: Dict = {
   priceFrom: 'from',
   priceTo: 'to',
   similarProducts: 'Similar products',
+  loadFailed: 'Could not load data. Check your connection.',
   updateAvailable: 'A new version of the app is available.',
   updateDownload: 'Update',
   updateTitle: 'New version',
@@ -538,6 +542,7 @@ const ru: Dict = {
   priceFrom: 'от',
   priceTo: 'до',
   similarProducts: 'Похожие товары',
+  loadFailed: 'Не удалось загрузить данные. Проверьте интернет.',
   updateAvailable: 'Вышла новая версия приложения.',
   updateDownload: 'Обновить',
   updateTitle: 'Новая версия',

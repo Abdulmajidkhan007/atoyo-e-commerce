@@ -102,8 +102,22 @@ export function SegmentedPicker({
     };
 
     return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 3,
+      /**
+       * SUDRASH TUGMALAR USTIDAN ushlanadi.
+       *
+       * Yostiq tugmalarning ORQASIDA turadi (matn ko'rinishi uchun),
+       * shuning uchun barmoq har doim Pressable'ga tegadi va yostiq
+       * hech qachon "responder" bo'lolmasdi - ilovada sudrash umuman
+       * ishlamasdi. Endi ushlovchi CONTAINER'da: bosish tugmaga
+       * o'tadi (capture'da `false`), gorizontal harakat boshlansa
+       * esa gestani container tortib oladi.
+       */
+      // Bosish (tap) TUGMAGA o'tadi - shuning uchun start'da `false`.
+      onStartShouldSetPanResponderCapture: () => false,
+      // Aniq GORIZONTAL harakat bo'lsa gestani o'zimiz olamiz:
+      // vertikal varaqlash ro'yxatga qolaveradi.
+      onMoveShouldSetPanResponderCapture: (_event, gesture) =>
+        Math.abs(gesture.dx) > 5 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
       onPanResponderMove: (_event, gesture) => {
         if (!box || list.length === 0) return;
         // Yostiq ramkadan chiqib ketmasin (eng o'ngdagi tugmagacha).
@@ -117,10 +131,9 @@ export function SegmentedPicker({
   }, [boxes, index, options, value, onChange, translate]);
 
   return (
-    <View style={[styles.track, styles.inner]}>
+    <View style={[styles.track, styles.inner]} {...responder.panHandlers}>
       {current && (
         <Animated.View
-          {...responder.panHandlers}
           style={[
             styles.pill,
             {
