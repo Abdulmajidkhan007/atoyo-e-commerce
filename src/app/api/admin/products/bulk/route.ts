@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { logAction } from "@/lib/telegram/action-log";
+import { moveToTrash, TRASH_DAYS } from "@/lib/products/trash";
 import { announceProduct } from "@/lib/telegram/channel";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
@@ -90,19 +91,25 @@ export async function POST(request: Request) {
   /* ---------------- O'CHIRISH ---------------- */
   if (parsed.data.action === "delete") {
     const snaps = await db.getAll(...refs);
-    const batch = db.batch();
-    for (const ref of refs) batch.delete(ref);
-    await batch.commit();
-
     const names = snaps
       .map((snap) => (snap.data() as Product | undefined)?.name)
       .filter(Boolean)
       .slice(0, 5);
+
+    // BUTUNLAY o'chirilmaydi - 30 kunlik savatga ko'chiriladi.
+    // Ilgari bir bosishda 200 ta mahsulot qaytarib bo'lmas darajada
+    // yo'q bo'lardi (rasmlari bilan birga).
+    const deleted = await moveToTrash(parsed.data.ids, who);
+
     await logAction(
-      `🗑 Ommaviy o'chirish (${who}): ${refs.length} ta mahsulot` +
-        (names.length > 0 ? ` — ${names.join(", ")}${refs.length > names.length ? "..." : ""}` : "")
+      `🗑 Ommaviy o'chirish (${who}): ${deleted} ta mahsulot savatga tushdi` +
+        (names.length > 0 ? ` — ${names.join(", ")}${deleted > names.length ? "..." : ""}` : "")
     );
-    return NextResponse.json({ ok: true, deleted: refs.length });
+    return NextResponse.json({
+      ok: true,
+      deleted,
+      note: `${TRASH_DAYS} kun ichida «Katalog → O'chirilganlar» dan tiklash mumkin.`,
+    });
   }
 
   /* ---------------- TAHRIRLASH ---------------- */

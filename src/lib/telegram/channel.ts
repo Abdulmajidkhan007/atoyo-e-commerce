@@ -120,6 +120,15 @@ function buildFooter(footer: ChannelPostFooter | undefined): string {
   return blocks.length > 0 ? `\n\n${blocks.join("\n\n")}` : "";
 }
 
+/**
+ * Kanal postining footeri (telefon, shior, manzil, havolalar) —
+ * TASHQARIGA ochiq: e'lon (`sendBroadcast`) ham xuddi mahsulot posti
+ * kabi ko'rinishi uchun shu funksiyani chaqiradi.
+ */
+export async function channelFooterText(): Promise<string> {
+  return buildFooter(await loadFooter());
+}
+
 /** Sozlamalardagi footer. O'qib bo'lmasa e'lon footersiz ketaveradi. */
 async function loadFooter(): Promise<ChannelPostFooter | undefined> {
   try {

@@ -55,7 +55,7 @@ const HELP_TEXT = [
   "<code>/tikla 12</code> — qaytarish",
   "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
   "<code>/stat</code> — umumiy statistika",
-  "<code>/elon Matn...</code> — barcha foydalanuvchilarga e'lon (Telegram + Email)",
+  "<code>/elon Matn...</code> — hammaga e'lon (Telegram + Email + kanal)",
   "",
   "<b>🎨 Bot stikerlari:</b>",
   "<code>/stiker</code> — slotlar ro'yxati va holati",
@@ -188,8 +188,18 @@ export async function handleAdminCommand(params: {
           return;
         }
         await reply("📤 E'lon yuborilmoqda, kuting...");
-        const result = await sendBroadcast({ title: "Atoyo Santexnika", body: argsText });
-        await reply(`✅ E'lon yuborildi — Telegram: ${result.telegramSent} ta, Email: ${result.emailSent} ta.`);
+        // Guruhdan yuborilgan e'lon ochiq KANALGA ham tushadi.
+        const result = await sendBroadcast({
+          title: "Atoyo Santexnika",
+          body: argsText,
+          viaChannel: true,
+        });
+        await reply(
+          `✅ E'lon yuborildi — Telegram: ${result.telegramSent} ta, Email: ${result.emailSent} ta` +
+            (result.channelPosted ? ", kanalga post qilindi" : "") +
+            "." +
+            (result.channelNote ? `\nKanal: ${result.channelNote}` : "")
+        );
         await logAction(`📢 E'lon yuborildi (guruhdan): Telegram ${result.telegramSent}, Email ${result.emailSent}`);
         return;
       }

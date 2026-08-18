@@ -1,6 +1,7 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage } from "@/lib/telegram/bot";
+import { resolveChannelId, channelFooterText } from "@/lib/telegram/channel";
 import { sendGenericEmail, isEmailConfigured } from "@/lib/email/mailer";
 
 /**
@@ -17,8 +18,16 @@ export async function sendBroadcast(params: {
   body: string;
   viaTelegram?: boolean;
   viaEmail?: boolean;
-}): Promise<{ telegramSent: number; emailSent: number; emailNote?: string }> {
-  const { title, body, viaTelegram = true, viaEmail = true } = params;
+  /** OCHIQ KANALGA ham post qilinsinmi (obunachilar ko'radi). */
+  viaChannel?: boolean;
+}): Promise<{
+  telegramSent: number;
+  emailSent: number;
+  channelPosted: boolean;
+  emailNote?: string;
+  channelNote?: string;
+}> {
+  const { title, body, viaTelegram = true, viaEmail = true, viaChannel = false } = params;
   const db = getAdminDb();
   let telegramSent = 0;
   let emailSent = 0;
@@ -30,7 +39,7 @@ export async function sendBroadcast(params: {
       const chatId = (doc.data() as { chatId?: number }).chatId;
       if (!chatId) continue;
       try {
-        await sendChatMessage(chatId, `📢 <b>${title}</b>\n\n${body}`);
+        await sendChatMessage(chatId, `📢 <b>${escapeHtml(title)}</b>\n\n${escapeHtml(body)}`);
         telegramSent += 1;
       } catch {
         // Bloklagan/o'chirgan foydalanuvchilar - jim o'tamiz.
@@ -73,5 +82,35 @@ export async function sendBroadcast(params: {
     }
   }
 
-  return { telegramSent, emailSent, emailNote };
+  /**
+   * 3) OCHIQ KANAL: e'lon kanalda ham chiroyli post bo'lib chiqadi -
+   * sarlavha qalin, matn tagida, oxirida do'konning odatdagi footeri
+   * (telefon, manzil, havolalar) - mahsulot postlari bilan bir xil
+   * ko'rinish.
+   */
+  let channelPosted = false;
+  let channelNote: string | undefined;
+  if (viaChannel) {
+    const channelId = await resolveChannelId();
+    if (!channelId) {
+      channelNote = "Kanal sozlanmagan (Sozlamalar → Bot → kanal ID).";
+    } else {
+      try {
+        await sendChatMessage(
+          channelId,
+          `📢 <b>${escapeHtml(title)}</b>\n\n${escapeHtml(body)}${await channelFooterText()}`
+        );
+        channelPosted = true;
+      } catch (error) {
+        channelNote = error instanceof Error ? error.message : "Kanalga yuborilmadi.";
+      }
+    }
+  }
+
+  return { telegramSent, emailSent, channelPosted, emailNote, channelNote };
+}
+
+/** Telegram HTML rejimida `<`, `>`, `&` belgilari xato beradi. */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

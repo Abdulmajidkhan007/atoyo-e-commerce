@@ -15,6 +15,8 @@ export default function BroadcastPage() {
   const [body, setBody] = useState("");
   const [viaTelegram, setViaTelegram] = useState(true);
   const [viaEmail, setViaEmail] = useState(true);
+  /** Ochiq kanalga post - obunachilar (mijoz bo'lmaganlar) ham ko'radi. */
+  const [viaChannel, setViaChannel] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
@@ -28,14 +30,23 @@ export default function BroadcastPage() {
       const res = await fetch("/api/admin/broadcast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), body: body.trim(), viaTelegram, viaEmail }),
+        body: JSON.stringify({
+          title: title.trim(),
+          body: body.trim(),
+          viaTelegram,
+          viaEmail,
+          viaChannel,
+        }),
       });
       if (!res.ok) throw new Error("failed");
       const data = await res.json();
       setResult(
-        `✅ Yuborildi — Telegram: ${data.telegramSent} ta, Email: ${data.emailSent} ta.` +
-          // Email ketmagan bo'lsa sababi aytiladi (SMTP yo'q, manzil yo'q...).
-          (data.emailNote ? ` ${data.emailNote}` : "")
+        `✅ Yuborildi — Telegram: ${data.telegramSent} ta, Email: ${data.emailSent} ta` +
+          (data.channelPosted ? ", kanalga post qilindi" : "") +
+          "." +
+          // Ketmagan bo'lsa sababi aytiladi (SMTP yo'q, kanal sozlanmagan...).
+          (data.emailNote ? ` ${data.emailNote}` : "") +
+          (data.channelNote ? ` Kanal: ${data.channelNote}` : "")
       );
       setTitle("");
       setBody("");
@@ -78,12 +89,16 @@ export default function BroadcastPage() {
             control={<Checkbox checked={viaEmail} onChange={(e) => setViaEmail(e.target.checked)} />}
             label="✉️ Email (sayt + obunachilar)"
           />
+          <FormControlLabel
+            control={<Checkbox checked={viaChannel} onChange={(e) => setViaChannel(e.target.checked)} />}
+            label="📣 Telegram kanal (ochiq post)"
+          />
         </div>
 
         {result && <Alert severity={isError ? "error" : "success"}>{result}</Alert>}
 
         <div>
-          <Button type="submit" variant="contained" size="large" disabled={isSending || (!viaTelegram && !viaEmail)}>
+          <Button type="submit" variant="contained" size="large" disabled={isSending || (!viaTelegram && !viaEmail && !viaChannel)}>
             {isSending ? <CircularProgress size={22} color="inherit" /> : "Yuborish"}
           </Button>
         </div>

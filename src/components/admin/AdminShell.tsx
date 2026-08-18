@@ -28,6 +28,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { signOutUser } from "@/lib/firebase/auth";
 import { useAppDispatch } from "@/redux/hooks";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { DEFAULT_ADMIN_PERMISSIONS, type AdminPermissions, type PermissionKey } from "@/lib/permissions";
 
 // `perm` - bo'limni ko'rish uchun kerakli huquq (yo'q bo'lsa hammaga ochiq).
@@ -35,6 +36,12 @@ const NAV_ITEMS: { href: string; label: string; Icon: typeof DashboardOutlinedIc
   { href: "/admin", label: "Dashboard", Icon: DashboardOutlinedIcon },
   { href: "/admin/katalog", label: "Katalog", Icon: Inventory2OutlinedIcon, perm: "products" },
   { href: "/admin/katalog/turlar", label: "Turlar", Icon: CategoryOutlinedIcon, perm: "products" },
+  {
+    href: "/admin/katalog/chiqindi",
+    label: "O'chirilganlar",
+    Icon: DeleteOutlineIcon,
+    perm: "products",
+  },
   { href: "/admin/buyurtmalar", label: "Buyurtmalar", Icon: ReceiptLongOutlinedIcon, perm: "orders" },
   { href: "/admin/hisobot", label: "Hisobot", Icon: InsightsOutlinedIcon, perm: "analytics" },
   { href: "/admin/ombor", label: "Ombor", Icon: WarehouseOutlinedIcon, perm: "products" },

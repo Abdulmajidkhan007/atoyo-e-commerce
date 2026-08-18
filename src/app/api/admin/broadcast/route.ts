@@ -13,6 +13,8 @@ const broadcastSchema = z.object({
   body: z.string().min(2).max(4000),
   viaTelegram: z.boolean().default(true),
   viaEmail: z.boolean().default(true),
+  /** Ochiq kanalga ham post qilinsinmi. */
+  viaChannel: z.boolean().default(false),
 });
 
 /** Admin paneldan barcha foydalanuvchilarga e'lon yuborish. */
@@ -25,7 +27,8 @@ export async function POST(request: Request) {
 
   const result = await sendBroadcast(parsed.data);
   await logAction(
-    `📢 E'lon yuborildi (${admin.email ?? "admin"}): "${parsed.data.title}" — Telegram: ${result.telegramSent}, Email: ${result.emailSent}`
+    `📢 E'lon yuborildi (${admin.email ?? "admin"}): "${parsed.data.title}" — Telegram: ${result.telegramSent}, Email: ${result.emailSent}` +
+      (result.channelPosted ? ", kanalga post qilindi" : "")
   );
 
   return NextResponse.json({ ok: true, ...result });

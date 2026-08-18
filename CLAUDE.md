@@ -194,6 +194,18 @@ sahifasi holatini manzilga yozadi (`?q=`, `?kategoriya=`, `?brend=`,
 `initial` bo'lib uzatiladi. Kirim sahifasidagi ✏️ ham shu bilan
 qaytadi.
 
+## O'chirilganlar savati (30 kun)
+
+Mahsulot **butunlay o'chirilmaydi**: `deletedProducts/{id}` ga
+ko'chiriladi (`lib/products/trash.ts`) va 30 kun turadi —
+`/admin/katalog/chiqindi` dan tiklanadi yoki butunlay o'chiriladi;
+muddati o'tganlari ro'yxat ochilganda avtomatik tozalanadi (alohida
+cron kerak emas). Tiklangan mahsulot **saytda YOPIQ** holda qaytadi
+(`isActive: false`) — tasodifan o'chirilgan minglab mahsulot birdan
+katalogga qaytib, kanalga e'lon bo'lib ketmasin. Storage'dagi rasm
+fayllari o'chirilmaydi, shuning uchun tiklangach rasmlar joyida.
+`deletedProducts` qoidalarda YOPIQ (ichida optom narx/tannarx bor).
+
 ## Katalog indekslari (buzilmasin)
 
 Katalog so'rovi `where isActive == true` + `orderBy` (createdAt/price/

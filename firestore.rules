@@ -126,6 +126,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // O'CHIRILGANLAR SAVATI - faqat server (Admin SDK). Ichida
+    // optom narx va tannarx bor, ya'ni mahsulot hujjatining o'zi.
+    match /deletedProducts/{productId} {
+      allow read, write: if false;
+    }
+
     // AI rasm sarfi hisoblagichi (oylik) - faqat server (Admin SDK).
     // Mijozga umuman kerak emas.
     match /aiUsage/{month} {

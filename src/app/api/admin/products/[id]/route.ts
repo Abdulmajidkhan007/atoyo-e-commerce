@@ -8,6 +8,7 @@ import { registerFacets } from "@/lib/products/facets";
 import { normalizeVariants } from "@/lib/products/variants";
 import { announceProduct, announceModeFor } from "@/lib/telegram/channel";
 import { indexProduct, removeFromIndex } from "@/lib/search/engine";
+import { moveToTrash } from "@/lib/products/trash";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
@@ -200,7 +201,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   const { id } = await params;
-  await getAdminDb().collection("products").doc(id).delete();
-  await removeFromIndex(id);
-  return NextResponse.json({ ok: true });
+  // Savatga ko'chiriladi (30 kun) - butunlay o'chirish savatdan.
+  const moved = await moveToTrash([id], admin.email ?? admin.displayName ?? "admin");
+  if (moved === 0) {
+    // Hujjat topilmadi - eski xatti-harakat (indeksdan tozalash) qoladi.
+    await removeFromIndex(id);
+  }
+  return NextResponse.json({ ok: true, trashed: moved > 0 });
 }
