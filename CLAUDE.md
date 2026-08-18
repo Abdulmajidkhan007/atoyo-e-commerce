@@ -329,6 +329,17 @@ urinish). Kalitlar `secrets/social`, sozlama `settings/social`.
 Kanalga e'lon qilingan mahsulot navbatga tushadi (`announceProduct`
 ichida, `refresh` rejimida emas). Ijtimoiy tarmoqda faqat DONA narx.
 
+**Blog maqolasidagi KONTENT VIDEOSI** (mahsulot videosi emas -
+maslahat/ko'rsatma lavhasi): `BlogPost.videoUrl`, admin formada
+"Kontent videosi" (20MB gacha, papka `blog`). Maqola chop etilganda
+kanalga rasm emas VIDEO posti chiqadi (`announceBlogPost` -
+`sendVideo`) va YouTube navbatiga tushadi (`enqueueBlogVideo`,
+`SocialJob.kind === "blog"`, `blogId`). Ikkinchi marta yuklanmasligi
+uchun natija `BlogPost.youtubeVideoId` ga yoziladi; kanal posti esa
+`channelChatId`/`channelMessageId` bilan TAHRIRLANADI - maqola
+yangilanganda yangi post tashlanmaydi. Navbatni cron bo'shatadi
+(`/api/cron/social`).
+
 ## Tur tanlagich (segment) — sayt va ilova bir xil
 
 Mahsulot sahifasidagi "Rangi / O'lcham" tanlagichi

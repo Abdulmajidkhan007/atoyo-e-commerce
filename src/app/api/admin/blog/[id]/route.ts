@@ -3,7 +3,9 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { announceBlogPost } from "@/lib/telegram/channel";
+import { enqueueBlogVideo } from "@/lib/social/publish";
 import type { BlogPost } from "@/types/content";
+import { validationMessage } from "@/lib/http/validation";
 
 export const runtime = "nodejs";
 
@@ -12,6 +14,8 @@ const updateSchema = z.object({
   excerpt: z.string().max(500).optional(),
   content: z.string().max(20000).optional(),
   coverImageUrl: z.string().url().or(z.literal("")).optional(),
+  /** Kontent videosi (mahsulot videosi emas). */
+  videoUrl: z.string().url().or(z.literal("")).optional(),
   isPublished: z.boolean().optional(),
 });
 
@@ -20,7 +24,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
+  }
 
   const { id } = await params;
   const ref = getAdminDb().collection("blogPosts").doc(id);
@@ -33,12 +39,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.excerpt !== undefined) updates.excerpt = d.excerpt.trim();
   if (d.content !== undefined) updates.content = d.content.trim();
   if (d.coverImageUrl !== undefined) updates.coverImageUrl = d.coverImageUrl;
+  if (d.videoUrl !== undefined) updates.videoUrl = d.videoUrl;
   if (d.isPublished !== undefined) updates.isPublished = d.isPublished;
 
   await ref.update(updates);
   const post = { ...(snap.data() as BlogPost), ...updates, id } as BlogPost;
-  await announceBlogPost(post, "updated");
-  return NextResponse.json({ post });
+  // Kanalda post bo'lsa - o'shanisi yangilanadi, yangisi tashlanmaydi.
+  const sent = await announceBlogPost(post, "updated");
+  if (sent && !post.channelMessageId) {
+    post.channelChatId = sent.chatId;
+    post.channelMessageId = sent.messageId;
+    await ref.update({ channelChatId: sent.chatId, channelMessageId: sent.messageId });
+  }
+  // Video keyin qo'shilgan bo'lsa ham YouTube'ga tushadi (bir marta).
+  const queued = await enqueueBlogVideo(post).catch((error) => {
+    console.error("Maqola videosini navbatga qo'shishda xato:", error);
+    return 0;
+  });
+  return NextResponse.json({ post, youtubeQueued: queued > 0 });
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {

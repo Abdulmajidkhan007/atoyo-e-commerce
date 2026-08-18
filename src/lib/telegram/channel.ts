@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import {
   sendChatMessage,
   sendMediaGroup,
+  sendVideo,
   editMessageCaptionOrText,
   deleteMessage,
   type MediaItem,
@@ -596,9 +597,24 @@ export async function announceProduct(
   return sent ? "posted" : "skipped";
 }
 
-/** Yangi yoki tahrirlangan blog posti e'loni. */
-export async function announceBlogPost(post: BlogPost, mode: "new" | "updated" = "new"): Promise<void> {
-  if (!post.isPublished) return;
+/**
+ * BLOG POSTI E'LONI (kanal).
+ *
+ * Maqolada KONTENT VIDEOSI bo'lsa (mahsulot videosi emas — maslahat,
+ * ko'rsatma, do'kon lavhasi) kanalga rasm emas, VIDEO chiqadi:
+ * Telegramda video to'g'ridan-to'g'ri ko'riladi, rasm + havoladan
+ * ko'ra ko'proq ko'riladi.
+ *
+ * Maqola oldin e'lon qilingan bo'lsa (`channelMessageId`) YANGI post
+ * tashlanmaydi — eskisining matni yangilanadi (mahsulotdagi kabi).
+ * Shuning uchun funksiya post ma'lumotini QAYTARADI: chaqiruvchi
+ * route uni hujjatga yozadi.
+ */
+export async function announceBlogPost(
+  post: BlogPost,
+  mode: "new" | "updated" = "new"
+): Promise<{ chatId: string; messageId: number } | null> {
+  if (!post.isPublished) return null;
 
   const lines = [
     mode === "new" ? "📰 <b>Yangi maqola</b>" : "♻️ <b>Maqola yangilandi</b>",
@@ -606,10 +622,43 @@ export async function announceBlogPost(post: BlogPost, mode: "new" | "updated" =
     `<b>${escapeHtml(post.title)}</b>`,
   ];
   if (post.excerpt) lines.push(``, escapeHtml(post.excerpt.slice(0, 500)));
+  const text = `${lines.join("\n")}${buildFooter(await loadFooter())}`;
+  const buttonText = "📖 To'liq o'qish";
+  const buttonUrl = `${siteUrl()}/blog/${post.slug}`;
 
-  await publish(`${lines.join("\n")}${buildFooter(await loadFooter())}`, {
-    photoUrl: post.coverImageUrl,
-    buttonText: "📖 To'liq o'qish",
-    buttonUrl: `${siteUrl()}/blog/${post.slug}`,
-  });
+  // Allaqachon e'lon qilingan — matnni yangilaymiz (takror post yo'q).
+  if (post.channelChatId && post.channelMessageId) {
+    try {
+      await editMessageCaptionOrText({
+        chatId: post.channelChatId,
+        messageId: post.channelMessageId,
+        text,
+        hasPhoto: Boolean(post.coverImageUrl || post.videoUrl),
+        replyMarkup: { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] },
+      });
+    } catch (error) {
+      console.error("Blog postini yangilashda xato:", error);
+    }
+    return { chatId: post.channelChatId, messageId: post.channelMessageId };
+  }
+
+  const channelId = await resolveChannelId();
+  if (!channelId) return null;
+
+  try {
+    // Video bo'lsa - sendVideo (albom emas: bitta element).
+    const sent = post.videoUrl
+      ? await sendVideo(channelId, post.videoUrl, {
+          caption: text,
+          replyMarkup: { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] },
+        })
+      : await sendChatMessage(channelId, text, {
+          photoUrl: post.coverImageUrl || undefined,
+          replyMarkup: { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] },
+        });
+    return { chatId: channelId, messageId: sent.message_id };
+  } catch (error) {
+    console.error("Blog postini kanalga yuborishda xato:", error);
+    return null;
+  }
 }

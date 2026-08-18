@@ -120,6 +120,11 @@ export interface BlogPost {
   excerpt: string;
   content: string;
   coverImageUrl: string;
+  /**
+   * Kontent videosi (mahsulot videosi emas). Ilovada video pleyer
+   * yo'q - tugma bosilsa video brauzerda ochiladi.
+   */
+  videoUrl?: string;
   isPublished: boolean;
   createdAt: number;
 }

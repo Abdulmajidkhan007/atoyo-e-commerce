@@ -7,6 +7,19 @@ export interface BlogPost {
   /** To'liq matn (oddiy matn / paragraflar) */
   content: string;
   coverImageUrl: string;
+  /**
+   * KONTENT VIDEOSI (mahsulot videosi EMAS) — maslahat, ko'rsatma,
+   * do'kon hayotidan lavha. Bo'lsa maqola chop etilganda:
+   *   • Telegram kanaliga video sifatida chiqadi;
+   *   • YouTube'ga (Shorts) navbat orqali yuklanadi.
+   * Storage papkasi: `blog`.
+   */
+  videoUrl?: string;
+  /** YouTube'ga yuklangan bo'lsa - video ID (takror yuklanmasin). */
+  youtubeVideoId?: string;
+  /** Kanaldagi post - yangilanganda yangi post tashlanmaydi. */
+  channelChatId?: string;
+  channelMessageId?: number;
   isPublished: boolean;
   createdAt: number;
   updatedAt: number;

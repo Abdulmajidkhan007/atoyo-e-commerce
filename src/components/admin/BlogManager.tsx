@@ -18,17 +18,31 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
+import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import type { BlogPost } from "@/types/content";
 
-const EMPTY = { title: "", excerpt: "", content: "", coverImageUrl: "", isPublished: true };
+const EMPTY = {
+  title: "",
+  excerpt: "",
+  content: "",
+  coverImageUrl: "",
+  /** Kontent videosi (mahsulot videosi emas) - YouTube va kanalga ketadi. */
+  videoUrl: "",
+  isPublished: true,
+};
+
+/** Video 20MB gacha (server ham shuni tekshiradi). */
+const MAX_VIDEO_MB = 20;
 
 export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
   const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
   const [editing, setEditing] = useState<BlogPost | null | undefined>(undefined);
   const [form, setForm] = useState(EMPTY);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInserting, setIsInserting] = useState(false);
@@ -57,6 +71,8 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
   const openNew = () => {
     setForm(EMPTY);
     setImageFile(null);
+    setVideoFile(null);
+    setNote(null);
     setError(null);
     setEditing(null);
   };
@@ -67,9 +83,12 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
       excerpt: post.excerpt,
       content: post.content,
       coverImageUrl: post.coverImageUrl,
+      videoUrl: post.videoUrl ?? "",
       isPublished: post.isPublished,
     });
     setImageFile(null);
+    setVideoFile(null);
+    setNote(null);
     setError(null);
     setEditing(post);
   };
@@ -92,7 +111,24 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
         coverImageUrl = (await up.json()).urls?.[0] ?? "";
       }
 
-      const payload = { ...form, coverImageUrl };
+      // KONTENT VIDEOSI: Storage'ga yuklanadi, keyin server uni
+      // kanalga video posti qilib chiqaradi va YouTube navbatiga
+      // qo'yadi (YouTube yoqilgan bo'lsa).
+      let videoUrl = form.videoUrl;
+      if (videoFile) {
+        if (videoFile.size > MAX_VIDEO_MB * 1024 * 1024) {
+          throw new Error(`Video ${MAX_VIDEO_MB}MB dan katta bo'lmasin.`);
+        }
+        const fd = new FormData();
+        fd.append("folder", "blog");
+        fd.append("kind", "video");
+        fd.append("files", videoFile);
+        const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        if (!up.ok) throw new Error((await up.json().catch(() => ({}))).error ?? "Video yuklanmadi.");
+        videoUrl = (await up.json()).urls?.[0] ?? "";
+      }
+
+      const payload = { ...form, coverImageUrl, videoUrl };
       const res = editing?.id
         ? await fetch(`/api/admin/blog/${editing.id}`, {
             method: "PATCH",
@@ -106,7 +142,12 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
           });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Saqlashda xatolik.");
 
-      const { post: saved } = await res.json();
+      const { post: saved, youtubeQueued } = await res.json();
+      setNote(
+        youtubeQueued
+          ? "Saqlandi. Video YouTube navbatiga qo'shildi (Sozlamalar > Ijtimoiy tarmoqlar)."
+          : null
+      );
       setPosts((prev) => {
         const exists = prev.some((p) => p.id === saved.id);
         return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...prev];
@@ -131,6 +172,13 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
         <h1 className="text-2xl font-bold text-navy-900 dark:text-white">Blog</h1>
         <Button variant="contained" startIcon={<AddIcon />} onClick={openNew}>Yangi maqola</Button>
       </div>
+
+      {/* Oyna yopilgandan keyin ko'rinadi - shuning uchun ro'yxat ustida. */}
+      {note && (
+        <Alert severity="success" className="mb-4" onClose={() => setNote(null)}>
+          {note}
+        </Alert>
+      )}
 
       {posts.length === 0 ? (
         <p className="text-sm text-navy-300">Hozircha maqolalar yo&apos;q.</p>
@@ -186,10 +234,44 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
             </Button>
           </div>
 
+          {/* KONTENT VIDEOSI - mahsulot videosi emas: maslahat,
+              ko'rsatma, do'kon lavhasi. Chop etilganda kanalga video
+              posti bo'lib chiqadi va YouTube'ga (Shorts) yuklanadi. */}
+          <div className="flex flex-col gap-2 rounded-xl2 border border-navy-100 p-3 dark:border-navy-500">
+            <div className="flex items-center gap-3">
+              <Button component="label" variant="outlined" size="small" startIcon={<VideocamOutlinedIcon />}>
+                Kontent videosi
+                <input
+                  type="file"
+                  hidden
+                  accept="video/mp4,video/quicktime,video/webm"
+                  onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+                />
+              </Button>
+              {(videoFile || form.videoUrl) && (
+                <span className="line-clamp-1 text-xs text-navy-300">
+                  {videoFile ? videoFile.name : "Video biriktirilgan"}
+                </span>
+              )}
+              {form.videoUrl && !videoFile && (
+                <Button size="small" color="error" onClick={() => setForm({ ...form, videoUrl: "" })}>
+                  Olib tashlash
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-navy-300">
+              Mahsulot videosi emas — maslahat/ko&apos;rsatma videosi. Chop etilganda
+              Telegram kanaliga video bo&apos;lib chiqadi va YouTube&apos;ga (Shorts)
+              navbat orqali yuklanadi. {MAX_VIDEO_MB}MB gacha.
+            </p>
+          </div>
+
           <FormControlLabel
             control={<Switch checked={form.isPublished} onChange={(e) => setForm({ ...form, isPublished: e.target.checked })} />}
             label="Chop etish"
           />
+
+
 
           {error && <Alert severity="error">{error}</Alert>}
         </DialogContent>

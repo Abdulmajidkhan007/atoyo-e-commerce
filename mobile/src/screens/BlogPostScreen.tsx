@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Image, ScrollView, Text, View} from 'react-native';
+import {Image, Linking, Pressable, ScrollView, Text, View} from 'react-native';
 import {makeStyles, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {fetchBlogPost} from '../firebase';
@@ -43,6 +43,18 @@ export function BlogPostScreen({route}: StackScreenProps<'Maqola'>) {
 
       <View style={{padding: spacing.lg, gap: spacing.sm}}>
         <Text style={styles.title}>{post.title}</Text>
+
+        {/* Kontent videosi - ilovada pleyer yo'q, brauzerda ochiladi. */}
+        {!!post.videoUrl && (
+          <Pressable
+            style={styles.videoBtn}
+            onPress={() => {
+              if (post.videoUrl) Linking.openURL(post.videoUrl).catch(() => {});
+            }}>
+            <Text style={styles.videoBtnText}>▶︎ Videoni ko&apos;rish</Text>
+          </Pressable>
+        )}
+
         <Text style={styles.date}>{new Date(post.createdAt).toLocaleDateString(dateLocale)}</Text>
         {post.content
           .split(/\n{2,}/)
@@ -58,6 +70,14 @@ export function BlogPostScreen({route}: StackScreenProps<'Maqola'>) {
 }
 
 const useStyles = makeStyles(c => ({
+  videoBtn: {
+    alignSelf: 'flex-start' as const,
+    backgroundColor: c.accent,
+    borderRadius: 999,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  videoBtnText: {color: c.onAccent, fontSize: 14, fontWeight: '700' as const},
   screen: {flex: 1, backgroundColor: c.bg},
   cover: {width: '100%', height: 220, backgroundColor: c.surfaceAlt},
   title: {color: c.text, fontWeight: '800', fontSize: 21},

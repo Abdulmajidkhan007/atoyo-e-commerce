@@ -311,6 +311,12 @@ Do'kon ham do'konlarga (optom), ham oddiy xaridorga (dona) sotadi va
 
 ## 1g. IJTIMOIY TARMOQLAR (Instagram, Facebook, YouTube)
 
+- **Blog maqolasidagi kontent videosi** (mahsulot videosi emas):
+  `BlogPost.videoUrl` — chop etilganda Telegram kanaliga VIDEO posti
+  bo'lib chiqadi va YouTube'ga (Shorts) navbat orqali yuklanadi
+  (`SocialJob.kind = "blog"`). Takrorlanmasligi uchun
+  `youtubeVideoId` va `channelMessageId` saqlanadi.
+
 Telegram kanali bilan bir qatorda ishlaydi, lekin kunlik chegaralar
 sababli NAVBAT orqali:
 

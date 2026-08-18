@@ -49,7 +49,20 @@ export default async function BlogPostPage({ params }: BlogPostPageParams) {
       <h1 className="mt-4 text-3xl font-bold text-navy-900 dark:text-white">{post.title}</h1>
       <p className="mt-2 text-sm text-navy-300">{new Date(post.createdAt).toLocaleDateString("uz-UZ")}</p>
 
-      {post.coverImageUrl && (
+      {/* KONTENT VIDEOSI - bo'lsa muqova rasmi o'rniga o'sha ko'rinadi
+          (o'quvchi avval videoni ko'radi). */}
+      {post.videoUrl ? (
+        <video
+          src={post.videoUrl}
+          controls
+          playsInline
+          preload="metadata"
+          poster={post.coverImageUrl || undefined}
+          className="mt-6 w-full rounded-xl2 border border-navy-100 dark:border-navy-500"
+        />
+      ) : null}
+
+      {!post.videoUrl && post.coverImageUrl && (
         <div className="relative mt-6 aspect-video overflow-hidden rounded-xl2 bg-navy-50 dark:bg-navy-900">
           <Image src={post.coverImageUrl} alt={post.title} fill sizes="(max-width:768px) 100vw, 768px" className="object-cover" priority />
         </div>

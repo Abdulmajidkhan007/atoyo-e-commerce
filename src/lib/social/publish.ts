@@ -12,6 +12,7 @@ import { publishToFacebook, publishToInstagram } from "./meta";
 import { uploadToYoutube } from "./youtube";
 import { SOCIAL_LABELS, type SocialJob, type SocialNetwork } from "@/types/social";
 import type { Product } from "@/types/product";
+import type { BlogPost } from "@/types/content";
 import { formatSom } from "@/lib/format";
 
 /**
@@ -93,6 +94,65 @@ export async function publishNow(
       : await publishToFacebook({ caption, images, video: images.length === 0 ? video : undefined });
 
   return { postId };
+}
+
+/**
+ * BLOG MAQOLASIDAGI KONTENT VIDEOSI → YouTube (Shorts).
+ *
+ * Mahsulot videosidan farqli: bu maslahat/ko'rsatma videosi, narx
+ * ham, kod ham yozilmaydi — sarlavha, qisqa tavsif va maqola havolasi
+ * ketadi. Telegram kanaliga esa `announceBlogPost` o'zi yuboradi.
+ */
+async function publishBlogNow(post: BlogPost): Promise<{ postId: string }> {
+  if (!post.videoUrl) throw new Error("Maqolada video yo'q.");
+  const settings = await getSocialSettings();
+  const description = [post.excerpt, `${SITE_URL}/blog/${post.slug}`, settings.hashtags]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const postId = await uploadToYoutube({
+    videoUrl: post.videoUrl,
+    title: post.title,
+    description,
+  });
+  return { postId };
+}
+
+/**
+ * Maqolaning videosini YouTube navbatiga qo'yadi. Video yo'q bo'lsa,
+ * YouTube o'chirilgan bo'lsa yoki allaqachon yuklangan bo'lsa - 0.
+ */
+export async function enqueueBlogVideo(post: BlogPost): Promise<number> {
+  if (!post.isPublished || !post.videoUrl || post.youtubeVideoId) return 0;
+  const settings = await getSocialSettings();
+  if (!settings.youtube) return 0;
+
+  const db = getAdminDb();
+  const existing = await db
+    .collection(COLLECTION)
+    .where("blogId", "==", post.id)
+    .where("network", "==", "youtube")
+    .limit(5)
+    .get();
+  if (existing.docs.some((doc) => (doc.data() as SocialJob).status !== "failed")) return 0;
+
+  const ref = db.collection(COLLECTION).doc();
+  const job: SocialJob = {
+    id: ref.id,
+    kind: "blog",
+    productId: "",
+    blogId: post.id,
+    productName: post.title,
+    network: "youtube",
+    status: "pending",
+    attempts: 0,
+    error: null,
+    postId: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  await ref.set(job);
+  return 1;
 }
 
 /** Bugun shu tarmoqqa nechta post ketgan. */
@@ -184,6 +244,42 @@ export async function processQueue(max = 10): Promise<{ posted: number; failed: 
       usedToday.set(job.network, used);
     }
     if (settings.dailyLimit > 0 && used >= settings.dailyLimit) continue;
+
+    // BLOG videosi: mahsulot emas, maqola hujjati o'qiladi.
+    if (job.kind === "blog") {
+      const postSnap = await db.collection("blogPosts").doc(job.blogId ?? "").get();
+      if (!postSnap.exists) {
+        await doc.ref.update({ status: "failed", error: "Maqola topilmadi.", updatedAt: Date.now() });
+        failed += 1;
+        continue;
+      }
+      const post = { id: postSnap.id, ...postSnap.data() } as BlogPost;
+      try {
+        const { postId } = await publishBlogNow(post);
+        await doc.ref.update({
+          status: "done",
+          postId,
+          error: null,
+          attempts: FieldValue.increment(1),
+          updatedAt: Date.now(),
+        });
+        // Maqolaga yozib qo'yiladi - ikkinchi marta yuklanmasin.
+        await postSnap.ref.update({ youtubeVideoId: postId });
+        usedToday.set(job.network, used + 1);
+        posted += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Xatolik";
+        const attempts = (job.attempts ?? 0) + 1;
+        await doc.ref.update({
+          status: attempts >= MAX_ATTEMPTS ? "failed" : "pending",
+          attempts,
+          error: message,
+          updatedAt: Date.now(),
+        });
+        failed += 1;
+      }
+      continue;
+    }
 
     const productSnap = await db.collection("products").doc(job.productId).get();
     if (!productSnap.exists) {

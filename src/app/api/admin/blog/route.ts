@@ -3,8 +3,10 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { announceBlogPost } from "@/lib/telegram/channel";
+import { enqueueBlogVideo } from "@/lib/social/publish";
 import type { BlogPost } from "@/types/content";
 import { slugify } from "@/lib/slug";
+import { validationMessage } from "@/lib/http/validation";
 
 export const runtime = "nodejs";
 
@@ -13,6 +15,8 @@ const postSchema = z.object({
   excerpt: z.string().max(500).default(""),
   content: z.string().max(20000).default(""),
   coverImageUrl: z.string().url().or(z.literal("")).default(""),
+  /** Kontent videosi (mahsulot videosi emas) - YouTube va kanalga. */
+  videoUrl: z.string().url().or(z.literal("")).default(""),
   isPublished: z.boolean().default(true),
 });
 
@@ -39,7 +43,9 @@ export async function POST(request: Request) {
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = postSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
+  }
 
   const d = parsed.data;
   const now = Date.now();
@@ -51,12 +57,23 @@ export async function POST(request: Request) {
     excerpt: d.excerpt.trim(),
     content: d.content.trim(),
     coverImageUrl: d.coverImageUrl,
+    ...(d.videoUrl ? { videoUrl: d.videoUrl } : {}),
     isPublished: d.isPublished,
     createdAt: now,
     updatedAt: now,
   };
 
   await ref.set(post);
-  await announceBlogPost(post, "new");
-  return NextResponse.json({ post }, { status: 201 });
+  // Kanalga e'lon (video bo'lsa - video posti) va YouTube navbati.
+  const sent = await announceBlogPost(post, "new");
+  if (sent) {
+    post.channelChatId = sent.chatId;
+    post.channelMessageId = sent.messageId;
+    await ref.update({ channelChatId: sent.chatId, channelMessageId: sent.messageId });
+  }
+  const queued = await enqueueBlogVideo(post).catch((error) => {
+    console.error("Maqola videosini navbatga qo'shishda xato:", error);
+    return 0;
+  });
+  return NextResponse.json({ post, youtubeQueued: queued > 0 }, { status: 201 });
 }

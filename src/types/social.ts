@@ -48,7 +48,17 @@ export type SocialJobStatus = "pending" | "done" | "failed";
 /** Navbatdagi bitta post. */
 export interface SocialJob {
   id: string;
+  /**
+   * NIMA post qilinadi: mahsulot (standart) yoki BLOG maqolasidagi
+   * kontent videosi. Eski hujjatlarda bu maydon yo'q — o'shalar
+   * mahsulot deb qabul qilinadi.
+   */
+  kind?: "product" | "blog";
+  /** Mahsulot ID si (blog ishida bo'sh). */
   productId: string;
+  /** Blog maqolasi ID si (`kind === "blog"`). */
+  blogId?: string;
+  /** Ro'yxatda ko'rinadigan nom (mahsulot nomi yoki maqola sarlavhasi). */
   productName: string;
   network: SocialNetwork;
   status: SocialJobStatus;
