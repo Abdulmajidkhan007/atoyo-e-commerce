@@ -15,6 +15,7 @@ import {
 import {useAuth} from '../auth';
 import type {StackScreenProps} from '../navigation/types';
 import {useToast} from '../components/Toast';
+import {DeliveryNote} from '../components/DeliveryNote';
 
 /**
  * Buyurtmani rasmiylashtirish. Hisob faqat ko'rsatish uchun - yakuniy
@@ -106,6 +107,9 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
         keyboardType="phone-pad"
         placeholder="+998901234567"
       />
+      {/* Manzil yozilishidan oldin bepul hudud aytiladi. */}
+      <DeliveryNote />
+
       <Field label={t.deliveryAddress} value={address} onChangeText={setAddress} multiline />
 
       <View style={styles.card}>

@@ -14,6 +14,7 @@ import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { CategoryTile } from "@/components/home/CategoryTile";
 import { ShowcaseGrid } from "@/components/home/ShowcaseGrid";
+import { Advantages } from "@/components/home/Advantages";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { useCategories } from "@/lib/products/useTaxonomy";
 
@@ -80,7 +81,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16">
+      {/* Bizning ustunligimiz: bepul yetkazish + o'rnatib berish
+          xizmati (matn sozlamadan keladi). */}
+      <Advantages />
+
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-6">
         <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">{dict.home.newProducts}</h2>
         <ShowcaseGrid />
       </section>

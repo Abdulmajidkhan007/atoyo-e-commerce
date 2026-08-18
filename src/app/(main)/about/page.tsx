@@ -3,11 +3,9 @@ import type { Metadata } from "next";
 import LocalPhoneOutlinedIcon from "@mui/icons-material/LocalPhoneOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
-import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
-import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { Advantages } from "@/components/home/Advantages";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +13,6 @@ export const metadata: Metadata = {
   title: "Biz haqimizda | Atoyo Santexnika",
   alternates: { canonical: "/about" },
 };
-
-const FEATURES = [
-  { Icon: VerifiedOutlinedIcon, title: "Sifat kafolati", text: "Faqat ishonchli ishlab chiqaruvchilardan sifatli mahsulot." },
-  { Icon: LocalShippingOutlinedIcon, title: "Tez yetkazib berish", text: "Buyurtmangizni tez va ishonchli yetkazib beramiz." },
-  { Icon: SupportAgentOutlinedIcon, title: "Professional maslahat", text: "Har bir mijozga individual yondashuv va yordam." },
-];
 
 export default async function AboutPage() {
   const settings = await getSiteSettings();
@@ -52,14 +44,11 @@ export default async function AboutPage() {
         </div>
       </div>
 
-      <div className="mt-12 grid gap-5 sm:grid-cols-3">
-        {FEATURES.map(({ Icon, title, text }) => (
-          <div key={title} className="rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
-            <Icon className="text-aqua-500" fontSize="large" />
-            <p className="mt-3 font-semibold text-navy-900 dark:text-white">{title}</p>
-            <p className="mt-1 text-sm text-navy-500 dark:text-navy-100">{text}</p>
-          </div>
-        ))}
+      {/* Ustunliklar bosh sahifadagi bilan BIR XIL bo'lim -
+          yetkazib berish va o'rnatish matni sozlamadan keladi,
+          shuning uchun ikki joyda ikki xil yozilib qolmaydi. */}
+      <div className="mt-12">
+        <Advantages />
       </div>
 
       <div className="mt-12 rounded-xl2 border border-navy-100 bg-white p-6 dark:border-navy-500 dark:bg-navy-700">

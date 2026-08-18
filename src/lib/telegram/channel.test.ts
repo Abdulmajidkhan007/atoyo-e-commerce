@@ -119,4 +119,13 @@ describe("buildProductText", () => {
   it("tugagan tur belgilanadi", () => {
     expect(buildProductText(withVariants, "new")).toContain("· tugagan");
   });
+
+  it("qo'shimcha qator (o'rnatish xizmati) tavsifdan oldin turadi", () => {
+    const withAbout = { ...base, description: "Qisqa tavsif" };
+    const text = buildProductText(withAbout, "new", "", ["🛠 <b>O'rnatib berish xizmati bor</b>"]);
+    const installAt = text.indexOf("🛠");
+    expect(installAt).toBeGreaterThan(-1);
+    // Tavsif eng oxirida qoladi.
+    expect(text.indexOf("Qisqa tavsif")).toBeGreaterThan(installAt);
+  });
 });

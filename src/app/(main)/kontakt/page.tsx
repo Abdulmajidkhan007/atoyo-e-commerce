@@ -5,6 +5,7 @@ import { TextField, Button, Alert, CircularProgress } from "@mui/material";
 import { normalizePhone, isValidName } from "@/lib/validation";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { StickerPacks } from "@/components/layout/StickerPacks";
+import { DeliveryNote } from "@/components/layout/DeliveryNote";
 
 export default function ContactPage() {
   const { dict } = useI18n();
@@ -53,7 +54,10 @@ export default function ContactPage() {
   return (
     <section className="mx-auto max-w-xl px-4 py-16">
       <h1 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">{dict.contact.title}</h1>
-      <p className="mb-6 text-sm text-navy-300">{dict.contact.subtitle}</p>
+      <p className="mb-4 text-sm text-navy-300">{dict.contact.subtitle}</p>
+
+      {/* Eng ko'p so'raladigan savol - "yetkazib berasizmi, qancha?" */}
+      <DeliveryNote className="mb-6" />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <TextField label={dict.checkout.fullName} required value={name} onChange={(e) => setName(e.target.value)} />

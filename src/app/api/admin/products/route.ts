@@ -53,6 +53,8 @@ const productSchema = z.object({
   diameterMm: z.number().nonnegative().optional(),
   lengthMm: z.number().nonnegative().optional(),
   weightKg: z.number().nonnegative().optional(),
+  /** O'rnatib berish xizmati bor mahsulot (moyka, dush kabina...). */
+  installService: z.boolean().default(false),
   images: z.array(z.string().url()).max(10).default([]),
   /** Mahsulot videolari (Storage havolalari). */
   videos: z.array(z.string().url()).max(3).default([]),
@@ -154,6 +156,7 @@ export async function POST(request: Request) {
     stock: d.stock,
     images: d.images,
     videos: d.videos,
+    installService: d.installService,
     thumbnailUrl: d.images[0] ?? "",
     isActive: !d.isDraft,
     isDraft: d.isDraft,

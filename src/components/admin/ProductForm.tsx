@@ -16,6 +16,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
@@ -88,6 +90,8 @@ const EMPTY_FORM = {
   diameterMm: "",
   lengthMm: "",
   weightKg: "",
+  /** Shu mahsulotni o'rnatib berish xizmati bormi (moyka, dush kabina...). */
+  installService: false,
 };
 
 interface NewImage {
@@ -216,6 +220,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
                 ? new Date(product.discountUntil).toISOString().slice(0, 10)
                 : "",
               stock: String(product.stock),
+              installService: product.installService === true,
               diameterMm: product.dimensions.diameterMm?.toString() ?? "",
               lengthMm: product.dimensions.lengthMm?.toString() ?? "",
               weightKg: product.dimensions.weightKg?.toString() ?? "",
@@ -528,6 +533,7 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
         variants: clean.variants,
         variantsExcluded: clean.variantsExcluded,
         ...(draft ? { isDraft: true } : {}),
+        installService: form.installService,
         diameterMm: form.diameterMm ? Number(form.diameterMm) : undefined,
         lengthMm: form.lengthMm ? Number(form.lengthMm) : undefined,
         weightKg: form.weightKg ? Number(form.weightKg) : undefined,
@@ -859,6 +865,20 @@ export function ProductForm({ product, initialName, draft = false, onSaved, onCa
               InputLabelProps={{ shrink: true }}
             />
           </div>
+
+          {/* O'RNATIB BERISH XIZMATI - faqat ba'zi mahsulotlarda
+              (full moyka, dush kabina...). Belgilansa mahsulot
+              sahifasida, ilovada va kanal postida yoziladi. Xizmat
+              chegarasi (qaysi hududga) sozlamada. */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={form.installService}
+                onChange={(e) => setForm({ ...form, installService: e.target.checked })}
+              />
+            }
+            label="O'rnatib berish xizmati bor"
+          />
 
           <div className="grid grid-cols-3 gap-3">
             <TextField size="small" type="number" label="Diametri (mm)" value={form.diameterMm} onChange={(e) => setForm({ ...form, diameterMm: e.target.value })} />

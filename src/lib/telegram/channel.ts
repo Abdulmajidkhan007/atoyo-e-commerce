@@ -25,6 +25,8 @@ import type { BlogPost, ChannelPostFooter } from "@/types/content";
 import { formatSom } from "@/lib/format";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
 import { toViewerProduct } from "@/lib/products/viewer";
+import { getDeliverySettings } from "@/lib/orders/pricing";
+import { freeDeliveryShort, installServiceText } from "@/lib/delivery/text";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
 
@@ -209,6 +211,37 @@ async function categoryLabelOf(product: Product): Promise<string> {
   }
 }
 
+/**
+ * KANAL POSTIDAGI YETKAZIB BERISH QATORI.
+ *
+ * Matn sozlamadan keladi (`settings/delivery`) va 60 soniya
+ * keshlanadi — kanalni yangilashda o'nlab post ketma-ket qayta
+ * quriladi, har biriga alohida Firestore o'qishi shart emas.
+ * Sozlama o'qilmasa qator umuman qo'shilmaydi (post ketaveradi).
+ */
+let deliveryCache: { at: number; line: string } | null = null;
+async function deliveryLine(): Promise<string> {
+  try {
+    if (!deliveryCache || Date.now() - deliveryCache.at > 60_000) {
+      const settings = await getDeliverySettings();
+      deliveryCache = { at: Date.now(), line: `🚚 ${escapeHtml(freeDeliveryShort(settings))}` };
+    }
+    return deliveryCache.line;
+  } catch {
+    return "";
+  }
+}
+
+/** O'rnatish xizmati kanalda ham aytiladi (mahsulotda belgilangan bo'lsa). */
+async function installLine(product: Product): Promise<string> {
+  if (!product.installService) return "";
+  try {
+    return installServiceText(await getDeliverySettings()) ? "🛠 <b>O'rnatib berish xizmati bor</b>" : "";
+  } catch {
+    return "";
+  }
+}
+
 /** Kanal postida ko'rsatiladigan turlar soni (post juda uzun bo'lmasligi uchun). */
 const MAX_VARIANT_LINES = 15;
 
@@ -221,7 +254,9 @@ const MAX_VARIANT_LINES = 15;
 export function buildProductText(
   product: Product,
   mode: "new" | "updated",
-  categoryLabel = ""
+  categoryLabel = "",
+  /** Qo'shimcha qatorlar (o'rnatish xizmati kabi) - tavsifdan oldin. */
+  extraLines: string[] = []
 ): string {
   const hasDiscount = isDiscountActive(product);
   // Sotish turi (dona/metr/kg...) - narx va zaxira shu birlikda.
@@ -280,6 +315,7 @@ export function buildProductText(
   if (product.material) lines.push(`🧱 ${escapeHtml(MATERIAL_LABELS[product.material] ?? product.material)}`);
   // Tavsifdan ichki xizmat ma'lumoti (1C kodi) olib tashlanadi -
   // u faqat xodimlar uchun, kanalda ko'rinmasligi kerak.
+  for (const line of extraLines.filter(Boolean)) lines.push(line);
   const about = publicDescription(product.description);
   if (about) lines.push(``, escapeHtml(about.slice(0, 400)));
 
@@ -341,8 +377,13 @@ export async function refreshChannelPost(product: Product): Promise<RefreshResul
   ].slice(0, 10);
 
   const header: "new" | "updated" = product.channelMode ?? "new";
-  const body = buildProductText(await forChannel(product), header, await categoryLabelOf(product));
-  const footer = buildFooter(await loadFooter());
+  const body = buildProductText(await forChannel(product), header, await categoryLabelOf(product), [
+    await installLine(product),
+  ]);
+  // Yetkazib berish va'dasi footerning eng tepasida - har postda
+  // ko'rinadi (mijoz "yetkazasizmi?" deb yozishi shart emas).
+  const promise = await deliveryLine();
+  const footer = `${promise ? `\n\n${promise}` : ""}${buildFooter(await loadFooter())}`;
   const budget = 850 - footer.length;
   const text =
     gallery.length > 1 && body.length > budget ? `${body.slice(0, Math.max(120, budget - 3))}...` : body;
@@ -449,8 +490,13 @@ export async function announceProduct(
     ...(product.images ?? []).filter(Boolean).map((url) => ({ url, type: "photo" as const })),
     ...(product.videos ?? []).filter(Boolean).map((url) => ({ url, type: "video" as const })),
   ].slice(0, 10);
-  const body = buildProductText(await forChannel(product), header, await categoryLabelOf(product));
-  const footer = buildFooter(await loadFooter());
+  const body = buildProductText(await forChannel(product), header, await categoryLabelOf(product), [
+    await installLine(product),
+  ]);
+  // Yetkazib berish va'dasi footerning eng tepasida - har postda
+  // ko'rinadi (mijoz "yetkazasizmi?" deb yozishi shart emas).
+  const promise = await deliveryLine();
+  const footer = `${promise ? `\n\n${promise}` : ""}${buildFooter(await loadFooter())}`;
   // Albom caption'i 1024 belgi bilan cheklangan - tavsif uzun bo'lsa
   // e'lon jimgina kesilib qolmasligi uchun mahsulot qismini qisqartiramiz
   // (footer - telefon, shior, havolalar - har doim to'liq qolsin).

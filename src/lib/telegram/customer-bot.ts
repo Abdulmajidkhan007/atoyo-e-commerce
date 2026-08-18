@@ -35,6 +35,7 @@ import type { Product, ProductCategory } from "@/types/product";
 import type { Order, OrderItem } from "@/types/order";
 import type { BlogPost } from "@/types/content";
 import { formatSom } from "@/lib/format";
+import { freeDeliveryShort, freeDeliveryText, installServiceText } from "@/lib/delivery/text";
 
 /**
  * MIJOZ-BOT - FAQAT shaxsiy (private) chatlarda ishlaydi. Webhook bu
@@ -450,6 +451,9 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
   const product = { id: doc.id, ...doc.data() } as Product;
   const ctx = await priceContext(chatId);
   const price = shownPrice(effectiveBotPrice(product), product, ctx);
+  // Yetkazib berish va'dasi va o'rnatish xizmati - saytdagi bilan
+  // BIR XIL matn (`lib/delivery/text.ts`).
+  const delivery = await getDeliverySettings();
   const session = await getSession(chatId);
   const isFavorite = (session.favorites ?? []).includes(product.id);
 
@@ -472,6 +476,8 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
       ? `⭐️ ${product.ratingAvg?.toFixed(1)} (${product.ratingCount})`
       : "",
     product.stock > 0 ? `${t.inStock}: ${product.stock} ${unit}` : `❌ ${t.outOfStock}`,
+    `🚚 ${freeDeliveryShort(delivery)}`,
+    product.installService && installServiceText(delivery) ? "🛠 O'rnatib berish xizmati bor" : "",
     localizedDescription(product, t.lang) ? `\n${localizedDescription(product, t.lang)}` : "",
   ].filter(Boolean);
 
@@ -662,7 +668,10 @@ async function startCheckout(chatId: number, userId: number, t: BotDict): Promis
 async function askAddress(chatId: number, session: BotSession, t: BotDict): Promise<void> {
   session.state = "awaiting_checkout_address";
   await saveSession(chatId, session);
-  await sendChatMessageWithReplyKeyboard(chatId, t.askAddress, [
+  // Manzil so'ralayotgan payt - bepul hudud haqida aytishning eng
+  // to'g'ri joyi.
+  const promise = freeDeliveryText(await getDeliverySettings());
+  await sendChatMessageWithReplyKeyboard(chatId, `${t.askAddress}\n\n🚚 ${promise}`, [
     [{ text: t.sendLocationBtn, request_location: true }],
     [{ text: t.skipBtn }],
   ]);

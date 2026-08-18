@@ -36,6 +36,21 @@ export interface Dictionary {
     categories: string;
     newProducts: string;
   };
+  /**
+   * BIZNING USTUNLIGIMIZ — bosh sahifadagi va "biz haqimizda"
+   * sahifasidagi bo'lim. Yetkazib berish va o'rnatish matni bu yerda
+   * EMAS: u sozlamadan keladi (`settings/delivery`), chunki admin uni
+   * o'zi o'zgartira olishi kerak.
+   */
+  advantages: {
+    title: string;
+    deliveryTitle: string;
+    installTitle: string;
+    qualityTitle: string;
+    qualityText: string;
+    supportTitle: string;
+    supportText: string;
+  };
   categories: {
     pipes: string;
     fittings: string;
@@ -260,6 +275,15 @@ const uz: Dictionary = {
     viewCatalog: "Katalogni ko'rish",
     categories: "Kategoriyalar",
     newProducts: "Yangi mahsulotlar",
+  },
+  advantages: {
+    title: "Bizning ustunligimiz",
+    deliveryTitle: "Bepul yetkazib berish",
+    installTitle: "O'rnatib berish xizmati",
+    qualityTitle: "Sifat kafolati",
+    qualityText: "Faqat ishonchli ishlab chiqaruvchilardan sifatli mahsulot.",
+    supportTitle: "Maslahat va yordam",
+    supportText: "Qaysi mahsulot mos kelishini ustalarimiz bilan maslahatlashing.",
   },
   categories: {
     pipes: "Quvurlar",
@@ -486,6 +510,15 @@ const en: Dictionary = {
     categories: "Categories",
     newProducts: "New products",
   },
+  advantages: {
+    title: "Why choose us",
+    deliveryTitle: "Free delivery",
+    installTitle: "Installation service",
+    qualityTitle: "Quality guarantee",
+    qualityText: "Only quality products from trusted manufacturers.",
+    supportTitle: "Advice and support",
+    supportText: "Our specialists will help you choose the right product.",
+  },
   categories: {
     pipes: "Pipes",
     fittings: "Fittings",
@@ -709,6 +742,15 @@ const ru: Dictionary = {
     viewCatalog: "Смотреть каталог",
     categories: "Категории",
     newProducts: "Новые товары",
+  },
+  advantages: {
+    title: "Наши преимущества",
+    deliveryTitle: "Бесплатная доставка",
+    installTitle: "Услуга установки",
+    qualityTitle: "Гарантия качества",
+    qualityText: "Только качественный товар от надёжных производителей.",
+    supportTitle: "Совет и поддержка",
+    supportText: "Наши мастера помогут подобрать нужный товар.",
   },
   categories: {
     pipes: "Трубы",

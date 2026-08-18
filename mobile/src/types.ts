@@ -58,6 +58,8 @@ export interface Product {
   thumbnailUrl: string;
   isActive: boolean;
   isDraft?: boolean;
+  /** O'rnatib berish xizmati bor mahsulot (moyka, dush kabina...). */
+  installService?: boolean;
   /** Mahsulot tartib raqami (saytdagi "№" ustuni). */
   code?: number;
   /** Kimdan kelgan (kirim uchun). */

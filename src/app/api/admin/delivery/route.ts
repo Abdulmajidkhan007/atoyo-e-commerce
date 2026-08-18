@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { validationMessage } from "@/lib/http/validation";
 import { requirePermission } from "@/lib/firebase/session";
 import { getDeliverySettings } from "@/lib/orders/pricing";
 
@@ -25,6 +26,16 @@ const schema = z.object({
     )
     .max(50)
     .optional(),
+
+  /**
+   * MIJOZGA KO'RINADIGAN VA'DA (matn). Narx hisobiga ta'sir qilmaydi -
+   * sayt/ilova/bot/kanalda shu matn chiqadi (`lib/delivery/text.ts`).
+   */
+  city: z.string().max(60).optional(),
+  freeRadiusKm: z.number().int().min(0).max(500).optional(),
+  note: z.string().max(300).optional(),
+  installEnabled: z.boolean().optional(),
+  installNote: z.string().max(300).optional(),
 });
 
 /** Yetkazib berish narxi sozlamalari (admin). */
@@ -39,7 +50,9 @@ export async function PATCH(request: Request) {
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
+  }
 
   await getAdminDb().doc("settings/delivery").set(parsed.data, { merge: true });
   return NextResponse.json({ ok: true });

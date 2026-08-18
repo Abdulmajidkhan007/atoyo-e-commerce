@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 import { CartItemRow } from "@/components/cart/CartItemRow";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+import { DeliveryNote } from "@/components/layout/DeliveryNote";
 
 export default function CartPage() {
   const { dict } = useI18n();
@@ -32,8 +33,11 @@ export default function CartPage() {
             ))}
           </div>
 
-          <div>
+          <div className="flex flex-col gap-4">
             <CartSummary />
+            {/* Savatda ham ko'rinsin: mijoz "yetkazish qancha turadi"
+                deb o'ylab qolmasin. */}
+            <DeliveryNote />
           </div>
         </div>
       )}

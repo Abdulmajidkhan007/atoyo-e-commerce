@@ -143,6 +143,14 @@ export interface Product {
    * ko'rsatiladi (`lib/products/product-code.ts`).
    */
   code?: number;
+  /**
+   * O'RNATIB BERISH XIZMATI. Ba'zi mahsulotlarni (full moyka, dush
+   * kabina, unitaz...) do'kon o'zi o'rnatib beradi - mijoz yaqin
+   * bo'lsa. Belgilangan bo'lsa mahsulot sahifasida, ilovada va kanal
+   * postida shu haqda yoziladi; xizmatning o'zi va hududi
+   * `settings/delivery` da (`lib/delivery/text.ts`).
+   */
+  installService?: boolean;
   isActive: boolean;
   /**
    * CHERNOVIK: mahsulot ochilgan, lekin hali katalogga chiqmagan va

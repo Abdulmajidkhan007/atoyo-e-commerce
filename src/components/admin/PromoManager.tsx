@@ -13,6 +13,7 @@ import {
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import type { DeliverySettings, PromoCode } from "@/types/promo";
 import { formatSom } from "@/lib/format";
+import { freeDeliveryText, installServiceText } from "@/lib/delivery/text";
 
 function toDateInput(ms: number | null): string {
   return ms ? new Date(ms).toISOString().slice(0, 10) : "";
@@ -147,6 +148,77 @@ export function PromoManager({
             Saqlash
           </Button>
         </form>
+
+        {/* ---- MIJOZGA KO'RINADIGAN VA'DA (matn) ----
+             Narx hisobiga ta'sir qilmaydi: bu matn bosh sahifada,
+             mahsulot sahifasida, savatda, botda va kanal postida
+             chiqadi (`lib/delivery/text.ts`). */}
+        <div className="mt-5 flex flex-col gap-3 border-t border-navy-100 pt-4 dark:border-navy-500">
+          <h3 className="font-medium text-navy-900 dark:text-white">
+            Mijozga ko&apos;rinadigan va&apos;da
+          </h3>
+          <p className="text-xs text-navy-300">
+            Bu matn saytda (bosh sahifa, mahsulot, savat, kontakt), ilovada,
+            botda va kanal postida chiqadi. Narx hisobiga ta&apos;sir qilmaydi.
+          </p>
+
+          <div className="flex flex-wrap items-start gap-3">
+            <TextField
+              size="small"
+              label="Shahar"
+              value={delivery.city ?? ""}
+              onChange={(e) => setDelivery({ ...delivery, city: e.target.value })}
+              className="!w-40"
+            />
+            <TextField
+              size="small"
+              type="number"
+              label="Bepul radius (km)"
+              value={delivery.freeRadiusKm ?? 0}
+              onChange={(e) =>
+                setDelivery({ ...delivery, freeRadiusKm: Number(e.target.value) || 0 })
+              }
+              className="!w-44"
+            />
+            <TextField
+              size="small"
+              label="O'z matni (ixtiyoriy)"
+              value={delivery.note ?? ""}
+              onChange={(e) => setDelivery({ ...delivery, note: e.target.value })}
+              helperText={`Bo'sh bo'lsa: "${freeDeliveryText({ ...delivery, note: "" })}"`}
+              className="!min-w-72 !flex-1"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-start gap-3">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={delivery.installEnabled ?? false}
+                  onChange={(e) => setDelivery({ ...delivery, installEnabled: e.target.checked })}
+                />
+              }
+              label="O'rnatib berish xizmati bor"
+            />
+            <TextField
+              size="small"
+              label="O'rnatish izohi (ixtiyoriy)"
+              value={delivery.installNote ?? ""}
+              onChange={(e) => setDelivery({ ...delivery, installNote: e.target.value })}
+              disabled={!delivery.installEnabled}
+              helperText="Bo'sh bo'lsa avtomatik matn yoziladi"
+              className="!min-w-72 !flex-1"
+            />
+            <Button variant="contained" size="small" onClick={saveDelivery} disabled={saving}>
+              Saqlash
+            </Button>
+          </div>
+
+          <p className="rounded-lg bg-navy-50 p-3 text-xs text-navy-500 dark:bg-navy-900 dark:text-navy-100">
+            Mijoz ko&apos;radi: <b>{freeDeliveryText(delivery)}</b>
+            {installServiceText(delivery) ? ` ${installServiceText(delivery)}` : ""}
+          </p>
+        </div>
 
         {/* ---- Hududlar: tuman bo'yicha alohida narx ---- */}
         <div className="mt-5 flex flex-col gap-2 border-t border-navy-100 pt-4 dark:border-navy-500">

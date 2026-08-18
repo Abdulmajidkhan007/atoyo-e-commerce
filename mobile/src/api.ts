@@ -135,6 +135,40 @@ export interface DeliverySettings {
   fee: number;
   freeFrom: number;
   enabled: boolean;
+  /** Mijozga aytiladigan va'da (saytdagi bilan BIR XIL matn). */
+  city?: string;
+  freeRadiusKm?: number;
+  note?: string;
+  installEnabled?: boolean;
+  installNote?: string;
+}
+
+/**
+ * BEPUL YETKAZISH matni. Sayt `src/lib/delivery/text.ts` bilan bir xil
+ * mantiq (ilova sayt kodini import qila olmaydi). Sozlama kelmasa
+ * standart matn: "Qo'qon ichida va atrofdagi 15 km gacha ... bepul".
+ */
+export function freeDeliveryText(settings?: Partial<DeliverySettings> | null): string {
+  const note = (settings?.note ?? '').trim();
+  if (note) return note;
+  const city = (settings?.city ?? "Qo'qon").trim();
+  const radius = Math.max(0, Math.round(settings?.freeRadiusKm ?? 15));
+  if (city && radius > 0) {
+    return `${city} ichida va atrofdagi ${radius} km gacha yetkazib berish bepul.`;
+  }
+  if (city) return `${city} ichida yetkazib berish bepul.`;
+  if (radius > 0) return `${radius} km gacha yetkazib berish bepul.`;
+  return 'Yetkazib berish xizmati mavjud.';
+}
+
+/** O'rnatib berish xizmati (o'chirilgan bo'lsa `null`). */
+export function installServiceText(settings?: Partial<DeliverySettings> | null): string | null {
+  if (settings?.installEnabled === false) return null;
+  const note = (settings?.installNote ?? '').trim();
+  if (note) return note;
+  const city = (settings?.city ?? "Qo'qon").trim();
+  const near = city ? `${city} va atrofidagi mijozlarga` : 'yaqin mijozlarga';
+  return `Moyka, dush kabina va shunga o'xshash mahsulotlarni o'rnatib berish xizmati bor — ${near}. Buyurtma berayotganda ayting.`;
 }
 
 export async function fetchDeliverySettings(): Promise<DeliverySettings> {

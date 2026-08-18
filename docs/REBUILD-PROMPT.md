@@ -48,6 +48,14 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   ustun, keyin eng yangisi; 5 daqiqa keshlanadi), pastida "Katalogni
   ko'rish" tugmasi. Katalog 3 000+ mahsulotga yetganda bosh sahifada
   uzun ro'yxat ko'rsatilmaydi.
+- **Yetkazib berish va'dasi:** "Qo'qon ichida va atrofdagi 15 km gacha
+  yetkazib berish bepul" degan matn sozlamadan keladi
+  (`settings/delivery`: `city`, `freeRadiusKm`, `note`,
+  `installEnabled`, `installNote`; matn `lib/delivery/text.ts`) va
+  bosh sahifadagi **"Bizning ustunligimiz"** bo'limida, "Biz
+  haqimizda"da, savat/checkout, kontakt, footer va mahsulot
+  sahifasida bir xil ko'rinadi. **O'rnatib berish xizmati** (moyka,
+  dush kabina...) mahsulotga bog'liq: `Product.installService`.
 - **Katalog:** cheksiz skroll (kursorli sahifalash, bir sahifada 24 ta),
   filtr modali — kategoriya, material, brend, ishlab chiqaruvchi davlat,
   narx oralig'i, saralash (yangi / arzon / qimmat).
@@ -652,7 +660,8 @@ bo'lardi.
 - `products` — nom, `nameSearchIndex`, `nameTokens[]`, tavsif, artikul,
   `code` (odam uchun tartib raqami), kategoriya/material/sotish turi
   (slug), brend, davlat, yetkazuvchi, narx, chegirma va muddati, zaxira,
-  o'lchamlar, rasm(lar) va `videos[]` (3 tagacha), `variantAxes[]` va
+  o'lchamlar, rasm(lar) va `videos[]` (3 tagacha), `installService`
+  (o'rnatib berish xizmati bor mahsulot), `variantAxes[]` va
   `variants[]`, `retailMarkupPercent` (shu mahsulotning dona ustamasi),
   `costPrice`, `isActive`, `isDraft`, `salesCount`, reyting, kanal
   posti ma'lumotlari, sanalar. **`price` — OPTOM narx** (dona narx
@@ -671,6 +680,9 @@ bo'lardi.
   `/admin/katalog/turlar` da boshqariladi (`/api/admin/taxonomy`,
   `/api/admin/facets`).
 - `stockMoves` — ombor harakatlari (kirim/sotuv/qaytish/chiqim/sanoq).
+- `settings/delivery` — yetkazish narxi (`fee`, `freeFrom`, `zones`)
+  VA mijozga aytiladigan va'da matni (`city`, `freeRadiusKm`, `note`,
+  `installEnabled`, `installNote`).
 - `settings/*` — sayt, yetkazish, telegram topic, `settings/pricing`
   (dona ustamasi va eng kam buyurtma), `settings/social` (qaysi
   ijtimoiy tarmoq yoqilgan, post shabloni, kunlik chegara).

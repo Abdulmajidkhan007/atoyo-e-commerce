@@ -2,6 +2,8 @@ import Link from "next/link";
 import { NewsletterForm } from "./NewsletterForm";
 import { AppDownloadCard } from "./AppDownloadCard";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { getDeliverySettings } from "@/lib/orders/pricing";
+import { freeDeliveryShort } from "@/lib/delivery/text";
 import { getDictionary } from "@/lib/i18n/server";
 import type { SocialLink } from "@/types/content";
 
@@ -13,7 +15,11 @@ const SOCIAL_LABELS: Record<SocialLink["platform"], string> = {
 };
 
 export async function Footer() {
-  const [settings, dict] = await Promise.all([getSiteSettings(), getDictionary()]);
+  const [settings, dict, delivery] = await Promise.all([
+    getSiteSettings(),
+    getDictionary(),
+    getDeliverySettings(),
+  ]);
   const socials = settings.socials.filter((s) => s.url);
 
   const footerLinks = [
@@ -31,6 +37,10 @@ export async function Footer() {
         <div>
           <p className="text-lg font-bold text-white">Atoyo Santexnika</p>
           <p className="mt-2 max-w-xs text-sm text-navy-300">{dict.footer.tagline}</p>
+          {/* Yetkazib berish va'dasi HAR sahifada ko'rinadi. */}
+          <p className="mt-3 max-w-xs text-sm font-medium text-aqua-300">
+            🚚 {freeDeliveryShort(delivery)}
+          </p>
           {socials.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-4">
               {socials.map((s) => (

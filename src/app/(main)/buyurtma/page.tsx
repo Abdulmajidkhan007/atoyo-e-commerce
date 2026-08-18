@@ -19,6 +19,7 @@ import { clearCart } from "@/redux/slices/cartSlice";
 import { ensureSessionCookie } from "@/lib/firebase/auth";
 import { normalizePhone, isValidName } from "@/lib/validation";
 import { deliveryFeeFor } from "@/lib/orders/promo";
+import { DeliveryNote } from "@/components/layout/DeliveryNote";
 import { DEFAULT_DELIVERY_SETTINGS, type DeliverySettings } from "@/types/promo";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { formatSom } from "@/lib/format";
@@ -207,6 +208,10 @@ export default function CheckoutPage() {
           </Button>
           {locationError && <p className="mt-1 text-xs text-red-500">{locationError}</p>}
         </div>
+
+        {/* Yetkazib berish va'dasi - mijoz manzilni yozishdan oldin
+            bepul hudud qayer ekanini bilsin. */}
+        <DeliveryNote />
 
         <TextField
           label={dict.checkout.address}

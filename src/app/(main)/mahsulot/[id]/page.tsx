@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Chip } from "@mui/material";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import { getProductById, getRelatedProducts } from "@/lib/firebase/admin-products";
 import { getDictionary } from "@/lib/i18n/server";
 import { isDiscountActive, effectivePrice } from "@/lib/products/pricing";
@@ -8,6 +10,8 @@ import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { getLocale } from "@/lib/i18n/server";
 import { getCurrentAppUser } from "@/lib/firebase/session";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
+import { getDeliverySettings } from "@/lib/orders/pricing";
+import { freeDeliveryText, installServiceText } from "@/lib/delivery/text";
 import { storefrontRole, toViewerProduct, toViewerProducts } from "@/lib/products/viewer";
 import { localizedDescription, localizedName } from "@/lib/products/i18n";
 import { labelOf } from "@/lib/products/taxonomy";
@@ -67,7 +71,7 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
 
 export default async function ProductPage({ params }: ProductPageParams) {
   const { id } = await params;
-  const [raw, dict, taxonomy, locale, viewer, pricing] = await Promise.all([
+  const [raw, dict, taxonomy, locale, viewer, pricing, delivery] = await Promise.all([
     getProductById(id),
     getDictionary(),
     getTaxonomy(),
@@ -75,6 +79,8 @@ export default async function ProductPage({ params }: ProductPageParams) {
     // Optom mijozga optom narx ko'rsatiladi; qolganlarga dona narx.
     getCurrentAppUser().catch(() => null),
     getPricingSettings(),
+    // Yetkazib berish va o'rnatish va'dasi (matn - sozlamadan).
+    getDeliverySettings(),
   ]);
 
   if (!raw) notFound();
@@ -109,6 +115,9 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
   // Chegirma muddati o'tgan bo'lsa - oddiy narx ko'rsatiladi.
   const hasDiscount = isDiscountActive(product);
+  // O'rnatish xizmati: mahsulotda belgilangan VA sozlamada yoqilgan
+  // bo'lsa ko'rinadi (do'kon xizmatni vaqtincha to'xtatishi mumkin).
+  const installText = installServiceText(delivery);
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">
@@ -213,6 +222,23 @@ export default async function ProductPage({ params }: ProductPageParams) {
               <AddToCartButton product={product} />
             </>
           )}
+
+          {/* YETKAZIB BERISH VA O'RNATISH — mijoz savatga solishdan
+              oldin ko'radigan eng muhim ikki savol. Matn sozlamadan
+              keladi; o'rnatish qatori faqat shu mahsulotda xizmat
+              belgilangan bo'lsa chiqadi. */}
+          <div className="mt-2 flex flex-col gap-2 rounded-xl2 border border-aqua-500/30 bg-aqua-50/60 p-3 text-sm text-navy-600 dark:border-aqua-500/30 dark:bg-navy-800 dark:text-navy-100">
+            <p className="flex items-start gap-2">
+              <LocalShippingOutlinedIcon fontSize="small" className="mt-0.5 shrink-0 text-aqua-600" />
+              <span>{freeDeliveryText(delivery)}</span>
+            </p>
+            {product.installService && installText && (
+              <p className="flex items-start gap-2">
+                <HandymanOutlinedIcon fontSize="small" className="mt-0.5 shrink-0 text-aqua-600" />
+                <span>{installText}</span>
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

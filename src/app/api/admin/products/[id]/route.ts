@@ -72,6 +72,8 @@ const updateSchema = z.object({
     .max(90)
     .optional(),
 
+  /** O'rnatib berish xizmati bor mahsulot (moyka, dush kabina...). */
+  installService: z.boolean().optional(),
   isActive: z.boolean().optional(),
   /** `false` - chernovikni nashr qilish (katalogga chiqadi + kanalga e'lon). */
   isDraft: z.boolean().optional(),
@@ -165,6 +167,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!d.isDraft && d.isActive === undefined) updates.isActive = true;
   }
   if (d.videos !== undefined) updates.videos = d.videos;
+  if (d.installService !== undefined) updates.installService = d.installService;
   if (d.images !== undefined) {
     updates.images = d.images;
     updates.thumbnailUrl = d.images[0] ?? "";

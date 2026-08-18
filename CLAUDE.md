@@ -270,6 +270,34 @@ Tekshirish: Sozlamalar → Tizim tekshiruvi → "Katalog so'rovi"
 - Kirimda 20 tadan ko'p mahsulot bo'lsa kanalga e'lon qilinmaydi
   (`announce: false`).
 
+## Yetkazib berish va o'rnatish va'dasi (bitta manba)
+
+Mijozga aytiladigan matn — "Qo'qon ichida va atrofdagi 15 km gacha
+yetkazib berish bepul" va "o'rnatib berish xizmati bor" — **kodda
+qattiq yozilmaydi**. U `settings/delivery` da (`DeliverySettings`:
+`city`, `freeRadiusKm`, `note`, `installEnabled`, `installNote`),
+matnni esa `lib/delivery/text.ts` yasaydi (`freeDeliveryText`,
+`freeDeliveryShort`, `installServiceText`; testi `text.test.ts`).
+Boshqaruvi: **Sozlamalar → Promokod va yetkazib berish → "Mijozga
+ko'rinadigan va'da"**.
+
+Shu matn chiqadigan joylar: bosh sahifa va "Biz haqimizda" dagi
+**"Bizning ustunligimiz"** bo'limi (`components/home/Advantages.tsx`),
+savat, checkout, kontakt, footer, mahsulot sahifasi, mobil ilova
+(`mobile/src/components/DeliveryNote.tsx` — sayt kodini import qila
+olmagani uchun matn mantiqi `mobile/src/api.ts` da TAKRORLANGAN,
+o'zgartirilsa ikkalasi ham), bot kartochkasi va manzil so'ralgan payt,
+kanal posti (footer tepasida, 60 s kesh).
+
+`lib/delivery/text.ts` da "server-only" YO'Q va hisob ham yo'q — u
+faqat matn. Yetkazish NARXI avvalgidek `fee`/`freeFrom`/`zones`
+bo'yicha (`lib/orders/promo.ts`).
+
+**O'rnatib berish xizmati mahsulotga bog'liq**: `Product.installService`
+(admin formada "O'rnatib berish xizmati bor" tugmachasi). Sahifada,
+ilovada va kanal postida u faqat mahsulotda belgilangan VA sozlamada
+xizmat yoqilgan bo'lsa chiqadi.
+
 ## CSP qoidasi (buzilmasin)
 
 Sayt `Content-Security-Policy` yuboradi (`lib/http/csp.ts`, testi

@@ -37,6 +37,7 @@ import {
 } from '../variants';
 import {Icon} from '../components/Icon';
 import {Breadcrumbs} from '../components/Breadcrumbs';
+import {DeliveryNote} from '../components/DeliveryNote';
 import {fetchTaxonomy} from '../api';
 import {SegmentedPicker} from '../components/SegmentedPicker';
 
@@ -313,6 +314,11 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           onPress={handleAddToCart}
           disabled={stock <= 0 || (withVariants && !variant)}
         />
+
+        {/* Yetkazib berish va'dasi - saytdagi bilan bir xil matn.
+            O'rnatish qatori faqat shu mahsulotda xizmat belgilangan
+            bo'lsa chiqadi. */}
+        <DeliveryNote withInstall={product.installService === true} />
 
         {/* ---- Sharhlar ---- */}
         <Text style={styles.section}>
