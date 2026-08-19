@@ -68,6 +68,16 @@ export interface SiteSettings {
   about: AboutContent;
   /** Kanal posti footeri (admin sozlamalaridan tahrirlanadi). */
   channelFooter?: ChannelPostFooter;
+  /**
+   * 3D REJIM TUGMASI SAYTDA KO'RINSINMI.
+   *
+   * Standart holat — **o'chiq**: 3D ko'rinish hali sinovda va u
+   * xarid oqimiga aloqador emas. Admin buni yoqsa header'da
+   * "✨ 3D / 📄 Klassik" tugmasi paydo bo'ladi va mijozlar ham
+   * tanlay oladi; o'chiq bo'lsa hamma klassik ko'rinishda ishlaydi
+   * (og'ir kutubxonalar umuman yuklanmaydi).
+   */
+  show3dMode?: boolean;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -88,6 +98,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
       "Yillar davomida to'plangan tajribamiz va ishonchli hamkorlarimiz tufayli mahsulotlarimiz sifatiga kafolat beramiz. Bizni tanlaganingiz uchun rahmat!",
     imageUrl: "",
   },
+  show3dMode: false,
   channelFooter: {
     phones: [],
     slogan: "",

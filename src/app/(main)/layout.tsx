@@ -6,7 +6,9 @@ import { getLocale } from "@/lib/i18n/server";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AssistantWidget } from "@/components/ai/AssistantWidget";
 import { organizationJsonLd } from "@/lib/seo/json-ld";
+import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { WorldCanvas } from "@/components/world/WorldCanvas";
+import { Ui3dGate } from "@/lib/ui-mode/Ui3dGate";
 
 // Footer admin tomonidan tahrirlanadigan sayt sozlamalarini (kontakt,
 // ijtimoiy tarmoqlar) jonli o'qiydi, shuning uchun bu layout ostidagi
@@ -15,7 +17,12 @@ import { WorldCanvas } from "@/components/world/WorldCanvas";
 export const dynamic = "force-dynamic";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
+  const [locale, settings] = await Promise.all([
+    getLocale(),
+    // 3D rejim tugmasi ko'rinadimi (admin sozlamasi, standart - yo'q).
+    getSiteSettings().catch(() => null),
+  ]);
+  const show3dMode = settings?.show3dMode === true;
 
   return (
     <LocaleProvider initialLocale={locale}>
@@ -25,10 +32,12 @@ export default async function MainLayout({ children }: { children: React.ReactNo
           almashganda qayta yaratilmaydi - kamera boshqa "bekat"ga
           uchib boradi (`lib/world/stations.ts`). Klassik rejimda
           umuman chizilmaydi. */}
-      <WorldCanvas />
+      {show3dMode && <WorldCanvas />}
+      {/* Admin 3D ni o'chirsa, ilgari 3D tanlagan mijoz klassikka qaytadi. */}
+      <Ui3dGate enabled={show3dMode} />
 
       <div className="flex min-h-screen flex-col">
-        <Header />
+        <Header show3dMode={show3dMode} />
         <main className="flex-1 pb-16 md:pb-0">{children}</main>
         <Footer />
         <MobileBottomNav />

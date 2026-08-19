@@ -5,10 +5,30 @@ Sayt ikki xil ko'rinishda ishlaydi va mijoz o'zi tanlaydi — Payme'dagi
 
 | Rejim | Nima ko'rinadi | Kimga |
 |---|---|---|
-| **`3d-modern`** (standart) | Hero'da 3D santexnika sahnasi, skrollda GSAP animatsiyasi, shishasimon (glass) kartochkalar | Yangi ko'rinishni xohlaganlarga |
-| **`classic`** | Hozirgi tekis dizayn, hech qanday og'ir kutubxona yuklanmaydi | Sekin internet, eski telefon, "chalg'itmasin" deydiganlarga |
+| **`classic`** (standart) | Hozirgi tekis dizayn, hech qanday og'ir kutubxona yuklanmaydi | Hamma mijozga — standart holat |
+| **`3d-modern`** | Hero'da 3D santexnika sahnasi, skrollda GSAP animatsiyasi, shishasimon (glass) kartochkalar | 3D admin tomonidan YOQILGAN bo'lsa, tanlagan mijozga |
 
 Tugma: **saytning yuqorisida** (`✨ 3D` / `📄 Klassik`).
+
+## 0. 3D MIJOZGA STANDART HOLDA KO'RINMAYDI (buzilmasin)
+
+3D ko'rinish hali **sinovda** va xarid oqimiga aloqasi yo'q, shuning
+uchun u admin tugmasi ortida:
+
+- `SiteSettings.show3dMode` (standart **`false`**) — boshqaruvi
+  **Sozlamalar → Sayt ko'rinishi**;
+- `DEFAULT_UI_MODE = "classic"`;
+- o'chiq bo'lsa header'dagi almashtirgich CHIZILMAYDI va
+  `(main)/layout.tsx` dagi `WorldCanvas` ham qurilmaydi — ya'ni
+  `three`/`gsap` mijozga umuman yuborilmaydi;
+- ilgari 3D ni tanlab qo'ygan mijoz "qamalib" qolmasligi uchun
+  `Ui3dGate` (`lib/ui-mode/Ui3dGate.tsx`) saqlangan tanlovni
+  klassikka qaytaradi;
+- **`/admin/3d`** — 3D ni MIJOZGA CHIQARMASDAN sinash sahifasi:
+  kategoriya tanlanadi, model aylantiriladi, qoplama almashtiriladi.
+
+Ya'ni "3D yoqilsinmi" degan qaror bitta joyda — admin sozlamasida.
+Komponentlarga yangi shart qo'shilmaydi.
 
 ---
 

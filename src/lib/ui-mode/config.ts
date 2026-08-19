@@ -23,8 +23,14 @@ export type UiMode = "classic" | "3d-modern";
 
 export const UI_MODES: readonly UiMode[] = ["classic", "3d-modern"] as const;
 
-/** Sayt birinchi ochilganda ko'rinadigan rejim. */
-export const DEFAULT_UI_MODE: UiMode = "3d-modern";
+/**
+ * Sayt birinchi ochilganda ko'rinadigan rejim.
+ *
+ * **Klassik** — ataylab: 3D ko'rinish hali sinovda, xarid oqimiga
+ * aloqasi yo'q va telefonlarda og'ir. U admin sozlamasidan
+ * (`SiteSettings.show3dMode`) yoqilgandagina mijozga ko'rinadi.
+ */
+export const DEFAULT_UI_MODE: UiMode = "classic";
 
 /** localStorage kaliti (redux-persist'ning kalitidan alohida). */
 export const UI_MODE_STORAGE_KEY = "atoyo.ui-mode";

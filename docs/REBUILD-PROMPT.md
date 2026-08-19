@@ -48,7 +48,12 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   ustun, keyin eng yangisi; 5 daqiqa keshlanadi), pastida "Katalogni
   ko'rish" tugmasi. Katalog 3 000+ mahsulotga yetganda bosh sahifada
   uzun ro'yxat ko'rsatilmaydi.
-- **Dizayn rejimi (klassik / 3D):** header'dagi tugma bilan mijoz
+- **Dizayn rejimi (klassik / 3D):** standart — **klassik**. 3D hali
+  sinovda, shuning uchun u admin sozlamasi ortida:
+  `SiteSettings.show3dMode` (Sozlamalar → "Sayt ko'rinishi") yoqilmaguncha
+  almashtirgich tugma ham, 3D dunyo ham chizilmaydi va `three`/`gsap`
+  mijozga yuborilmaydi. Admin `/admin/3d` sahifasida modellarni
+  mijozga chiqarmasdan sinab ko'radi. Yoqilgan bo'lsa: header'dagi tugma bilan mijoz
   "✨ 3D" va "📄 Klassik" ko'rinish o'rtasida almashadi (tanlov
   `localStorage` + cookie'da). 3D rejimdagi bosh sahifa — kinematik
   hero: markazda koddan yasalgan kosasimon moyka + gooseneck kran,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { TextField, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
+import { TextField, Button, Snackbar, Alert, CircularProgress, Switch, FormControlLabel } from "@mui/material";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import type { SiteSettings, SocialLink } from "@/types/content";
 
@@ -24,6 +24,7 @@ const PLATFORM_LABELS: Record<SocialLink["platform"], string> = {
 export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSettings }) {
   const [phone, setPhone] = useState(initialSettings.phone);
   const [email, setEmail] = useState(initialSettings.email);
+  const [show3dMode, setShow3dMode] = useState(initialSettings.show3dMode === true);
   const [address, setAddress] = useState(initialSettings.address);
   const [aboutTitle, setAboutTitle] = useState(initialSettings.about.title);
   const [aboutBody, setAboutBody] = useState(initialSettings.about.body);
@@ -67,6 +68,7 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
           address: address.trim(),
           socials: socialsArray,
           about: { title: aboutTitle.trim(), body: aboutBody.trim(), imageUrl },
+          show3dMode,
         }),
       });
       if (!res.ok) throw new Error("save");
@@ -133,6 +135,19 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
 
         <TextField label="Sarlavha" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} fullWidth size="small" />
         <TextField label="Matn" value={aboutBody} onChange={(e) => setAboutBody(e.target.value)} multiline minRows={6} fullWidth />
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
+        <h3 className="font-semibold text-navy-900 dark:text-white">Sayt ko&apos;rinishi</h3>
+        <FormControlLabel
+          control={<Switch checked={show3dMode} onChange={(e) => setShow3dMode(e.target.checked)} />}
+          label="3D rejim tugmasi mijozlarga ko'rinsin"
+        />
+        <p className="text-xs text-navy-300">
+          O&apos;chirilgan bo&apos;lsa sayt faqat klassik ko&apos;rinishda ishlaydi va 3D sahna
+          umuman yuklanmaydi. Yoqilsa header&apos;da &quot;Klassik / 3D&quot; tugmasi paydo bo&apos;ladi.
+          Hozircha bu sinov rejimi.
+        </p>
       </div>
 
       <div>

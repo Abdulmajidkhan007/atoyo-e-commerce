@@ -127,6 +127,13 @@ export function FaucetConfigurator({
   heightClass = "h-[320px] sm:h-[420px]",
 }: FaucetConfiguratorProps) {
   const [finishId, setFinishId] = useState<FinishId>(initialFinish);
+  /**
+   * Mijoz modelni O'ZI aylantirdimi. Aylantirgan zahoti avtomatik
+   * aylanish TO'XTAYDI: aks holda barmoq qo'yib yuborilishi bilan
+   * model o'zicha surilib ketardi va "boshqarib bo'lmayapti"
+   * degan tuyg'u qolardi.
+   */
+  const [rotatedByUser, setRotatedByUser] = useState(false);
   const finish = findFinish(finishId);
   const distance = cameraDistanceFor(category);
 
@@ -169,17 +176,35 @@ export function FaucetConfigurator({
               <Lightformer intensity={1.2} position={[5, -1, 1]} scale={[5, 5, 1]} color="#5E8CA6" />
             </Environment>
 
-            {/* Zum o'chirilgan: sahifa skrollini "yeb qo'ymasin". */}
+            {/* Zum o'chirilgan: sahifa skrollini "yeb qo'ymasin".
+                Aylantirish esa OCHIQ - asosiy imkoniyat shu.
+                `enableDamping` bilan model barmoq ortidan silliq
+                boradi va qo'yib yuborilganda asta to'xtaydi. */}
             <OrbitControls
+              makeDefault
               enableZoom={false}
               enablePan={false}
-              autoRotate
+              enableRotate
+              enableDamping
+              dampingFactor={0.08}
+              rotateSpeed={0.9}
+              autoRotate={!rotatedByUser}
               autoRotateSpeed={1.2}
               minPolarAngle={Math.PI / 4}
               maxPolarAngle={Math.PI / 1.9}
+              onStart={() => setRotatedByUser(true)}
             />
           </Canvas>
         </Suspense>
+
+        {/* Aylantirish maslahati - faqat mijoz hali aylantirmagan bo'lsa. */}
+        {!rotatedByUser && (
+          <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
+            <span className="rounded-full bg-black/35 px-3 py-1 text-[11px] text-white/85 backdrop-blur">
+              Barmoq bilan aylantiring
+            </span>
+          </div>
+        )}
 
         {/* --- Suzuvchi boshqaruv paneli (glassmorphism) --- */}
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-3">

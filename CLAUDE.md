@@ -348,11 +348,18 @@ xizmat yoqilgan bo'lsa chiqadi.
 
 ## Dizayn rejimi: klassik / 3D (buzilmasin)
 
-Sayt ikki ko'rinishda: **`3d-modern`** (standart) va **`classic`**.
+Sayt ikki ko'rinishda: **`classic`** (standart) va **`3d-modern`**.
 Tanlash tugmasi header'da, tanlov `localStorage` (`atoyo.ui-mode`) +
 cookie'da. Batafsil: `docs/UI-3D.md`.
 
-Uchta qoida:
+**0. 3D MIJOZGA STANDART HOLDA KO'RINMAYDI.** U `SiteSettings.show3dMode`
+(standart `false`, boshqaruvi Sozlamalar → "Sayt ko'rinishi") bilan
+yoqiladi. O'chiq bo'lsa almashtirgich tugma ham, `WorldCanvas` ham
+chizilmaydi — `three`/`gsap` mijozga umuman yuborilmaydi; ilgari 3D
+tanlagan mijozni `Ui3dGate` klassikka qaytaradi. Adminning o'zi
+**`/admin/3d`** sahifasida 3D ni mijozga chiqarmasdan sinaydi.
+
+Yana uchta qoida:
 
 1. **Shart bitta joyda.** Og'ir effekt chizilishini `useImmersive()`
    hal qiladi (`lib/ui-mode/useImmersive.ts`): foydalanuvchi 3D ni

@@ -37,6 +37,8 @@ const settingsSchema = z.object({
         .default([]),
     })
     .optional(),
+  /** 3D rejim tugmasi saytda ko'rinsinmi (standart - yo'q). */
+  show3dMode: z.boolean().optional(),
 });
 
 /** Sayt sozlamalari (kontakt, ijtimoiy tarmoqlar, about) - faqat admin. */
