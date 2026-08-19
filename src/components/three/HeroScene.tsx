@@ -113,7 +113,7 @@ function Radiator(props: ThreeElements["group"]) {
  * Sahna mazmuni: shakllar guruhi sekin aylanadi va SICHQONCHAGA
  * muloyim javob beradi (`lerp` - keskin sakramaydi).
  */
-function Composition() {
+function Composition({ compact = false }: { compact?: boolean }) {
   const group = useRef<Group>(null);
 
   useFrame((state, delta) => {
@@ -129,56 +129,125 @@ function Composition() {
     node.rotation.x = MathUtils.damp(node.rotation.x, targetX, 3, delta);
   });
 
+  /**
+   * JOYLASHUV ikki xil, chunki kadr shakli ham ikki xil:
+   *   • kompyuterda kadr BALAND (hero'ning o'ng yarmi) - shakllar
+   *     diagonal bo'yicha joylashadi;
+   *   • telefonda kadr KENG va PAST (412x232 atrofida) - shakllar
+   *     bir qatorga yoyiladi, aks holda o'rtada kichkina to'planib
+   *     qoladi va atrofi bo'sh ko'rinadi.
+   */
+  const layout = compact
+    ? {
+        elbow: [-2.1, 0.15, 0] as const,
+        faucet: [0.35, -0.05, 0.2] as const,
+        radiator: [2.2, -0.1, -0.4] as const,
+      }
+    : {
+        elbow: [-1.7, 0.4, 0] as const,
+        faucet: [0.9, 0.15, 0.4] as const,
+        radiator: [0.2, -1.15, -1.2] as const,
+      };
+
   return (
-    // Guruh biroz chapga va yuqoriga surilgan: aks holda kompozitsiya
-    // kadrning o'ng pastki burchagiga yopishib qoladi.
-    <group ref={group} position={[-0.25, 0.35, 0]} scale={0.92}>
+    // Kompyuterda guruh biroz chapga va yuqoriga surilgan: aks holda
+    // kompozitsiya kadrning o'ng pastki burchagiga yopishib qoladi.
+    <group ref={group} position={compact ? [0, 0, 0] : [-0.25, 0.35, 0]} scale={compact ? 1 : 0.92}>
       <Float speed={1.1} rotationIntensity={0.35} floatIntensity={0.7}>
-        <PipeElbow position={[-1.7, 0.4, 0]} rotation={[0.2, 0.5, 0.4]} scale={0.85} />
+        <PipeElbow position={layout.elbow} rotation={[0.2, 0.5, 0.4]} scale={0.85} />
       </Float>
       <Float speed={1.4} rotationIntensity={0.25} floatIntensity={0.5}>
-        <Faucet position={[0.9, 0.15, 0.4]} rotation={[0.1, -0.35, 0.12]} scale={0.95} />
+        <Faucet position={layout.faucet} rotation={[0.1, -0.35, 0.12]} scale={0.95} />
       </Float>
       <Float speed={0.9} rotationIntensity={0.3} floatIntensity={0.6}>
-        <Radiator position={[0.2, -1.15, -1.2]} rotation={[0.15, 0.4, -0.08]} scale={0.7} />
+        <Radiator position={layout.radiator} rotation={[0.15, 0.4, -0.08]} scale={0.7} />
       </Float>
     </group>
   );
 }
 
 /**
- * Sahna. `frameloop` TASHQARIDAN boshqariladi: sahna ko'rinmay qolsa
- * yoki brauzer varag'i orqaga o'tsa `"never"` beriladi va GPU
- * butunlay to'xtaydi (batareya tejaladi).
+ * Sahna.
+ *
+ * `frameloop` TASHQARIDAN boshqariladi: sahna ko'rinmay qolsa yoki
+ * brauzer varag'i orqaga o'tsa `"never"` beriladi va GPU butunlay
+ * to'xtaydi (batareya tejaladi).
+ *
+ * `quality`:
+ *   • `"high"` (kompyuter) - to'liq: soya, yuqori piksel zichligi;
+ *   • `"mid"`  (telefon)   - soyasiz, past piksel zichligi va kichikroq
+ *     atrof-muhit xaritasi. Sahna KO'RINADI, lekin telefonni qizdirmaydi.
  */
-export default function HeroScene({ active }: { active: boolean }) {
+export default function HeroScene({
+  active,
+  quality = "high",
+}: {
+  active: boolean;
+  quality?: "mid" | "high";
+}) {
+  const light = quality === "mid";
+
   return (
     <Canvas
       frameloop={active ? "always" : "never"}
-      // Retina ekranda 3x piksel chizish shart emas - 1.5 yetarli.
-      dpr={[1, 1.5]}
-      camera={{ position: [0, 0, 6.2], fov: 42 }}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      // Retina ekranda 3x piksel chizish shart emas; telefonda undan ham kam.
+      dpr={light ? [1, 1.25] : [1, 1.5]}
+      // Telefonda kamera yaqinroq: kadr past va keng, shakllar
+      // ekranni to'ldirishi kerak.
+      camera={{ position: [0, 0, light ? 5.4 : 6.2], fov: 42 }}
+      gl={{
+        antialias: !light,
+        alpha: true,
+        powerPreference: light ? "default" : "high-performance",
+      }}
       style={{ pointerEvents: "none" }}
     >
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[4, 6, 5]} intensity={1.6} />
+      {/* Telefonda atrof-muhit xaritasi kichikroq (64px) - aks etish
+          kamayadi, shuning uchun to'g'ridan-to'g'ri yorug'lik biroz
+          kuchliroq beriladi, aks holda metall qoraygan ko'rinadi. */}
+      <ambientLight intensity={light ? 0.9 : 0.55} />
+      <directionalLight position={[4, 6, 5]} intensity={light ? 2.3 : 1.6} />
+      {/* Old tomondan qo'shimcha yorug'lik - telefonda metallning
+          yorqin qirralari ko'rinib tursin. */}
+      {light && <directionalLight position={[-3, 2, 6]} intensity={1.2} />}
       <pointLight position={[-5, -2, 3]} intensity={35} color={GOLD} distance={14} />
 
-      <Composition />
+      <Composition compact={light} />
 
-      {/* Yerdagi mayin soya - shakllar "havoda osilib" qolmaydi. */}
-      <ContactShadows position={[0, -2.4, 0]} opacity={0.35} scale={12} blur={2.6} far={4} />
+      {/* Yerdagi mayin soya - shakllar "havoda osilib" qolmaydi.
+          Telefonda soya alohida render bosqichi bo'lgani uchun
+          o'tkazib yuboriladi. */}
+      {!light && (
+        <ContactShadows position={[0, -2.4, 0]} opacity={0.35} scale={12} blur={2.6} far={4} />
+      )}
 
       {/*
         HDR FAYLSIZ atrof-muhit: quyidagi "yorug'lik plitalari"
         kubik xaritani xotirada yasaydi. Metall yuzalar aynan shu
         aks etishlar hisobiga tirik ko'rinadi.
       */}
-      <Environment resolution={128}>
-        <Lightformer intensity={2.2} position={[0, 4, 2]} scale={[8, 2, 1]} color="#ffffff" />
-        <Lightformer intensity={1.4} position={[-4, 1, 2]} scale={[4, 4, 1]} color={GOLD} />
-        <Lightformer intensity={1} position={[4, -1, 1]} scale={[4, 4, 1]} color="#5E8CA6" />
+      <Environment resolution={light ? 64 : 128}>
+        {/* Telefonda xarita kichik va aks etish "yo'qoladi" - shuning
+            uchun plitalar yorqinroq beriladi, aks holda metall
+            jigarrang-qora bo'lib ko'rinadi. */}
+        <Lightformer
+          intensity={light ? 3.2 : 2.2}
+          position={[0, 4, 2]}
+          scale={[8, 2, 1]}
+          color="#ffffff"
+        />
+        <Lightformer
+          intensity={light ? 2.1 : 1.4}
+          position={[-4, 1, 2]}
+          scale={[4, 4, 1]}
+          color={GOLD}
+        />
+        <Lightformer
+          intensity={light ? 1.6 : 1}
+          position={[4, -1, 1]}
+          scale={[4, 4, 1]}
+          color="#5E8CA6"
+        />
       </Environment>
     </Canvas>
   );

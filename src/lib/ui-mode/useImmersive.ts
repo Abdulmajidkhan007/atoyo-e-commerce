@@ -7,9 +7,9 @@ import { useDeviceTier, type DeviceTier } from "./useDeviceTier";
  * "OG'IR" EFFEKTLAR YOQILADIMI - BITTA QOIDA, BITTA JOY.
  *
  * Qoida: foydalanuvchi 3D rejimni tanlagan BO'LSA va qurilma buni
- * ko'tara olsa. Shu shart butun loyihada faqat shu yerda yozilgan -
- * yangi komponent yozganda uni takrorlash SHART EMAS, `useImmersive()`
- * ni chaqiring.
+ * ko'tara olsa (telefon ham - u yengil sifatda chizadi, `tier: "mid"`).
+ * Shu shart butun loyihada faqat shu yerda yozilgan - yangi komponent
+ * yozganda uni takrorlash SHART EMAS, `useImmersive()` ni chaqiring.
  *
  *   const { immersive } = useImmersive();
  *   return immersive ? <ChiroyliVariant /> : <YengilVariant />;
@@ -24,5 +24,7 @@ export function useImmersive(): {
   const { isModern } = useUiMode();
   const tier = useDeviceTier();
 
-  return { immersive: isModern && tier === "high", isModern, tier };
+  // "low" - 3D umuman yo'q; "mid" (telefon) va "high" (kompyuter) -
+  // chiziladi, sifat farqini `HeroScene` o'zi hal qiladi.
+  return { immersive: isModern && tier !== "low", isModern, tier };
 }

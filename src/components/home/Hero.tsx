@@ -26,16 +26,7 @@ export function Hero() {
           : "bg-navy-900 text-white"
       }`}
     >
-      {/* 3D qatlami: matn ORQASIDA turadi va bosilmaydi. */}
-      <div
-        aria-hidden
-        data-immersive-only
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block"
-      >
-        <HeroCanvas className="h-full w-full" />
-      </div>
-
-      <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-16 md:py-24">
+      <div className="relative mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 pt-16 pb-8 md:pt-24 md:pb-24">
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
             immersive
@@ -54,6 +45,25 @@ export function Hero() {
         <Button component={Link} href="/katalog" variant="contained" color="primary" size="large">
           {dict.home.viewCatalog}
         </Button>
+      </div>
+
+      {/*
+        3D QATLAMI — bosiladigan emas, faqat bezak.
+
+        TELEFONDA u matnning OSTIDA, o'z joyida turadi (oqim ichida,
+        balandligi belgilangan). Ilgari sahna butun bo'limni qoplab,
+        sarlavha ustiga chiqib ketgan edi: na matn o'qilardi, na
+        shakllar ko'rinardi.
+
+        KOMPYUTERDA esa `absolute` bo'lib o'ng yarmini egallaydi —
+        matn chap tomonda bemalol joylashadi.
+      */}
+      <div
+        aria-hidden
+        data-immersive-only
+        className="pointer-events-none relative h-64 w-full pb-6 md:absolute md:inset-y-0 md:right-0 md:h-auto md:w-1/2 md:pb-0"
+      >
+        <HeroCanvas className="h-full w-full" />
       </div>
     </section>
   );

@@ -308,9 +308,14 @@ Uchta qoida:
 
 1. **Shart bitta joyda.** Og'ir effekt chizilishini `useImmersive()`
    hal qiladi (`lib/ui-mode/useImmersive.ts`): foydalanuvchi 3D ni
-   tanlagan VA qurilma ko'taradi (ekran ≥768px, ≥4 yadro/4GB, WebGL
-   bor, `prefers-reduced-motion` va `saveData` yo'q). Komponentda bu
-   shartni QAYTA yozmang.
+   tanlagan VA qurilma ko'taradi. Qurilma pog'onasi uchta
+   (`useDeviceTier`): `low` — 3D yo'q (`prefers-reduced-motion`,
+   `saveData`, 2G/3G, WebGL yo'q, <3GB/<4 yadro); `mid` — TELEFON,
+   sahna yengil sifatda (soyasiz, `dpr ≤ 1.25`); `high` — kompyuter,
+   to'liq sifat. Komponentda bu shartni QAYTA yozmang.
+   **Telefonni "yaroqsiz" deb chiqarib tashlamang** — mijozlarning
+   ko'pchiligi telefonda va bir marta aynan shu sabab 3D umuman
+   ko'rinmagan edi.
 2. **`three` / `gsap` / `framer-motion` statik import QILINMAYDI.**
    Faqat dinamik: `HeroCanvas` (`next/dynamic`, `ssr:false`),
    `Reveal` (`await import("gsap")`), `GlassCard` (`LazyMotion`).

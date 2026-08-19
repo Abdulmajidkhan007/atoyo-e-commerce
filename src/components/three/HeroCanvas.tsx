@@ -28,18 +28,24 @@ const HeroScene = dynamic(() => import("./HeroScene"), {
   loading: () => <SceneLoader />,
 });
 
-/** 3D o'rniga ko'rinadigan yengil variant (CSS gradient, 0 KB JS). */
+/**
+ * 3D chizilmaydigan holatdagi zaxira (CSS gradient, 0 KB JS).
+ *
+ * ATAYLAB juda sezilmas: ilgari bu yerda kattaroq va xira "dog'" bor
+ * edi - u 3D o'rniga chizilganda sahifa nosoz ko'ringandek tuyulardi.
+ * Endi u shunchaki mayin yorug'lik: bor-yo'qligi bilinmaydi.
+ */
 function PosterFallback() {
   return (
     <div
       aria-hidden
-      className="h-full w-full rounded-full bg-[radial-gradient(circle_at_30%_30%,rgba(196,154,108,0.55),transparent_60%),radial-gradient(circle_at_70%_70%,rgba(94,140,166,0.45),transparent_55%)] blur-[2px]"
+      className="h-full w-full bg-[radial-gradient(circle_at_65%_45%,rgba(196,154,108,0.18),transparent_58%)]"
     />
   );
 }
 
 export function HeroCanvas({ className = "" }: { className?: string }) {
-  const { immersive } = useImmersive();
+  const { immersive, tier } = useImmersive();
   const wrapper = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
 
@@ -72,7 +78,8 @@ export function HeroCanvas({ className = "" }: { className?: string }) {
     <div ref={wrapper} className={className}>
       {immersive ? (
         <Suspense fallback={<SceneLoader />}>
-          <HeroScene active={active} />
+          {/* Telefonda ("mid") sahna yengil sifatda chiziladi. */}
+          <HeroScene active={active} quality={tier === "high" ? "high" : "mid"} />
         </Suspense>
       ) : (
         <PosterFallback />

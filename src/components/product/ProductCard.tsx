@@ -16,9 +16,16 @@ import { FavoriteButton } from "./FavoriteButton";
 import { StarRating } from "./StarRating";
 import type { Product } from "@/types/product";
 import { formatSom } from "@/lib/format";
+import { useImmersive } from "@/lib/ui-mode/useImmersive";
+
+/** Kartochka ko'rinishi rejimga qarab (mazmuni bir xil). */
+const CLASSIC_CARD = "border-navy-100 bg-white hover:shadow-lg dark:border-navy-500 dark:bg-navy-700";
+const GLASS_CARD =
+  "border-navy-100/80 bg-white/60 backdrop-blur-md hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(7,45,64,0.18)] dark:border-white/10 dark:bg-navy-800/50";
 
 export function ProductCard({ product }: { product: Product }) {
   const dispatch = useAppDispatch();
+  const { immersive } = useImmersive();
   // Nom tanlangan tilda (tarjimasi bo'lmasa - o'zbekchasi).
   const { locale, dict } = useI18n();
   const name = localizedName(product, locale);
@@ -44,7 +51,11 @@ export function ProductCard({ product }: { product: Product }) {
   );
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl2 border border-navy-100 bg-white transition hover:shadow-lg dark:border-navy-500 dark:bg-navy-700">
+    <div
+      className={`group relative flex flex-col overflow-hidden rounded-xl2 border transition duration-300 ${
+        immersive ? GLASS_CARD : CLASSIC_CARD
+      }`}
+    >
       <Link href={`/mahsulot/${product.id}`} className="relative block aspect-square bg-navy-50 dark:bg-navy-900">
         {product.thumbnailUrl ? (
           <Image

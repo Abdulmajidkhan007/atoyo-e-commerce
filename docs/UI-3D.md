@@ -18,7 +18,7 @@ Tugma: **saytning yuqorisida** (`✨ 3D` / `📄 Klassik`).
 src/lib/ui-mode/
   config.ts          # rejim turi, saqlash (localStorage + cookie), erta skript
   UiModeContext.tsx  # React konteksti: useUiMode()
-  useDeviceTier.ts   # qurilma quvvati: "low" | "high"
+  useDeviceTier.ts   # qurilma quvvati: "low" | "mid" | "high"
   useImmersive.ts    # YAGONA QOIDA: og'ir effektlar yoqiladimi
 
 src/components/layout/UiModeSwitch.tsx   # almashtirgich tugma
@@ -48,9 +48,20 @@ export function MeningBlokim() {
 `immersive === true` bo'lishi uchun **ikkala** shart kerak:
 
 1. foydalanuvchi `3d-modern` ni tanlagan;
-2. qurilma ko'taradi (`useDeviceTier` — ekran ≥ 768px, ≥ 4 yadro,
-   ≥ 4GB xotira, WebGL bor, `prefers-reduced-motion` yo'q, trafik
-   tejash rejimi yo'q).
+2. qurilma ko'taradi — ya'ni `useDeviceTier()` `"low"` qaytarmaydi.
+
+Pog'onalar:
+
+| Pog'ona | Kim | Nima chiziladi |
+|---|---|---|
+| `"low"` | `prefers-reduced-motion`, trafik tejash, 2G/3G, WebGL yo'q, <3GB xotira yoki <4 yadro | 3D **yo'q** — o'rniga sezilmas yorug'lik |
+| `"mid"` | telefon/planshet (ekran < 768px) | Sahna **bor**, lekin soyasiz, past piksel zichligi (`dpr ≤ 1.25`), kichikroq atrof-muhit xaritasi |
+| `"high"` | kompyuter | To'liq sifat |
+
+> **Tarix:** avval `"ekran < 768px → low"` degan shart bor edi va
+> telefonda 3D UMUMAN chizilmasdi — tugmada "3D" yozuv turardi-yu,
+> ekranda hech qanday 3D yo'q edi. Mijozlarning ko'pchiligi
+> telefonda, shuning uchun endi telefon ham sahnani ko'radi.
 
 Faqat foydalanuvchi tanlovi kerak bo'lsa — `useUiMode().isModern`.
 
@@ -102,9 +113,20 @@ npm run build && npm run start
   javob beradi;
 - "📄 Klassik" bosilsa → canvas yo'qoladi, sahifa yengillashadi,
   tanlov `reload` dan keyin ham saqlanadi;
-- Telefon o'lchamida (390px) → 3D umuman chizilmaydi, o'rniga
-  gradient "poster";
+- Telefon o'lchamida (≈390-412px) → sahna hero matnining OSTIDA,
+  o'z bandida chiziladi (soyasiz, past piksel zichligi);
 - Brauzerda "Reduce motion" yoqilsa → animatsiyalar o'chadi.
+
+## 5a. Telefondagi joylashuv (nozik joy)
+
+Hero'dagi 3D bloki telefonda `relative h-64` — ya'ni **oqim ichida**,
+matndan keyin. Kompyuterda esa `md:absolute md:right-0 md:w-1/2`.
+
+Nega shunday: bir marta u telefonda ham `absolute inset-0` edi va
+sahna sarlavha ustiga chiqib ketgan — na matn o'qilardi, na shakllar
+ko'rinardi. Shakllarning joylashuvi ham kadr shakliga qarab
+o'zgaradi (`Composition` dagi `layout`): kompyuterda diagonal,
+telefonda bir qatorda.
 
 ## 6. Keyingi bosqichlar (hali qilinmagan)
 

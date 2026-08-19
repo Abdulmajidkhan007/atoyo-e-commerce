@@ -53,13 +53,18 @@ export default function HomePage() {
           bosh sahifada asosiylari turadi, qolgani katalogda.
         */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-          {categories.slice(0, HOME_CATEGORIES).map((item) => (
-            <CategoryTile
-              key={item.slug}
-              category={item.slug}
-              label={item.label}
-              Icon={CATEGORY_ICONS[item.slug] ?? CategoryOutlinedIcon}
-            />
+          {/* Kafellar KETMA-KET chiqadi (har biri 40 ms kechikish bilan) -
+              3D rejim farqi telefonda ham sezilsin. Kechikish 6 tadan
+              keyin qayta boshlanadi: pastdagi kafel 0.5 soniya kutib
+              turmasin. */}
+          {categories.slice(0, HOME_CATEGORIES).map((item, index) => (
+            <Reveal key={item.slug} delay={(index % 6) * 0.04}>
+              <CategoryTile
+                category={item.slug}
+                label={item.label}
+                Icon={CATEGORY_ICONS[item.slug] ?? CategoryOutlinedIcon}
+              />
+            </Reveal>
           ))}
           {categories.length > HOME_CATEGORIES && (
             <Link
