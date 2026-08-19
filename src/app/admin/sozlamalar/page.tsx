@@ -15,17 +15,22 @@ import { EmailSettingsForm } from "@/components/admin/EmailSettingsForm";
 import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
 import { AiUsagePanel } from "@/components/admin/AiUsagePanel";
 import { AppUpdateForm } from "@/components/admin/AppUpdateForm";
+import { channelQueueSummary, getChannelPace } from "@/lib/telegram/channel-queue";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSettingsPage() {
-  const [topicConfig, requiredChannels, siteSettings, channelId, user] = await Promise.all([
-    resolveTopicConfig(),
-    getRequiredChannels(),
-    getSiteSettings(),
-    resolveChannelId(),
-    getCurrentAppUser(),
-  ]);
+  const [topicConfig, requiredChannels, siteSettings, channelId, user, channelPace, channelQueue] =
+    await Promise.all([
+      resolveTopicConfig(),
+      getRequiredChannels(),
+      getSiteSettings(),
+      resolveChannelId(),
+      getCurrentAppUser(),
+      // Kanal post tezligi va navbatda kutayotganlar soni.
+      getChannelPace(),
+      channelQueueSummary().catch(() => ({ pending: 0, next: null })),
+    ]);
 
   // Maxfiy kalitlar faqat loyiha egasiga - niqoblangan ko'rinishda.
   const secrets = isOwner(user) ? await describeTelegramSecrets() : null;
@@ -116,6 +121,8 @@ export default async function AdminSettingsPage() {
           initialConfig={topicConfig}
           initialChannels={requiredChannels}
           initialChannelId={channelId ?? ""}
+          initialPace={channelPace}
+          initialQueued={channelQueue.pending}
         />
       </section>
 

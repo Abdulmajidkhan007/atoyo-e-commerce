@@ -240,6 +240,21 @@ Tekshirish: Sozlamalar → Tizim tekshiruvi → "Katalog so'rovi"
   qaytaradi (`posted` / `edited` / `unchanged` / `skipped`), UI shuni
   ochiq yozadi. Haqiqatan yangi post kerak bo'lsa `"repost"` rejimi
   (eski post o'chiriladi).
+- **KANAL POST TEZLIGI (navbat)**: bir vaqtda ko'p mahsulot kirim
+  qilinsa kanal spam bo'lib ketmasin — **oyna bo'yicha chegara**
+  (standart: 10 daqiqada 5 ta YANGI post, `settings/telegram` dagi
+  `channelMaxPerWindow` / `channelWindowMinutes`, boshqaruvi
+  Sozlamalar → Bot sozlamalari → "Post tezligi"). Chegaradan oshgani
+  TASHLANMAYDI — `channelQueue` ga tushadi va oyna bo'shashi bilan
+  avtomatik chiqadi. Mantiq `lib/telegram/channel-queue.ts` da:
+  hisob "surilib boruvchi oyna" (`channelRecent` massivi), alohida
+  kolleksiya/indeks kerak emas.
+  Navbatni bo'shatish: `/api/cron/channel` (CRON_SECRET) va har yangi
+  e'lon oldidan 2 tadan (`drainChannelQueue`) — cron sozlanmagan
+  bo'lsa ham navbat qotib qolmaydi. Faqat YANGI post chegaraga
+  tushadi; mavjud postni tahrirlash (`refresh`) erkin.
+  `announceProduct` endi `"queued"` ham qaytaradi va bot xodimga
+  "~N daqiqadan keyin chiqadi" deb yozadi.
 - **Telegram limiti**: bitta kanalga daqiqasiga ~20 ta tahrir.
   Shuning uchun `refresh-channel` bir so'rovda 15 tadan oladi va har
   tahrir orasida 3 s kutadi; `callTelegramApi` esa 429 javobidagi

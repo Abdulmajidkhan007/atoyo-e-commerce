@@ -69,6 +69,14 @@ service cloud.firestore {
     // OPTOM MIJOZLAR va ularning kalitlari - faqat server. Kalit
     // ro'yxatda ochiq turadi, shuning uchun clientga umuman berilmaydi.
     // Ijtimoiy tarmoq navbati - faqat server (Admin SDK) ishlatadi.
+    /**
+     * KANAL NAVBATI: tezlik chegarasidan oshgan e'lonlar shu yerda
+     * kutadi. Faqat server (Admin SDK) yozadi va o'qiydi.
+     */
+    match /channelQueue/{jobId} {
+      allow read, write: if false;
+    }
+
     match /socialQueue/{jobId} {
       allow read, write: if false;
     }

@@ -27,6 +27,13 @@ import { formatSom } from "@/lib/format";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
 import { toViewerProduct } from "@/lib/products/viewer";
 import { getDeliverySettings } from "@/lib/orders/pricing";
+import {
+  dueChannelPosts,
+  enqueueChannelPost,
+  markQueueAttempt,
+  removeFromQueue,
+  reserveChannelSlot,
+} from "./channel-queue";
 import { freeDeliveryShort, installServiceText } from "@/lib/delivery/text";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
@@ -164,7 +171,7 @@ export type AnnounceMode = "new" | "updated" | "refresh" | "repost";
  * Ilgari funksiya `void` qaytarardi va admin panel eski postni jimgina
  * tahrirlaganda ham "kanalga joylandi" deb yozardi.
  */
-export type AnnounceResult = "posted" | "edited" | "unchanged" | "skipped";
+export type AnnounceResult = "posted" | "edited" | "unchanged" | "skipped" | "queued";
 
 /**
  * Mahsulot o'zgarishi kanalda "yangilandi" deb e'lon qilinishga
@@ -460,11 +467,37 @@ export async function refreshChannelPost(product: Product): Promise<RefreshResul
  */
 export async function announceProduct(
   product: Product,
-  mode: AnnounceMode = "new"
+  mode: AnnounceMode = "new",
+  options: { fromQueue?: boolean } = {}
 ): Promise<AnnounceResult> {
   // Chernovik hali e'lon qilinmaydi - "✅ Yetarli, tayyor" bosilgandan
   // (yoki kirim orqali zaxira kelgandan) keyin chiqadi.
   if (!product.isActive || product.isDraft) return "skipped";
+
+  /**
+   * TEZLIK CHEGARASI (masalan 10 daqiqada 5 ta post).
+   *
+   * Faqat YANGI post chegaraga tushadi: mavjud postni tahrirlash
+   * (`refresh`, narx yangilanishi) obunachiga bildirishnoma
+   * yubormaydi va kanalni to'ldirmaydi.
+   *
+   * Chegaradan oshgani TASHLANMAYDI - navbatga qo'yiladi va oyna
+   * bo'shashi bilan avtomatik chiqadi (`drainChannelQueue`).
+   */
+  const isNewPost = !product.channelMessageId || mode === "repost";
+  if (isNewPost && !options.fromQueue) {
+    // Avval NAVBATDAGI eskilarini chiqaramiz: cron sozlanmagan
+    // bo'lsa ham navbat harakatlanib turadi ("tirik" qoladi).
+    await drainChannelQueue(2).catch(() => ({ posted: 0, failed: 0 }));
+
+    const slot = await reserveChannelSlot();
+    if (!slot.allowed) {
+      await enqueueChannelPost(product.id, product.name, slot.nextAt).catch((error) =>
+        console.error("Kanal navbatiga qo'shishda xato:", error)
+      );
+      return "queued";
+    }
+  }
 
   // Sarlavha: `refresh` bo'lsa postdagi avvalgi sarlavha saqlanadi.
   const header: "new" | "updated" =
@@ -661,4 +694,55 @@ export async function announceBlogPost(
     console.error("Blog postini kanalga yuborishda xato:", error);
     return null;
   }
+}
+
+
+/* ------------------------------------------------------------------ */
+/*  NAVBATNI BO'SHATISH                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Vaqti kelgan navbatdagi postlarni chiqaradi.
+ *
+ * Uch joydan chaqiriladi:
+ *   • `/api/cron/channel` — jadval bo'yicha (asosiy yo'l);
+ *   • yangi e'lon oldidan (`announceProduct` chaqirilganda) — cron
+ *     sozlanmagan bo'lsa ham navbat harakatlanib turadi;
+ *   • admin paneldagi tugma.
+ *
+ * `fromQueue: true` bilan chaqiriladi - aks holda post yana o'zini
+ * navbatga qo'yib, cheksiz aylanma hosil bo'lardi.
+ */
+export async function drainChannelQueue(max = 5): Promise<{ posted: number; failed: number }> {
+  const jobs = await dueChannelPosts(max).catch(() => []);
+  let posted = 0;
+  let failed = 0;
+
+  for (const job of jobs) {
+    // Navbatdagi post ham umumiy tezlikka bo'ysunadi.
+    const slot = await reserveChannelSlot();
+    if (!slot.allowed) {
+      await markQueueAttempt(job, slot.nextAt);
+      break;
+    }
+
+    try {
+      const snapshot = await getAdminDb().collection("products").doc(job.productId).get();
+      if (!snapshot.exists) {
+        await removeFromQueue(job.id);
+        continue;
+      }
+
+      const product = { id: snapshot.id, ...snapshot.data() } as Product;
+      const result = await announceProduct(product, "new", { fromQueue: true });
+      await removeFromQueue(job.id);
+      if (result === "posted") posted += 1;
+    } catch (error) {
+      console.error("Navbatdagi postni chiqarishda xato:", error);
+      await markQueueAttempt(job, Date.now() + 60_000);
+      failed += 1;
+    }
+  }
+
+  return { posted, failed };
 }

@@ -594,6 +594,29 @@ curl -X POST https://atoyo-uz.web.app/api/cron/social \
   -H "Authorization: Bearer <satr>"
 ```
 
+### Telegram kanal navbati (`/api/cron/channel`)
+
+Kanal posti tezligi chegaralangan (standart: **10 daqiqada 5 ta yangi
+post**, Sozlamalar → Bot sozlamalari → "Post tezligi"). Chegaradan
+oshgan e'lonlar `channelQueue` da kutadi. Shu jadval ularni chiqaradi
+— **har 5 daqiqada** yetadi:
+
+```bash
+gcloud scheduler jobs create http atoyo-channel-queue \
+  --project=atoyo-uz \
+  --location=us-east4 \
+  --schedule="*/5 * * * *" \
+  --time-zone="Asia/Tashkent" \
+  --uri="https://atoyo-uz.web.app/api/cron/channel" \
+  --http-method=POST \
+  --headers="Authorization=Bearer <o'sha CRON_SECRET>"
+```
+
+Cron sozlanmasa ham navbat qotib qolmaydi: keyingi e'lon yuborilganda
+`announceProduct` o'zi ikkita eskisini chiqaradi. Lekin xodim uzoq
+vaqt yangi mahsulot qo'shmasa, navbat o'sha vaqtgacha kutadi —
+shuning uchun jadval tavsiya qilinadi.
+
 ## Sog'liq tekshiruvi va xatolar
 
 - **`/api/health`** — sayt tirikligini bildiradi (`{"ok":true}`).

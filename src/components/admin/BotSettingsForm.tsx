@@ -12,15 +12,27 @@ interface BotSettingsFormProps {
   initialConfig: TelegramTopicConfig;
   initialChannels: RequiredChannel[];
   initialChannelId: string;
+  /** Kanal tezligi: oynada nechta post va oyna uzunligi (daqiqa). */
+  initialPace: { maxPerWindow: number; windowMinutes: number };
+  /** Navbatda kutayotgan postlar soni. */
+  initialQueued: number;
 }
 
-export function BotSettingsForm({ initialConfig, initialChannels, initialChannelId }: BotSettingsFormProps) {
+export function BotSettingsForm({
+  initialConfig,
+  initialChannels,
+  initialChannelId,
+  initialPace,
+  initialQueued,
+}: BotSettingsFormProps) {
   const [orders, setOrders] = useState(String(initialConfig.orders));
   const [contact, setContact] = useState(String(initialConfig.contact));
   const [subscribers, setSubscribers] = useState(String(initialConfig.subscribers));
   const [actions, setActions] = useState(String(initialConfig.actions));
   const [intake, setIntake] = useState(String(initialConfig.intake));
   const [channelId, setChannelId] = useState(initialChannelId);
+  const [maxPerWindow, setMaxPerWindow] = useState(String(initialPace.maxPerWindow));
+  const [windowMinutes, setWindowMinutes] = useState(String(initialPace.windowMinutes));
   const [channels, setChannels] = useState<RequiredChannel[]>(initialChannels);
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
@@ -168,6 +180,8 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
           actions: Number(actions) || 0,
           intake: Number(intake) || 0,
           channelId: channelId.trim(),
+          channelMaxPerWindow: Number(maxPerWindow) || 0,
+          channelWindowMinutes: Number(windowMinutes) || 10,
           requiredChannels: cleanChannels,
           ...answer,
         }),
@@ -217,6 +231,41 @@ export function BotSettingsForm({ initialConfig, initialChannels, initialChannel
           value={channelId}
           onChange={(e) => setChannelId(e.target.value)}
         />
+
+        {/* ---- POST TEZLIGI ----
+            Bir vaqtda ko'p mahsulot kirim qilinsa kanal spam bo'lib
+            ketmasin: chegaradan oshgani navbatga tushadi va oyna
+            bo'shashi bilan avtomatik chiqadi. */}
+        <div className="mt-2 border-t border-navy-100 pt-4 dark:border-navy-500">
+          <h3 className="font-medium text-navy-900 dark:text-white">Post tezligi</h3>
+          <p className="mt-1 text-xs text-navy-300">
+            Ko&apos;p mahsulot birdan kirim qilinsa kanal to&apos;lib ketmasligi uchun chegara.
+            Undan oshgan e&apos;lonlar <b>navbatga</b> tushadi va vaqti kelganda o&apos;zi chiqadi
+            — hech biri yo&apos;qolmaydi. <b>0</b> — chegarasiz.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <TextField
+              size="small"
+              type="number"
+              label="Nechta post"
+              value={maxPerWindow}
+              onChange={(e) => setMaxPerWindow(e.target.value)}
+              className="!w-36"
+            />
+            <TextField
+              size="small"
+              type="number"
+              label="Necha daqiqada"
+              value={windowMinutes}
+              onChange={(e) => setWindowMinutes(e.target.value)}
+              className="!w-40"
+            />
+            <span className="text-xs text-navy-300">
+              Hozir: {maxPerWindow || 0} ta / {windowMinutes || 10} daqiqa
+              {initialQueued > 0 ? ` · navbatda ${initialQueued} ta` : ""}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Majburiy kanallar */}

@@ -19,6 +19,14 @@ const schema = z.object({
   challengeAnswer: z.number().int(),
   /** E'lon kanali: @username yoki -100... ID. Bo'sh - env'dagi qiymat ishlatiladi. */
   channelId: z.string().max(100).default(""),
+  /**
+   * KANAL TEZLIGI: bitta oynada ko'pi bilan shuncha YANGI post.
+   * Oshgani navbatga tushadi va oyna bo'shashi bilan chiqadi.
+   * 0 - chegarasiz (hamma post darhol ketadi).
+   */
+  channelMaxPerWindow: z.number().int().min(0).max(60).default(5),
+  /** Oyna uzunligi (daqiqa). */
+  channelWindowMinutes: z.number().int().min(1).max(1440).default(10),
   requiredChannels: z
     .array(
       z.object({

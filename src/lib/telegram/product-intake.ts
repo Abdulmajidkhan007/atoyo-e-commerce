@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { uploadImageAdmin, uploadVideoAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
-import { sendChatMessage, downloadTelegramFile } from "./bot";
+import { sendChatMessage, downloadTelegramFile, sendTopicMessage } from "./bot";
 import { announceProduct } from "./channel";
 import { logAction } from "./action-log";
 import { startOptionalFieldsFlow } from "./admin-session";
@@ -197,9 +197,41 @@ async function announceWhenAlbumSettles(mediaGroupId: string, productId: string)
   // o'tkazib yuboradi) - u "✅ Yetarli, tayyor" bosilganda chiqadi.
   const snap = await db.collection("products").doc(productId).get();
   if (!snap.exists) return;
-  await announceProduct({ id: snap.id, ...snap.data() } as Product, "new").catch((error) =>
-    console.error("Kanalga e'lon (albom) xatosi:", error)
-  );
+  const result = await announceProduct(
+    { id: snap.id, ...snap.data() } as Product,
+    "new"
+  ).catch((error) => {
+    console.error("Kanalga e'lon (albom) xatosi:", error);
+    return "skipped" as const;
+  });
+  // Tezlik chegarasiga urilgan bo'lsa xodim buni BILISHI kerak -
+  // aks holda "post chiqmadi, nimadir buzuq" degan taassurot qoladi.
+  if (result === "queued") await notifyQueued(snap.id);
+}
+
+/**
+ * "Navbatga qo'yildi" xabari.
+ *
+ * Kanal tezligi chegarasidan oshganda post darhol chiqmaydi. Xodimga
+ * qachon chiqishini aytamiz, aks holda u qayta-qayta e'lon qilishga
+ * urinadi (va navbat yanada uzayadi).
+ */
+async function notifyQueued(productId: string): Promise<void> {
+  try {
+    const { channelQueueSummary } = await import("./channel-queue");
+    const { pending, next } = await channelQueueSummary();
+    const minutes = next ? Math.max(1, Math.round((next.dueAt - Date.now()) / 60_000)) : 1;
+    await sendTopicMessage(
+      "intake",
+      `⏳ Kanal tezligi chegarasi: post <b>navbatga</b> qo'yildi.\n` +
+        `Taxminan <b>${minutes} daqiqadan</b> keyin avtomatik chiqadi` +
+        (pending > 1 ? ` (navbatda ${pending} ta).` : ".") +
+        `\n\nTezlikni o'zgartirish: Sozlamalar → Bot sozlamalari → "Post tezligi".`
+    ).catch(() => {});
+  } catch (error) {
+    console.error("Navbat xabarini yuborishda xato:", error);
+  }
+  void productId;
 }
 
 /** Kirim tarixiga yozuv (sayt: /admin/katalog/kirim/tarix). */
@@ -542,9 +574,14 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
     await announceWhenAlbumSettles(mediaGroupId, saved.id);
   } else {
     const withMedia = await ref.get();
-    await announceProduct({ id: withMedia.id, ...withMedia.data() } as Product, "new").catch((error) =>
-      console.error("Kanalga e'lon (kirim) xatosi:", error)
-    );
+    const result = await announceProduct(
+      { id: withMedia.id, ...withMedia.data() } as Product,
+      "new"
+    ).catch((error) => {
+      console.error("Kanalga e'lon (kirim) xatosi:", error);
+      return "skipped" as const;
+    });
+    if (result === "queued") await notifyQueued(withMedia.id);
   }
 
   // Eski albom hujjatlarini tozalab turamiz (fon rejimida, xatosiz).
