@@ -89,6 +89,36 @@ async function attachTelegramPhoto(productId: string, photoFileId: string): Prom
   return url;
 }
 
+/**
+ * RASMNI MAHSULOTDAN OLIB TASHLASH.
+ *
+ * Fayl Storage'da QOLADI - u boshqa joyda ishlatilayotgan bo'lishi
+ * mumkin va o'chirilgan mahsulot savatdan tiklanganda rasmlari
+ * joyida turishi kerak (`lib/products/trash.ts` bilan bir xil
+ * mantiq). Bu yerda faqat bog'lanish uziladi.
+ *
+ * Birinchi rasm o'chirilsa muqova (`thumbnailUrl`) keyingisiga
+ * o'tadi; rasm qolmasa bo'sh bo'ladi.
+ */
+async function detachProductPhoto(productId: string, index: number): Promise<Product | null> {
+  const ref = getAdminDb().collection("products").doc(productId);
+  const snap = await ref.get();
+  if (!snap.exists) return null;
+
+  const product = { id: snap.id, ...snap.data() } as Product;
+  const images = [...(product.images ?? [])];
+  if (index < 0 || index >= images.length) return product;
+
+  images.splice(index, 1);
+  const updates = {
+    images,
+    thumbnailUrl: images[0] ?? "",
+    updatedAt: Date.now(),
+  };
+  await ref.update(updates);
+  return { ...product, ...updates };
+}
+
 interface InlineButton {
   text: string;
   callback_data?: string;
@@ -382,6 +412,41 @@ export async function startOptionalFieldsFlow(params: {
     [header, "", "Qolgan ma'lumotlarni ham to'ldirasizmi? (ixtiyoriy)"].join("\n"),
     { replyMarkup: { inline_keyboard: rows }, threadId }
   );
+}
+
+/**
+ * RASMLAR MENYUSI: qo'shish va O'CHIRISH.
+ *
+ * Ilgari "🖼 Rasm" tugmasi to'g'ridan-to'g'ri "rasm yuboring" deb
+ * so'rardi - ya'ni rasm faqat QO'SHILARDI. Xunuk yoki noto'g'ri
+ * rasmni olib tashlashning yo'li yo'q edi (faqat saytdan).
+ */
+async function sendPhotoMenu(session: AdminSession, product: Product): Promise<void> {
+  const images = product.images ?? [];
+  const rows: InlineButton[][] = [[{ text: "➕ Rasm qo'shish", callback_data: "ap|ph|add" }]];
+
+  // Har rasm uchun alohida tugma: "🗑 1-rasm", "🗑 2-rasm" ...
+  // Birinchisi muqova ekani ochiq yoziladi.
+  for (let i = 0; i < images.length; i += 2) {
+    rows.push(
+      images.slice(i, i + 2).map((_, j) => ({
+        text: i + j === 0 ? "🗑 1-rasm (muqova)" : `🗑 ${i + j + 1}-rasm`,
+        callback_data: `ap|ph|del:${i + j}`,
+      }))
+    );
+  }
+
+  rows.push([{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]);
+
+  const text =
+    images.length > 0
+      ? `🖼 <b>Rasmlar:</b> ${images.length} ta.\n\nO'chirish uchun raqamini bosing (birinchisi — muqova, kartochkada shu ko'rinadi).`
+      : "🖼 Mahsulotda hali rasm yo'q.";
+
+  await sendChatMessage(session.chatId, text, {
+    replyMarkup: { inline_keyboard: rows },
+    threadId: session.threadId,
+  });
 }
 
 async function sendEditMenu(session: AdminSession, product: Product): Promise<void> {
@@ -1179,6 +1244,56 @@ export async function handleAdminSessionCallback(params: {
   }
 
   // Tahrirlash uchun maydon tanlandi
+  if (action === "ph") {
+    await answerCallbackQuery(callbackQueryId);
+
+    if (value === "add") {
+      session.step = "edit_value";
+      session.editField = "photo";
+      await saveSession(userId, session);
+      await sendChatMessage(session.chatId, "🖼 Yangi <b>rasmni</b> yuboring:", {
+        threadId: session.threadId,
+      });
+      return;
+    }
+
+    if (value?.startsWith("del:") && session.productId) {
+      const index = Number(value.slice(4));
+      const updated = await detachProductPhoto(session.productId, index).catch((error) => {
+        console.error("Rasmni o'chirishda xato:", error);
+        return null;
+      });
+
+      if (!updated) {
+        await sendChatMessage(session.chatId, "⚠️ Rasmni o'chirib bo'lmadi.", {
+          threadId: session.threadId,
+        });
+        return;
+      }
+
+      await sendChatMessage(
+        session.chatId,
+        `🗑 Rasm o'chirildi. Qoldi: ${updated.images?.length ?? 0} ta.`,
+        { threadId: session.threadId }
+      );
+
+      /**
+       * Kanaldagi post ham yangilanadi. Rasmlar SONI o'zgargani
+       * uchun `announceProduct` eski postni o'chirib, yangisini
+       * tashlaydi - yuborilgan albomdan rasm olib tashlab
+       * bo'lmaydi (Telegram cheklovi).
+       */
+      await announceProduct(updated, "refresh").catch((error) =>
+        console.error("Kanaldagi e'lonni yangilashda xato:", error)
+      );
+
+      await sendPhotoMenu(session, updated);
+      return;
+    }
+
+    return;
+  }
+
   if (action === "ef") {
     await answerCallbackQuery(callbackQueryId);
     if (value === "category") {
@@ -1211,6 +1326,16 @@ export async function handleAdminSessionCallback(params: {
     if (value === "back") {
       await reloadEditMenu(userId, session);
       return;
+    }
+    if (value === "photo") {
+      // Rasm uchun alohida menyu: qo'shish yoki o'chirish.
+      const snap = session.productId
+        ? await getAdminDb().collection("products").doc(session.productId).get()
+        : null;
+      if (snap?.exists) {
+        await sendPhotoMenu(session, { id: snap.id, ...snap.data() } as Product);
+        return;
+      }
     }
     // Matn/son kutiladigan maydon
     session.step = "edit_value";

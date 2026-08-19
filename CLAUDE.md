@@ -194,6 +194,26 @@ sahifasi holatini manzilga yozadi (`?q=`, `?kategoriya=`, `?brend=`,
 `initial` bo'lib uzatiladi. Kirim sahifasidagi ✏️ ham shu bilan
 qaytadi.
 
+## Mahsulot raqami (`code`) va hisoblagich
+
+Raqam `metadata/counters.productCode` dan ajratiladi
+(`lib/products/product-code.ts`). Ikki funksiya ATAYLAB farq qiladi:
+
+- `bumpProductCodeCounter(to)` — faqat KO'TARADI (raqamsiz eski
+  mahsulotlarga raqam berilganda);
+- `setProductCodeCounter(to)` — ANIQ qiymatga qo'yadi, kamaytirishi
+  ham mumkin. **"Raqamlarni qayta tartiblash" da shu ishlatiladi.**
+
+Nega muhim: 3 900 ta mahsulot o'chirilib, qolgan 87 tasi 1..87 ga
+qayta raqamlangach hisoblagich ham 87 bo'lishi kerak. Ilgari u yerda
+ham `bump` chaqirilardi (faqat ko'taradi), shuning uchun hisoblagich
+3945 da qolib, keyingi mahsulot 3946-raqamni olardi — ro'yxat
+"87, 3946" bo'lib chiqardi.
+
+`/api/admin/products/reindex` HAMMA mahsulotni ko'radi (kursor bilan,
+`__name__` tartibida) — ilgari `limit(500)` bor edi va 500 tadan
+keyingilari jimgina tashlab ketilardi. Yozuvlar 400 tadan batch bilan.
+
 ## O'chirilganlar savati (30 kun)
 
 Mahsulot **butunlay o'chirilmaydi**: `deletedProducts/{id}` ga
@@ -524,6 +544,13 @@ foydalanuvchi so'raganda.
   rasm(lar) + izoh (nom/narx/soni/kimdan/material) → mahsulot yaratiladi,
   keyin ixtiyoriy maydonlar tugmalari. Albom (media_group) holati
   `intakeAlbums/{mediaGroupId}` da.
+- **Rasm boshqaruvi (bot)**: `/tahrir` → "🖼 Rasm" endi MENYU ochadi —
+  qo'shish ham, O'CHIRISH ham (`ap|ph|add` / `ap|ph|del:<index>`,
+  `sendPhotoMenu`). Ilgari faqat qo'shish bor edi va xunuk rasmni
+  botdan olib tashlab bo'lmasdi. Fayl Storage'da QOLADI (savatdan
+  tiklashda kerak), faqat bog'lanish uziladi; rasm soni o'zgargani
+  uchun kanal posti qayta tashlanadi (albomdan rasm olib tashlab
+  bo'lmaydi - Telegram cheklovi).
 - Webhook: `src/app/api/telegram-webhook/route.ts`. Topic Thread ID'lar
   Firestore `settings/telegram` da (buyurtmalar topic = 2, kirim = 151).
 - Bot tokeni/guruh ID/webhook siri: `secrets/telegram` (server-only,

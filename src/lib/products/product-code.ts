@@ -45,6 +45,23 @@ export async function reserveProductCodes(count: number): Promise<number[]> {
 }
 
 /**
+ * Hisoblagichni ANIQ shu qiymatga qo'yadi (kamaytirish ham mumkin).
+ *
+ * "Raqamlarni qayta tartiblash" dan keyin SHU kerak: 3 900 ta mahsulot
+ * o'chirilib, qolgan 87 tasi 1..87 ga qayta raqamlangan bo'lsa,
+ * hisoblagich ham 87 ga tushishi kerak. Aks holda keyingi mahsulot
+ * 3946-raqamni olib, ro'yxat yana "87, 3946" bo'lib chiqadi -
+ * foydalanuvchi aynan shu holatga tushgan edi.
+ *
+ * `bumpProductCodeCounter` esa faqat KO'TARADI - u boshqa maqsad
+ * uchun (raqamsiz eski mahsulotlarga raqam berilganda).
+ */
+export async function setProductCodeCounter(value: number): Promise<void> {
+  const safe = Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+  await getAdminDb().doc(COUNTER_DOC).set({ productCode: safe }, { merge: true });
+}
+
+/**
  * Hisoblagichni mavjud eng katta raqamdan kam bo'lmasligiga keltiradi
  * (eski mahsulotlarga raqam berilgandan keyin chaqiriladi).
  */

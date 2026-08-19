@@ -52,7 +52,12 @@ export function ProductTable() {
       const data = await res.json();
       setReindexResult(
         res.ok
-          ? `✅ ${data.updated} ta mahsulot yangilandi (${data.codesAdded ?? 0} tasining raqami ${renumber ? "qayta berildi" : "to'ldirildi"})`
+          ? `✅ ${data.updated} ta mahsulot yangilandi (${data.codesAdded ?? 0} tasining raqami ` +
+              `${renumber ? "qayta berildi" : "to'ldirildi"})` +
+              // Keyingi mahsulot qaysi raqamni olishini AYTAMIZ: qayta
+              // tartiblashdan keyin hisoblagich ham tushishi kerak va
+              // foydalanuvchi buni ko'rib ishonch hosil qiladi.
+              (data.nextCode ? `. Keyingi mahsulot raqami: ${data.nextCode}` : "")
           : "Xatolik yuz berdi"
       );
     } catch {

@@ -507,6 +507,11 @@ salomlashuv rasmi.
 
 ### Xodimlar guruhi (yopiq, forum-topiclar bilan)
 
+- `/tahrir` dagi "🖼 Rasm" tugmasi menyu ochadi: rasm qo'shish va
+  mavjud rasmni o'chirish (birinchisi — muqova). Rasm o'chirilganda
+  kanal posti qayta tashlanadi (yuborilgan albomdan rasm olib
+  tashlab bo'lmaydi).
+
 - Yangi buyurtma "Buyurtmalar" topic'iga tushadi, xabar ostida holat
   tugmalari — bosilganda saytdagi bilan bir xil funksiya ishlaydi.
 - Buyruqlar: `/yangi` (interaktiv, tugmalar bilan mahsulot yaratish),

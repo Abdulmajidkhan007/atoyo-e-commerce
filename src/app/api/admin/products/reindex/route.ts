@@ -2,10 +2,17 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
-import { bumpProductCodeCounter } from "@/lib/products/product-code";
+import { bumpProductCodeCounter, setProductCodeCounter } from "@/lib/products/product-code";
 import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
+
+/** Bir so'rovda o'qiladigan hujjatlar soni. */
+const PAGE = 400;
+/** Xotira uchun yuqori chegara (10 000+ katalog uchun yetarli). */
+const MAX_DOCS = 20_000;
+/** Firestore batch chegarasi 500 ta - xavfsiz oraliq. */
+const BATCH_LIMIT = 400;
 
 /**
  * Bir martalik to'ldirish (idempotent, faqat admin):
@@ -33,12 +40,29 @@ export async function POST(request: Request) {
   const renumber = body.renumber === true;
 
   const db = getAdminDb();
-  const snapshot = await db.collection("products").limit(500).get();
+
+  /**
+   * HAMMA mahsulot ko'rib chiqiladi.
+   *
+   * Ilgari bu yerda `limit(500)` turardi va katalogda 500 tadan ko'p
+   * mahsulot bo'lsa qolganlari JIMGINA tashlab ketilardi - raqami
+   * yo'q mahsulot raqamsiz qolaverar edi. Endi kursor (`__name__`)
+   * bilan sahifama-sahifa o'qiladi (kompozit indeks kerak emas).
+   */
+  const docs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+  let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  for (;;) {
+    let query = db.collection("products").orderBy("__name__").limit(PAGE);
+    if (cursor) query = query.startAfter(cursor);
+    const page = await query.get();
+    docs.push(...page.docs);
+    if (page.size < PAGE) break;
+    cursor = page.docs[page.size - 1];
+    if (docs.length >= MAX_DOCS) break;
+  }
 
   // Raqamlar yaratilish tartibida beriladi: eng eski mahsulot - 1-raqam.
-  const docs = [...snapshot.docs].sort(
-    (a, b) => ((a.data() as Product).createdAt ?? 0) - ((b.data() as Product).createdAt ?? 0)
-  );
+  docs.sort((a, b) => ((a.data() as Product).createdAt ?? 0) - ((b.data() as Product).createdAt ?? 0));
 
   // Allaqachon berilgan raqamlar band hisoblanadi (qayta tartiblashda
   // esa hech biri band emas - hammasi yangidan beriladi).
@@ -57,7 +81,10 @@ export async function POST(request: Request) {
     return candidate;
   };
 
-  const batch = db.batch();
+  // Yozuvlar bo'lib-bo'lib yuboriladi: bitta batch'ga 500 tadan ko'p
+  // amal sig'maydi.
+  let batch = db.batch();
+  let pending = 0;
   let updated = 0;
   let codesAdded = 0;
 
@@ -91,13 +118,39 @@ export async function POST(request: Request) {
     if (Object.keys(updates).length > 0) {
       batch.update(doc.ref, updates);
       updated += 1;
+      pending += 1;
+      if (pending >= BATCH_LIMIT) {
+        await batch.commit();
+        batch = db.batch();
+        pending = 0;
+      }
     }
   }
 
-  if (updated > 0) await batch.commit();
-  // Hisoblagich mavjud eng katta raqamdan orqada qolmasin.
-  const maxCode = taken.size > 0 ? Math.max(...taken) : 0;
-  if (maxCode > 0) await bumpProductCodeCounter(maxCode);
+  if (pending > 0) await batch.commit();
 
-  return NextResponse.json({ ok: true, scanned: snapshot.size, updated, codesAdded });
+  const maxCode = taken.size > 0 ? Math.max(...taken) : 0;
+  if (renumber) {
+    /**
+     * QAYTA TARTIBLASHDA hisoblagich ANIQ shu raqamga QO'YILADI
+     * (kamayishi ham mumkin).
+     *
+     * Ilgari bu yerda ham `bumpProductCodeCounter` chaqirilardi - u
+     * esa faqat ko'taradi. Natijada 3 900 ta mahsulot o'chirilib,
+     * qolgani 1..87 ga qayta raqamlangandan keyin ham hisoblagich
+     * 3945 da qolib ketardi va keyingi mahsulot 3946-raqamni olardi.
+     */
+    await setProductCodeCounter(maxCode);
+  } else if (maxCode > 0) {
+    // Faqat to'ldirishda: hisoblagich eng katta raqamdan orqada qolmasin.
+    await bumpProductCodeCounter(maxCode);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    scanned: docs.length,
+    updated,
+    codesAdded,
+    nextCode: maxCode + 1,
+  });
 }
