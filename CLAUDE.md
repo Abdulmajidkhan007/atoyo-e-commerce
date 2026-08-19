@@ -132,6 +132,19 @@ foydalaning.
   nomi bir xil qatorlar bitta mahsulotga yig'iladi. Mantiq
   `lib/products/csv.ts` (`variantsFromRows`, `normalizeHeader`) da,
   testlari `csv.test.ts`. Namuna fayl: `scripts/make-sample-xlsx.js`.
+- Telegram kirimida **hamma maydon** yozilishi mumkin: majburiylardan
+  tashqari `Tannarx`, `Kalit so'zlar`, `O'rnatib berish`, `Chegirma`,
+  `Chegirma muddati`, o'lchamlar va tarjimalar (`Nomi ruscha`,
+  `Tavsif ruscha`, `Nomi inglizcha`, `Tavsif inglizcha`). Namunani
+  bot ko'rsatadi: **`/namuna`** (yoki `/kirim`) — matn
+  `admin-commands.ts` dagi `INTAKE_SAMPLE` da va u `FIELD_ALIASES`
+  bilan MOS bo'lishi shart.
+- **Tahrir paytida kanalga post YUBORILMAYDI.** Har o'zgarish
+  `session.pendingAnnounce` ni belgilaydi, e'lon esa "✅ Tugatish"
+  bosilganda (yoki bekor qilinganda) BIR MARTA ketadi. Ilgari har
+  maydon/rasm o'zgarganda kanalga post ketardi va yarim tahrirlangan
+  holat chiqib qolardi. Narx/chegirma o'zgargan bo'lsa sarlavha
+  "♻️ Mahsulot yangilandi" bo'ladi (`pendingAnnounceMode`).
 - Telegram kirim izohida `Tur nomi:` + `Turlar:` bloki
   (`lib/telegram/intake-parser.ts`, testlari `intake-parser.test.ts`).
   Bir nechta qator `|` bilan: `Tur nomi: O'lcham|Rangi|Qalinlik` va

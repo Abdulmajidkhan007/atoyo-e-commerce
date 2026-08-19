@@ -226,4 +226,38 @@ describe("parseIntakeCaption", () => {
     // Turlar qabul qilinmagani uchun narx/soni yetishmaydi deb aytiladi.
     expect(parsed.missing).toContain("price");
   });
+
+  it("qo'shimcha maydonlarni ham o'qiydi (tannarx, kalit, o'rnatish, tarjima)", () => {
+    const parsed = parseIntakeCaption(
+      [
+        "Nomi: Parda+Kovrik",
+        "Kodi: Sc-26",
+        "Kategoriya: hammom",
+        "Tannarx: 68000",
+        "Narx: 73000",
+        "Soni: 15",
+        "Kimdan: Atoyo",
+        "Kalit so'zlar: parda, hammom pardasi",
+        "O'rnatib berish: ha",
+        "Nomi ruscha: Штора",
+        "Tavsif ruscha: Размер 180x180",
+      ].join("\n"),
+      taxonomy
+    );
+
+    expect(parsed.costPrice).toBe(68000);
+    expect(parsed.price).toBe(73000);
+    expect(parsed.keywords).toEqual(["parda", "hammom pardasi"]);
+    expect(parsed.installService).toBe(true);
+    expect(parsed.nameRu).toBe("Штора");
+    expect(parsed.descriptionRu).toBe("Размер 180x180");
+  });
+
+  it("o'rnatish xizmati \"yo'q\" bo'lsa false, aytilmasa null", () => {
+    const base = ["Nomi: Kran", "Kategoriya: kranlar", "Narx: 10000", "Soni: 1", "Kimdan: Atoyo"];
+    expect(
+      parseIntakeCaption([...base, "O'rnatib berish: yo'q"].join("\n"), taxonomy).installService
+    ).toBe(false);
+    expect(parseIntakeCaption(base.join("\n"), taxonomy).installService).toBeNull();
+  });
 });

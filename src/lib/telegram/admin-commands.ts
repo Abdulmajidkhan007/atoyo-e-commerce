@@ -39,6 +39,57 @@ const MATERIAL_ALIASES: Record<string, ProductMaterial> = {
   pvx: "pvc", pvc: "pvc",
 };
 
+/**
+ * TO'LIQ KIRIM NAMUNASI.
+ *
+ * "Kirim" topic'iga rasm + izoh tashlanadi. Majburiy maydonlar
+ * beshta (nomi, kodi, tannarx, optom narx, soni, kategoriya), qolgani
+ * ixtiyoriy — lekin xodim ularning BORLIGINI bilishi kerak edi.
+ * Shu buyruq aynan shuning uchun: bot namunani ko'rsatib turadi.
+ *
+ * Maydon nomlari `intake-parser.ts` dagi `FIELD_ALIASES` bilan bir
+ * xil bo'lishi SHART — yangi alias qo'shsangiz shu matnni ham
+ * yangilang.
+ */
+const INTAKE_SAMPLE = [
+  "📋 <b>Kirim namunasi</b> — rasm(lar) bilan birga izohga yozing.",
+  "",
+  "<b>MAJBURIY:</b>",
+  "<code>Nomi: Parda+Kovrik",
+  "Kodi: Sc-26 Cosa Lilatex",
+  "Kategoriya: Hammom aksessuarlari",
+  "Tannarx: 68000",
+  "Narx: 73000",
+  "Soni: 15",
+  "Kimdan: Atoyo</code>",
+  "",
+  "<b>IXTIYORIY (xohlaganini qo'shing):</b>",
+  "<code>Material: plastik",
+  "Brend: Cosa",
+  "Davlat: Turkiya",
+  "Sotish turi: dona",
+  "Tavsif: Razmeri 180x180",
+  "Kalit so'zlar: parda, hammom pardasi",
+  "Chegirma: 69000",
+  "Chegirma muddati: 31.12.2026",
+  "O'rnatib berish: ha",
+  "Diametri: 32",
+  "Uzunligi: 180",
+  "Vazni: 1.2",
+  "Nomi ruscha: Штора+Коврик",
+  "Tavsif ruscha: Размер 180x180</code>",
+  "",
+  "<b>TURLARI BO'LSA</b> (narx va soni turlardan olinadi):",
+  "<code>Tur nomi: Rangi|O'lcham",
+  "Turlar:",
+  "Oq|180x180 - 73000 - 15 - SC-26-OQ",
+  "Ko'k|180x200 - 78000 - 8 - SC-26-KK</code>",
+  "",
+  "ℹ️ Har qator: <b>qiymatlar - narx - soni - kod</b>. Tur qatorlari 3 tadan oshmasin.",
+  "ℹ️ Narx — <b>OPTOM</b> narx. Dona narx ustama bilan o'zi hisoblanadi.",
+  "ℹ️ Yozilmagan maydonni keyin tugmalar bilan to'ldirsa ham bo'ladi.",
+].join("\n");
+
 const HELP_TEXT = [
   "🛠 <b>Admin buyruqlari</b>",
   "",
@@ -56,6 +107,8 @@ const HELP_TEXT = [
   "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
   "<code>/stat</code> — umumiy statistika",
   "<code>/elon Matn...</code> — hammaga e'lon (Telegram + Email + kanal)",
+  "",
+  "<code>/namuna</code> — KIRIM namunasi (hamma maydon bilan)",
   "",
   "<b>🎨 Bot stikerlari:</b>",
   "<code>/stiker</code> — slotlar ro'yxati va holati",
@@ -102,6 +155,12 @@ export async function handleAdminCommand(params: {
       case "/yordam":
       case "/help": {
         await reply(HELP_TEXT);
+        return;
+      }
+
+      case "/namuna":
+      case "/kirim": {
+        await reply(INTAKE_SAMPLE);
         return;
       }
 

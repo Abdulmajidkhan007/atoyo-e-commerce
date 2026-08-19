@@ -128,6 +128,17 @@ interface InlineButton {
 interface AdminSession {
   flow: "new_product" | "edit_product";
   step: string;
+  /**
+   * Tahrir paytida mahsulot o'zgargan, lekin kanalga hali e'lon
+   * qilinmagan. "✅ Tugatish" bosilganda bir marta yuboriladi.
+   */
+  pendingAnnounce?: boolean;
+  /**
+   * Kutayotgan e'lonning sarlavhasi: narx/chegirma o'zgarsa
+   * "♻️ Mahsulot yangilandi", qolgan hollarda post jimgina
+   * yangilanadi (`refresh`).
+   */
+  pendingAnnounceMode?: "refresh" | "updated";
   chatId: number;
   threadId?: number;
   draft: Partial<Product>;
@@ -743,7 +754,16 @@ async function applyEditValue(userId: number, session: AdminSession, field: stri
   await sendChatMessage(session.chatId, "✅ Yangilandi.", { threadId: session.threadId });
   if (snap.exists) {
     const product = { id: snap.id, ...snap.data() } as Product;
-    await announceProduct(product, before ? announceModeFor(before, product) : "refresh");
+    /**
+     * KANALGA HOZIR TEGILMAYDI - "✅ Tugatish" bosilganda bir marta.
+     * Lekin SARLAVHA hozir hal qilinadi: narx/chegirma o'zgargan
+     * bo'lsa post "♻️ Mahsulot yangilandi" bo'lib chiqishi kerak,
+     * aks holda jimgina yangilanadi.
+     */
+    const mode = before ? announceModeFor(before, product) : "refresh";
+    session.pendingAnnounce = true;
+    if (mode === "updated") session.pendingAnnounceMode = "updated";
+    await saveSession(userId, session);
     await sendEditMenu(session, product);
   }
 }
@@ -1015,9 +1035,9 @@ async function finishVariantEdit(userId: number, session: AdminSession): Promise
 
   const product = await loadProduct(session.productId);
   if (!product) return;
-  await announceProduct(product, "refresh").catch((error) =>
-    console.error("Kanaldagi e'lonni yangilashda xato:", error)
-  );
+  // Turlar o'zgarishi ham yakunda bir marta e'lon qilinadi.
+  session.pendingAnnounce = true;
+  await saveSession(userId, session);
   await sendVariantMenu(session, product);
 }
 
@@ -1054,8 +1074,24 @@ export async function handleAdminSessionCallback(params: {
 
   // Bekor qilish
   if (action === "cancel") {
+    /**
+     * "Bekor qilish" TAHRIRNI qaytarmaydi - o'zgarishlar bazaga
+     * allaqachon yozilgan. Shuning uchun kutayotgan e'lon shu yerda
+     * yuboriladi, aks holda kanaldagi post eski holatda qolib
+     * ketardi.
+     */
+    const pending = session.pendingAnnounce && session.productId;
     await clearSession(userId);
     await answerCallbackQuery(callbackQueryId, "Bekor qilindi");
+    if (pending && session.productId) {
+      const snap = await getAdminDb().collection("products").doc(session.productId).get();
+      if (snap.exists) {
+        await announceProduct(
+          { id: snap.id, ...snap.data() } as Product,
+          session.pendingAnnounceMode ?? "refresh"
+        ).catch((error) => console.error("Kanalga e'lon (bekor) xatosi:", error));
+      }
+    }
     await sendChatMessage(session.chatId, "❌ Bekor qilindi.", { threadId: session.threadId });
     return;
   }
@@ -1085,9 +1121,14 @@ export async function handleAdminSessionCallback(params: {
             `📦 Yangi mahsulot (Telegram kirimi): №${product.code} — ${product.name}, ${formatSom(product.price)}, ${product.stock} ${product.unit}`
           );
         }
-        await announceProduct(product, published ? "new" : "refresh").catch((error) =>
-          console.error("Kanalga e'lon (yakun) xatosi:", error)
-        );
+        // Nashr qilinayotgan bo'lsa - albatta; tahrir bo'lsa faqat
+        // haqiqatan o'zgargan bo'lsa (keraksiz post yuborilmasin).
+        if (published || session.pendingAnnounce) {
+          const mode = published ? "new" : (session.pendingAnnounceMode ?? "refresh");
+          await announceProduct(product, mode).catch((error) =>
+            console.error("Kanalga e'lon (yakun) xatosi:", error)
+          );
+        }
       }
     }
 
@@ -1278,14 +1319,14 @@ export async function handleAdminSessionCallback(params: {
       );
 
       /**
-       * Kanaldagi post ham yangilanadi. Rasmlar SONI o'zgargani
-       * uchun `announceProduct` eski postni o'chirib, yangisini
-       * tashlaydi - yuborilgan albomdan rasm olib tashlab
-       * bo'lmaydi (Telegram cheklovi).
+       * Kanalga hozir TEGILMAYDI - "✅ Tugatish" bosilganda bir
+       * marta yangilanadi. Aks holda har rasm o'chirilganda kanalga
+       * yangi post ketardi (rasm soni o'zgargani uchun post qayta
+       * tashlanadi) va kanal yarim tahrirlangan nusxalar bilan
+       * to'lib ketardi.
        */
-      await announceProduct(updated, "refresh").catch((error) =>
-        console.error("Kanaldagi e'lonni yangilashda xato:", error)
-      );
+      session.pendingAnnounce = true;
+      await saveSession(userId, session);
 
       await sendPhotoMenu(session, updated);
       return;
@@ -1365,11 +1406,19 @@ async function reloadEditMenu(
 
   const product = { id: snap.id, ...snap.data() } as Product;
   if (changed) {
-    // Kategoriya/material kabi o'zgarishlar postni jimgina yangilaydi -
-    // "Mahsulot yangilandi" sarlavhasiga arzimaydi.
-    await announceProduct(product, "refresh").catch((error) =>
-      console.error("Kanaldagi e'lonni yangilashda xato:", error)
-    );
+    /**
+     * E'LON DARHOL YUBORILMAYDI.
+     *
+     * Ilgari har bir o'zgarish (nom, narx, rasm qo'shish/o'chirish)
+     * kanaldagi postni SHU ZAHOTI yangilardi. Xodim ketma-ket bir
+     * necha maydonni tahrirlasa kanalga bir necha marta post ketardi
+     * va yarim tahrirlangan holat ham chiqib qolardi.
+     *
+     * Endi o'zgarish faqat BELGILANADI, e'lon esa "✅ Tugatish"
+     * bosilganda (yoki bekor qilinganda) BIR MARTA yuboriladi.
+     */
+    session.pendingAnnounce = true;
+    await saveSession(userId, session);
   }
   await sendEditMenu(session, product);
 }

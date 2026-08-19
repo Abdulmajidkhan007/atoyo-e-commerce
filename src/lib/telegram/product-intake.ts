@@ -463,8 +463,22 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
       .replace(/\s+/g, "-")}-${ref.id.slice(0, 6)}`,
     name: parsed.name,
     nameSearchIndex: parsed.name.toLowerCase(),
-    nameTokens: buildNameTokens(parsed.name, parsed.brand, parsed.sku),
+    nameTokens: buildNameTokens(parsed.name, parsed.brand, parsed.sku, parsed.keywords, [
+      parsed.nameRu,
+      parsed.nameEn,
+    ]),
     description: parsed.description,
+    // Ixtiyoriy maydonlar - faqat yozilgan bo'lsa hujjatga tushadi
+    // (bo'sh satrlar bazani keraksiz to'ldirmasin).
+    ...(parsed.keywords.length > 0 ? { keywords: parsed.keywords } : {}),
+    ...(parsed.nameRu ? { nameRu: parsed.nameRu } : {}),
+    ...(parsed.nameEn ? { nameEn: parsed.nameEn } : {}),
+    ...(parsed.descriptionRu ? { descriptionRu: parsed.descriptionRu } : {}),
+    ...(parsed.descriptionEn ? { descriptionEn: parsed.descriptionEn } : {}),
+    ...(parsed.installService !== null ? { installService: parsed.installService } : {}),
+    // TANNARX: mijozga hech qachon ko'rinmaydi (viewer.ts olib tashlaydi),
+    // foyda hisoboti shunga tayanadi.
+    costPrice: parsed.costPrice,
     sku: parsed.sku,
     category: parsed.category!,
     brand: parsed.brand,

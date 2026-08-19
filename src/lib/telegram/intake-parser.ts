@@ -20,6 +20,8 @@ import type { ProductCategory, ProductMaterial } from "@/types/product";
 export type IntakeField =
   | "name"
   | "price"
+  /** TANNARX - bizga qancha tushgan (mijozga ko'rinmaydi). */
+  | "costPrice"
   | "stock"
   | "supplier"
   | "material"
@@ -37,7 +39,16 @@ export type IntakeField =
   /** Turlar qatorining nomi ("O'lcham", "O'lcham|Rang"). */
   | "variantAxis"
   /** Turlar ro'yxati - keyingi qatorlarda yoziladi. */
-  | "variants";
+  | "variants"
+  /** Qidiruvni bog'laydigan maxsus kalit so'zlar. */
+  | "keywords"
+  /** "O'rnatib berish xizmati bor" (ha/yo'q). */
+  | "installService"
+  /** Tarjimalar (ixtiyoriy). */
+  | "nameRu"
+  | "nameEn"
+  | "descriptionRu"
+  | "descriptionEn";
 
 /** Kalit so'zlar - normalizatsiyadan keyingi ko'rinishda (apostrofsiz, kichik). */
 const FIELD_ALIASES: Record<string, IntakeField> = {
@@ -48,6 +59,13 @@ const FIELD_ALIASES: Record<string, IntakeField> = {
   tovar: "name",
   nazvanie: "name",
   название: "name",
+
+  tannarx: "costPrice",
+  "tan narx": "costPrice",
+  "tannarxi": "costPrice",
+  "kelish narxi": "costPrice",
+  sebestoimost: "costPrice",
+  себестоимость: "costPrice",
 
   narx: "price",
   narxi: "price",
@@ -151,6 +169,34 @@ const FIELD_ALIASES: Record<string, IntakeField> = {
   razmerlar: "variants",
   razmerlari: "variants",
   "turlari": "variants",
+
+  "kalit soz": "keywords",
+  "kalit sozlar": "keywords",
+  "kalit": "keywords",
+  keywords: "keywords",
+  teglar: "keywords",
+
+  ornatish: "installService",
+  "ornatib berish": "installService",
+  "ornatish xizmati": "installService",
+  "ornatib berish xizmati": "installService",
+  montaj: "installService",
+
+  "nomi ruscha": "nameRu",
+  "nom ruscha": "nameRu",
+  "ruscha nomi": "nameRu",
+  "name ru": "nameRu",
+
+  "nomi inglizcha": "nameEn",
+  "inglizcha nomi": "nameEn",
+  "name en": "nameEn",
+
+  "tavsif ruscha": "descriptionRu",
+  "ruscha tavsif": "descriptionRu",
+  "opisanie ru": "descriptionRu",
+
+  "tavsif inglizcha": "descriptionEn",
+  "inglizcha tavsif": "descriptionEn",
 
   ogirlik: "weight",
   ogirligi: "weight",
@@ -334,6 +380,8 @@ export interface ParsedVariant {
 export interface ParsedIntake {
   name: string;
   price: number | null;
+  /** TANNARX (mijozga ko'rinmaydi, foyda hisobi uchun). */
+  costPrice: number | null;
   stock: number | null;
   supplier: string;
   material: ProductMaterial | null;
@@ -354,6 +402,14 @@ export interface ParsedIntake {
   variantAxisLabels: string[];
   /** Turlar (bo'lsa, narx va zaxira shulardan olinadi). */
   variants: ParsedVariant[];
+  /** Maxsus kalit so'zlar (o'zaro almashtiriladigan mahsulotlar uchun). */
+  keywords: string[];
+  /** O'rnatib berish xizmati bor-yo'qligi (aytilmasa `null`). */
+  installService: boolean | null;
+  nameRu: string;
+  nameEn: string;
+  descriptionRu: string;
+  descriptionEn: string;
   /** To'ldirilmagan majburiy maydonlar (rasm bu ro'yxatga kirmaydi). */
   missing: IntakeField[];
   /** Tushunarsiz qiymatlar (masalan material nomi topilmadi). */
@@ -555,9 +611,20 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
   if (!category) missing.push("category");
   if (!unit) missing.push("unit");
 
+  /** "ha / bor / yes / +" - ha; "yo'q / yuq / no / -" - yo'q. */
+  const installRaw = (values.get("installService") ?? "").trim().toLowerCase();
+  const installService = installRaw
+    ? /^(ha|bor|yes|true|\+|1)/.test(installRaw)
+      ? true
+      : /^(yo|yu|no|false|-|0)/.test(installRaw)
+        ? false
+        : null
+    : null;
+
   return {
     name,
     price: effectivePrice,
+    costPrice: values.has("costPrice") ? parseAmount(values.get("costPrice")!) : null,
     stock: effectiveStock,
     supplier,
     material,
@@ -578,6 +645,17 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
         : ["Turi"]
       : [],
     variants: usableVariants,
+    // Kalit so'zlar vergul bilan: "rakovina kalta, 7013 seriya".
+    keywords: (values.get("keywords") ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 10),
+    installService,
+    nameRu: (values.get("nameRu") ?? "").trim(),
+    nameEn: (values.get("nameEn") ?? "").trim(),
+    descriptionRu: (values.get("descriptionRu") ?? "").trim(),
+    descriptionEn: (values.get("descriptionEn") ?? "").trim(),
     missing,
     warnings,
   };
@@ -585,6 +663,13 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
 
 export const INTAKE_FIELD_LABELS: Record<IntakeField, string> = {
   name: "Nomi",
+  costPrice: "Tannarx",
+  keywords: "Kalit so'zlar",
+  installService: "O'rnatib berish xizmati",
+  nameRu: "Nomi (ruscha)",
+  nameEn: "Nomi (inglizcha)",
+  descriptionRu: "Tavsif (ruscha)",
+  descriptionEn: "Tavsif (inglizcha)",
   unit: "Sotish turi (dona/metr/kg...)",
   sku: "Kodi (artikul)",
   price: "Narxi",
