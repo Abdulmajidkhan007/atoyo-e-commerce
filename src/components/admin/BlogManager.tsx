@@ -21,7 +21,7 @@ import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternate
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
-import type { BlogPost } from "@/types/content";
+import { DEFAULT_BLOG_DESTINATIONS, type BlogDestinations, type BlogPost } from "@/types/content";
 
 const EMPTY = {
   title: "",
@@ -31,7 +31,17 @@ const EMPTY = {
   /** Kontent videosi (mahsulot videosi emas) - YouTube va kanalga ketadi. */
   videoUrl: "",
   isPublished: true,
+  /** Maqola qayerga yuborilsin (har maqolada alohida tanlanadi). */
+  destinations: DEFAULT_BLOG_DESTINATIONS,
 };
+
+/** Yo'nalish belgilari - tartibi va izohi bilan. */
+const DESTINATIONS: { key: keyof BlogDestinations; label: string; hint: string }[] = [
+  { key: "telegram", label: "Telegram kanal", hint: "video bo'lsa video posti bo'lib chiqadi" },
+  { key: "youtube", label: "YouTube", hint: "faqat VIDEO bo'lsa (Shorts)" },
+  { key: "instagram", label: "Instagram", hint: "muqova rasmi yoki video kerak" },
+  { key: "facebook", label: "Facebook", hint: "muqova rasmi yoki video kerak" },
+];
 
 /** Video 20MB gacha (server ham shuni tekshiradi). */
 const MAX_VIDEO_MB = 20;
@@ -85,6 +95,8 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
       coverImageUrl: post.coverImageUrl,
       videoUrl: post.videoUrl ?? "",
       isPublished: post.isPublished,
+      // Eski maqolalarda bu maydon yo'q - standart yo'nalishlar.
+      destinations: post.destinations ?? DEFAULT_BLOG_DESTINATIONS,
     });
     setImageFile(null);
     setVideoFile(null);
@@ -142,10 +154,10 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
           });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Saqlashda xatolik.");
 
-      const { post: saved, youtubeQueued } = await res.json();
+      const { post: saved, socialQueued } = await res.json();
       setNote(
-        youtubeQueued
-          ? "Saqlandi. Video YouTube navbatiga qo'shildi (Sozlamalar > Ijtimoiy tarmoqlar)."
+        socialQueued > 0
+          ? `Saqlandi. ${socialQueued} ta ijtimoiy tarmoq navbatiga qo'shildi (Sozlamalar > Ijtimoiy tarmoqlar).`
           : null
       );
       setPosts((prev) => {
@@ -263,6 +275,41 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPost[] }) {
               Mahsulot videosi emas — maslahat/ko&apos;rsatma videosi. Chop etilganda
               Telegram kanaliga video bo&apos;lib chiqadi va YouTube&apos;ga (Shorts)
               navbat orqali yuklanadi. {MAX_VIDEO_MB}MB gacha.
+            </p>
+          </div>
+
+          {/* QAYERGA YUBORILADI. Ilgari yo'nalish qat'iy edi (Telegram +
+              video bo'lsa YouTube); endi har maqolada tanlanadi. Tarmoq
+              Sozlamalarda ham yoqilgan bo'lishi shart. */}
+          <div className="flex flex-col gap-1 rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
+            <h4 className="mb-1 text-sm font-semibold text-navy-900 dark:text-white">
+              Qayerga yuborilsin
+            </h4>
+            {DESTINATIONS.map(({ key, label, hint }) => (
+              <FormControlLabel
+                key={key}
+                control={
+                  <Switch
+                    checked={form.destinations[key]}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        destinations: { ...form.destinations, [key]: e.target.checked },
+                      })
+                    }
+                  />
+                }
+                label={
+                  <span>
+                    {label} <span className="text-xs text-navy-300">— {hint}</span>
+                  </span>
+                }
+              />
+            ))}
+            <p className="mt-1 text-xs text-navy-300">
+              Instagram/Facebook/YouTube uchun avval Sozlamalar &gt; Ijtimoiy tarmoqlar da
+              hisob ulangan va tarmoq yoqilgan bo&apos;lishi kerak. Post navbat orqali
+              ketadi (kunlik chegara bor).
             </p>
           </div>
 

@@ -448,13 +448,24 @@ urinish). Kalitlar `secrets/social`, sozlama `settings/social`.
 Kanalga e'lon qilingan mahsulot navbatga tushadi (`announceProduct`
 ichida, `refresh` rejimida emas). Ijtimoiy tarmoqda faqat DONA narx.
 
+**Maqola QAYERGA yuboriladi — har maqolada tanlanadi.** Ilgari
+yo'nalish qat'iy edi (Telegram + videosi bo'lsa YouTube). Endi
+`BlogPost.destinations` (`telegram` / `youtube` / `instagram` /
+`facebook`, admin formadagi "Qayerga yuborilsin" bloki). Eski
+hujjatlarda maydon yo'q — ular `DEFAULT_BLOG_DESTINATIONS` bilan
+avvalgidek ishlaydi. Tarmoq Sozlamalarda ham yoqilgan bo'lishi shart;
+YouTube uchun VIDEO, Instagram/Facebook uchun muqova rasmi (yoki
+video) kerak — `blogNetworks()` shuni tekshiradi va `enqueueBlogPost()`
+har tarmoqqa bittadan navbat yozuvi qo'yadi.
+
 **Blog maqolasidagi KONTENT VIDEOSI** (mahsulot videosi emas -
 maslahat/ko'rsatma lavhasi): `BlogPost.videoUrl`, admin formada
 "Kontent videosi" (20MB gacha, papka `blog`). Maqola chop etilganda
 kanalga rasm emas VIDEO posti chiqadi (`announceBlogPost` -
-`sendVideo`) va YouTube navbatiga tushadi (`enqueueBlogVideo`,
+`sendVideo`) va YouTube navbatiga tushadi (`enqueueBlogPost`,
 `SocialJob.kind === "blog"`, `blogId`). Ikkinchi marta yuklanmasligi
-uchun natija `BlogPost.youtubeVideoId` ga yoziladi; kanal posti esa
+uchun natija `BlogPost.youtubeVideoId` ga yoziladi (bu cheklov faqat
+YouTube'da); kanal posti esa
 `channelChatId`/`channelMessageId` bilan TAHRIRLANADI - maqola
 yangilanganda yangi post tashlanmaydi. Navbatni cron bo'shatadi
 (`/api/cron/social`).

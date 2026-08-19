@@ -3,8 +3,8 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { announceBlogPost } from "@/lib/telegram/channel";
-import { enqueueBlogVideo } from "@/lib/social/publish";
-import type { BlogPost } from "@/types/content";
+import { enqueueBlogPost } from "@/lib/social/publish";
+import { DEFAULT_BLOG_DESTINATIONS, type BlogPost } from "@/types/content";
 import { validationMessage } from "@/lib/http/validation";
 
 export const runtime = "nodejs";
@@ -16,6 +16,15 @@ const updateSchema = z.object({
   coverImageUrl: z.string().url().or(z.literal("")).optional(),
   /** Kontent videosi (mahsulot videosi emas). */
   videoUrl: z.string().url().or(z.literal("")).optional(),
+  /** Qayerga yuborilsin (belgilanmasa - avvalgi xatti-harakat). */
+  destinations: z
+    .object({
+      telegram: z.boolean(),
+      youtube: z.boolean(),
+      instagram: z.boolean(),
+      facebook: z.boolean(),
+    })
+    .optional(),
   isPublished: z.boolean().optional(),
 });
 
@@ -41,22 +50,29 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (d.coverImageUrl !== undefined) updates.coverImageUrl = d.coverImageUrl;
   if (d.videoUrl !== undefined) updates.videoUrl = d.videoUrl;
   if (d.isPublished !== undefined) updates.isPublished = d.isPublished;
+  if (d.destinations !== undefined) updates.destinations = d.destinations;
 
   await ref.update(updates);
   const post = { ...(snap.data() as BlogPost), ...updates, id } as BlogPost;
+  // Eski maqolalarda `destinations` yo'q - ular avvalgidek
+  // (Telegram + video bo'lsa YouTube) qabul qilinadi.
+  const destinations = post.destinations ?? DEFAULT_BLOG_DESTINATIONS;
   // Kanalda post bo'lsa - o'shanisi yangilanadi, yangisi tashlanmaydi.
-  const sent = await announceBlogPost(post, "updated");
+  // Telegram belgisi olib tashlangan bo'lsa yangi post ham ketmaydi
+  // (mavjud post joyida qoladi - uni bot o'chirmaydi).
+  const sent = destinations.telegram ? await announceBlogPost(post, "updated") : null;
   if (sent && !post.channelMessageId) {
     post.channelChatId = sent.chatId;
     post.channelMessageId = sent.messageId;
     await ref.update({ channelChatId: sent.chatId, channelMessageId: sent.messageId });
   }
-  // Video keyin qo'shilgan bo'lsa ham YouTube'ga tushadi (bir marta).
-  const queued = await enqueueBlogVideo(post).catch((error) => {
-    console.error("Maqola videosini navbatga qo'shishda xato:", error);
+  // Video/rasm keyin qo'shilgan yoki yangi tarmoq belgilangan bo'lsa
+  // ham navbatga tushadi (har tarmoqqa bir marta).
+  const queued = await enqueueBlogPost(post).catch((error) => {
+    console.error("Maqolani ijtimoiy tarmoq navbatiga qo'shishda xato:", error);
     return 0;
   });
-  return NextResponse.json({ post, youtubeQueued: queued > 0 });
+  return NextResponse.json({ post, socialQueued: queued });
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {

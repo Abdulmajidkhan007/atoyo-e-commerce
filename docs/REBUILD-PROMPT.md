@@ -361,6 +361,13 @@ sababli NAVBAT orqali:
   tushadi, "Navbatni yuborish" tugmasi yoki tashqi cron uni
   bo'shatadi; xato bo'lsa 3 martagacha qayta uriniladi. Ommaviy
   kirimda navbatga umuman qo'yilmaydi.
+- **Blog maqolasi qayerga yuboriladi — har maqolada tanlanadi**
+  (`BlogPost.destinations`: `telegram` / `youtube` / `instagram` /
+  `facebook`, admin formadagi "Qayerga yuborilsin" bloki). Tarmoq
+  Sozlamalarda ham yoqilgan bo'lishi shart; YouTube uchun VIDEO,
+  Instagram/Facebook uchun muqova rasmi (yoki video) kerak. Eski
+  maqolalarda maydon yo'q - ular avvalgidek (Telegram + video bo'lsa
+  YouTube) ishlaydi.
 - **Tanlab joylash**: katalogni tartibga solish sahifasida
   belgilangan mahsulotlarni "Instagram/Facebook" tugmasi bilan
   darhol joylash mumkin.

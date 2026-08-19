@@ -3,8 +3,8 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { announceBlogPost } from "@/lib/telegram/channel";
-import { enqueueBlogVideo } from "@/lib/social/publish";
-import type { BlogPost } from "@/types/content";
+import { enqueueBlogPost } from "@/lib/social/publish";
+import { DEFAULT_BLOG_DESTINATIONS, type BlogPost } from "@/types/content";
 import { slugify } from "@/lib/slug";
 import { validationMessage } from "@/lib/http/validation";
 
@@ -17,6 +17,15 @@ const postSchema = z.object({
   coverImageUrl: z.string().url().or(z.literal("")).default(""),
   /** Kontent videosi (mahsulot videosi emas) - YouTube va kanalga. */
   videoUrl: z.string().url().or(z.literal("")).default(""),
+  /** Qayerga yuborilsin (belgilanmasa - avvalgi xatti-harakat). */
+  destinations: z
+    .object({
+      telegram: z.boolean(),
+      youtube: z.boolean(),
+      instagram: z.boolean(),
+      facebook: z.boolean(),
+    })
+    .optional(),
   isPublished: z.boolean().default(true),
 });
 
@@ -58,22 +67,23 @@ export async function POST(request: Request) {
     content: d.content.trim(),
     coverImageUrl: d.coverImageUrl,
     ...(d.videoUrl ? { videoUrl: d.videoUrl } : {}),
+    destinations: d.destinations ?? DEFAULT_BLOG_DESTINATIONS,
     isPublished: d.isPublished,
     createdAt: now,
     updatedAt: now,
   };
 
   await ref.set(post);
-  // Kanalga e'lon (video bo'lsa - video posti) va YouTube navbati.
-  const sent = await announceBlogPost(post, "new");
+  // Kanalga e'lon (video bo'lsa - video posti) - faqat tanlangan bo'lsa.
+  const sent = post.destinations?.telegram ? await announceBlogPost(post, "new") : null;
   if (sent) {
     post.channelChatId = sent.chatId;
     post.channelMessageId = sent.messageId;
     await ref.update({ channelChatId: sent.chatId, channelMessageId: sent.messageId });
   }
-  const queued = await enqueueBlogVideo(post).catch((error) => {
-    console.error("Maqola videosini navbatga qo'shishda xato:", error);
+  const queued = await enqueueBlogPost(post).catch((error) => {
+    console.error("Maqolani ijtimoiy tarmoq navbatiga qo'shishda xato:", error);
     return 0;
   });
-  return NextResponse.json({ post, youtubeQueued: queued > 0 }, { status: 201 });
+  return NextResponse.json({ post, socialQueued: queued }, { status: 201 });
 }

@@ -1,3 +1,25 @@
+/** Maqola qaysi kanallarga yuborilishi (admin formadagi belgilar). */
+export interface BlogDestinations {
+  /** Telegram kanali (rasm yoki video posti). */
+  telegram: boolean;
+  /** YouTube - faqat maqolada VIDEO bo'lsa. */
+  youtube: boolean;
+  instagram: boolean;
+  facebook: boolean;
+}
+
+/**
+ * Standart yo'nalishlar = loyihaning ilgarigi xatti-harakati:
+ * Telegram + (video bo'lsa) YouTube. Instagram/Facebook ataylab
+ * o'chiq - ular blogda yangi imkoniyat, admin o'zi belgilaydi.
+ */
+export const DEFAULT_BLOG_DESTINATIONS: BlogDestinations = {
+  telegram: true,
+  youtube: true,
+  instagram: false,
+  facebook: false,
+};
+
 export interface BlogPost {
   id: string;
   slug: string;
@@ -17,6 +39,17 @@ export interface BlogPost {
   videoUrl?: string;
   /** YouTube'ga yuklangan bo'lsa - video ID (takror yuklanmasin). */
   youtubeVideoId?: string;
+  /**
+   * MAQOLA QAYERGA YUBORILADI (admin formada belgilanadi).
+   *
+   * Ilgari yo'nalish qat'iy edi: har maqola Telegram kanaliga ketardi
+   * va videosi bo'lsa YouTube'ga tushardi - Instagram/Facebook esa
+   * umuman yo'q edi. Endi har maqolada alohida tanlanadi.
+   *
+   * Eski hujjatlarda bu maydon yo'q - o'shalar avvalgidek
+   * (`DEFAULT_BLOG_DESTINATIONS`) qabul qilinadi.
+   */
+  destinations?: BlogDestinations;
   /** Kanaldagi post - yangilanganda yangi post tashlanmaydi. */
   channelChatId?: string;
   channelMessageId?: number;

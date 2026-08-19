@@ -12,7 +12,7 @@ import { publishToFacebook, publishToInstagram } from "./meta";
 import { uploadToYoutube } from "./youtube";
 import { SOCIAL_LABELS, type SocialJob, type SocialNetwork } from "@/types/social";
 import type { Product } from "@/types/product";
-import type { BlogPost } from "@/types/content";
+import { DEFAULT_BLOG_DESTINATIONS, type BlogPost } from "@/types/content";
 import { formatSom } from "@/lib/format";
 
 /**
@@ -97,62 +97,114 @@ export async function publishNow(
 }
 
 /**
- * BLOG MAQOLASIDAGI KONTENT VIDEOSI → YouTube (Shorts).
+ * BLOG MAQOLASI → ijtimoiy tarmoq.
  *
- * Mahsulot videosidan farqli: bu maslahat/ko'rsatma videosi, narx
+ * Mahsulot postidan farqli: bu maslahat/ko'rsatma maqolasi, narx
  * ham, kod ham yozilmaydi — sarlavha, qisqa tavsif va maqola havolasi
  * ketadi. Telegram kanaliga esa `announceBlogPost` o'zi yuboradi.
+ *
+ * YouTube uchun VIDEO shart; Instagram/Facebook uchun muqova rasmi
+ * (yoki video) yetadi.
  */
-async function publishBlogNow(post: BlogPost): Promise<{ postId: string }> {
-  if (!post.videoUrl) throw new Error("Maqolada video yo'q.");
+async function publishBlogNow(
+  post: BlogPost,
+  network: SocialNetwork
+): Promise<{ postId: string }> {
   const settings = await getSocialSettings();
-  const description = [post.excerpt, `${SITE_URL}/blog/${post.slug}`, settings.hashtags]
+  const link = `${SITE_URL}/blog/${post.slug}`;
+
+  if (network === "youtube") {
+    if (!post.videoUrl) throw new Error("Maqolada video yo'q.");
+    const description = [post.excerpt, link, settings.hashtags].filter(Boolean).join("\n\n");
+    const postId = await uploadToYoutube({
+      videoUrl: post.videoUrl,
+      title: post.title,
+      description,
+    });
+    return { postId };
+  }
+
+  const caption = [post.title, post.excerpt, link, settings.hashtags]
     .filter(Boolean)
     .join("\n\n");
+  const images = post.coverImageUrl ? [post.coverImageUrl] : [];
+  const video = images.length === 0 ? post.videoUrl : undefined;
+  if (images.length === 0 && !video) {
+    throw new Error("Maqolada rasm ham, video ham yo'q - post qilib bo'lmaydi.");
+  }
 
-  const postId = await uploadToYoutube({
-    videoUrl: post.videoUrl,
-    title: post.title,
-    description,
-  });
+  const postId =
+    network === "instagram"
+      ? await publishToInstagram({ caption, images, video })
+      : await publishToFacebook({ caption, images, video });
   return { postId };
 }
 
+/** Maqola shu tarmoqqa yuborilishi kerakmi (maydon + tarmoq talabi). */
+function blogNetworks(post: BlogPost): SocialNetwork[] {
+  const wanted = post.destinations ?? DEFAULT_BLOG_DESTINATIONS;
+  const networks: SocialNetwork[] = [];
+  // YouTube - faqat videosi bor maqola uchun.
+  if (wanted.youtube && post.videoUrl) networks.push("youtube");
+  // Instagram/Facebook - muqova rasmi yoki video kerak.
+  if (post.coverImageUrl || post.videoUrl) {
+    if (wanted.instagram) networks.push("instagram");
+    if (wanted.facebook) networks.push("facebook");
+  }
+  return networks;
+}
+
 /**
- * Maqolaning videosini YouTube navbatiga qo'yadi. Video yo'q bo'lsa,
- * YouTube o'chirilgan bo'lsa yoki allaqachon yuklangan bo'lsa - 0.
+ * Maqolani TANLANGAN tarmoqlar navbatiga qo'yadi (`post.destinations`).
+ *
+ * Tarmoq admin sozlamasida ham yoqilgan bo'lishi shart; YouTube uchun
+ * video, Instagram/Facebook uchun muqova rasmi kerak. Bir maqola bir
+ * tarmoqqa ikki marta tushmaydi.
  */
-export async function enqueueBlogVideo(post: BlogPost): Promise<number> {
-  if (!post.isPublished || !post.videoUrl || post.youtubeVideoId) return 0;
+export async function enqueueBlogPost(post: BlogPost): Promise<number> {
+  if (!post.isPublished) return 0;
   const settings = await getSocialSettings();
-  if (!settings.youtube) return 0;
+
+  const networks = blogNetworks(post).filter((network) => {
+    if (!settings[network]) return false;
+    // YouTube'ga allaqachon yuklangan bo'lsa - takror yuklanmaydi.
+    if (network === "youtube" && post.youtubeVideoId) return false;
+    return true;
+  });
+  if (networks.length === 0) return 0;
 
   const db = getAdminDb();
-  const existing = await db
-    .collection(COLLECTION)
-    .where("blogId", "==", post.id)
-    .where("network", "==", "youtube")
-    .limit(5)
-    .get();
-  if (existing.docs.some((doc) => (doc.data() as SocialJob).status !== "failed")) return 0;
+  let added = 0;
 
-  const ref = db.collection(COLLECTION).doc();
-  const job: SocialJob = {
-    id: ref.id,
-    kind: "blog",
-    productId: "",
-    blogId: post.id,
-    productName: post.title,
-    network: "youtube",
-    status: "pending",
-    attempts: 0,
-    error: null,
-    postId: null,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  await ref.set(job);
-  return 1;
+  for (const network of networks) {
+    const existing = await db
+      .collection(COLLECTION)
+      .where("blogId", "==", post.id)
+      .where("network", "==", network)
+      .limit(5)
+      .get();
+    if (existing.docs.some((doc) => (doc.data() as SocialJob).status !== "failed")) continue;
+
+    const ref = db.collection(COLLECTION).doc();
+    const job: SocialJob = {
+      id: ref.id,
+      kind: "blog",
+      productId: "",
+      blogId: post.id,
+      productName: post.title,
+      network,
+      status: "pending",
+      attempts: 0,
+      error: null,
+      postId: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    await ref.set(job);
+    added += 1;
+  }
+
+  return added;
 }
 
 /** Bugun shu tarmoqqa nechta post ketgan. */
@@ -255,7 +307,7 @@ export async function processQueue(max = 10): Promise<{ posted: number; failed: 
       }
       const post = { id: postSnap.id, ...postSnap.data() } as BlogPost;
       try {
-        const { postId } = await publishBlogNow(post);
+        const { postId } = await publishBlogNow(post, job.network);
         await doc.ref.update({
           status: "done",
           postId,
@@ -263,8 +315,9 @@ export async function processQueue(max = 10): Promise<{ posted: number; failed: 
           attempts: FieldValue.increment(1),
           updatedAt: Date.now(),
         });
-        // Maqolaga yozib qo'yiladi - ikkinchi marta yuklanmasin.
-        await postSnap.ref.update({ youtubeVideoId: postId });
+        // YouTube ID maqolaga yozib qo'yiladi - ikkinchi marta
+        // yuklanmasin (Instagram/Facebook uchun bunday cheklov yo'q).
+        if (job.network === "youtube") await postSnap.ref.update({ youtubeVideoId: postId });
         usedToday.set(job.network, used + 1);
         posted += 1;
       } catch (error) {
