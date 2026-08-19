@@ -81,6 +81,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    /**
+     * KANAL POSTI BOSILISHLARI: "Saytda ko'rish" tugmasi hisobi.
+     * Faqat server yozadi (`/k/<id>` route'i, Admin SDK) va faqat
+     * bot/admin o'qiydi - mijozga bu raqamlar kerak emas.
+     */
+    match /channelClicks/{productId} {
+      allow read, write: if false;
+    }
+
     match /wholesaleClients/{clientId} {
       allow read, write: if false;
     }

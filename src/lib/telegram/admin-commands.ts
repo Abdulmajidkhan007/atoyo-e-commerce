@@ -7,6 +7,7 @@ import { sendChatMessage } from "./bot";
 import { startNewProductFlow, startEditProductFlow, cancelAdminSession } from "./admin-session";
 import { sendBroadcast } from "@/lib/broadcast";
 import { logAction } from "./action-log";
+import { channelReport } from "./channel-report";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 import type { Order } from "@/types/order";
 import { formatSom } from "@/lib/format";
@@ -106,6 +107,7 @@ const HELP_TEXT = [
   "<code>/tikla 12</code> — qaytarish",
   "<code>/buyurtmalar</code> — so'nggi 5 buyurtma",
   "<code>/stat</code> — umumiy statistika",
+  "<code>/kanal</code> — kanal hisoboti (obunachilar, bosilishlar)",
   "<code>/elon Matn...</code> — hammaga e'lon (Telegram + Email + kanal)",
   "",
   "<code>/namuna</code> — KIRIM namunasi (hamma maydon bilan)",
@@ -176,6 +178,11 @@ export async function handleAdminCommand(params: {
             `Faol mahsulotlar: <b>${productsCount.data().count}</b>`,
           ].join("\n")
         );
+        return;
+      }
+
+      case "/kanal": {
+        await reply(await channelReport());
         return;
       }
 

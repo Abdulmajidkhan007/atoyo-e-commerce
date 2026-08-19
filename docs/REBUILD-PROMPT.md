@@ -521,7 +521,14 @@ salomlashuv rasmi.
   tugmalari — bosilganda saytdagi bilan bir xil funksiya ishlaydi.
 - Buyruqlar: `/yangi` (interaktiv, tugmalar bilan mahsulot yaratish),
   `/tahrir`, `/narx`, `/zaxira`, `/top`, `/uchir`, `/tikla`,
-  `/buyurtmalar`, `/stat`, `/elon` (mijozlarga xabar), `/help`.
+  `/buyurtmalar`, `/stat`, `/kanal`, `/elon` (mijozlarga xabar), `/help`.
+- **Kanal statistikasi.** Telegram postni kim ko'rganini botga bermaydi,
+  shuning uchun post ostidagi tugma `/k/<id>` ga qaraydi: bosilish
+  `channelClicks/{productId}` da sanaladi va mijoz mahsulot sahifasiga
+  yo'naltiriladi. Postni adminlar guruhiga **forward** qilsangiz bot
+  o'sha postning hisobini chiqaradi (bugun / 7 kun / jami, oxirgi
+  bosilish, kanal obunachilari). `/kanal` — umumiy hisobot: obunachilar,
+  bot foydalanuvchilari, 7 kunda faollar va eng ko'p bosilgan 5 post.
 - **"Kirim" topic'i:** xodim rasm(lar) + izoh tashlaydi
   ("nom / narx / soni / kimdan / material") — bot mahsulotni yaratadi,
   albom (media_group) holatini vaqtincha saqlaydi, keyin ixtiyoriy

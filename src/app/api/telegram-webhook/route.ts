@@ -7,6 +7,7 @@ import { handleAdminSessionMessage, handleAdminSessionCallback } from "@/lib/tel
 import { handleCustomerMessage, handleCustomerCallback } from "@/lib/telegram/customer-bot";
 import { handleIntakeMessage } from "@/lib/telegram/product-intake";
 import { handleStickerCommand, handleStickerMessage } from "@/lib/telegram/sticker-commands";
+import { handleForwardedChannelPost, type ForwardedPost } from "@/lib/telegram/channel-report";
 import { resolveTopicConfig } from "@/lib/telegram/topics";
 import { getTelegramSecrets } from "@/lib/telegram/secrets";
 
@@ -47,6 +48,19 @@ interface TelegramMessage {
   };
   /** Reply qilingan xabar (stikerni slotga biriktirishda kerak). */
   reply_to_message?: TelegramMessage;
+  /**
+   * Forward qilingan xabar manbasi. Bot API 7.0 dan `forward_origin`,
+   * undan oldin `forward_from_chat` + `forward_from_message_id` edi -
+   * eski mijozlar hali ham eski shaklni yuborishi mumkin, shuning
+   * uchun IKKALASI ham o'qiladi.
+   */
+  forward_origin?: {
+    type: string;
+    chat?: { id: number; title?: string };
+    message_id?: number;
+  };
+  forward_from_chat?: { id: number; title?: string };
+  forward_from_message_id?: number;
 }
 
 interface TelegramCallbackQuery {
@@ -59,6 +73,25 @@ interface TelegramCallbackQuery {
 interface TelegramUpdate {
   message?: TelegramMessage;
   callback_query?: TelegramCallbackQuery;
+}
+
+/**
+ * Xabar KANALDAN forward qilinganmi. Shunday bo'lsa xodim postning
+ * hisobotini so'ragan bo'ladi (`channel-report.ts`).
+ */
+function forwardedChannelPost(message: TelegramMessage): ForwardedPost | null {
+  const origin = message.forward_origin;
+  if (origin?.type === "channel" && origin.chat && origin.message_id) {
+    return { chatId: origin.chat.id, messageId: origin.message_id, chatTitle: origin.chat.title };
+  }
+  if (message.forward_from_chat && message.forward_from_message_id) {
+    return {
+      chatId: message.forward_from_chat.id,
+      messageId: message.forward_from_message_id,
+      chatTitle: message.forward_from_chat.title,
+    };
+  }
+  return null;
 }
 
 function isAdminGroupChat(chat: TelegramChat | undefined, staffChatId: string): boolean {
@@ -141,10 +174,27 @@ export async function POST(request: Request) {
         message.location ||
         message.photo ||
         message.video ||
-        message.sticker)
+        message.sticker ||
+        // Forward qilingan post rasmsiz/matnsiz ham bo'lishi mumkin
+        // (masalan albom) - u ham qabul qilinadi.
+        message.forward_origin ||
+        message.forward_from_chat)
     ) {
       if (isAdminGroupChat(message.chat, staffChatId)) {
         const adminUserId = message.from?.id;
+
+        // KANALDAN FORWARD qilingan post = "shu postning hisobini
+        // ko'rsat" degani. Eng birinchi tekshiriladi: forward hech
+        // qachon kirim ham, sessiya javobi ham emas.
+        const forwarded = forwardedChannelPost(message);
+        if (forwarded) {
+          await handleForwardedChannelPost({
+            chatId: message.chat.id,
+            threadId: message.message_thread_id,
+            post: forwarded,
+          });
+          return NextResponse.json({ ok: true });
+        }
 
         // Xodimlar guruhiga tashlangan stiker: bot uning kodini aytadi
         // va to'plamni eslab qoladi (kirim topic'ida bundan mustasno -

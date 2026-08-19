@@ -396,7 +396,9 @@ export async function refreshChannelPost(product: Product): Promise<RefreshResul
   const text =
     gallery.length > 1 && body.length > budget ? `${body.slice(0, Math.max(120, budget - 3))}...` : body;
   const caption = `${text}${footer}`;
-  const buttonUrl = `${siteUrl()}/mahsulot/${product.id}`;
+  // Tugma SANALADIGAN havolaga qaraydi (`/k/<id>`): u bosilishni
+  // yozib, mahsulot sahifasiga yo'naltiradi (`lib/telegram/channel-stats.ts`).
+  const buttonUrl = `${siteUrl()}/k/${product.id}`;
   const buttonText = "🛒 Saytda ko'rish";
 
   const finalText = gallery.length > 1 ? `${caption}\n\n<a href="${buttonUrl}">${buttonText}</a>` : caption;
@@ -538,7 +540,9 @@ export async function announceProduct(
   const text =
     gallery.length > 1 && body.length > budget ? `${body.slice(0, Math.max(120, budget - 3))}...` : body;
   const caption = `${text}${footer}`;
-  const buttonUrl = `${siteUrl()}/mahsulot/${product.id}`;
+  // Tugma SANALADIGAN havolaga qaraydi (`/k/<id>`): u bosilishni
+  // yozib, mahsulot sahifasiga yo'naltiradi (`lib/telegram/channel-stats.ts`).
+  const buttonUrl = `${siteUrl()}/k/${product.id}`;
   const buttonText = "🛒 Saytda ko'rish";
 
   let posted =

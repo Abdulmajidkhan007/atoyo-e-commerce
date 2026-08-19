@@ -571,7 +571,19 @@ foydalanuvchi so'raganda.
   tiklashda kerak), faqat bog'lanish uziladi; rasm soni o'zgargani
   uchun kanal posti qayta tashlanadi (albomdan rasm olib tashlab
   bo'lmaydi - Telegram cheklovi).
-- Webhook: `src/app/api/telegram-webhook/route.ts`. Topic Thread ID'lar
+- **Kanal posti statistikasi**: Telegram postni KIM ko'rganini botga
+  BERMAYDI (bunday API yo'q). Shuning uchun o'lchanadigan narsa — post
+  ostidagi tugma bosilishi: tugma endi `/k/<id>` ga qaraydi
+  (`src/app/k/[id]/route.ts`), u `channelClicks/{productId}` hujjatiga
+  `increment` yozib mahsulot sahifasiga yo'naltiradi. Kunlik kalitlar
+  (`days: { "YYYY-MM-DD": n }`) 90 kundan keyin o'qish paytida
+  tozalanadi; sof mantiq `click-days.ts` da (testi `click-days.test.ts`).
+  Hisobot: postni adminlar guruhiga **forward** qilsangiz bot o'sha
+  postning hisobini chiqaradi (`channel-report.ts`, post
+  `channelMessageId` bo'yicha topiladi), **`/kanal`** esa umumiy
+  ko'rsatkichlarni beradi — kanal obunachilari (`getChatMemberCount`),
+  bot foydalanuvchilari (`botUsers`) va 7 kunda faollar (`botSessions`,
+  `count()` agregatsiyasi bilan — hujjatlar o'qilmaydi).
   Firestore `settings/telegram` da (buyurtmalar topic = 2, kirim = 151).
 - Bot tokeni/guruh ID/webhook siri: `secrets/telegram` (server-only,
   `lib/telegram/secrets.ts`) → env'dan ustun. Sozlamalarni saqlash

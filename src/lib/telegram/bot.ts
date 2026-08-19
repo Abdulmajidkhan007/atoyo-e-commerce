@@ -283,6 +283,21 @@ export async function isChatMember(channelId: string, userId: number): Promise<b
 }
 
 /**
+ * Kanal/guruh a'zolari soni (getChatMemberCount).
+ *
+ * Bot kanalda admin bo'lmasa Telegram rad etadi - o'shanda `null`
+ * qaytadi va chaqiruvchi "ma'lum emas" deb yozadi (xato tashlanmaydi:
+ * bu ko'rsatkich yordamchi, asosiy ishni to'xtatmasligi kerak).
+ */
+export async function getChatMemberCount(chatId: number | string): Promise<number | null> {
+  try {
+    return await callTelegramApi<number>("getChatMemberCount", { chat_id: chatId });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Telegram'ga yuborilgan faylni (masalan, admin yuborgan mahsulot rasmini)
  * yuklab oladi - keyin Admin SDK orqali Storage'ga o'tkaziladi. Bot API
  * cheklovi: 20 MB gacha (rasm uchun bemalol yetadi).
