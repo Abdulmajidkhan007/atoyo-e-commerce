@@ -48,6 +48,14 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   ustun, keyin eng yangisi; 5 daqiqa keshlanadi), pastida "Katalogni
   ko'rish" tugmasi. Katalog 3 000+ mahsulotga yetganda bosh sahifada
   uzun ro'yxat ko'rsatilmaydi.
+- **Dizayn rejimi (klassik / 3D):** header'dagi tugma bilan mijoz
+  "✨ 3D" va "📄 Klassik" ko'rinish o'rtasida almashadi (tanlov
+  `localStorage` + cookie'da). 3D rejimda bosh sahifada `three.js`
+  sahnasi (koddan yasalgan santexnika shakllari, sichqonchaga javob
+  beradi), GSAP ScrollTrigger bilan bo'limlar chiqishi va glassmorphism
+  kartochkalar. Og'ir kutubxonalar FAQAT 3D rejimda va faqat quvvatli
+  qurilmada yuklanadi; kichik ekran/sekin tarmoq/"reduce motion" da
+  avtomatik 2D fallback. Tartib: `docs/UI-3D.md`.
 - **Yetkazib berish va'dasi:** "Qo'qon ichida va atrofdagi 15 km gacha
   yetkazib berish bepul" degan matn sozlamadan keladi
   (`settings/delivery`: `city`, `freeRadiusKm`, `note`,

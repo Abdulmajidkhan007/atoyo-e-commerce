@@ -9,7 +9,8 @@
 | Qatlam | Texnologiya |
 |---|---|
 | Framework | Next.js 16.2.x (App Router, Turbopack) |
-| UI | Tailwind CSS + Material UI (MUI), Dark/Light mode |
+| UI | Tailwind CSS + Material UI (MUI), Dark/Light mode, klassik/3D dizayn rejimi |
+| 3D va animatsiya | three.js + @react-three/fiber/drei, GSAP ScrollTrigger, framer-motion (faqat 3D rejimda, dinamik yuklanadi) |
 | State | Redux Toolkit (+ redux-persist: savat/tema) |
 | Backend | Firebase (Auth, Cloud Firestore, Storage) |
 | Integratsiya | Telegram Bot API (forum topic'lar, inline tugmalar, webhook) |
@@ -23,6 +24,7 @@
 - **Auth** — Sign in with Google + Email/Parol; birinchi kirishda Firestore `users`ga `{role:'user'}` yoziladi
 - **Admin panel** (`/admin`) — dashboard (tushum/eng ko'p sotilganlar), katalog boshqaruvi (inline narx/zaxira, bulk narx, rasm yuklash), buyurtmalar nazorati, foydalanuvchi rollari, bot Thread ID sozlamalari
 - **Xavfsizlik** — ikki qatlamli himoya: `src/proxy.ts` (edge-safe, faqat session cookie borligini tekshiradi) va `admin/layout.tsx`da haqiqiy `role: admin` tekshiruvi (Node); mahsulot narxi mijozga faqat `lib/products/viewer.ts` orqali chiqadi (optom narx va tannarx olib tashlanadi), `products` kolleksiyasi Firestore qoidalarida clientga yopiq
+- **Dizayn rejimi** — header'dagi tugma bilan "✨ 3D" va "📄 Klassik" ko'rinish o'rtasida almashish (tanlov saqlanadi). 3D rejimda bosh sahifada interaktiv three.js sahnasi, GSAP scroll animatsiyalari va glassmorphism kartochkalar; zaif qurilma/sekin tarmoq/"reduce motion" da avtomatik yengil variant — `docs/UI-3D.md`
 - **Boshqa kanallar** — mijoz-bot (katalog/savat/checkout Telegramda), do'kon televizori uchun `/tv` sahifasi, Android ilova (`mobile/`, React Native), Windows/Linux ilova (`desktop/`, Electron — saytning o'zini ochadi), AI yordamchisi (`src/lib/ai/`, rasmdan qidiruv ham)
 
 ## Ishga tushirish
@@ -91,4 +93,5 @@ docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 | `docs/DEPLOY.md` | Hosting, env va secret sozlash tartibi |
 | `docs/KIRIM-VA-IMPORT.md` | Kirim, Excel/CSV import, 1C narxnomasi |
 | `docs/TV.md` / `docs/DESKTOP.md` / `docs/STICKERS.md` | Do'kon ekrani, Electron, stikerlar |
+| `docs/UI-3D.md` | Klassik/3D dizayn rejimi, 3D sahna va tezlik qoidalari |
 | `docs/BACKUP.md` / `docs/PLAY-STORE.md` / `docs/TYPESENSE.md` | Zaxira, ilova relizi, qidiruv motori |

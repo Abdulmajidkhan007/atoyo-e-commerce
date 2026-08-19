@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@mui/material";
 import PlumbingOutlinedIcon from "@mui/icons-material/PlumbingOutlined";
 import SettingsInputComponentOutlinedIcon from "@mui/icons-material/SettingsInputComponentOutlined";
 import WaterDropOutlinedIcon from "@mui/icons-material/WaterDropOutlined";
@@ -15,6 +14,8 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import { CategoryTile } from "@/components/home/CategoryTile";
 import { ShowcaseGrid } from "@/components/home/ShowcaseGrid";
 import { Advantages } from "@/components/home/Advantages";
+import { Hero } from "@/components/home/Hero";
+import { Reveal } from "@/components/motion/Reveal";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { useCategories } from "@/lib/products/useTaxonomy";
 
@@ -41,20 +42,11 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="bg-navy-900 text-white">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-16">
-          <span className="rounded-full bg-aqua-500/20 px-3 py-1 text-xs font-medium text-aqua-300">
-            {dict.home.badge}
-          </span>
-          <h1 className="max-w-xl text-3xl font-bold md:text-4xl">{dict.home.heroTitle}</h1>
-          <p className="max-w-lg text-navy-100">{dict.home.heroText}</p>
-          <Button component={Link} href="/katalog" variant="contained" color="primary" size="large">
-            {dict.home.viewCatalog}
-          </Button>
-        </div>
-      </section>
+      {/* Hero: 3D rejimda orqa fonda interaktiv sahna, klassikda -
+          hozirgi tekis fon. Matn ikkalasida bir xil. */}
+      <Hero />
 
-      <section className="mx-auto max-w-7xl px-4 py-10">
+      <Reveal as="section" className="mx-auto max-w-7xl px-4 py-10">
         <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">{dict.home.categories}</h2>
         {/*
           Kategoriyalar ko'p (import bilan o'nlab yangisi qo'shildi) -
@@ -79,16 +71,18 @@ export default function HomePage() {
             </Link>
           )}
         </div>
-      </section>
+      </Reveal>
 
       {/* Bizning ustunligimiz: bepul yetkazish + o'rnatib berish
           xizmati (matn sozlamadan keladi). */}
-      <Advantages />
+      <Reveal delay={0.05}>
+        <Advantages />
+      </Reveal>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16 pt-6">
+      <Reveal as="section" delay={0.05} className="mx-auto max-w-7xl px-4 pb-16 pt-6">
         <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">{dict.home.newProducts}</h2>
         <ShowcaseGrid />
-      </section>
+      </Reveal>
     </>
   );
 }

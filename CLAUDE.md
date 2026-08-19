@@ -298,6 +298,34 @@ bo'yicha (`lib/orders/promo.ts`).
 ilovada va kanal postida u faqat mahsulotda belgilangan VA sozlamada
 xizmat yoqilgan bo'lsa chiqadi.
 
+## Dizayn rejimi: klassik / 3D (buzilmasin)
+
+Sayt ikki ko'rinishda: **`3d-modern`** (standart) va **`classic`**.
+Tanlash tugmasi header'da, tanlov `localStorage` (`atoyo.ui-mode`) +
+cookie'da. Batafsil: `docs/UI-3D.md`.
+
+Uchta qoida:
+
+1. **Shart bitta joyda.** Og'ir effekt chizilishini `useImmersive()`
+   hal qiladi (`lib/ui-mode/useImmersive.ts`): foydalanuvchi 3D ni
+   tanlagan VA qurilma ko'taradi (ekran ≥768px, ≥4 yadro/4GB, WebGL
+   bor, `prefers-reduced-motion` va `saveData` yo'q). Komponentda bu
+   shartni QAYTA yozmang.
+2. **`three` / `gsap` / `framer-motion` statik import QILINMAYDI.**
+   Faqat dinamik: `HeroCanvas` (`next/dynamic`, `ssr:false`),
+   `Reveal` (`await import("gsap")`), `GlassCard` (`LazyMotion`).
+   Klassik rejimdagi mijoz bu paketlarni umuman yuklamaydi.
+3. **3D uchun tashqi fayl yo'q** — `.glb` ham, `.hdr` ham. Shakllar
+   koddan (`HeroScene.tsx`), yorug'lik `Lightformer` bilan xotirada.
+   CSP tashqi hostni bloklaydi va bu ATAYLAB yumshatilmaydi.
+
+Sahna ko'rinmasa yoki varaq orqada bo'lsa render to'xtaydi
+(`frameloop="never"`). Yangi 3D bezakka `data-immersive-only`
+atributini bering — klassik rejimda CSS uni React'dan oldin yashiradi.
+Server rejimni O'QIMAYDI (Hosting faqat `__session` cookie'ni
+o'tkazadi), shuning uchun `layout.tsx` dagi erta skript `<html
+data-ui-mode>` ni qo'yadi — tema bilan bir xil naqsh.
+
 ## CSP qoidasi (buzilmasin)
 
 Sayt `Content-Security-Policy` yuboradi (`lib/http/csp.ts`, testi

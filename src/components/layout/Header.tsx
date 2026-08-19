@@ -11,6 +11,7 @@ import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { UiModeSwitch } from "./UiModeSwitch";
 import { SearchBar } from "@/components/product/SearchBar";
 
 export function Header() {
@@ -71,6 +72,9 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-0 sm:gap-1">
+          {/* Dizayn rejimi. Tor telefonda joy yetmaydi - u yerda
+              tugma pastki qatorda (qidiruv yonida) ko'rinadi. */}
+          <UiModeSwitch className="mr-1 hidden lg:flex" />
           <LanguageSwitcher />
           <ThemeToggle />
 
@@ -107,6 +111,11 @@ export function Header() {
           <SearchBar value={searchTerm} onChange={setSearchTerm} onSubmit={handleSearchSubmit} />
         </div>
       )}
+
+      {/* Kichik/o'rta ekranda almashtirgich shu yerda turadi. */}
+      <div className="flex justify-end border-t border-navy-100 px-4 py-1.5 lg:hidden dark:border-navy-500">
+        <UiModeSwitch />
+      </div>
     </header>
   );
 }

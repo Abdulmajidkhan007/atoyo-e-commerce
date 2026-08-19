@@ -76,7 +76,7 @@ commitning o'zida**:
   tartibi o'zgarsa (u eskirib qolmasin).
 - `docs/DEPLOY.md` — yangi env/secret/sozlash qadami paydo bo'lsa.
 - Bo'limga xos hujjatlar: `docs/KIRIM-VA-IMPORT.md` (kirim/import),
-  `docs/TV.md` (do'kon ekrani), `docs/DESKTOP.md` (Electron),
+  `docs/TV.md` (do'kon ekrani), `docs/DESKTOP.md` (Electron), `docs/UI-3D.md` (klassik/3D dizayn),
   `docs/STICKERS.md` (stikerlar), `docs/BACKUP.md` (zaxira),
   `docs/PLAY-STORE.md`, `docs/TYPESENSE.md`, `mobile/README.md`.
 - `docs/SESSION-PROMPT.md` — ish tartibi o'zgarsa shu promptning o'zi.

@@ -6,6 +6,7 @@ import { Analytics } from "@/components/analytics/Analytics";
 import { SITE_NAME, siteUrl } from "@/lib/seo/json-ld";
 import { ogImage, siteDescription, SITE_KEYWORDS, SITE_TITLE } from "@/lib/seo/metadata";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { UI_MODE_INIT_SCRIPT } from "@/lib/ui-mode/config";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
@@ -101,6 +102,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="uz" suppressHydrationWarning>
       <body className={inter.variable}>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Ko'rinish rejimi (klassik/3D) ham bo'yashdan OLDIN qo'yiladi -
+            "klassik" tanlagan mijoz 3D qatlamini bir lahza ham ko'rmaydi. */}
+        <script dangerouslySetInnerHTML={{ __html: UI_MODE_INIT_SCRIPT }} />
+        {/* JS ishlamasa skrollda chiqadigan bloklar (Reveal) shaffof
+            holda qolib ketmasin - kontent har doim ko'rinishi shart. */}
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html: "<style>[data-reveal]{opacity:1!important;transform:none!important}</style>",
+          }}
+        />
         {/*
           MUI uslublari SERVERDA chizilgan HTML ichiga qo'shiladi. Busiz
           emotion uslublarni faqat brauzerda, hydration'dan keyin

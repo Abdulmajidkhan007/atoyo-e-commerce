@@ -7,6 +7,7 @@ import { store } from "@/redux/store";
 import { useAppSelector } from "@/redux/hooks";
 import { getMuiTheme } from "@/theme/muiTheme";
 import { useAuthListener } from "@/hooks/useAuthListener";
+import { UiModeProvider } from "@/lib/ui-mode/UiModeContext";
 
 function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   const themeMode = useAppSelector((s) => s.ui.themeMode);
@@ -43,7 +44,15 @@ function MuiThemeBridge({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <MuiThemeBridge>{children}</MuiThemeBridge>
+      {/*
+        KO'RINISH REJIMI (klassik / 3D) redux'da EMAS, alohida
+        kontekstda: u redux-persist bilan bog'liq emas va sahifa
+        bo'yalishidan oldin ishlaydigan skript bilan juftlashadi
+        (`lib/ui-mode/config.ts`).
+      */}
+      <UiModeProvider>
+        <MuiThemeBridge>{children}</MuiThemeBridge>
+      </UiModeProvider>
     </Provider>
   );
 }
