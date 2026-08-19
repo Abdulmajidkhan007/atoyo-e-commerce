@@ -166,3 +166,17 @@ html[data-ui-mode="3d-modern"] .dark body,
     display: none !important;
   }
 }
+
+/* ---------------------------------------------------------------
+   KINEMATIK SARLAVHA (`SplitReveal`).
+
+   So'zlarning boshlang'ich holati ATAYLAB CSS'da: agar u JSX'dagi
+   `style` da bo'lsa, ota komponent qayta render bo'lganda React uni
+   qayta qo'yadi va GSAP chiqargan matn yana yo'qoladi.
+   GSAP inline uslub yozadi - u bu qoidadan ustun turadi.
+   --------------------------------------------------------------- */
+[data-split="on"] [data-word] {
+  opacity: 0;
+  transform: translateY(18px);
+  filter: blur(10px);
+}

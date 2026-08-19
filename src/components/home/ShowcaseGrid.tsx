@@ -6,6 +6,7 @@ import { Button } from "@mui/material";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductCardSkeletons } from "@/components/product/ProductCardSkeleton";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { Reveal } from "@/components/motion/Reveal";
 import type { Product } from "@/types/product";
 
 /**
@@ -48,8 +49,12 @@ export function ShowcaseGrid() {
   return (
     <>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+        {/* Kartalar KETMA-KET ochiladi (3D rejimda blur bilan) -
+            ro'yxat birdan "otilib chiqmaydi". */}
+        {products.map((product, index) => (
+          <Reveal key={product.id} delay={index * 0.05}>
+            <ProductCard product={product} />
+          </Reveal>
         ))}
       </div>
 

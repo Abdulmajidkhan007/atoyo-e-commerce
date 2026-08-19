@@ -324,6 +324,16 @@ Uchta qoida:
    koddan (`HeroScene.tsx`), yorug'lik `Lightformer` bilan xotirada.
    CSP tashqi hostni bloklaydi va bu ATAYLAB yumshatilmaydi.
 
+Hero sahnasi: markazda koddan yasalgan kosasimon moyka + gooseneck
+kran (`scene/ProductShowpiece.tsx`), atrofida JONLI ma'lumotli
+suzuvchi shisha panellar (`scene/FloatingPanel.tsx`, matni canvas
+teksturada — troika/tashqi shrift YO'Q) va mini xarita
+(`scene/GpsMesh.tsx`). Skroll GSAP ScrollTrigger bilan kamerani
+yaqinlashtiradi (`lib/motion/useHeroScroll.ts`): kompyuterda hero PIN
+qilinadi, TELEFONDA PIN YO'Q — u yerda pin skrollni "ushlab qolgandek"
+tuyuladi. Progress `ref` orqali beriladi (state emas), aks holda
+skrollning har kadrida React qayta render bo'lardi.
+
 Sahna ko'rinmasa yoki varaq orqada bo'lsa render to'xtaydi
 (`frameloop="never"`). Yangi 3D bezakka `data-immersive-only`
 atributini bering — klassik rejimda CSS uni React'dan oldin yashiradi.

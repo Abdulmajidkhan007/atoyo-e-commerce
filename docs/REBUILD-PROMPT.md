@@ -50,10 +50,15 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   uzun ro'yxat ko'rsatilmaydi.
 - **Dizayn rejimi (klassik / 3D):** header'dagi tugma bilan mijoz
   "✨ 3D" va "📄 Klassik" ko'rinish o'rtasida almashadi (tanlov
-  `localStorage` + cookie'da). 3D rejimda bosh sahifada `three.js`
-  sahnasi (koddan yasalgan santexnika shakllari, sichqonchaga javob
-  beradi), GSAP ScrollTrigger bilan bo'limlar chiqishi va glassmorphism
-  kartochkalar. Og'ir kutubxonalar FAQAT 3D rejimda va faqat quvvatli
+  `localStorage` + cookie'da). 3D rejimdagi bosh sahifa — kinematik
+  hero: markazda koddan yasalgan kosasimon moyka + gooseneck kran,
+  atrofida JONLI ma'lumotli suzuvchi shisha panellar (yetkazish
+  va'dasi, kategoriyalar, vitrinadagi mahsulot) va mini xarita
+  (radar to'lqini). Skroll GSAP ScrollTrigger bilan kamerani sahnaga
+  yaqinlashtiradi (kompyuterda hero pin bo'ladi, telefonda pin yo'q);
+  sarlavha so'zma-so'z, blurdan aniqlikka ochiladi; bo'lim va
+  kartochkalar ketma-ket (stagger) chiqadi va glassmorphism
+  ko'rinishda bo'ladi. Og'ir kutubxonalar FAQAT 3D rejimda va faqat quvvatli
   qurilmada yuklanadi; kichik ekran/sekin tarmoq/"reduce motion" da
   avtomatik 2D fallback. Tartib: `docs/UI-3D.md`.
 - **Yetkazib berish va'dasi:** "Qo'qon ichida va atrofdagi 15 km gacha

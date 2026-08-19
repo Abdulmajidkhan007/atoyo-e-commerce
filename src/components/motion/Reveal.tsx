@@ -74,6 +74,8 @@ export function Reveal({ children, className = "", delay = 0, as = "div" }: Reve
           opacity: 1,
           y: 0,
           scale: 1,
+          // Qatlamli blur: element "fokusga kelayotgandek" ochiladi.
+          filter: "blur(0px)",
           duration: 0.7,
           delay,
           ease: "power2.out",
@@ -104,9 +106,16 @@ export function Reveal({ children, className = "", delay = 0, as = "div" }: Reve
     <Tag
       ref={ref as React.Ref<never>}
       data-reveal
-      className={`${immersive ? "" : "transition-all duration-700 ease-out"} ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-      } ${className}`}
+      className={`${
+        immersive
+          // Blur boshlang'ich holat sifatida turadi; GSAP uni inline
+          // uslub bilan olib tashlaydi (inline CSS klassdan ustun).
+          // GSAP umuman kelmasa `visible` bo'ladi va klass olinadi.
+          ? visible
+            ? ""
+            : "blur-[6px]"
+          : "transition-all duration-700 ease-out"
+      } ${visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"} ${className}`}
       style={immersive ? undefined : { transitionDelay: `${delay}s` }}
     >
       {children}

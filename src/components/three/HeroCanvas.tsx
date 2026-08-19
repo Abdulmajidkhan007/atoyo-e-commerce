@@ -1,15 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { useImmersive } from "@/lib/ui-mode/useImmersive";
+import { useHeroPanels } from "@/lib/hero/usePanelData";
 import { SceneLoader } from "./SceneLoader";
 
 /**
  * 3D SAHNANING "DARVOZASI".
  *
- * Bu komponent uch ishni qiladi va shu sabab sahnaning o'zidan
- * ALOHIDA turadi (sahna faqat chizish bilan shug'ullanadi):
+ * Bu komponent qaror qabul qiladi, sahna esa faqat chizadi:
  *
  *   1) QAROR: og'ir sahna umuman chizilsinmi (`useImmersive` -
  *      foydalanuvchi 3D rejimni tanlagan va qurilma ko'taradi);
@@ -17,10 +17,11 @@ import { SceneLoader } from "./SceneLoader";
  *      (`ssr: false`) - klassik rejimdagi mijoz bu ~600KB ni umuman
  *      yuklamaydi. Yuklanguncha `Suspense` + minimal loader;
  *   3) TEJASH: sahna ekrandan chiqib ketsa yoki brauzer varag'i
- *      orqaga o'tsa render TO'XTAYDI (`active = false`).
+ *      orqaga o'tsa render TO'XTAYDI (`active = false`);
+ *   4) MA'LUMOT: suzuvchi panellarga jonli ma'lumot beradi
+ *      (kategoriyalar, yetkazish va'dasi, vitrinadagi mahsulot).
  *
- * 3D chizilmaydigan holatda o'rniga yengil gradient "poster"
- * ko'rinadi - joy bo'sh qolmaydi va sahifa "sakramaydi".
+ * 3D chizilmaydigan holatda o'rniga sezilmas yorug'lik qoladi.
  */
 
 const HeroScene = dynamic(() => import("./HeroScene"), {
@@ -28,24 +29,25 @@ const HeroScene = dynamic(() => import("./HeroScene"), {
   loading: () => <SceneLoader />,
 });
 
-/**
- * 3D chizilmaydigan holatdagi zaxira (CSS gradient, 0 KB JS).
- *
- * ATAYLAB juda sezilmas: ilgari bu yerda kattaroq va xira "dog'" bor
- * edi - u 3D o'rniga chizilganda sahifa nosoz ko'ringandek tuyulardi.
- * Endi u shunchaki mayin yorug'lik: bor-yo'qligi bilinmaydi.
- */
+/** 3D chizilmasa - shunchaki mayin yorug'lik (0 KB JS). */
 function PosterFallback() {
   return (
     <div
       aria-hidden
-      className="h-full w-full bg-[radial-gradient(circle_at_65%_45%,rgba(196,154,108,0.18),transparent_58%)]"
+      className="h-full w-full bg-[radial-gradient(circle_at_60%_45%,rgba(196,154,108,0.18),transparent_58%)]"
     />
   );
 }
 
-export function HeroCanvas({ className = "" }: { className?: string }) {
+export interface HeroCanvasProps {
+  className?: string;
+  /** Skroll progressi (0..1) - `useHeroScroll` yozadi. */
+  progress: RefObject<number>;
+}
+
+export function HeroCanvas({ className = "", progress }: HeroCanvasProps) {
   const { immersive, tier } = useImmersive();
+  const panels = useHeroPanels();
   const wrapper = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
 
@@ -78,8 +80,12 @@ export function HeroCanvas({ className = "" }: { className?: string }) {
     <div ref={wrapper} className={className}>
       {immersive ? (
         <Suspense fallback={<SceneLoader />}>
-          {/* Telefonda ("mid") sahna yengil sifatda chiziladi. */}
-          <HeroScene active={active} quality={tier === "high" ? "high" : "mid"} />
+          <HeroScene
+            active={active}
+            progress={progress}
+            panels={panels}
+            quality={tier === "high" ? "high" : "mid"}
+          />
         </Suspense>
       ) : (
         <PosterFallback />

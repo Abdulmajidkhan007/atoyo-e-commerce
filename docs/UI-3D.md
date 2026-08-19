@@ -26,9 +26,20 @@ src/components/motion/Reveal.tsx         # skrollda chiqish (GSAP yoki CSS)
 src/components/motion/GlassCard.tsx      # kartochka: rejimga qarab tanlaydi
 src/components/motion/GlassCardMotion.tsx # framer-motion qismi (lazy)
 
-src/components/three/HeroCanvas.tsx      # 3D "darvozasi": qaror + yuklash + to'xtatish
-src/components/three/HeroScene.tsx       # sahnaning o'zi (faqat chizadi)
+src/components/motion/SplitReveal.tsx    # sarlavha so'zma-so'z (blur -> aniq)
+
+src/components/three/HeroCanvas.tsx      # 3D "darvozasi": qaror + yuklash + to'xtatish + jonli ma'lumot
+src/components/three/HeroScene.tsx       # sahnani YIG'ADI (qaror qabul qilmaydi)
 src/components/three/SceneLoader.tsx     # minimal yuklanish ko'rsatkichi
+src/components/three/scene/
+  ProductShowpiece.tsx   # markaziy mahsulot: kosasimon moyka + gooseneck kran (koddan)
+  GpsMesh.tsx            # mini xarita: simli to'r + do'kon nuqtasi + radar to'lqini
+  FloatingPanel.tsx      # sahna ICHIDAGI shisha panel (jonli ma'lumot bilan)
+  panelTexture.ts        # panel matni - canvas tekstura (tashqi shriftsiz)
+  CameraRig.tsx          # sichqoncha parallaksi + skroll bilan yaqinlashish
+
+src/lib/motion/useHeroScroll.ts          # GSAP ScrollTrigger: pin + progress
+src/lib/hero/usePanelData.ts             # panellardagi JONLI ma'lumot
 src/components/home/Hero.tsx             # bosh sahifa hero bo'limi
 ```
 
@@ -102,6 +113,40 @@ shuning uchun **server rejimni O'QIMAYDI** va har doim standart
 lahza ham ko'rmasligi uchun `layout.tsx` da sahifa bo'yalishidan oldin
 ishlaydigan kichik skript `<html data-ui-mode="...">` ni qo'yadi — tema
 (dark mode) bilan bir xil naqsh.
+
+## 4a. Kinematik skroll (pin) va panellar
+
+**Skroll.** `useHeroScroll` GSAP ScrollTrigger yaratadi va progressni
+(0→1) `ref` ga yozadi; `CameraRig` uni `useFrame` ichida o'qib
+kamerani sahnaga yaqinlashtiradi. Progress `state` EMAS — aks holda
+skrollning har kadrida React qayta render bo'lardi.
+
+- **Kompyuterda** hero PIN qilinadi (`end: "+=140%"`): sahifa joyida
+  turadi, kamera ichkariga kiradi.
+- **Telefonda pin YO'Q.** Pin u yerda skrollni "ushlab qolgandek"
+  tuyuladi va do'kon uchun bu xarid oqimini buzadi — progress oddiy
+  skrolldan hisoblanadi.
+
+**Panellar sahna ICHIDA** (DOM emas): kamera aylanganda ular ham
+aylanadi, mahsulot ularni to'sib qoladi. Matn `panelTexture.ts` da
+2D canvas'ga chiziladi va teksturaga aylanadi.
+
+> **Nega troika/`<Text>` emas?** drei'ning `<Text>` i shrift faylini
+> talab qiladi va standart holatda uni Google CDN'dan tortadi — CSP
+> buni bloklaydi, ya'ni matn umuman ko'rinmasdi. Canvas-tekstura
+> tashqi faylsiz ishlaydi va ~150 KB kutubxonani tejaydi.
+
+**Panel joylashuvi KADRGA qarab hisoblangan.** Kompyuterda kanvas
+bo'limning o'ng 55% ini egallaydi; `fov: 38°` va ~6.5 masofada
+ko'rinadigan kenglik ~4.2 birlik, ya'ni `x` chegarasi taxminan ±2.1.
+Panel kengligi 2.1 bo'lsa markazi -1.05 dan chapda bo'lmasligi kerak,
+aks holda matnning yarmi kadrdan chiqib ketadi (bir marta shunday
+bo'lgan).
+
+**Panellardagi ma'lumot JONLI** (`usePanelData.ts`): kategoriyalar
+soni/nomlari, `settings/delivery` dagi yetkazish va'dasi va
+vitrinadagi mahsulot (nomi + dona narxi). Admin sozlamani
+o'zgartirsa hero ham o'zgaradi.
 
 ## 5. Sinash
 

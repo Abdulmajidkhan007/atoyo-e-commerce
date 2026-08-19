@@ -1,251 +1,130 @@
 "use client";
 
-import { useMemo, useRef } from "react";
-import { Canvas, useFrame, type ThreeElements } from "@react-three/fiber";
-import { ContactShadows, Environment, Float, Lightformer } from "@react-three/drei";
-import { MathUtils, type Group } from "three";
+import type { RefObject } from "react";
+import { Canvas } from "@react-three/fiber";
+import { ContactShadows, Environment, Lightformer } from "@react-three/drei";
+import { ProductShowpiece } from "./scene/ProductShowpiece";
+import { FloatingPanel } from "./scene/FloatingPanel";
+import { CameraRig } from "./scene/CameraRig";
+import { GpsMesh } from "./scene/GpsMesh";
+import type { HeroPanels } from "@/lib/hero/usePanelData";
 
 /**
- * BOSH SAHIFADAGI 3D SAHNA — santexnika shakllari.
+ * HERO SAHNASI — "luxury product shot".
  *
- * MUHIM QAROR: sahna TASHQI FAYLSIZ (.glb/.hdr) qurilgan - hamma
- * shakl koddan yasaladi. Sabab ikkita:
- *   1) saytning CSP qoidasi tashqi hostlarni bloklaydi
- *      (`lib/http/csp.ts`), ya'ni CDN'dan model tortib bo'lmaydi;
- *   2) fayl yo'q - yuklanish tez, keshlash muammosi yo'q.
+ * Tuzilishi ATAYLAB sodda: bu fayl faqat SAHNANI YIG'ADI, hech
+ * qanday qaror qabul qilmaydi. Qaror (chizilsinmi, qaysi sifatda)
+ * `HeroCanvas` da, kamera mantiqi `CameraRig` da, shakllar
+ * `ProductShowpiece` da, panellar `FloatingPanel` da.
  *
- * Yorug'lik ham shunday: `Environment` ichidagi `Lightformer` lar
- * kubik xaritani XOTIRADA yasaydi (HDR fayl yuklanmaydi) - metall
- * yuzalar aks etadigan bo'ladi.
+ * TASHQI FAYL YO'Q: model ham (`.glb`), muhit xaritasi ham (`.hdr`)
+ * yuklanmaydi — CSP tashqi hostni bloklaydi. Yorug'lik `Lightformer`
+ * plitalari bilan xotirada quriladi, matn esa canvas-teksturada.
  *
- * Ranglar brend palitrasidan: `#C49A6C` (oltin urg'u) va `#072D40`
- * (chuqur petrol ko'k) - `tailwind.config.ts` bilan bir xil.
+ * `quality`:
+ *   • `"high"` (kompyuter) — soya, yuqori piksel zichligi, to'liq muhit;
+ *   • `"mid"`  (telefon)   — soyasiz, past zichlik, yorug'lik kuchliroq.
  */
 
 const GOLD = "#C49A6C";
-const GOLD_DARK = "#8A6640";
-const STEEL = "#A8C6D6";
 
-/** Metall material - hamma detal uchun bir xil "til". */
-function MetalMaterial({ color = GOLD, roughness = 0.22 }: { color?: string; roughness?: number }) {
-  return <meshStandardMaterial color={color} metalness={1} roughness={roughness} envMapIntensity={1.1} />;
-}
-
-/** BURCHAK MUFTA: chorak halqa + ikki uchidagi quvur. */
-function PipeElbow(props: ThreeElements["group"]) {
-  return (
-    <group {...props}>
-      <mesh rotation={[0, 0, 0]}>
-        {/* radius, quvur qalinligi, segmentlar, yoy = 90° */}
-        <torusGeometry args={[1, 0.28, 24, 48, Math.PI / 2]} />
-        <MetalMaterial />
-      </mesh>
-      <mesh position={[1, -0.45, 0]} rotation={[0, 0, 0]}>
-        <cylinderGeometry args={[0.28, 0.28, 0.9, 24]} />
-        <MetalMaterial />
-      </mesh>
-      <mesh position={[-0.45, 1, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.28, 0.28, 0.9, 24]} />
-        <MetalMaterial />
-      </mesh>
-      {/* Uchlaridagi gayka halqalari - siluetni "santexnika" qiladi. */}
-      <mesh position={[1, -0.85, 0]}>
-        <cylinderGeometry args={[0.34, 0.34, 0.16, 6]} />
-        <MetalMaterial color={GOLD_DARK} roughness={0.35} />
-      </mesh>
-      <mesh position={[-0.85, 1, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.34, 0.34, 0.16, 6]} />
-        <MetalMaterial color={GOLD_DARK} roughness={0.35} />
-      </mesh>
-    </group>
-  );
-}
-
-/** KRAN (smesitel): tagi, tanasi, egri jo'mragi va dastagi. */
-function Faucet(props: ThreeElements["group"]) {
-  return (
-    <group {...props}>
-      <mesh position={[0, -0.9, 0]}>
-        <cylinderGeometry args={[0.5, 0.55, 0.18, 32]} />
-        <MetalMaterial roughness={0.3} />
-      </mesh>
-      <mesh position={[0, -0.15, 0]}>
-        <cylinderGeometry args={[0.26, 0.3, 1.4, 32]} />
-        <MetalMaterial />
-      </mesh>
-      {/* Jo'mrak - yarim halqa. */}
-      <mesh position={[0, 0.55, 0]} rotation={[0, 0, Math.PI]}>
-        <torusGeometry args={[0.6, 0.13, 20, 40, Math.PI / 1.6]} />
-        <MetalMaterial />
-      </mesh>
-      <mesh position={[0.32, 0.62, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.16, 0.16, 0.5, 20]} />
-        <MetalMaterial color={STEEL} roughness={0.15} />
-      </mesh>
-    </group>
-  );
-}
-
-/** RADIATOR: bir necha yupqa qovurg'a (qatorlar `useMemo` bilan). */
-function Radiator(props: ThreeElements["group"]) {
-  const fins = useMemo(() => [0, 1, 2, 3, 4], []);
-  return (
-    <group {...props}>
-      {fins.map((index) => (
-        <mesh key={index} position={[index * 0.26 - 0.52, 0, 0]}>
-          <boxGeometry args={[0.16, 1.5, 0.5]} />
-          <MetalMaterial color={index % 2 === 0 ? GOLD : GOLD_DARK} roughness={0.4} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.82, 0]}>
-        <boxGeometry args={[1.5, 0.16, 0.5]} />
-        <MetalMaterial color={STEEL} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, -0.82, 0]}>
-        <boxGeometry args={[1.5, 0.16, 0.5]} />
-        <MetalMaterial color={STEEL} roughness={0.3} />
-      </mesh>
-    </group>
-  );
-}
-
-/**
- * Sahna mazmuni: shakllar guruhi sekin aylanadi va SICHQONCHAGA
- * muloyim javob beradi (`lerp` - keskin sakramaydi).
- */
-function Composition({ compact = false }: { compact?: boolean }) {
-  const group = useRef<Group>(null);
-
-  useFrame((state, delta) => {
-    const node = group.current;
-    if (!node) return;
-
-    // `state.pointer` — -1..1 oralig'idagi kursor holati.
-    const targetY = state.pointer.x * 0.4;
-    const targetX = -state.pointer.y * 0.25;
-    // `damp` kadr tezligiga bog'liq emas: 30 fps da ham, 120 fps da
-    // ham harakat bir xil tezlikda tuyuladi.
-    node.rotation.y = MathUtils.damp(node.rotation.y, targetY, 3, delta);
-    node.rotation.x = MathUtils.damp(node.rotation.x, targetX, 3, delta);
-  });
-
-  /**
-   * JOYLASHUV ikki xil, chunki kadr shakli ham ikki xil:
-   *   • kompyuterda kadr BALAND (hero'ning o'ng yarmi) - shakllar
-   *     diagonal bo'yicha joylashadi;
-   *   • telefonda kadr KENG va PAST (412x232 atrofida) - shakllar
-   *     bir qatorga yoyiladi, aks holda o'rtada kichkina to'planib
-   *     qoladi va atrofi bo'sh ko'rinadi.
-   */
-  const layout = compact
-    ? {
-        elbow: [-2.1, 0.15, 0] as const,
-        faucet: [0.35, -0.05, 0.2] as const,
-        radiator: [2.2, -0.1, -0.4] as const,
-      }
-    : {
-        elbow: [-1.7, 0.4, 0] as const,
-        faucet: [0.9, 0.15, 0.4] as const,
-        radiator: [0.2, -1.15, -1.2] as const,
-      };
-
-  return (
-    // Kompyuterda guruh biroz chapga va yuqoriga surilgan: aks holda
-    // kompozitsiya kadrning o'ng pastki burchagiga yopishib qoladi.
-    <group ref={group} position={compact ? [0, 0, 0] : [-0.25, 0.35, 0]} scale={compact ? 1 : 0.92}>
-      <Float speed={1.1} rotationIntensity={0.35} floatIntensity={0.7}>
-        <PipeElbow position={layout.elbow} rotation={[0.2, 0.5, 0.4]} scale={0.85} />
-      </Float>
-      <Float speed={1.4} rotationIntensity={0.25} floatIntensity={0.5}>
-        <Faucet position={layout.faucet} rotation={[0.1, -0.35, 0.12]} scale={0.95} />
-      </Float>
-      <Float speed={0.9} rotationIntensity={0.3} floatIntensity={0.6}>
-        <Radiator position={layout.radiator} rotation={[0.15, 0.4, -0.08]} scale={0.7} />
-      </Float>
-    </group>
-  );
-}
-
-/**
- * Sahna.
- *
- * `frameloop` TASHQARIDAN boshqariladi: sahna ko'rinmay qolsa yoki
- * brauzer varag'i orqaga o'tsa `"never"` beriladi va GPU butunlay
- * to'xtaydi (batareya tejaladi).
- *
- * `quality`:
- *   • `"high"` (kompyuter) - to'liq: soya, yuqori piksel zichligi;
- *   • `"mid"`  (telefon)   - soyasiz, past piksel zichligi va kichikroq
- *     atrof-muhit xaritasi. Sahna KO'RINADI, lekin telefonni qizdirmaydi.
- */
-export default function HeroScene({
-  active,
-  quality = "high",
-}: {
+export interface HeroSceneProps {
+  /** Sahna ko'rinib turibdimi (yo'q bo'lsa render to'xtaydi). */
   active: boolean;
+  /** Skroll progressi (GSAP yozadi, `CameraRig` o'qiydi). */
+  progress: RefObject<number>;
+  /** Suzuvchi panellardagi JONLI ma'lumot. */
+  panels: HeroPanels;
   quality?: "mid" | "high";
-}) {
+}
+
+export default function HeroScene({ active, progress, panels, quality = "high" }: HeroSceneProps) {
   const light = quality === "mid";
 
   return (
     <Canvas
       frameloop={active ? "always" : "never"}
-      // Retina ekranda 3x piksel chizish shart emas; telefonda undan ham kam.
-      dpr={light ? [1, 1.25] : [1, 1.5]}
-      // Telefonda kamera yaqinroq: kadr past va keng, shakllar
-      // ekranni to'ldirishi kerak.
-      camera={{ position: [0, 0, light ? 5.4 : 6.2], fov: 42 }}
+      dpr={light ? [1, 1.25] : [1, 2]}
+      camera={{ position: [3.1, 2.0, 5.6], fov: 38 }}
       gl={{
         antialias: !light,
         alpha: true,
-        powerPreference: light ? "default" : "high-performance",
+        powerPreference: "high-performance",
       }}
       style={{ pointerEvents: "none" }}
     >
-      {/* Telefonda atrof-muhit xaritasi kichikroq (64px) - aks etish
-          kamayadi, shuning uchun to'g'ridan-to'g'ri yorug'lik biroz
-          kuchliroq beriladi, aks holda metall qoraygan ko'rinadi. */}
-      <ambientLight intensity={light ? 0.9 : 0.55} />
-      <directionalLight position={[4, 6, 5]} intensity={light ? 2.3 : 1.6} />
-      {/* Old tomondan qo'shimcha yorug'lik - telefonda metallning
-          yorqin qirralari ko'rinib tursin. */}
-      {light && <directionalLight position={[-3, 2, 6]} intensity={1.2} />}
-      <pointLight position={[-5, -2, 3]} intensity={35} color={GOLD} distance={14} />
+      <CameraRig progress={progress} compact={light} />
 
-      <Composition compact={light} />
+      <ambientLight intensity={light ? 0.75 : 0.45} />
+      <directionalLight position={[4, 6, 4]} intensity={light ? 2.2 : 1.7} />
+      <pointLight position={[-4, 1, 3]} intensity={28} color={GOLD} distance={14} />
 
-      {/* Yerdagi mayin soya - shakllar "havoda osilib" qolmaydi.
-          Telefonda soya alohida render bosqichi bo'lgani uchun
-          o'tkazib yuboriladi. */}
-      {!light && (
-        <ContactShadows position={[0, -2.4, 0]} opacity={0.35} scale={12} blur={2.6} far={4} />
-      )}
+      <ProductShowpiece compact={light} />
 
       {/*
-        HDR FAYLSIZ atrof-muhit: quyidagi "yorug'lik plitalari"
-        kubik xaritani xotirada yasaydi. Metall yuzalar aynan shu
-        aks etishlar hisobiga tirik ko'rinadi.
+        SUZUVCHI PANELLAR — turli CHUQURLIKDA (Z), shuning uchun kamera
+        yaqinlashganda ular bir-biridan ajralib, yonidan o'tib ketadi.
+        Telefonda ikkitasi qoladi: uchtasi kadrga sig'maydi.
+
+        JOYLASHUV KADRGA QARAB HISOBLANGAN. Kompyuterda kanvas
+        bo'limning o'ng 55% ini egallaydi; fov 38° va masofa ~6.5
+        bo'lganda ko'rinadigan kenglik ~4.2 birlik, ya'ni x chegarasi
+        taxminan ±2.1. Kengligi 2.1 bo'lgan panel markazi -1.05 dan
+        chapda bo'lsa CHETDAN CHIQIB ketadi - ilgari aynan shunday
+        bo'lgan va matnning yarmi ko'rinmasdi.
       */}
-      <Environment resolution={light ? 64 : 128}>
-        {/* Telefonda xarita kichik va aks etish "yo'qoladi" - shuning
-            uchun plitalar yorqinroq beriladi, aks holda metall
-            jigarrang-qora bo'lib ko'rinadi. */}
+      <FloatingPanel
+        panel={panels.delivery}
+        position={light ? [-0.9, 1.3, 0.6] : [-0.9, 1.55, 0.9]}
+        rotation={[0, 0.4, 0]}
+        width={light ? 1.9 : 2.1}
+        phase={0}
+      />
+      <FloatingPanel
+        panel={panels.catalog}
+        position={light ? [0.95, -1.6, 0.7] : [1.02, 0.62, -0.3]}
+        rotation={[0, -0.42, 0]}
+        width={light ? 1.9 : 2.0}
+        speed={0.42}
+        phase={1.9}
+      />
+      {!light && (
+        <FloatingPanel
+          panel={panels.product}
+          position={[-0.82, -1.62, 1.3]}
+          rotation={[0, 0.28, 0]}
+          width={1.9}
+          speed={0.62}
+          phase={3.4}
+        />
+      )}
+
+      {/* Mini xarita: do'kon nuqtasi va undan tarqaladigan radar
+          to'lqini ("15 km atrofga yetkazamiz" degan hissiyot).
+          Telefonda kadr tor - u yerda chizilmaydi. */}
+      {!light && <GpsMesh position={[1.28, -1.5, 0.95]} scale={0.68} />}
+
+      {!light && (
+        <ContactShadows position={[0, -1.02, 0]} opacity={0.42} scale={11} blur={2.4} far={4.5} />
+      )}
+
+      <Environment resolution={light ? 64 : 160}>
         <Lightformer
-          intensity={light ? 3.2 : 2.2}
+          intensity={light ? 3.4 : 2.4}
           position={[0, 4, 2]}
-          scale={[8, 2, 1]}
+          scale={[9, 2, 1]}
           color="#ffffff"
         />
         <Lightformer
-          intensity={light ? 2.1 : 1.4}
-          position={[-4, 1, 2]}
-          scale={[4, 4, 1]}
+          intensity={light ? 2.2 : 1.6}
+          position={[-5, 1, 2]}
+          scale={[5, 5, 1]}
           color={GOLD}
         />
         <Lightformer
-          intensity={light ? 1.6 : 1}
-          position={[4, -1, 1]}
-          scale={[4, 4, 1]}
+          intensity={light ? 1.7 : 1.2}
+          position={[5, -1, 1]}
+          scale={[5, 5, 1]}
           color="#5E8CA6"
         />
       </Environment>
