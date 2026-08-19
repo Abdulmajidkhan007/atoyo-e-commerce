@@ -710,6 +710,31 @@ Tartib:
    hisobi bilan kirib ruxsat beriladi → refresh token avtomatik
    yoziladi. "Tekshirish" tugmasi kanal nomini ko'rsatadi.
 
+### 2a. Noto'g'ri YouTube kanalga ulanib qolgan bo'lsa
+
+Kanal odatda **alohida Google hisobida** yoki **brend akkauntda**
+turadi. Brauzerda boshqa Google hisobi ochiq bo'lsa, Google ilgari
+jimgina o'shanga ulab yuborardi — sayt "boshqa kanalga" ulanardi.
+Endi ulanish so'rovi `prompt=consent select_account` bilan ketadi,
+ya'ni **hisob tanlash oynasi har safar chiqadi**.
+
+Tartib:
+
+1. Sozlamalar → Ijtimoiy tarmoqlar → **"YouTube'ga ulanish"**.
+2. Google **hisob tanlash** oynasida kanal egasining hisobini tanlang
+   (kerak bo'lsa "Boshqa hisob bilan kirish").
+3. Keyingi oynada Google **qaysi kanal** nomidan ruxsat berilishini
+   so'raydi — shaxsiy hisobni emas, **kanal (brend akkaunt)** ni
+   tanlang. Bu oyna faqat hisobda bir nechta kanal bo'lsa chiqadi.
+4. Ruxsat bering — refresh token yangisi bilan almashadi (eskisi
+   ustiga yoziladi, alohida "uzish" shart emas).
+5. **"Tekshirish"** tugmasi qaysi kanal ulanganini yozadi. Noto'g'ri
+   bo'lsa 1-qadamdan qaytaring.
+
+> Agar kanal Google Workspace hisobida bo'lsa va tashkilot tashqi
+> dasturlarni bloklagan bo'lsa, admin `youtube.upload` ruxsatini
+> ochishi kerak.
+
 > **"So'rov tasdiqlanmadi (state)"** xatosi haqida: OAuth ning CSRF
 > `state` qiymati avval cookie'da saqlanardi, lekin **Firebase Hosting
 > backendga `__session` dan boshqa HECH QANDAY cookie'ni uzatmaydi** —

@@ -434,6 +434,14 @@ export function SocialSettingsForm({ owner }: Props) {
               Manzil oxirida bo&apos;sh joy yoki qo&apos;shimcha &quot;/&quot; bo&apos;lmasin —
               Meta ham, Google ham harfma-harf solishtiradi.
             </p>
+            <p className="mt-2">
+              <b>Noto&apos;g&apos;ri YouTube kanalga ulanib qolgan bo&apos;lsa:</b> yana
+              &quot;YouTube&apos;ga ulanish&quot; tugmasini bosing — endi Google har safar
+              <b> hisob tanlash</b> oynasini ko&apos;rsatadi. Kanal egasining Google hisobini
+              tanlang, so&apos;ng ro&apos;yxatdan <b>kanal (brend akkaunt)</b> ni tanlang —
+              shaxsiy hisobni emas. Oxirida &quot;Tekshirish&quot; tugmasi qaysi kanal
+              ulanganini yozadi.
+            </p>
           </div>
           <p className="text-xs text-navy-300">
             Kalitlar Firestore&apos;ning <code>secrets/social</code> hujjatida saqlanadi — u

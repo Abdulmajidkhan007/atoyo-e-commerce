@@ -6,8 +6,8 @@ Ya'ni yoqish/o'chirish — bitta env masalasi, kod o'zgarmaydi.
 
 ## Kerak bo'ladimi?
 
-Hozircha **yo'q**. Firestore qidiruvi tokenlar bilan ishlaydi va
-mahsulot 1000 tagacha bo'lganda sezilarli sekinlashmaydi. Motor
+**Endi ha.** Katalogda 3800+ mahsulot bor, ya'ni quyidagi
+sabablarning birinchi ikkitasi allaqachon yuzaga kelgan. Motor
 quyidagilar paydo bo'lganda kerak:
 
 - mahsulot 2000+ ga yetdi va qidiruv sekinlashdi;
@@ -23,6 +23,46 @@ quyidagilar paydo bo'lganda kerak:
 | Oddiy VPS | 4-6 $/oy | Har qanday provayder, 1 GB RAM yetadi |
 
 Pul cheklangan bo'lsa **Oracle Always Free** — eng to'g'ri variant.
+
+## Eng tez yo'l: Typesense Cloud (~20 $/oy, 10 daqiqa)
+
+1. `cloud.typesense.org` → Google/GitHub bilan kirish.
+2. **Launch cluster**: eng kichik konfiguratsiya (0.5 GB RAM) 10 000
+   mahsulotga bemalol yetadi. Region — **Frankfurt** (Yevropa
+   O'zbekistonga eng yaqin).
+3. Klaster ko'tarilgach **Generate API key** → `Admin API key` ni
+   nusxalang; `Hostname` ni ham (`xxx.a1.typesense.net`).
+4. Pastdagi **"Saytga ulash"** bo'limiga o'ting.
+
+Server boshqarish, yangilash, HTTPS — hammasi ular tomonda. Pul
+to'lashni xohlamasangiz keyingi bo'lim (0 $).
+
+## 0 $ yo'l: Oracle Cloud Always Free (qadamma-qadam)
+
+Oracle **doimiy bepul** ARM serveri beradi (4 yadro, 24 GB RAM) —
+Typesense uchun bu juda ko'p. Karta so'raydi, lekin bepul rejada
+pul yechilmaydi.
+
+1. **Ro'yxatdan o'tish.** `cloud.oracle.com` → Start for free.
+   Region tanlaganda **Germany Central (Frankfurt)** yoki
+   **UAE (Dubai)** ni oling — keyin O'ZGARTIRIB BO'LMAYDI.
+2. **Server yaratish.** Menu → Compute → **Instances** → Create.
+   - Image: **Ubuntu 22.04**;
+   - Shape: **Ampere / VM.Standard.A1.Flex**, 1 yadro + 6 GB RAM
+     (bu ham "Always Free" ichida);
+   - SSH kalit: **Save private key** — faylni yo'qotmang.
+3. **Portni ochish.** Instance sahifasida → Subnet → Security List →
+   **Add Ingress Rule**: Source `0.0.0.0/0`, TCP, port **443**
+   (8108 ni internetga OCHMANG).
+   Serverning o'zida ham:
+   ```bash
+   sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+   sudo netfilter-persistent save
+   ```
+4. **DNS.** Domeningizda (`atoyo.uz`) `search` uchun **A yozuv**
+   qo'shing → serverning Public IP si. Domen bo'lmasa Typesense
+   Cloud'ni oling — HTTPS'siz kalitni internetga chiqarib bo'lmaydi.
+5. **Serverga kirish va o'rnatish** — quyidagi bo'limdagi buyruqlar.
 
 ## O'zi hostlangan holda o'rnatish (Docker)
 

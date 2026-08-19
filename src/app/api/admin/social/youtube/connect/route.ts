@@ -42,9 +42,14 @@ export async function GET() {
   url.searchParams.set("redirect_uri", youtubeRedirectUri());
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", YOUTUBE_SCOPE);
-  // Refresh token faqat shu ikkovi bilan qaytadi.
+  // Refresh token faqat `access_type=offline` + `prompt=consent` bilan
+  // qaytadi. `select_account` esa HISOB TANLASH oynasini MAJBURAN
+  // ochadi: brauzerda boshqa Google hisobi ochiq bo'lsa Google jimgina
+  // o'shanga ulab yuborardi va sayt "boshqa kanalga" ulanib qolardi
+  // (kanal odatda alohida hisobda/brend akkauntda bo'ladi). Endi
+  // qaysi hisob va qaysi kanal ekanini har safar tanlash mumkin.
   url.searchParams.set("access_type", "offline");
-  url.searchParams.set("prompt", "consent");
+  url.searchParams.set("prompt", "consent select_account");
   url.searchParams.set("state", state);
 
   return NextResponse.redirect(url.toString());
