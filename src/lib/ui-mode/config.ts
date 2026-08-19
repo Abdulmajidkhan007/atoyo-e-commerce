@@ -32,6 +32,15 @@ export const UI_MODE_STORAGE_KEY = "atoyo.ui-mode";
 /** Cookie nomi (zaxira; server unga tayanmaydi - yuqoridagi izohga qarang). */
 export const UI_MODE_COOKIE = "atoyo_ui_mode";
 
+/**
+ * "BARIBIR YOQISH" bayrog'i.
+ *
+ * Qurilma sinovi 3D ni o'chirib qo'ysa (kam xotira, tejamkor rejim...)
+ * foydalanuvchi uni MAJBURAN yoqishi mumkin. Tanlov shu kalitda
+ * saqlanadi va faqat o'sha brauzerga tegishli.
+ */
+export const FORCE_3D_STORAGE_KEY = "atoyo.ui-3d-force";
+
 /** `<html data-ui-mode="...">` - CSS shu atribut orqali rejimni biladi. */
 export const UI_MODE_ATTRIBUTE = "data-ui-mode";
 
@@ -100,3 +109,25 @@ try {
   document.documentElement.setAttribute('${UI_MODE_ATTRIBUTE}', '${DEFAULT_UI_MODE}');
 }
 `;
+
+
+/** "Baribir yoqish" belgilanganmi (faqat brauzerda). */
+export function readForce3d(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(FORCE_3D_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** "Baribir yoqish" holatini saqlaydi. */
+export function persistForce3d(value: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (value) window.localStorage.setItem(FORCE_3D_STORAGE_KEY, "1");
+    else window.localStorage.removeItem(FORCE_3D_STORAGE_KEY);
+  } catch {
+    /* localStorage yopiq - majburiy rejim shu sessiyada ishlamaydi */
+  }
+}

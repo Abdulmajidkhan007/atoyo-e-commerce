@@ -7,6 +7,7 @@ import { useImmersive } from "@/lib/ui-mode/useImmersive";
 import { useHeroScroll } from "@/lib/motion/useHeroScroll";
 import { HeroCanvas } from "@/components/three/HeroCanvas";
 import { SplitReveal } from "@/components/motion/SplitReveal";
+import { Immersive3dNotice } from "@/components/three/Immersive3dNotice";
 
 /**
  * BOSH SAHIFA "HERO" BO'LIMI — ikki ko'rinishda.
@@ -69,6 +70,10 @@ export function Hero() {
         <Button component={Link} href="/katalog" variant="contained" color="primary" size="large">
           {dict.home.viewCatalog}
         </Button>
+
+        {/* 3D tanlangan, lekin qurilma rad etgan bo'lsa - sababi va
+            "baribir yoqish" tugmasi. Aks holda hech narsa chizilmaydi. */}
+        <Immersive3dNotice className="mt-1" />
       </div>
 
       {/*

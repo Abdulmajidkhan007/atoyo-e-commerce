@@ -65,14 +65,24 @@ Pog'onalar:
 
 | Pog'ona | Kim | Nima chiziladi |
 |---|---|---|
-| `"low"` | `prefers-reduced-motion`, trafik tejash, 2G/3G, WebGL yo'q, <3GB xotira yoki <4 yadro | 3D **yo'q** — o'rniga sezilmas yorug'lik |
+| `"low"` | `prefers-reduced-motion`, trafik tejash, 2G/3G, WebGL yo'q, juda kam xotira yoki <4 yadro | 3D **yo'q** — sababi ekranda yoziladi va "Baribir yoqish" tugmasi chiqadi |
 | `"mid"` | telefon/planshet (ekran < 768px) | Sahna **bor**, lekin soyasiz, past piksel zichligi (`dpr ≤ 1.25`), kichikroq atrof-muhit xaritasi |
 | `"high"` | kompyuter | To'liq sifat |
 
-> **Tarix:** avval `"ekran < 768px → low"` degan shart bor edi va
-> telefonda 3D UMUMAN chizilmasdi — tugmada "3D" yozuv turardi-yu,
-> ekranda hech qanday 3D yo'q edi. Mijozlarning ko'pchiligi
-> telefonda, shuning uchun endi telefon ham sahnani ko'radi.
+> **Tarix (ikki marta yiqilgan joy):**
+> 1. Avval `"ekran < 768px → low"` sharti bor edi va telefonda 3D
+>    umuman chizilmasdi.
+> 2. Keyin xotira chegarasi 3GB qilib qo'yilgan edi — Chrome
+>    `deviceMemory` ni 0.25/0.5/1/2/4/8 qadamlari bilan beradi va
+>    **3GB telefon `2` deb ko'rsatiladi**, ya'ni o'rta darajali
+>    telefonlarda 3D yana chizilmadi. Foydalanuvchi "3D" tugmasini
+>    bosib, ekranda bo'sh joy ko'rardi.
+>
+> Shu sabab endi: chegara past (`deviceMemory >= 2`), sabab ochiq
+> yoziladi (`TIER_REASON_TEXT`) va foydalanuvchi **"Baribir yoqish"**
+> bilan qarorni bekor qila oladi (`useImmersive().setForced`,
+> `localStorage: atoyo.ui-3d-force`). Yagona qattiq sabab — WebGL
+> yo'qligi (`canForce: false`).
 
 Faqat foydalanuvchi tanlovi kerak bo'lsa — `useUiMode().isModern`.
 

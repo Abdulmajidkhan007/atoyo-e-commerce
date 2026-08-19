@@ -310,12 +310,16 @@ Uchta qoida:
    hal qiladi (`lib/ui-mode/useImmersive.ts`): foydalanuvchi 3D ni
    tanlagan VA qurilma ko'taradi. Qurilma pog'onasi uchta
    (`useDeviceTier`): `low` — 3D yo'q (`prefers-reduced-motion`,
-   `saveData`, 2G/3G, WebGL yo'q, <3GB/<4 yadro); `mid` — TELEFON,
-   sahna yengil sifatda (soyasiz, `dpr ≤ 1.25`); `high` — kompyuter,
-   to'liq sifat. Komponentda bu shartni QAYTA yozmang.
+   `saveData`, 2G/3G, WebGL yo'q, juda kam xotira/yadro); `mid` —
+   TELEFON, sahna yengil sifatda (soyasiz, `dpr ≤ 1.25`); `high` —
+   kompyuter, to'liq sifat. Komponentda bu shartni QAYTA yozmang.
    **Telefonni "yaroqsiz" deb chiqarib tashlamang** — mijozlarning
-   ko'pchiligi telefonda va bir marta aynan shu sabab 3D umuman
-   ko'rinmagan edi.
+   ko'pchiligi telefonda va IKKI marta aynan shu sabab 3D umuman
+   ko'rinmagan (avval ekran kengligi, keyin `deviceMemory` chegarasi:
+   Chrome 3GB telefonni **2** deb ko'rsatadi). Shu sababli 3D
+   o'chirilsa SABABI ekranda yoziladi va foydalanuvchi
+   **"Baribir yoqish"** bilan qarorni bekor qila oladi
+   (`Immersive3dNotice`, `localStorage: atoyo.ui-3d-force`).
 2. **`three` / `gsap` / `framer-motion` statik import QILINMAYDI.**
    Faqat dinamik: `HeroCanvas` (`next/dynamic`, `ssr:false`),
    `Reveal` (`await import("gsap")`), `GlassCard` (`LazyMotion`).

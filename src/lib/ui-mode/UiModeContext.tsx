@@ -4,7 +4,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import {
   DEFAULT_UI_MODE,
   UI_MODE_ATTRIBUTE,
+  persistForce3d,
   persistUiMode,
+  readForce3d,
   readStoredUiMode,
   type UiMode,
 } from "./config";
@@ -32,6 +34,17 @@ interface UiModeState {
   isModern: boolean;
   setMode: (mode: UiMode) => void;
   toggle: () => void;
+  /**
+   * "BARIBIR YOQISH": qurilma sinovi 3D ni rad etgan bo'lsa ham
+   * foydalanuvchi uni majburan yoqqan.
+   *
+   * MUHIM: bu holat AYNAN SHU YERDA (kontekstda) turadi. Ilgari u
+   * `useImmersive` ichidagi oddiy `useState` edi va har komponent
+   * o'z nusxasini ko'rardi: tugma o'zida yoqilardi, sahna esa
+   * bundan bexabar qolardi - tugma "ishlamas" edi.
+   */
+  force3d: boolean;
+  setForce3d: (value: boolean) => void;
 }
 
 const UiModeContext = createContext<UiModeState | null>(null);
@@ -39,14 +52,17 @@ const UiModeContext = createContext<UiModeState | null>(null);
 export function UiModeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<UiMode>(DEFAULT_UI_MODE);
   const [ready, setReady] = useState(false);
+  const [force3d, setForce3dState] = useState(false);
 
   // Saqlangan tanlov - faqat brauzerda, mount'dan keyin.
   useEffect(() => {
     const stored = readStoredUiMode();
+    const storedForce = readForce3d();
     // Mikrovazifada: effekt ichida to'g'ridan-to'g'ri setState chaqirish
     // React compiler qoidasini buzadi va ortiqcha render beradi.
     const timer = setTimeout(() => {
       setModeState(stored);
+      setForce3dState(storedForce);
       setReady(true);
     }, 0);
     return () => clearTimeout(timer);
@@ -62,6 +78,11 @@ export function UiModeProvider({ children }: { children: React.ReactNode }) {
     persistUiMode(next);
   }, []);
 
+  const setForce3d = useCallback((value: boolean) => {
+    setForce3dState(value);
+    persistForce3d(value);
+  }, []);
+
   const value = useMemo<UiModeState>(
     () => ({
       mode,
@@ -69,8 +90,10 @@ export function UiModeProvider({ children }: { children: React.ReactNode }) {
       isModern: mode === "3d-modern",
       setMode,
       toggle: () => setMode(mode === "classic" ? "3d-modern" : "classic"),
+      force3d,
+      setForce3d,
     }),
-    [mode, ready, setMode]
+    [mode, ready, setMode, force3d, setForce3d]
   );
 
   return <UiModeContext.Provider value={value}>{children}</UiModeContext.Provider>;
@@ -91,5 +114,7 @@ export function useUiMode(): UiModeState {
     isModern: false,
     setMode: () => {},
     toggle: () => {},
+    force3d: false,
+    setForce3d: () => {},
   };
 }
