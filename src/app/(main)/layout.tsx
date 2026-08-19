@@ -6,6 +6,7 @@ import { getLocale } from "@/lib/i18n/server";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AssistantWidget } from "@/components/ai/AssistantWidget";
 import { organizationJsonLd } from "@/lib/seo/json-ld";
+import { WorldCanvas } from "@/components/world/WorldCanvas";
 
 // Footer admin tomonidan tahrirlanadigan sayt sozlamalarini (kontakt,
 // ijtimoiy tarmoqlar) jonli o'qiydi, shuning uchun bu layout ostidagi
@@ -20,6 +21,12 @@ export default async function MainLayout({ children }: { children: React.ReactNo
     <LocaleProvider initialLocale={locale}>
       {/* Do'kon va sayt haqidagi sxema - hamma sahifada. */}
       <JsonLd data={organizationJsonLd()} />
+      {/* 3D DUNYO: butun do'kon ortidagi yagona sahna. Sahifa
+          almashganda qayta yaratilmaydi - kamera boshqa "bekat"ga
+          uchib boradi (`lib/world/stations.ts`). Klassik rejimda
+          umuman chizilmaydi. */}
+      <WorldCanvas />
+
       <div className="flex min-h-screen flex-col">
         <Header />
         <main className="flex-1 pb-16 md:pb-0">{children}</main>

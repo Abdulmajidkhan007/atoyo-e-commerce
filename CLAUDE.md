@@ -338,6 +338,23 @@ qilinadi, TELEFONDA PIN YO'Q — u yerda pin skrollni "ushlab qolgandek"
 tuyuladi. Progress `ref` orqali beriladi (state emas), aks holda
 skrollning har kadrida React qayta render bo'lardi.
 
+**3D DUNYO (butun sayt).** 3D rejimda sayt bitta uzluksiz makon:
+`(main)/layout.tsx` da bir marta o'rnatilgan `WorldCanvas` sahifalar
+ORTIDA yashaydi (`fixed inset-0 -z-10`, `pointer-events: none`), har
+manzil esa o'z "bekati" (`lib/world/stations.ts`) — sahifa almashganda
+sahna qayta yaratilmaydi, faqat kamera o'sha bekatga uchib boradi.
+Bosh sahifada dunyo chizilmaydi (u yerda hero sahnasi bor), admin va
+`/tv` da ham yo'q. **Kontent HTML'da qoladi** — SEO va ekran o'quvchi
+uchun. 3D rejimda tema HAR DOIM to'q (`providers.tsx` dagi
+`effectiveMode`): `body` foni shaffof bo'lgani uchun yorug' temada
+matn o'qilmasdi.
+
+**Qoplama (finish) tizimi:** `lib/three/finishes.ts` — xrom /
+tillarang / mat qora. Modellar KATEGORIYA darajasida
+(`components/3d/models/registry.tsx`), chunki 10 000+ mahsulotga
+alohida `.glb` yasab bo'lmaydi; mahsulot sahifasidagi model ostida
+"namunaviy" degan ochiq yozuv turishi SHART.
+
 Sahna ko'rinmasa yoki varaq orqada bo'lsa render to'xtaydi
 (`frameloop="never"`). Yangi 3D bezakka `data-immersive-only`
 atributini bering — klassik rejimda CSS uni React'dan oldin yashiradi.

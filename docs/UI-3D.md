@@ -218,6 +218,38 @@ Qoplama tanlagich IKKI joyda: bosh sahifadagi hero'da (sahnadagi
 kranning qoplamasi o'zgaradi) va mahsulot sahifasida (`Product3dView`,
 faqat 3D rejimda chiziladi).
 
+## 5c. 3D DUNYO (sahifalar ortidagi uzluksiz makon)
+
+```
+src/lib/world/stations.ts        # manzil -> "bekat" (kamera + mazmun)
+src/components/world/WorldCanvas.tsx  # darvoza: qaror + yuklash + tejash
+src/components/world/WorldScene.tsx   # sahna: javon / projektor / peshtaxta / jim fon
+```
+
+Sayt 3D rejimda **bitta uzluksiz makon**: har sahifa shu makonning
+bir joyi. Sahifa almashganda sahna QAYTA YARATILMAYDI — kanvas
+`(main)/layout.tsx` da bir marta o'rnatiladi va faqat kamera boshqa
+bekatga uchib boradi (`StationRig`, `damp` bilan).
+
+| Manzil | Bekat | Nima ko'rinadi |
+|---|---|---|
+| `/` | — | Dunyo chizilmaydi: bosh sahifada o'zining kinematik hero sahnasi bor (ikkita katta sahna = GPU isrofi) |
+| `/katalog` | `catalog` | Kategoriya modellari yoy bo'ylab "javon" |
+| `/mahsulot/*` | `product` | Uzoqdagi jim model (sahifadagi konfigurator asosiy) |
+| `/savat`, `/buyurtma`, `/tolov`, `/chek` | `cart` | "Peshtaxta" + yetkazish to'ri |
+| Qolganlari | `calm` | Jim suzuvchi detallar |
+| `/admin`, `/tv` | — | Umuman chizilmaydi |
+
+**Kontent HTML'da qoladi.** Dunyo `fixed inset-0 -z-10` va
+`pointer-events: none` — matn, narx, havolalar odatdagi DOM'da.
+Shuning uchun Google ham, ekran o'quvchi ham hech narsa yo'qotmaydi.
+
+**3D rejim = TO'Q ko'rinish.** Dunyo ko'rinishi uchun `body` foni
+shaffof bo'ladi (fon `html` ga ko'chgan), shuning uchun 3D rejimda
+tema har doim to'q: yorug' temada to'q matn to'q sahna ustida
+o'qilmasdi. Klassik rejimda tema tanlovi avvalgidek ishlaydi
+(`providers.tsx` dagi `effectiveMode`).
+
 ## 6. Keyingi bosqichlar (hali qilinmagan)
 
 - Katalog va mahsulot sahifalari uchun 3D ko'rinish (hozircha ular

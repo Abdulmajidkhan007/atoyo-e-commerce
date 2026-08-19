@@ -58,7 +58,15 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   yaqinlashtiradi (kompyuterda hero pin bo'ladi, telefonda pin yo'q);
   sarlavha so'zma-so'z, blurdan aniqlikka ochiladi; bo'lim va
   kartochkalar ketma-ket (stagger) chiqadi va glassmorphism
-  ko'rinishda bo'ladi. Og'ir kutubxonalar FAQAT 3D rejimda va faqat quvvatli
+  ko'rinishda bo'ladi. Qolgan sahifalarda esa **3D DUNYO** ishlaydi:
+  `(main)/layout.tsx` da bir marta o'rnatilgan kanvas sahifalar
+  ortida yashaydi va har manzil o'z "bekati" (katalog - kategoriya
+  modellari javoni, savat/checkout - peshtaxta, qolgani - jim fon);
+  sahifa almashganda sahna qayta yaratilmaydi, kamera uchib boradi.
+  Mahsulot sahifasida **3D konfigurator**: modelni 360° aylantirish
+  va qoplamani almashtirish (xrom / tillarang / mat qora). Modellar
+  KATEGORIYA darajasida, koddan yasalgan (10 000+ mahsulotga alohida
+  `.glb` yasab bo'lmaydi); `.glb` biriktirilsa u ustun turadi. Og'ir kutubxonalar FAQAT 3D rejimda va faqat quvvatli
   qurilmada yuklanadi; kichik ekran/sekin tarmoq/"reduce motion" da
   avtomatik 2D fallback. Tartib: `docs/UI-3D.md`.
 - **Yetkazib berish va'dasi:** "Qo'qon ichida va atrofdagi 15 km gacha

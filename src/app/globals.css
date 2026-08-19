@@ -145,18 +145,23 @@ html[data-ui-mode="classic"] [data-immersive-only] {
    (var(--color-bg)) orqadagi istalgan qatlamni yopib qo'yardi.
    `fixed` biriktirish: skrollda fon "suzmaydi", sahifa tinch ko'rinadi.
    Bu sof CSS - JavaScript ham, rasm ham yo'q. */
-html[data-ui-mode="3d-modern"] body {
+/* 3D REJIMDAGI FON.
+
+   Dunyo sahnasi (`WorldCanvas`) sahifa ORTIDA, `-z-10` da turadi.
+   `body` ning o'z rangi bo'lsa u sahnani butunlay yopib qo'yadi -
+   shuning uchun 3D rejimda fon `html` ga ko'chadi, `body` esa
+   shaffof qoladi. Natijada: eng ostda to'q gradient, ustida 3D
+   sahna, undan ustida kontent. */
+html[data-ui-mode="3d-modern"] {
+  background-color: #04202f;
   background-image:
-    radial-gradient(60% 50% at 12% 0%, rgba(196, 154, 108, 0.16), transparent 62%),
-    radial-gradient(55% 45% at 88% 12%, rgba(23, 80, 113, 0.13), transparent 60%);
+    radial-gradient(70% 55% at 12% 0%, rgba(196, 154, 108, 0.18), transparent 62%),
+    radial-gradient(60% 50% at 88% 10%, rgba(94, 140, 166, 0.16), transparent 60%);
   background-attachment: fixed;
 }
 
-html[data-ui-mode="3d-modern"] .dark body,
-.dark html[data-ui-mode="3d-modern"] body {
-  background-image:
-    radial-gradient(60% 50% at 12% 0%, rgba(196, 154, 108, 0.14), transparent 62%),
-    radial-gradient(55% 45% at 88% 12%, rgba(94, 140, 166, 0.14), transparent 60%);
+html[data-ui-mode="3d-modern"] body {
+  background-color: transparent;
 }
 
 /* Tizimda "harakatni kamaytirish" yoqilgan bo'lsa og'ir bezaklar

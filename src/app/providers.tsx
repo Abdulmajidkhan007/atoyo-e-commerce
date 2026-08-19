@@ -7,11 +7,21 @@ import { store } from "@/redux/store";
 import { useAppSelector } from "@/redux/hooks";
 import { getMuiTheme } from "@/theme/muiTheme";
 import { useAuthListener } from "@/hooks/useAuthListener";
-import { UiModeProvider } from "@/lib/ui-mode/UiModeContext";
+import { UiModeProvider, useUiMode } from "@/lib/ui-mode/UiModeContext";
 
 function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   const themeMode = useAppSelector((s) => s.ui.themeMode);
-  const theme = useMemo(() => getMuiTheme(themeMode), [themeMode]);
+  const { isModern } = useUiMode();
+  /**
+   * 3D REJIM HAR DOIM TO'Q ko'rinishda.
+   *
+   * Sabab: 3D dunyo sahifa ORTIDA turadi va uni ko'rish uchun sahifa
+   * foni shaffof bo'ladi. Yorug' (light) tema bilan bu chalkash
+   * ko'rinardi - to'q matn to'q sahna ustida o'qilmasdi. Klassik
+   * rejimda esa foydalanuvchining tema tanlovi avvalgidek ishlaydi.
+   */
+  const effectiveMode = isModern ? "dark" : themeMode;
+  const theme = useMemo(() => getMuiTheme(effectiveMode), [effectiveMode]);
   useAuthListener();
 
   // Root layout'dagi blocking script <html> ga .dark klassni erta qo'yadi
@@ -19,15 +29,15 @@ function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   // klass sinxron ushlab turiladi (masalan, foydalanuvchi light'ga qaytsa).
   useEffect(() => {
     function syncHtmlClass() {
-      document.documentElement.classList.toggle("dark", themeMode === "dark");
+      document.documentElement.classList.toggle("dark", effectiveMode === "dark");
     }
     syncHtmlClass();
-  }, [themeMode]);
+  }, [effectiveMode]);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <div className={themeMode === "dark" ? "dark" : ""}>{children}</div>
+      <div className={effectiveMode === "dark" ? "dark" : ""}>{children}</div>
     </ThemeProvider>
   );
 }
