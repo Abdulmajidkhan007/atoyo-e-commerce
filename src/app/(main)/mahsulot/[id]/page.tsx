@@ -22,6 +22,7 @@ import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { FavoriteButton } from "@/components/product/FavoriteButton";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductReviews } from "@/components/product/ProductReviews";
+import { Product3dView } from "@/components/product/Product3dView";
 import { StarRating } from "@/components/product/StarRating";
 import { ShareButton } from "@/components/product/ShareButton";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -241,6 +242,9 @@ export default async function ProductPage({ params }: ProductPageParams) {
           </div>
         </div>
       </div>
+
+      {/* 3D ko'rinish + qoplama konfiguratori (faqat 3D rejimda). */}
+      <Product3dView category={product.category} />
 
       {(product.videos ?? []).length > 0 && (
         <div className="mt-8 flex flex-col gap-3">

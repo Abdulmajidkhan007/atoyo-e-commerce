@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@mui/material";
 import { useI18n } from "@/lib/i18n/LocaleContext";
@@ -8,6 +9,8 @@ import { useHeroScroll } from "@/lib/motion/useHeroScroll";
 import { HeroCanvas } from "@/components/three/HeroCanvas";
 import { SplitReveal } from "@/components/motion/SplitReveal";
 import { Immersive3dNotice } from "@/components/three/Immersive3dNotice";
+import { FinishPicker } from "@/components/3d/FinishPicker";
+import { DEFAULT_FINISH, type FinishId } from "@/lib/three/finishes";
 
 /**
  * BOSH SAHIFA "HERO" BO'LIMI — ikki ko'rinishda.
@@ -28,6 +31,8 @@ import { Immersive3dNotice } from "@/components/three/Immersive3dNotice";
 export function Hero() {
   const { dict } = useI18n();
   const { immersive, tier } = useImmersive();
+  // Hero'dagi mahsulot qoplamasi (xrom / tillarang / mat qora).
+  const [finishId, setFinishId] = useState<FinishId>(DEFAULT_FINISH);
 
   // Pin faqat kompyuterda va faqat 3D rejimda.
   const { containerRef, progress } = useHeroScroll({
@@ -74,6 +79,15 @@ export function Hero() {
         {/* 3D tanlangan, lekin qurilma rad etgan bo'lsa - sababi va
             "baribir yoqish" tugmasi. Aks holda hech narsa chizilmaydi. */}
         <Immersive3dNotice className="mt-1" />
+
+        {/* Qoplama tanlagich - faqat 3D sahna chizilganda ma'noga ega. */}
+        {immersive && (
+          <FinishPicker
+            value={finishId}
+            onChange={(finish) => setFinishId(finish.id)}
+            className="mt-2"
+          />
+        )}
       </div>
 
       {/*
@@ -89,7 +103,7 @@ export function Hero() {
         data-immersive-only
         className="pointer-events-none relative h-64 w-full pb-6 md:absolute md:inset-y-0 md:right-0 md:h-full md:w-[55%] md:pb-0"
       >
-        <HeroCanvas className="h-full w-full" progress={progress} />
+        <HeroCanvas className="h-full w-full" progress={progress} finishId={finishId} />
       </div>
     </section>
   );

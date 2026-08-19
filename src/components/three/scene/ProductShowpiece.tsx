@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import { BackSide, DoubleSide, MathUtils, type Group } from "three";
+import { findFinish, type FinishId } from "@/lib/three/finishes";
 
 /**
  * MARKAZIY MAHSULOT — "premium product shot": plita ustidagi
@@ -24,8 +25,6 @@ import { BackSide, DoubleSide, MathUtils, type Group } from "three";
  *   • kran   — brend oltini (asosiy urg'u).
  */
 
-const GOLD = "#C49A6C";
-const GOLD_DEEP = "#8A6640";
 const STEEL = "#DCE9F1";
 const STEEL_DEEP = "#93B4C6";
 
@@ -33,8 +32,16 @@ const STEEL_DEEP = "#93B4C6";
 const BOWL_RADIUS = 0.56;
 const BOWL_RIM_Y = -0.16;
 
-export function ProductShowpiece({ compact = false }: { compact?: boolean }) {
+export function ProductShowpiece({
+  compact = false,
+  finishId = "gold",
+}: {
+  compact?: boolean;
+  /** Kran va detallarning qoplamasi (mijoz hero'da tanlaydi). */
+  finishId?: FinishId;
+}) {
   const group = useRef<Group>(null);
+  const finish = findFinish(finishId);
 
   // Juda sekin tebranish: mahsulot har tomondan ko'rinadi, lekin
   // "aylanayotgan bezak" bo'lib ko'zni charchatmaydi.
@@ -79,7 +86,11 @@ export function ProductShowpiece({ compact = false }: { compact?: boolean }) {
         {/* Tubidagi suv teshigi. */}
         <mesh position={[0, -BOWL_RADIUS + 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.035, 0.07, 24]} />
-          <meshStandardMaterial color={GOLD_DEEP} metalness={1} roughness={0.3} />
+          <meshStandardMaterial
+            color={finish.color}
+            metalness={finish.metalness}
+            roughness={Math.min(1, finish.roughness + 0.12)}
+          />
         </mesh>
       </group>
 
@@ -89,24 +100,40 @@ export function ProductShowpiece({ compact = false }: { compact?: boolean }) {
       <group position={[0, -0.72, -0.52]}>
         <mesh position={[0, 0.04, 0]}>
           <cylinderGeometry args={[0.19, 0.22, 0.08, 40]} />
-          <meshStandardMaterial color={GOLD_DEEP} metalness={1} roughness={0.3} />
+          <meshStandardMaterial
+            color={finish.color}
+            metalness={finish.metalness}
+            roughness={Math.min(1, finish.roughness + 0.12)}
+          />
         </mesh>
         <mesh position={[0, 0.62, 0]}>
           <cylinderGeometry args={[0.075, 0.095, 1.12, 32]} />
-          <meshStandardMaterial color={GOLD} metalness={1} roughness={0.15} />
+          <meshStandardMaterial
+            color={finish.color}
+            metalness={finish.metalness}
+            roughness={finish.roughness}
+          />
         </mesh>
 
         {/* Yarim halqa YZ tekisligida (Y bo'yicha 90° burilgan):
             ustundan chiqib OLDINGA engashadi. */}
         <mesh position={[0, 1.18, 0]} rotation={[0, Math.PI / 2, 0]}>
           <torusGeometry args={[0.29, 0.075, 20, 56, Math.PI]} />
-          <meshStandardMaterial color={GOLD} metalness={1} roughness={0.15} />
+          <meshStandardMaterial
+            color={finish.color}
+            metalness={finish.metalness}
+            roughness={finish.roughness}
+          />
         </mesh>
 
         {/* Jo'mrak uchi - kosa markazidan pastga qaragan. */}
         <mesh position={[0, 1.12, 0.58]}>
           <cylinderGeometry args={[0.058, 0.07, 0.2, 24]} />
-          <meshStandardMaterial color={GOLD_DEEP} metalness={1} roughness={0.22} />
+          <meshStandardMaterial
+            color={finish.color}
+            metalness={finish.metalness}
+            roughness={Math.min(1, finish.roughness + 0.08)}
+          />
         </mesh>
 
         {/* Dastak (lever) va uning sharchasi. */}
@@ -116,7 +143,11 @@ export function ProductShowpiece({ compact = false }: { compact?: boolean }) {
         </mesh>
         <mesh position={[0.06, 0.92, -0.02]}>
           <sphereGeometry args={[0.055, 20, 20]} />
-          <meshStandardMaterial color={GOLD} metalness={1} roughness={0.2} />
+          <meshStandardMaterial
+            color={finish.color}
+            metalness={finish.metalness}
+            roughness={finish.roughness}
+          />
         </mesh>
       </group>
 

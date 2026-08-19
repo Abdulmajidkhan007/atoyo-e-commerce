@@ -8,6 +8,7 @@ import { FloatingPanel } from "./scene/FloatingPanel";
 import { CameraRig } from "./scene/CameraRig";
 import { GpsMesh } from "./scene/GpsMesh";
 import type { HeroPanels } from "@/lib/hero/usePanelData";
+import type { FinishId } from "@/lib/three/finishes";
 
 /**
  * HERO SAHNASI — "luxury product shot".
@@ -35,10 +36,18 @@ export interface HeroSceneProps {
   progress: RefObject<number>;
   /** Suzuvchi panellardagi JONLI ma'lumot. */
   panels: HeroPanels;
+  /** Mahsulot qoplamasi - mijoz hero'da tanlaydi. */
+  finishId?: FinishId;
   quality?: "mid" | "high";
 }
 
-export default function HeroScene({ active, progress, panels, quality = "high" }: HeroSceneProps) {
+export default function HeroScene({
+  active,
+  progress,
+  panels,
+  finishId = "gold",
+  quality = "high",
+}: HeroSceneProps) {
   const light = quality === "mid";
 
   return (
@@ -59,7 +68,7 @@ export default function HeroScene({ active, progress, panels, quality = "high" }
       <directionalLight position={[4, 6, 4]} intensity={light ? 2.2 : 1.7} />
       <pointLight position={[-4, 1, 3]} intensity={28} color={GOLD} distance={14} />
 
-      <ProductShowpiece compact={light} />
+      <ProductShowpiece compact={light} finishId={finishId} />
 
       {/*
         SUZUVCHI PANELLAR — turli CHUQURLIKDA (Z), shuning uchun kamera

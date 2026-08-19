@@ -183,6 +183,41 @@ ko'rinardi. Shakllarning joylashuvi ham kadr shakliga qarab
 o'zgaradi (`Composition` dagi `layout`): kompyuterda diagonal,
 telefonda bir qatorda.
 
+## 5b. Mahsulot 3D konfiguratori (qoplama tanlash)
+
+```
+src/lib/three/finishes.ts            # qoplamalar: xrom / tillarang / mat qora
+src/components/3d/FinishPicker.tsx   # suzuvchi shisha tanlagich (DOM)
+src/components/3d/FaucetConfigurator.tsx  # canvas + model + tanlagich
+src/components/3d/models/            # KATEGORIYA bo'yicha parametrik modellar
+  parts.tsx        # umumiy materiallar va detallar
+  FaucetModel / SinkModel / ShowerModel / RadiatorModel /
+  BoilerModel / PipeModel / ToiletModel
+  registry.tsx     # kategoriya slug -> model (switch, komponent QAYTARMAYDI)
+```
+
+**Modellar kategoriya darajasida.** Katalogda 10 000+ mahsulot bor —
+har biriga `.glb` yasash real emas. Shuning uchun mijoz "kran" ni
+ochsa kran, "radiator" ni ochsa radiator ko'radi; mahsulot sahifasida
+buning ostiga **ochiq yozuv** qo'yilgan ("model shu turdagi mahsulot
+uchun namunaviy"), aks holda mijoz modelni mahsulotning aniq
+nusxasi deb o'ylashi mumkin.
+
+**`.glb` ham qo'llab-quvvatlanadi:** `FaucetConfigurator` ga
+`modelUrl` berilsa `useGLTF` bilan yuklanadi, nusxasi
+`scene.clone(true)` bilan olinadi va materiallar `traverse` orqali
+yangilanadi. Fayl topilmasa `ModelBoundary` (class komponent) xatoni
+ushlab, parametrik modelga o'tadi — sahifa qulab tushmaydi.
+
+> **CSP eslatmasi:** drei'ning `<Environment preset="city" />` i HDR
+> faylni GitHub CDN'dan tortadi va bizning CSP uni bloklaydi (sahna
+> qop-qora bo'lib qolardi). Shuning uchun muhit HAR JOYDA
+> `Lightformer` plitalari bilan xotirada quriladi.
+
+Qoplama tanlagich IKKI joyda: bosh sahifadagi hero'da (sahnadagi
+kranning qoplamasi o'zgaradi) va mahsulot sahifasida (`Product3dView`,
+faqat 3D rejimda chiziladi).
+
 ## 6. Keyingi bosqichlar (hali qilinmagan)
 
 - Katalog va mahsulot sahifalari uchun 3D ko'rinish (hozircha ular

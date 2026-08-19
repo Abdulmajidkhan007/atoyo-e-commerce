@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { useImmersive } from "@/lib/ui-mode/useImmersive";
 import { useHeroPanels } from "@/lib/hero/usePanelData";
+import type { FinishId } from "@/lib/three/finishes";
 import { SceneLoader } from "./SceneLoader";
 
 /**
@@ -43,9 +44,11 @@ export interface HeroCanvasProps {
   className?: string;
   /** Skroll progressi (0..1) - `useHeroScroll` yozadi. */
   progress: RefObject<number>;
+  /** Mahsulot qoplamasi (hero'dagi tanlagichdan). */
+  finishId?: FinishId;
 }
 
-export function HeroCanvas({ className = "", progress }: HeroCanvasProps) {
+export function HeroCanvas({ className = "", progress, finishId }: HeroCanvasProps) {
   const { immersive, tier } = useImmersive();
   const panels = useHeroPanels();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -84,6 +87,7 @@ export function HeroCanvas({ className = "", progress }: HeroCanvasProps) {
             active={active}
             progress={progress}
             panels={panels}
+            finishId={finishId}
             quality={tier === "high" ? "high" : "mid"}
           />
         </Suspense>
