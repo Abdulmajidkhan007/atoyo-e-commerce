@@ -87,7 +87,8 @@ docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 
 | Fayl | Nima haqida |
 |---|---|
-| `CLAUDE.md` | Arxitektura qoidalari, narx maxfiyligi, CSP, bot xaritasi |
+| `CLAUDE.md` | Buzilmas qoidalar (narx maxfiyligi, CSP, kanal, Storage) va xarita |
+| `docs/ARXITEKTURA-TARIXI.md` | Qoidalarning sababi: qaysi nosozlikdan keyin paydo bo'lgani |
 | `docs/REBUILD-PROMPT.md` | Loyihaning to'liq holati (boshqa AI ga topshiriq) |
 | `docs/SESSION-PROMPT.md` | Yangi ish sessiyasi uchun tayyor prompt |
 | `docs/DEPLOY.md` | Hosting, env va secret sozlash tartibi |

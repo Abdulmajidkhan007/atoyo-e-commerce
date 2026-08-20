@@ -1,9 +1,26 @@
 # Yangi sessiya uchun tayyor prompt
 
-Bu faylning **"Prompt" bo'limini to'liq nusxalab**, yangi Claude Code
-sessiyasining birinchi xabari sifatida yuboring. U ish tartibini,
-buzilmasligi kerak bo'lgan qoidalarni va hujjatlarni yangilab borish
-majburiyatini bir joyda beradi.
+## Avval eng muhimi: uzun promptni HAR SAFAR yuborish SHART EMAS
+
+Claude Code har sessiyada **`CLAUDE.md` ni o'zi o'qiydi** — ish
+tartibi, branch, narx qoidasi, CSP, cookie, bot xaritasi hammasi
+o'sha yerda. Ya'ni yangi sessiyada model "garang" bo'lib turmaydi.
+
+**Kundalik ish uchun shuncha yetadi:**
+
+```text
+Vazifa: <nima kerak>.
+Fayl: <bilsangiz - src/lib/telegram/admin-session.ts kabi>.
+Tugagach: tekshiruv (tsc + eslint + test + build), commit va push.
+```
+
+Fayl nomini aytish eng katta tejamkorlik: model qidirib yurmaydi.
+Qoida "nega shunday" ekani kerak bo'lsa u
+`docs/ARXITEKTURA-TARIXI.md` ni o'zi ochadi.
+
+Pastdagi **to'liq prompt** esa quyidagi hollarda kerak: loyihani
+boshqa AI ga (ChatGPT, Gemini) topshirganda yoki Claude'ning
+`CLAUDE.md` ni o'qimaydigan boshqa muhitida ishlaganda.
 
 Prompt loyihaning hozirgi holatiga mos yozilgan. **Loyiha o'zgarsa shu
 faylni ham yangilang** — u ham `docs/` ning bir qismi.
@@ -19,10 +36,11 @@ tomonlama Telegram bot + React Native ilova (`mobile/`) + Electron
 ilova (`desktop/`). Sayt productionda: https://atoyo-uz.web.app
 Do'kon: Qo'qon, Navbahor ko'chasi 45p. 10 000+ mahsulot.
 
-ISHNI BOSHLASHDAN OLDIN o'qi: `CLAUDE.md` (arxitektura qoidalari,
-narx qoidasi, CSP, cookie, bot xaritasi) va kerakli bo'limi bo'yicha
-`docs/REBUILD-PROMPT.md` (loyihaning to'liq holati). Kod yozishdan
-oldin tegishli fayllarni O'QI — taxmin qilma.
+ISHNI BOSHLASHDAN OLDIN o'qi: `CLAUDE.md` (buzilmas qoidalar va
+xarita). Qoidaning SABABI kerak bo'lsa — `docs/ARXITEKTURA-TARIXI.md`
+(qaysi nosozlikdan keyin paydo bo'lgani). Loyihaning to'liq holati —
+`docs/REBUILD-PROMPT.md`. Kod yozishdan oldin tegishli fayllarni
+O'QI — taxmin qilma.
 
 ## Til va uslub
 - Menga javob HAR DOIM o'zbekcha, sodda va aniq.
