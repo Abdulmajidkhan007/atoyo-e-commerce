@@ -697,7 +697,24 @@ export async function announceProduct(
 
   // Yangisi chiqdi - endi eskisini olib tashlash xavfsiz.
   if (outdated) {
-    await deleteMessage(outdated.chatId, outdated.messageId).catch(() => {});
+    /**
+     * Eski postni o'chirish YIQILSA JIMGINA O'TIB KETMAYDI.
+     *
+     * Ilgari xato yutilardi va kanalda bir mahsulotning IKKI posti
+     * qolib ketardi — nega qolganini bilib bo'lmasdi. Eng ko'p
+     * uchraydigan sabab: botda kanalda "Delete messages" huquqi
+     * yo'q. Endi sabab xodimlar guruhiga yoziladi.
+     */
+    await deleteMessage(outdated.chatId, outdated.messageId).catch(async (error) => {
+      const reason = error instanceof Error ? error.message : "noma'lum";
+      console.error("Eski kanal postini o'chirib bo'lmadi:", error);
+      await logAction(
+        `⚠️ Eski kanal posti o'chmadi: ${product.name}\n` +
+          `Sabab: ${reason}\n` +
+          `Kanalda ikkita post qolgan bo'lishi mumkin — eskisini qo'lda o'chiring. ` +
+          `Ko'p uchraydigan sabab: botda kanalda "Delete messages" huquqi yo'q.`
+      ).catch(() => {});
+    });
   }
 
   if (outcome.degraded === "no-video") {
