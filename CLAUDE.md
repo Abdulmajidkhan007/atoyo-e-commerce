@@ -265,6 +265,18 @@ Tekshirish: Sozlamalar → Tizim tekshiruvi → "Katalog so'rovi"
   sayt/ilova/bot - `localizedDescription` ichida). Admin panelda
   tavsifning o'zi to'liq ko'rinadi. Mobil nusxasi -
   `mobile/src/types.ts`.
+- **POSTNI ALMASHTIRISH TARTIBI (buzilmasin): avval YANGISI
+  yuboriladi, eskisi FAQAT shundan keyin o'chiriladi.** Media soni
+  o'zgarsa (rasm/video qo'shilsa) albomni tahrirlab bo'lmaydi va
+  post qayta tashlanadi. Ilgari tartib teskari edi — eski post
+  o'chirilib, yangisi Telegram tomonidan qabul qilinmasa (masalan
+  albomdagi videoni yuklab ololmasa) kanalda mahsulot UMUMAN
+  qolmasdi. Endi yiqilsa `announceProduct` `"failed"` qaytaradi,
+  eski post joyida qoladi va sabab "Actions" topikiga yoziladi
+  (`publish()` xato sababini qaytaradi). Videoli albom o'tmasa —
+  ikkinchi urinish FAQAT RASMLAR bilan (`degraded: "no-video"`),
+  video baribir saytda va ilovada ko'rinadi. Testi:
+  `channel-announce.test.ts`.
 - Kanalga e'lon: mahsulotda `channelMessageId` bo'lsa YANGI post
   tashlanmaydi - eski post tahrirlanadi. Sozlamalardagi "Kanal
   postlarini yangilash" postni mahsulotning HOZIRGI holatidan qayta

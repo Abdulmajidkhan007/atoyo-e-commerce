@@ -3,7 +3,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage, answerCallbackQuery, downloadTelegramFile } from "./bot";
 import { uploadImageAdmin, uploadVideoAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
-import { announceProduct, announceModeFor } from "./channel";
+import { announceProduct, announceModeFor, type AnnounceResult } from "./channel";
 import { nextProductCode, findProductIdByCode } from "@/lib/products/product-code";
 import { registerFacets } from "@/lib/products/facets";
 import { logAction } from "./action-log";
@@ -1218,6 +1218,8 @@ export async function handleAdminSessionCallback(params: {
     // ma'lumot oxirgi holat bilan jimgina yangilanadi.
     let published = false;
     let publishedCode: number | undefined;
+    /** Kanal natijasi - xodimga ochiq aytiladi (jimgina yo'qolmasin). */
+    let announceResult: AnnounceResult | null = null;
     if (session.productId) {
       const ref = getAdminDb().collection("products").doc(session.productId);
       const snap = await ref.get();
@@ -1236,18 +1238,37 @@ export async function handleAdminSessionCallback(params: {
         // haqiqatan o'zgargan bo'lsa (keraksiz post yuborilmasin).
         if (published || session.pendingAnnounce) {
           const mode = published ? "new" : (session.pendingAnnounceMode ?? "refresh");
-          await announceProduct(product, mode).catch((error) =>
-            console.error("Kanalga e'lon (yakun) xatosi:", error)
-          );
+          announceResult = await announceProduct(product, mode).catch((error) => {
+            console.error("Kanalga e'lon (yakun) xatosi:", error);
+            return "failed" as const;
+          });
         }
       }
     }
 
+    /**
+     * KANAL NATIJASI OCHIQ YOZILADI.
+     *
+     * Ilgari bot har doim "✅ Tahrirlash yakunlandi" derdi - post
+     * chiqdimi, navbatda turibdimi yoki umuman yiqildimi, bilib
+     * bo'lmasdi.
+     */
+    const channelNote =
+      announceResult === "failed"
+        ? "\n\n⚠️ Kanalga post chiqmadi — eski post joyida qoldi. Sabab \"Actions\" topikida."
+        : announceResult === "queued"
+          ? "\n\n⏳ Kanal navbatida — tezlik chegarasi bo'shashi bilan chiqadi."
+          : announceResult === "posted"
+            ? "\n\n📢 Kanalga yangi post tashlandi."
+            : announceResult === "edited"
+              ? "\n\n📢 Kanaldagi post yangilandi."
+              : "";
+
     await sendChatMessage(
       session.chatId,
-      published
+      (published
         ? `✅ <b>Mahsulot katalogga qo'shildi</b> va kanalga e'lon qilindi.\n🆔 ID: <b>${publishedCode ?? "-"}</b>`
-        : "✅ Tahrirlash yakunlandi.",
+        : "✅ Tahrirlash yakunlandi.") + channelNote,
       { threadId: session.threadId }
     );
     return;

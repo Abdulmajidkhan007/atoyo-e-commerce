@@ -35,6 +35,7 @@ import {
   reserveChannelSlot,
 } from "./channel-queue";
 import { freeDeliveryShort, installServiceText } from "@/lib/delivery/text";
+import { logAction } from "./action-log";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
 
@@ -63,40 +64,80 @@ export async function resolveChannelId(): Promise<string | null> {
   return process.env.TELEGRAM_CHANNEL_ID?.trim() || null;
 }
 
+/** `publish()` natijasi: yuborilgan post yoki SABABI bilan xato. */
+interface PublishOutcome {
+  sent: { chatId: string; messageId: number; hasPhoto: boolean } | null;
+  /** Postga haqiqatan tushgan media soni (`channelPhotoCount` uchun). */
+  count: number;
+  /** Yiqilgan bo'lsa - Telegram aytgan sabab (xodimga ko'rsatiladi). */
+  error?: string;
+  /** To'liq albom o'tmay, kamroq narsa bilan chiqqan bo'lsa. */
+  degraded?: "no-video";
+}
+
 /**
- * Kanalga e'lon yuboradi. Kanal sozlanmagan bo'lsa yoki Telegram xato
- * bersa - jimgina o'tib ketadi: e'lon mahsulot/post saqlanishiga
- * hech qachon xalaqit bermasligi kerak.
+ * Kanalga e'lon yuboradi.
+ *
+ * MUHIM: xato SABABI bilan qaytadi (ilgari `null` qaytarardi va nima
+ * bo'lgani faqat serverning konsolida qolardi). Chaqiruvchi shu
+ * sababni xodimlar guruhiga yozadi.
+ *
+ * ZAXIRA YO'L: albomda VIDEO bo'lsa Telegram uni o'zi havoladan
+ * yuklab olishi kerak va bu yiqilishi mumkin (fayl sekin ochilsa,
+ * hajmi katta bo'lsa...). Bunday holda post umuman chiqmay
+ * qolmasligi uchun ikkinchi urinish FAQAT RASMLAR bilan bo'ladi -
+ * video baribir saytda va ilovada ko'rinadi.
  */
 async function publish(
   text: string,
   options: { photoUrl?: string; media?: MediaItem[]; buttonText: string; buttonUrl: string }
-): Promise<{ chatId: string; messageId: number; hasPhoto: boolean } | null> {
+): Promise<PublishOutcome> {
   const channelId = await resolveChannelId();
-  if (!channelId) return null;
+  if (!channelId) return { sent: null, count: 0, error: "Kanal sozlanmagan." };
 
   // Bir nechta rasm bo'lsa - albom. Albomga inline tugma qo'shib
   // bo'lmaydi, shuning uchun havola caption ichida beriladi.
   const gallery = (options.media ?? []).filter((item) => item.url).slice(0, 10);
+  const caption = `${text}\n\n<a href="${options.buttonUrl}">${options.buttonText}</a>`;
 
-  try {
-    if (gallery.length > 1) {
-      const sent = await sendMediaGroup(channelId, gallery, {
-        caption: `${text}\n\n<a href="${options.buttonUrl}">${options.buttonText}</a>`,
-      });
-      const first = sent[0];
-      return first ? { chatId: channelId, messageId: first.message_id, hasPhoto: true } : null;
-    }
+  const sendAlbum = async (items: MediaItem[]) => {
+    const sent = await sendMediaGroup(channelId, items, { caption });
+    const first = sent[0];
+    return first
+      ? { chatId: channelId, messageId: first.message_id, hasPhoto: true }
+      : null;
+  };
 
-    const photoUrl = gallery[0]?.url ?? options.photoUrl ?? undefined;
+  const sendSingle = async (items: MediaItem[]) => {
+    const photoUrl = items[0]?.url ?? options.photoUrl ?? undefined;
     const sent = await sendChatMessage(channelId, text, {
       photoUrl,
       replyMarkup: { inline_keyboard: [[{ text: options.buttonText, url: options.buttonUrl }]] },
     });
     return { chatId: channelId, messageId: sent.message_id, hasPhoto: Boolean(photoUrl) };
+  };
+
+  try {
+    if (gallery.length > 1) {
+      return { sent: await sendAlbum(gallery), count: gallery.length };
+    }
+    return { sent: await sendSingle(gallery), count: gallery.length };
   } catch (error) {
+    const reason = error instanceof Error ? error.message : "Noma'lum xato";
     console.error("Kanalga e'lon yuborishda xato:", error);
-    return null;
+
+    // Zaxira: videosiz qayta urinamiz (video ko'pincha aybdor bo'ladi).
+    const photos = gallery.filter((item) => item.type === "photo");
+    if (photos.length < gallery.length && photos.length > 0) {
+      try {
+        const sent = photos.length > 1 ? await sendAlbum(photos) : await sendSingle(photos);
+        return { sent, count: photos.length, degraded: "no-video", error: reason };
+      } catch (retryError) {
+        console.error("Videosiz qayta urinish ham yiqildi:", retryError);
+      }
+    }
+
+    return { sent: null, count: 0, error: reason };
   }
 }
 
@@ -171,7 +212,19 @@ export type AnnounceMode = "new" | "updated" | "refresh" | "repost";
  * Ilgari funksiya `void` qaytarardi va admin panel eski postni jimgina
  * tahrirlaganda ham "kanalga joylandi" deb yozardi.
  */
-export type AnnounceResult = "posted" | "edited" | "unchanged" | "skipped" | "queued";
+/**
+ * `announceProduct` natijasi.
+ *
+ * `failed` — Telegram postni qabul qilmadi. Bunda ESKI POST JOYIDA
+ * QOLADI (pastdagi izohga qarang) va sabab xodimlar guruhiga yoziladi.
+ */
+export type AnnounceResult =
+  | "posted"
+  | "edited"
+  | "unchanged"
+  | "skipped"
+  | "queued"
+  | "failed";
 
 /**
  * Mahsulot o'zgarishi kanalda "yangilandi" deb e'lon qilinishga
@@ -554,12 +607,17 @@ export async function announceProduct(
         }
       : null;
 
-  // 0) QAYTA POST: eski post o'chiriladi va pastda yangisi tashlanadi.
-  //    (Tahrirlash bilan chalkashmasin - admin ataylab shuni so'ragan.)
-  if (mode === "repost" && posted) {
-    await deleteMessage(posted.chatId, posted.messageId).catch(() => {});
-    posted = null;
-  }
+  /**
+   * ESKI POST YANGISI CHIQQANDAN KEYIN O'CHIRILADI (buzilmasin).
+   *
+   * Ilgari tartib teskari edi: avval eski post o'chirilib, keyin
+   * yangisi yuborilardi. Yangisi yiqilsa (masalan albomdagi videoni
+   * Telegram yuklab ololmasa) kanalda MAHSULOT UMUMAN QOLMASDI -
+   * "o'chirib yubordi va qaytadan tashlamadi". Endi eski post
+   * faqat yangisi muvaffaqiyatli chiqqanda o'chiriladi.
+   */
+  const replacing = mode === "repost" && posted ? posted : null;
+  if (replacing) posted = null;
 
   // 1) Post bor va rasmlar o'zgarmagan - o'shanisini tahrirlaymiz.
   if (posted && posted.photoCount === gallery.length) {
@@ -592,27 +650,50 @@ export async function announceProduct(
     }
   }
 
-  // 2) Rasmlar soni o'zgargan bo'lsa eski postni olib tashlaymiz.
-  if (posted && posted.photoCount !== gallery.length) {
-    await deleteMessage(posted.chatId, posted.messageId).catch(() => {});
-  }
+  // 2) Media soni o'zgargan (rasm/video qo'shilgan yoki olib
+  //    tashlangan) - albomni tahrirlab bo'lmaydi, yangisi kerak.
+  //    Eskisi PASTDA, yangisi chiqqandan keyin o'chiriladi.
+  const outdated = replacing ?? (posted && posted.photoCount !== gallery.length ? posted : null);
 
-  const sent = await publish(caption, {
+  const outcome = await publish(caption, {
     photoUrl: product.thumbnailUrl,
     media: gallery,
     buttonText,
     buttonUrl,
   });
+  const sent = outcome.sent;
+
+  if (!sent) {
+    // Yangi post chiqmadi - eski post JOYIDA QOLDI. Sabab xodimlar
+    // guruhiga yoziladi, aks holda "post yo'qoldi" deb qolinardi.
+    await logAction(
+      `⚠️ Kanalga post chiqmadi: ${product.name}\nSabab: ${outcome.error ?? "noma'lum"}`
+    ).catch(() => {});
+    return "failed";
+  }
+
+  // Yangisi chiqdi - endi eskisini olib tashlash xavfsiz.
+  if (outdated) {
+    await deleteMessage(outdated.chatId, outdated.messageId).catch(() => {});
+  }
+
+  if (outcome.degraded === "no-video") {
+    await logAction(
+      `⚠️ Kanal posti VIDEOSIZ chiqdi: ${product.name}\nTelegram videoni ololmadi (${outcome.error ?? "sabab noma'lum"}). Video saytda va ilovada ko'rinadi.`
+    ).catch(() => {});
+  }
 
   // Keyingi tahrirlarda shu postni topish uchun ID sini saqlab qo'yamiz.
-  if (sent) {
+  {
     await getAdminDb()
       .collection("products")
       .doc(product.id)
       .update({
         channelChatId: sent.chatId,
         channelMessageId: sent.messageId,
-        channelPhotoCount: gallery.length,
+        // HAQIQATAN yuborilgan media soni: videosiz chiqqan bo'lsa
+        // kamroq bo'ladi va keyingi tahrir shunga qarab ish ko'radi.
+        channelPhotoCount: outcome.count,
         channelMode: header,
       })
       .catch((error) => console.error("E'lon ID sini saqlashda xato:", error));
@@ -631,7 +712,7 @@ export async function announceProduct(
     );
   }
 
-  return sent ? "posted" : "skipped";
+  return "posted";
 }
 
 /**
