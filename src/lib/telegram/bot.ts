@@ -139,6 +139,50 @@ export interface MediaItem {
   type: "photo" | "video";
 }
 
+/**
+ * VIDEO HAVOLA BILAN YUBORILMAYDI (buzilmasin).
+ *
+ * Telegram rasmni havoladan bemalol oladi, VIDEO'ni esa ko'pincha
+ * ololmaydi: `Bad Request: ... "Wrong file identifier/HTTP URL
+ * specified"`. Bir marta aynan shu sabab mahsulot posti videosiz
+ * chiqqan edi. Shuning uchun videoni BIZ yuklab olamiz va Telegram'ga
+ * multipart (fayl sifatida) beramiz — bu yo'l ishonchli.
+ *
+ * Fayl juda katta yoki yuklab bo'lmasa `null` qaytadi va eski usul
+ * (havola) sinab ko'riladi.
+ */
+const MAX_UPLOAD_BYTES = 45 * 1024 * 1024; // Bot API multipart chegarasi ~50 MB
+
+async function fetchForUpload(
+  url: string
+): Promise<{ blob: Blob; filename: string } | null> {
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) return null;
+
+    const length = Number(response.headers.get("content-length") ?? 0);
+    if (length > MAX_UPLOAD_BYTES) return null;
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length > MAX_UPLOAD_BYTES) return null;
+
+    const contentType = response.headers.get("content-type") ?? "video/mp4";
+    // Nomi Telegram uchun muhim emas, lekin kengaytmasi turini aytadi.
+    const extension = contentType.includes("webm")
+      ? "webm"
+      : contentType.includes("quicktime")
+        ? "mov"
+        : "mp4";
+    return {
+      blob: new Blob([new Uint8Array(buffer)], { type: contentType }),
+      filename: `video-${Date.now()}.${extension}`,
+    };
+  } catch (error) {
+    console.warn("Videoni yuklab olishda xato (havola bilan uriniladi):", error);
+    return null;
+  }
+}
+
 export async function sendMediaGroup(
   chatId: number | string,
   items: (string | MediaItem)[],
@@ -150,25 +194,67 @@ export async function sendMediaGroup(
     .slice(0, 10);
   if (media.length < 2) return [];
 
-  return callTelegramApi<SentMessage[]>("sendMediaGroup", {
-    chat_id: chatId,
-    message_thread_id: options?.threadId,
-    media: media.map((item, index) => ({
-      type: item.type,
-      media: item.url,
-      ...(index === 0 && options?.caption
-        ? { caption: options.caption, parse_mode: "HTML" }
-        : {}),
-    })),
-  });
+  // Videolarni oldindan yuklab olamiz (yuqoridagi izohga qarang).
+  const uploads = new Map<number, { blob: Blob; filename: string }>();
+  await Promise.all(
+    media.map(async (item, index) => {
+      if (item.type !== "video") return;
+      const file = await fetchForUpload(item.url);
+      if (file) uploads.set(index, file);
+    })
+  );
+
+  const descriptors = media.map((item, index) => ({
+    type: item.type,
+    media: uploads.has(index) ? `attach://media${index}` : item.url,
+    ...(index === 0 && options?.caption
+      ? { caption: options.caption, parse_mode: "HTML" }
+      : {}),
+  }));
+
+  if (uploads.size === 0) {
+    return callTelegramApi<SentMessage[]>("sendMediaGroup", {
+      chat_id: chatId,
+      message_thread_id: options?.threadId,
+      media: descriptors,
+    });
+  }
+
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  if (options?.threadId) form.append("message_thread_id", String(options.threadId));
+  form.append("media", JSON.stringify(descriptors));
+  for (const [index, file] of uploads) {
+    form.append(`media${index}`, file.blob, file.filename);
+  }
+  return callTelegramApiForm<SentMessage[]>("sendMediaGroup", form);
 }
 
-/** Bitta video yuborish (albom bo'lmaganda). */
+/**
+ * Bitta video yuborish (albom bo'lmaganda). Albomdagi kabi: fayl
+ * avval BIZ tomonimizdan yuklab olinadi, chunki Telegram video
+ * havolasini ko'pincha rad etadi.
+ */
 export async function sendVideo(
   chatId: number | string,
   videoUrl: string,
   options?: { caption?: string; replyMarkup?: InlineKeyboardMarkup; threadId?: number }
 ): Promise<SentMessage> {
+  const file = await fetchForUpload(videoUrl);
+
+  if (file) {
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    if (options?.threadId) form.append("message_thread_id", String(options.threadId));
+    form.append("video", file.blob, file.filename);
+    if (options?.caption) {
+      form.append("caption", options.caption);
+      form.append("parse_mode", "HTML");
+    }
+    if (options?.replyMarkup) form.append("reply_markup", JSON.stringify(options.replyMarkup));
+    return callTelegramApiForm<SentMessage>("sendVideo", form);
+  }
+
   return callTelegramApi<SentMessage>("sendVideo", {
     chat_id: chatId,
     message_thread_id: options?.threadId,
