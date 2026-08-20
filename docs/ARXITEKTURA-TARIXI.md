@@ -129,6 +129,25 @@ Zaxira yo'l ham qoldi: albom baribir o'tmasa, ikkinchi urinish
 FAQAT RASMLAR bilan bo'ladi (`degraded: "no-video"`) — post chiqadi,
 video esa saytda va ilovada ko'rinaveradi.
 
+### 6.2a. Kesilgan HTML butun postni yiqitgan kun
+
+Albom izohi 1024 belgi bilan cheklangan, shuning uchun uzun matn
+kesilardi — oddiy `slice()` bilan. Matn esa HTML, ya'ni kesish
+`<b>` bilan `</b>` orasiga tushishi mumkin edi:
+
+```
+Bad Request: can't parse InputMedia: Can't parse entities:
+Can't find end tag corresponding to start tag "b"
+```
+
+Telegram bunday matnni butunlay rad etadi — mahsulot kanalga
+umuman chiqmadi. Endi `truncateHtml()` (`lib/telegram/html-truncate.ts`)
+ishlatiladi: u teg ichida ham, HTML entity (`&amp;`) ichida ham
+kesmaydi, ochiq qolgan teglarni o'zi yopadi va yopuvchi teglar
+uchun ham joy hisoblaydi. Yuborishdan oldin oxirgi qalqon ham bor:
+izoh 1024 (rasm/video bo'lsa) yoki 4096 belgiga qisqartiriladi.
+Testi: `html-truncate.test.ts`.
+
 ### 6.3. 65 postdan 45 tasi yiqilgan kun
 
 "Kanal postlarini yangilash" bir so'rovda hammasini ketma-ket

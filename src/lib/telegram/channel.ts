@@ -36,6 +36,7 @@ import {
 } from "./channel-queue";
 import { freeDeliveryShort, installServiceText } from "@/lib/delivery/text";
 import { logAction } from "./action-log";
+import { truncateHtml } from "./html-truncate";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
 
@@ -98,7 +99,17 @@ async function publish(
   // Bir nechta rasm bo'lsa - albom. Albomga inline tugma qo'shib
   // bo'lmaydi, shuning uchun havola caption ichida beriladi.
   const gallery = (options.media ?? []).filter((item) => item.url).slice(0, 10);
-  const caption = `${text}\n\n<a href="${options.buttonUrl}">${options.buttonText}</a>`;
+  /**
+   * OXIRGI QALQON. Telegram cheklovi: rasm/video izohi 1024 belgi,
+   * oddiy xabar 4096. Matn yuqorida ham qisqartiriladi, lekin footer
+   * yoki havola qo'shilgach chegara oshib ketishi mumkin edi va
+   * Telegram butun postni rad etardi. `truncateHtml` HTML'ni
+   * buzmasdan kesadi (teg o'rtasidan kesmaydi, ochiq tegni yopadi).
+   */
+  const caption = truncateHtml(
+    `${text}\n\n<a href="${options.buttonUrl}">${options.buttonText}</a>`,
+    1024
+  );
 
   const sendAlbum = async (items: MediaItem[]) => {
     const sent = await sendMediaGroup(channelId, items, { caption });
@@ -110,7 +121,9 @@ async function publish(
 
   const sendSingle = async (items: MediaItem[]) => {
     const photoUrl = items[0]?.url ?? options.photoUrl ?? undefined;
-    const sent = await sendChatMessage(channelId, text, {
+    // Rasmli xabarda izoh 1024, rasmsizda matn 4096 belgi.
+    const body = truncateHtml(text, photoUrl ? 1024 : 4096);
+    const sent = await sendChatMessage(channelId, body, {
       photoUrl,
       replyMarkup: { inline_keyboard: [[{ text: options.buttonText, url: options.buttonUrl }]] },
     });
@@ -446,15 +459,22 @@ export async function refreshChannelPost(product: Product): Promise<RefreshResul
   const promise = await deliveryLine();
   const footer = `${promise ? `\n\n${promise}` : ""}${buildFooter(await loadFooter())}`;
   const budget = 850 - footer.length;
-  const text =
-    gallery.length > 1 && body.length > budget ? `${body.slice(0, Math.max(120, budget - 3))}...` : body;
+  // Kesish HTML'ni BUZMASLIGI kerak: `truncateHtml` teg va entity
+  // o'rtasidan kesmaydi va ochiq qolgan tegni o'zi yopadi. Ilgari
+  // oddiy `slice()` edi va Telegram butun postni rad etardi
+  // ("Can't find end tag corresponding to start tag b").
+  const text = gallery.length > 1 ? truncateHtml(body, Math.max(120, budget)) : body;
   const caption = `${text}${footer}`;
   // Tugma SANALADIGAN havolaga qaraydi (`/k/<id>`): u bosilishni
   // yozib, mahsulot sahifasiga yo'naltiradi (`lib/telegram/channel-stats.ts`).
   const buttonUrl = `${siteUrl()}/k/${product.id}`;
   const buttonText = "🛒 Saytda ko'rish";
 
-  const finalText = gallery.length > 1 ? `${caption}\n\n<a href="${buttonUrl}">${buttonText}</a>` : caption;
+  // Telegram cheklovi: rasm/video izohi 1024 belgi (HTML buzilmasin).
+  const finalText = truncateHtml(
+    gallery.length > 1 ? `${caption}\n\n<a href="${buttonUrl}">${buttonText}</a>` : caption,
+    gallery.length > 0 || product.thumbnailUrl ? 1024 : 4096
+  );
   const replyMarkup =
     gallery.length > 1 ? undefined : { inline_keyboard: [[{ text: buttonText, url: buttonUrl }]] };
 
@@ -590,8 +610,11 @@ export async function announceProduct(
   // e'lon jimgina kesilib qolmasligi uchun mahsulot qismini qisqartiramiz
   // (footer - telefon, shior, havolalar - har doim to'liq qolsin).
   const budget = 850 - footer.length;
-  const text =
-    gallery.length > 1 && body.length > budget ? `${body.slice(0, Math.max(120, budget - 3))}...` : body;
+  // Kesish HTML'ni BUZMASLIGI kerak: `truncateHtml` teg va entity
+  // o'rtasidan kesmaydi va ochiq qolgan tegni o'zi yopadi. Ilgari
+  // oddiy `slice()` edi va Telegram butun postni rad etardi
+  // ("Can't find end tag corresponding to start tag b").
+  const text = gallery.length > 1 ? truncateHtml(body, Math.max(120, budget)) : body;
   const caption = `${text}${footer}`;
   // Tugma SANALADIGAN havolaga qaraydi (`/k/<id>`): u bosilishni
   // yozib, mahsulot sahifasiga yo'naltiradi (`lib/telegram/channel-stats.ts`).

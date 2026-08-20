@@ -128,6 +128,11 @@ ustama `settings/pricing`, standart 5%).
   sabab "Actions" topikiga yoziladi. Videoli albom o'tmasa —
   ikkinchi urinish faqat rasmlar bilan (`degraded: "no-video"`).
   Testi: `channel-announce.test.ts`.
+- **UZUN MATN `truncateHtml()` BILAN KESILADI** (`html-truncate.ts`),
+  oddiy `slice()` bilan EMAS: post matni HTML, teg o'rtasidan
+  kesilsa Telegram butun postni rad etadi (`Can't find end tag
+  corresponding to start tag "b"`). Cheklov: rasm/video izohi 1024,
+  matnli xabar 4096 belgi. Testi: `html-truncate.test.ts`.
 - **VIDEO HAVOLA BILAN YUBORILMAYDI.** Telegram video havolasini
   rad etadi (`Wrong file identifier/HTTP URL specified`), shuning
   uchun `sendMediaGroup`/`sendVideo` videoni o'zi yuklab olib
