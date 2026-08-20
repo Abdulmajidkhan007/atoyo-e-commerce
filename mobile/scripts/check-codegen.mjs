@@ -24,6 +24,7 @@ const LIBS = [
   'react-native-svg',
   '@react-native-firebase/messaging',
   'react-native-image-picker',
+  'react-native-video',
 ];
 
 const cli = 'node_modules/@react-native/codegen/lib/cli/combine/combine-js-to-schema-cli.js';
