@@ -55,6 +55,11 @@ export interface Product {
   discountUntil?: number | null;
   stock: number;
   images: string[];
+  /**
+   * Mahsulot videolari (Telegram kirimida yoki admin panelda
+   * yuklangan). Galereyada rasmlardan keyin ko'rinadi.
+   */
+  videos?: string[];
   thumbnailUrl: string;
   isActive: boolean;
   isDraft?: boolean;

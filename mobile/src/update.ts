@@ -16,7 +16,7 @@ import {isNewer} from './version';
  */
 
 /** Shu build'ning versiyasi (android/app/build.gradle dagi versionName). */
-export const APP_VERSION = '1.1';
+export const APP_VERSION = '1.2';
 
 /** Zaxira havola - server bermasa ham yuklab olish ishlasin. */
 export const FALLBACK_APK_URL =

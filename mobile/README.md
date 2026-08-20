@@ -196,7 +196,7 @@ APK to'g'ridan-to'g'ri tarqatiladi, ya'ni telefon ilovani o'zi
 yangilamaydi. Yangi versiya chiqarish tartibi:
 
 1. `mobile/android/app/build.gradle` da `versionCode` ni +1 qiling va
-   `versionName` ni oshiring (masalan `1.1`).
+   `versionName` ni oshiring (hozirgi: `versionCode 3`, `1.2`).
 2. **`mobile/src/update.ts` dagi `APP_VERSION` ni ham o'sha raqamga
    moslang** — ilova o'zini shu bilan solishtiradi.
 3. Commit + push. CI APK yig'adi; `main` ga tushganda
@@ -209,3 +209,11 @@ yangilamaydi. Yangi versiya chiqarish tartibi:
 Shundan keyin foydalanuvchi ilovani ochganda oyna chiqadi va
 "Yangilash" tugmasi APK ni brauzerda yuklab beradi; bildirishnoma
 belgilangan bo'lsa ilovani ochmaganlar ham xabar oladi.
+
+### 1.2 versiyasida nima o'zgardi
+
+- **Mahsulot videosi** — galereyada rasmlardan keyin ko'rinadi va
+  ilovaning O'ZIDA o'ynaydi (`react-native-video`). Bosilgunicha
+  yuklanmaydi — mobil internet tejaladi.
+- **Blog maqolasidagi video** ham ilovada o'ynaydi (ilgari brauzerda
+  ochilardi va mijoz ilovadan chiqib ketardi).

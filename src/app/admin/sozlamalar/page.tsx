@@ -15,6 +15,7 @@ import { EmailSettingsForm } from "@/components/admin/EmailSettingsForm";
 import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
 import { AiUsagePanel } from "@/components/admin/AiUsagePanel";
 import { AppUpdateForm } from "@/components/admin/AppUpdateForm";
+import { StorageCleanupPanel } from "@/components/admin/StorageCleanupPanel";
 import { channelQueueSummary, getChannelPace } from "@/lib/telegram/channel-queue";
 
 export const dynamic = "force-dynamic";
@@ -134,6 +135,20 @@ export default async function AdminSettingsPage() {
         </p>
         <DiagnosticsPanel />
       </section>
+
+      {/* Storage tozalash - faqat loyiha egasiga (qaytarib bo'lmaydi). */}
+      {isOwner(user) && (
+        <section>
+          <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">
+            Storage tozalash
+          </h2>
+          <p className="mb-6 text-sm text-navy-300">
+            Ishlatilmayotgan (yetim) rasm va videolarni topib o&apos;chiradi — Firebase
+            Storage&apos;da joy bo&apos;shatadi.
+          </p>
+          <StorageCleanupPanel />
+        </section>
+      )}
 
       {/* Maxfiy kalitlar - faqat loyiha egasiga ko'rinadi. */}
       {secrets && (

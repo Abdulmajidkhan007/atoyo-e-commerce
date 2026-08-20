@@ -710,6 +710,22 @@ yangilamaydi. Shuning uchun:
   `mobile/src/version.ts` da (testi `version.test.ts`, sayt
   vitest'ida ishlaydi).
 
+## Storage tozalash (yetim fayllar)
+
+Mahsulotdan olib tashlangan rasm/video Storage'da ATAYLAB qoladi
+(savatdan tiklanganda kerak bo'lishi mumkin), lekin joy egallaydi.
+`lib/storage/cleanup.ts` bazadagi HAMMA havolani yig'ib
+(`products`, `deletedProducts`, `blogPosts`, `settings`, `metadata`,
+`orders`, `reviews`, `stockIntakes`, `intakeAlbums` — hujjat JSON'i
+regex bilan tekshiriladi, shuning uchun YANGI maydon qo'shilsa ham
+o'zi hisobga olinadi) ularga kirmagan fayllarni topadi.
+
+Qoidalar: faqat `products/`, `blog/`, `site/` papkalari; **30 kundan
+yosh fayllarga tegilmaydi** (yarim yo'lda uzilgan kirim o'chib
+ketmasin); o'chirish ro'yxati SERVERDA qayta hisoblanadi (mijoz
+yuborgan yo'llarga ishonilmaydi). UI: Sozlamalar → "Storage
+tozalash" (faqat loyiha egasi, tasdiq so'zi `TOZALASH`).
+
 ## Mobil ilova (`mobile/`)
 
 React Native CLI (bare, RN 0.76) — **faqat mijozlar uchun**. Sayt bilan

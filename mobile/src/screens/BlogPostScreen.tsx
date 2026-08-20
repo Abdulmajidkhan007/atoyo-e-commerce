@@ -1,15 +1,19 @@
 import React, {useEffect, useState} from 'react';
-import {Image, Linking, Pressable, ScrollView, Text, View} from 'react-native';
+import {Image, ScrollView, Text, useWindowDimensions, View} from 'react-native';
 import {makeStyles, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {fetchBlogPost} from '../firebase';
 import type {BlogPost} from '../types';
 import {EmptyState, Loading} from '../components/ui';
 import type {StackScreenProps} from '../navigation/types';
+import {VideoPlayer} from '../components/VideoPlayer';
 
 /** Maqola matni - saytdagi `/blog/[slug]` bilan bir xil mazmun. */
 export function BlogPostScreen({route}: StackScreenProps<'Maqola'>) {
   const styles = useStyles();
+  const {width: windowWidth} = useWindowDimensions();
+  // Video matn bilan bir xil chekkada tursin (ikki tomondan `lg` bo'sh joy).
+  const videoWidth = windowWidth - spacing.lg * 2;
   const {t, locale} = useI18n();
   const [post, setPost] = useState<BlogPost | null | undefined>();
 
@@ -44,15 +48,11 @@ export function BlogPostScreen({route}: StackScreenProps<'Maqola'>) {
       <View style={{padding: spacing.lg, gap: spacing.sm}}>
         <Text style={styles.title}>{post.title}</Text>
 
-        {/* Kontent videosi - ilovada pleyer yo'q, brauzerda ochiladi. */}
+        {/* Kontent videosi - endi ILOVANING O'ZIDA o'ynaydi
+            (ilgari brauzerda ochilardi va mijoz ilovadan chiqib
+            ketardi). Bosilgunicha yuklanmaydi. */}
         {!!post.videoUrl && (
-          <Pressable
-            style={styles.videoBtn}
-            onPress={() => {
-              if (post.videoUrl) Linking.openURL(post.videoUrl).catch(() => {});
-            }}>
-            <Text style={styles.videoBtnText}>▶︎ Videoni ko&apos;rish</Text>
-          </Pressable>
+          <VideoPlayer url={post.videoUrl} width={videoWidth} height={200} />
         )}
 
         <Text style={styles.date}>{new Date(post.createdAt).toLocaleDateString(dateLocale)}</Text>
@@ -70,14 +70,6 @@ export function BlogPostScreen({route}: StackScreenProps<'Maqola'>) {
 }
 
 const useStyles = makeStyles(c => ({
-  videoBtn: {
-    alignSelf: 'flex-start' as const,
-    backgroundColor: c.accent,
-    borderRadius: 999,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  videoBtnText: {color: c.onAccent, fontSize: 14, fontWeight: '700' as const},
   screen: {flex: 1, backgroundColor: c.bg},
   cover: {width: '100%', height: 220, backgroundColor: c.surfaceAlt},
   title: {color: c.text, fontWeight: '800', fontSize: 21},

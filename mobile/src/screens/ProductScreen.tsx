@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import {makeStyles, radius, spacing} from '../theme';
+import {VideoPlayer} from '../components/VideoPlayer';
 import {useI18n} from '../i18n';
 import {
   effectivePrice,
@@ -41,7 +42,10 @@ import {DeliveryNote} from '../components/DeliveryNote';
 import {fetchTaxonomy} from '../api';
 import {SegmentedPicker} from '../components/SegmentedPicker';
 
-/** Mahsulot sahifasi: rasm, narx, tavsif, sevimlilar, savat va sharhlar. */
+/** Galereya slaydining balandligi (rasm ham, video ham bir xil). */
+const GALLERY_HEIGHT = 300;
+
+/** Mahsulot sahifasi: rasm/video, narx, tavsif, sevimlilar, savat va sharhlar. */
 export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>) {
   const {productId} = route.params;
   const styles = useStyles();
@@ -131,6 +135,10 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   // TURLARI bo'lgan mahsulotda narx va zaxira tanlangan turdan olinadi.
   const gallery = (product.images ?? []).filter(Boolean);
   if (gallery.length === 0 && product.thumbnailUrl) gallery.push(product.thumbnailUrl);
+  // Videolar galereyaning OXIRIDA turadi (saytdagi bilan bir xil
+  // tartib) - avval rasmlar, keyin video.
+  const videos = (product.videos ?? []).filter(Boolean);
+  const slideCount = gallery.length + videos.length;
 
   const withVariants = hasVariants(product);
   const selection = picked ?? defaultVariant(product)?.options ?? {};
@@ -184,7 +192,7 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
     <ScrollView style={styles.screen} contentContainerStyle={{paddingBottom: spacing.xl}}>
       {/* GALEREYA: bir nechta rasm bo'lsa yonma-yon suriladi, rasm
           bosilsa to'liq ekranda ochiladi (saytdagi kabi). */}
-      {gallery.length > 0 && (
+      {slideCount > 0 && (
         <ScrollView
           horizontal
           pagingEnabled
@@ -200,10 +208,18 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
               />
             </Pressable>
           ))}
+          {/* VIDEO: bosilgunicha yuklanmaydi (mobil internet tejaladi). */}
+          {videos.map(url => (
+            <VideoPlayer key={url} url={url} width={windowWidth} height={GALLERY_HEIGHT} />
+          ))}
         </ScrollView>
       )}
-      {gallery.length > 1 && (
-        <Text style={styles.galleryHint}>{gallery.length} ta rasm — suring</Text>
+      {slideCount > 1 && (
+        <Text style={styles.galleryHint}>
+          {videos.length > 0
+            ? `${gallery.length} ta rasm, ${videos.length} ta video — suring`
+            : `${gallery.length} ta rasm — suring`}
+        </Text>
       )}
 
       <View style={{padding: spacing.lg, gap: spacing.sm}}>
@@ -434,7 +450,7 @@ const useStyles = makeStyles(c => ({
   center: {flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg},
   /* Eni ekran kengligiga teng: gorizontal ScrollView ichida foiz
      ishlamaydi (0 bo'lib qoladi - rasm ko'rinmasdi). */
-  image: {height: 300, backgroundColor: c.surfaceAlt},
+  image: {height: GALLERY_HEIGHT, backgroundColor: c.surfaceAlt},
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
