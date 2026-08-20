@@ -575,6 +575,15 @@ foydalanuvchi so'raganda.
   rasm(lar) + izoh (nom/narx/soni/kimdan/material) → mahsulot yaratiladi,
   keyin ixtiyoriy maydonlar tugmalari. Albom (media_group) holati
   `intakeAlbums/{mediaGroupId}` da.
+- **Video (bot)**: `/tahrir` → "🎬 Video" menyusi — qo'shish va
+  o'chirish (`ap|vd|add` / `ap|vd|del:<index>`, `sendVideoMenu`).
+  Kirimdan keyingi "qolgan ma'lumotlar" tugmalarida ham bor. Video
+  Storage'ga `products/<id>` ga tushadi (`uploadVideoAdmin`, 20 MB —
+  Bot API `getFile` chegarasi ham shu), mahsulotda `videos[]`
+  (ko'pi bilan 3 ta). Saytda u GALEREYANING oxirgi slaydi bo'lib
+  chiqadi (`ProductGallery` `videos` prop'i) — ilgari sahifaning
+  pastidagi alohida "Video" bo'limida edi va ko'zga tashlanmasdi.
+  Video o'chirilganda ham fayl Storage'da qoladi.
 - **Rasm boshqaruvi (bot)**: `/tahrir` → "🖼 Rasm" endi MENYU ochadi —
   qo'shish ham, O'CHIRISH ham (`ap|ph|add` / `ap|ph|del:<index>`,
   `sendPhotoMenu`). Ilgari faqat qo'shish bor edi va xunuk rasmni

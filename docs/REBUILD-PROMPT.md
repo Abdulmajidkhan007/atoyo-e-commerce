@@ -519,6 +519,10 @@ salomlashuv rasmi.
 
 ### Xodimlar guruhi (yopiq, forum-topiclar bilan)
 
+- `/tahrir` dagi **"🎬 Video"** tugmasi ham menyu ochadi: video
+  qo'shish (20 MB gacha) va o'chirish. Video mahsulotning `videos[]`
+  ro'yxatiga tushadi (3 tagacha) va SAYTDAGI GALEREYADA rasmlardan
+  keyingi slayd bo'lib ko'rinadi.
 - `/tahrir` dagi "🖼 Rasm" tugmasi menyu ochadi: rasm qo'shish va
   mavjud rasmni o'chirish (birinchisi — muqova). Rasm o'chirilganda
   kanal posti qayta tashlanadi (yuborilgan albomdan rasm olib

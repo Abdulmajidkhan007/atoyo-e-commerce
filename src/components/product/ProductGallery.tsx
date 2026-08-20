@@ -10,8 +10,18 @@ import "swiper/css/pagination";
 
 interface ProductGalleryProps {
   images: string[];
+  /**
+   * Mahsulot videolari (Telegram kirimida yoki admin panelda
+   * yuklangan). Galereyaning OXIRGI slaydlari bo'lib chiqadi -
+   * mijoz rasmni ko'rgach videoni ham shu yerda ko'radi, sahifaning
+   * pastiga tushishi shart emas.
+   */
+  videos?: string[];
   alt: string;
 }
+
+/** Galereyadagi bitta slayd: rasm yoki video. */
+type Slide = { kind: "image"; url: string; imageIndex: number } | { kind: "video"; url: string };
 
 /**
  * Mahsulot rasmlari galereyasi (Swiper).
@@ -21,11 +31,20 @@ interface ProductGalleryProps {
  * butun ekranni egallaydigan ko'rinish ochiladi: u yerda yana bir marta
  * bosib kattalashtirish (2.5x) va barmoq bilan surish mumkin.
  */
-export function ProductGallery({ images, alt }: ProductGalleryProps) {
+export function ProductGallery({ images, videos = [], alt }: ProductGalleryProps) {
   const validImages = images.filter(Boolean);
+  const validVideos = videos.filter(Boolean);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  if (validImages.length === 0) {
+  // Slaydlar: avval rasmlar, keyin videolar. Kattalashtirish (lightbox)
+  // faqat RASMGA tegishli, shuning uchun rasmning o'z tartib raqami
+  // slaydda alohida saqlanadi.
+  const slides: Slide[] = [
+    ...validImages.map((url, imageIndex) => ({ kind: "image" as const, url, imageIndex })),
+    ...validVideos.map((url) => ({ kind: "video" as const, url })),
+  ];
+
+  if (slides.length === 0) {
     return (
       <div className="flex aspect-square w-full items-center justify-center rounded-xl2 bg-navy-50 text-navy-300 dark:bg-navy-900">
         Rasm yo&apos;q
@@ -35,22 +54,26 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
 
   return (
     <>
-      {validImages.length === 1 ? (
-        <button
-          type="button"
-          onClick={() => setLightboxIndex(0)}
-          className="relative block aspect-square w-full cursor-zoom-in overflow-hidden rounded-xl2 bg-navy-50 dark:bg-navy-900"
-          aria-label="Rasmni kattalashtirish"
-        >
-          <Image
-            src={validImages[0]!}
-            alt={alt}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-contain"
-            priority
-          />
-        </button>
+      {slides.length === 1 ? (
+        slides[0]!.kind === "video" ? (
+          <VideoSlide url={slides[0]!.url} rounded />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setLightboxIndex(0)}
+            className="relative block aspect-square w-full cursor-zoom-in overflow-hidden rounded-xl2 bg-navy-50 dark:bg-navy-900"
+            aria-label="Rasmni kattalashtirish"
+          >
+            <Image
+              src={slides[0]!.url}
+              alt={alt}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-contain"
+              priority
+            />
+          </button>
+        )
       ) : (
         <div className="overflow-hidden rounded-xl2">
           <Swiper
@@ -61,25 +84,31 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
             slidesPerView={1}
             className="aspect-square w-full bg-navy-50 dark:bg-navy-900"
           >
-            {validImages.map((url, index) => (
-              <SwiperSlide key={url}>
-                <button
-                  type="button"
-                  onClick={() => setLightboxIndex(index)}
-                  className="relative block aspect-square w-full cursor-zoom-in"
-                  aria-label="Rasmni kattalashtirish"
-                >
-                  <Image
-                    src={url}
-                    alt={`${alt} — ${index + 1}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-contain"
-                    priority={index === 0}
-                  />
-                </button>
-              </SwiperSlide>
-            ))}
+            {slides.map((slide, index) =>
+              slide.kind === "video" ? (
+                <SwiperSlide key={slide.url}>
+                  <VideoSlide url={slide.url} />
+                </SwiperSlide>
+              ) : (
+                <SwiperSlide key={slide.url}>
+                  <button
+                    type="button"
+                    onClick={() => setLightboxIndex(slide.imageIndex)}
+                    className="relative block aspect-square w-full cursor-zoom-in"
+                    aria-label="Rasmni kattalashtirish"
+                  >
+                    <Image
+                      src={slide.url}
+                      alt={`${alt} — ${slide.imageIndex + 1}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-contain"
+                      priority={index === 0}
+                    />
+                  </button>
+                </SwiperSlide>
+              )
+            )}
           </Swiper>
         </div>
       )}
@@ -93,6 +122,31 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
         />
       )}
     </>
+  );
+}
+
+/**
+ * VIDEO SLAYDI.
+ *
+ * `preload="metadata"` - butun fayl emas, faqat birinchi kadr va
+ * davomiyligi yuklanadi (mobil internetni tejaydi). Avtomatik
+ * o'ynatilmaydi: mijoz o'zi bosadi.
+ */
+function VideoSlide({ url, rounded = false }: { url: string; rounded?: boolean }) {
+  return (
+    <div
+      className={`flex aspect-square w-full items-center justify-center bg-black ${
+        rounded ? "overflow-hidden rounded-xl2" : ""
+      }`}
+    >
+      <video
+        src={url}
+        controls
+        playsInline
+        preload="metadata"
+        className="max-h-full max-w-full"
+      />
+    </div>
   );
 }
 

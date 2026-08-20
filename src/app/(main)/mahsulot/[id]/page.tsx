@@ -152,6 +152,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
       <div className="grid gap-8 md:grid-cols-2">
         <ProductGallery
           images={product.images.length > 0 ? product.images : product.thumbnailUrl ? [product.thumbnailUrl] : []}
+          videos={product.videos ?? []}
           alt={name}
         />
 
@@ -245,17 +246,6 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
       {/* 3D ko'rinish + qoplama konfiguratori (faqat 3D rejimda). */}
       <Product3dView category={product.category} />
-
-      {(product.videos ?? []).length > 0 && (
-        <div className="mt-8 flex flex-col gap-3">
-          <h2 className="text-lg font-semibold text-navy-900 dark:text-white">Video</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(product.videos ?? []).map((url) => (
-              <video key={url} src={url} controls playsInline preload="metadata" className="w-full rounded-xl2 border border-navy-100 dark:border-navy-500" />
-            ))}
-          </div>
-        </div>
-      )}
 
       <ProductReviews productId={product.id} />
 

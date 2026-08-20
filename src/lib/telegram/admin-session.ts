@@ -1,7 +1,7 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage, answerCallbackQuery, downloadTelegramFile } from "./bot";
-import { uploadImageAdmin } from "@/lib/firebase/admin-storage";
+import { uploadImageAdmin, uploadVideoAdmin } from "@/lib/firebase/admin-storage";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { announceProduct, announceModeFor } from "./channel";
 import { nextProductCode, findProductIdByCode } from "@/lib/products/product-code";
@@ -117,6 +117,54 @@ async function detachProductPhoto(productId: string, index: number): Promise<Pro
   };
   await ref.update(updates);
   return { ...product, ...updates };
+}
+
+/** Mahsulotda ko'pi bilan shuncha video (kirim oqimi bilan bir xil). */
+const MAX_VIDEOS = 3;
+
+/**
+ * Telegram'dan kelgan VIDEONI Storage'ga o'tkazib, mahsulotga bog'laydi.
+ *
+ * Bot API'da `getFile` 20 MB gacha fayl beradi - kattasi uchun
+ * Telegram havola bermaydi, shuning uchun xodimga qisqa video
+ * yuborish kerakligi aytiladi (`uploadVideoAdmin` ham 20 MB bilan
+ * cheklaydi).
+ */
+async function attachTelegramVideo(productId: string, videoFileId: string): Promise<void> {
+  const file = await downloadTelegramFile(videoFileId);
+  const url = await uploadVideoAdmin(`products/${productId}`, {
+    buffer: file.buffer,
+    // Telegram video fayli .mp4 bo'ladi; getFile turini bermaydi.
+    contentType: "video/mp4",
+    originalName: file.fileName,
+  });
+
+  const ref = getAdminDb().collection("products").doc(productId);
+  const snap = await ref.get();
+  const existing = (snap.data() as Product | undefined)?.videos ?? [];
+  if (existing.includes(url)) return;
+  if (existing.length >= MAX_VIDEOS) {
+    throw new Error(`Mahsulotda ${MAX_VIDEOS} tadan ko'p video bo'lmaydi.`);
+  }
+  await ref.update({ videos: [...existing, url], updatedAt: Date.now() });
+}
+
+/**
+ * VIDEONI MAHSULOTDAN OLIB TASHLASH. Rasmdagi kabi fayl Storage'da
+ * QOLADI - faqat bog'lanish uziladi.
+ */
+async function detachProductVideo(productId: string, index: number): Promise<Product | null> {
+  const ref = getAdminDb().collection("products").doc(productId);
+  const snap = await ref.get();
+  if (!snap.exists) return null;
+
+  const product = { id: snap.id, ...snap.data() } as Product;
+  const videos = [...(product.videos ?? [])];
+  if (index < 0 || index >= videos.length) return product;
+
+  videos.splice(index, 1);
+  await ref.update({ videos, updatedAt: Date.now() });
+  return { ...product, videos };
 }
 
 interface InlineButton {
@@ -369,6 +417,7 @@ const EDIT_FIELDS: { field: string; label: string }[] = [
   { field: "supplier", label: "🚚 Kimdan kelgan" },
   { field: "description", label: "📝 Tavsif" },
   { field: "photo", label: "🖼 Rasm" },
+  { field: "video", label: "🎬 Video" },
 ];
 
 /**
@@ -386,6 +435,7 @@ const OPTIONAL_FIELDS: { field: string; label: string }[] = [
   { field: "discount", label: "🔻 Chegirma" },
   { field: "discountUntil", label: "⏳ Chegirma muddati" },
   { field: "photo", label: "🖼 Yana rasm" },
+  { field: "video", label: "🎬 Video" },
   { field: "name", label: "✏️ Nomni tuzatish" },
 ];
 
@@ -453,6 +503,33 @@ async function sendPhotoMenu(session: AdminSession, product: Product): Promise<v
     images.length > 0
       ? `🖼 <b>Rasmlar:</b> ${images.length} ta.\n\nO'chirish uchun raqamini bosing (birinchisi — muqova, kartochkada shu ko'rinadi).`
       : "🖼 Mahsulotda hali rasm yo'q.";
+
+  await sendChatMessage(session.chatId, text, {
+    replyMarkup: { inline_keyboard: rows },
+    threadId: session.threadId,
+  });
+}
+
+/**
+ * VIDEOLAR MENYUSI: qo'shish va o'chirish (rasmlar menyusi bilan
+ * bir xil naqsh). Video mahsulot sahifasida galereyaning oxirgi
+ * slaydi bo'lib chiqadi.
+ */
+async function sendVideoMenu(session: AdminSession, product: Product): Promise<void> {
+  const videos = product.videos ?? [];
+  const rows: InlineButton[][] = [];
+  if (videos.length < MAX_VIDEOS) {
+    rows.push([{ text: "➕ Video qo'shish", callback_data: "ap|vd|add" }]);
+  }
+  for (let i = 0; i < videos.length; i += 1) {
+    rows.push([{ text: `🗑 ${i + 1}-video`, callback_data: `ap|vd|del:${i}` }]);
+  }
+  rows.push([{ text: "⬅️ Orqaga", callback_data: "ap|ef|back" }]);
+
+  const text =
+    videos.length > 0
+      ? `🎬 <b>Videolar:</b> ${videos.length} ta (ko'pi bilan ${MAX_VIDEOS} ta).\n\nVideo saytdagi galereyada rasmlardan keyin ko'rinadi.`
+      : `🎬 Mahsulotda hali video yo'q.\n\nVideo yuborsangiz u saytdagi galereyaga tushadi (20 MB gacha).`;
 
   await sendChatMessage(session.chatId, text, {
     replyMarkup: { inline_keyboard: rows },
@@ -571,8 +648,10 @@ export async function handleAdminSessionMessage(params: {
   text: string;
   /** Admin rasm yuborgan bo'lsa - eng katta o'lchamdagi file_id. */
   photoFileId?: string;
+  /** Admin video yuborgan bo'lsa - uning file_id si. */
+  videoFileId?: string;
 }): Promise<boolean> {
-  const { chatId, userId, text, photoFileId } = params;
+  const { chatId, userId, text, photoFileId, videoFileId } = params;
   const session = await getSession(userId);
   if (!session) return false;
   session.threadId = session.threadId ?? params.threadId;
@@ -602,6 +681,38 @@ export async function handleAdminSessionMessage(params: {
       }
     }
     await reloadEditMenu(userId, session, photoAdded);
+    return true;
+  }
+
+  if (session.flow === "edit_product" && session.step === "edit_value" && session.editField === "video") {
+    if (!videoFileId) {
+      await sendChatMessage(
+        chatId,
+        "Iltimos, videoni <b>video</b> sifatida yuboring (fayl/hujjat emas).",
+        { threadId: session.threadId }
+      );
+      return true;
+    }
+    let videoAdded = false;
+    if (session.productId) {
+      try {
+        await attachTelegramVideo(session.productId, videoFileId);
+        videoAdded = true;
+        await sendChatMessage(chatId, "🎬 Video qo'shildi ✅ Saytdagi galereyada ko'rinadi.", {
+          threadId: session.threadId,
+        });
+      } catch (error) {
+        console.error("Video yuklashda xato:", error);
+        // Sabab aniq aytiladi: hajm chegarasi eng ko'p uchraydigan holat.
+        const reason = error instanceof Error ? error.message : "Noma'lum xato";
+        await sendChatMessage(
+          chatId,
+          `⚠️ Video yuklanmadi: ${reason}\n\nTelegram bot 20 MB gacha faylni oladi — qisqaroq video yuboring.`,
+          { threadId: session.threadId }
+        );
+      }
+    }
+    await reloadEditMenu(userId, session, videoAdded);
     return true;
   }
 
@@ -1335,6 +1446,53 @@ export async function handleAdminSessionCallback(params: {
     return;
   }
 
+  // VIDEO menyusi (rasm menyusi bilan bir xil mantiq).
+  if (action === "vd") {
+    await answerCallbackQuery(callbackQueryId);
+
+    if (value === "add") {
+      session.step = "edit_value";
+      session.editField = "video";
+      await saveSession(userId, session);
+      await sendChatMessage(
+        session.chatId,
+        "🎬 <b>Videoni</b> yuboring (20 MB gacha). U saytdagi galereyada ko'rinadi.",
+        { threadId: session.threadId }
+      );
+      return;
+    }
+
+    if (value?.startsWith("del:") && session.productId) {
+      const index = Number(value.slice(4));
+      const updated = await detachProductVideo(session.productId, index).catch((error) => {
+        console.error("Videoni o'chirishda xato:", error);
+        return null;
+      });
+
+      if (!updated) {
+        await sendChatMessage(session.chatId, "⚠️ Videoni o'chirib bo'lmadi.", {
+          threadId: session.threadId,
+        });
+        return;
+      }
+
+      await sendChatMessage(
+        session.chatId,
+        `🗑 Video o'chirildi. Qoldi: ${updated.videos?.length ?? 0} ta.`,
+        { threadId: session.threadId }
+      );
+
+      // Kanalga hozir tegilmaydi - "✅ Tugatish" da bir marta.
+      session.pendingAnnounce = true;
+      await saveSession(userId, session);
+
+      await sendVideoMenu(session, updated);
+      return;
+    }
+
+    return;
+  }
+
   if (action === "ef") {
     await answerCallbackQuery(callbackQueryId);
     if (value === "category") {
@@ -1375,6 +1533,16 @@ export async function handleAdminSessionCallback(params: {
         : null;
       if (snap?.exists) {
         await sendPhotoMenu(session, { id: snap.id, ...snap.data() } as Product);
+        return;
+      }
+    }
+    if (value === "video") {
+      // Video uchun alohida menyu: qo'shish yoki o'chirish.
+      const snap = session.productId
+        ? await getAdminDb().collection("products").doc(session.productId).get()
+        : null;
+      if (snap?.exists) {
+        await sendVideoMenu(session, { id: snap.id, ...snap.data() } as Product);
         return;
       }
     }

@@ -241,6 +241,7 @@ export async function POST(request: Request) {
               threadId: message.message_thread_id,
               text: message.text ?? "",
               photoFileId,
+              videoFileId,
             });
             if (handledBySession) return NextResponse.json({ ok: true });
           }
@@ -281,7 +282,7 @@ export async function POST(request: Request) {
             text: message.text,
             userId: adminUserId,
           });
-        } else if (adminUserId && (message.text || message.photo)) {
+        } else if (adminUserId && (message.text || message.photo || message.video)) {
           // Buyruq bo'lmagan matn/rasm - faol interaktiv sessiya bosqichi
           // bo'lishi mumkin (nom/narx kiritish yoki mahsulot rasmi).
           // Sessiya bo'lmasa e'tiborsiz.
@@ -291,6 +292,9 @@ export async function POST(request: Request) {
             threadId: message.message_thread_id,
             text: message.text ?? "",
             photoFileId: message.photo?.at(-1)?.file_id,
+            // Video ham sessiyaga uzatiladi: "🎬 Video" tugmasidan
+            // keyin xodim videoni shu yerga yuboradi.
+            videoFileId: message.video?.file_id,
           });
         }
       } else if (message.chat.type === "private" && message.from?.id) {
