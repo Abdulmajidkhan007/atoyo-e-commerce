@@ -354,6 +354,9 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/BACKUP.md`, `docs/PLAY-STORE.md` | Zaxira, Play Store |
 | `mobile/README.md` | Ilova: yig'ish va yangilanish chiqarish |
 | `docs/SESSION-PROMPT.md` | Yangi sessiyaga beriladigan tayyor prompt |
+| `docs/PROMPTLAR.md` | Rejalashtiruvchi sessiya + boshqa loyihani tahlil qilish prompti |
+| `docs/PROMPTLAR-UMUMIY.md` | Umumiy (istalgan loyihaga mos) promptlar kutubxonasi |
+| `docs/PROMPTLAR-ATOYO.md` | Shu loyihaga xos promptlar + **loyiha auditi** topshirig'i |
 
 # MA'LUM BLOKLAR VA KUTILAYOTGAN ISHLAR
 

@@ -92,6 +92,8 @@ docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 | `docs/REBUILD-PROMPT.md` | Loyihaning to'liq holati (boshqa AI ga topshiriq) |
 | `docs/SESSION-PROMPT.md` | Yangi ish sessiyasi uchun tayyor prompt |
 | `docs/PROMPTLAR.md` | Rejalashtiruvchi sessiya, kundalik ish va boshqa loyihani tahlil promptlari |
+| `docs/PROMPTLAR-UMUMIY.md` | Umumiy promptlar kutubxonasi (istalgan loyihaga mos) |
+| `docs/PROMPTLAR-ATOYO.md` | Shu loyihaga xos promptlar va loyiha auditi topshirig'i |
 | `docs/DEPLOY.md` | Hosting, env va secret sozlash tartibi |
 | `docs/KIRIM-VA-IMPORT.md` | Kirim, Excel/CSV import, 1C narxnomasi |
 | `docs/TV.md` / `docs/DESKTOP.md` / `docs/STICKERS.md` | Do'kon ekrani, Electron, stikerlar |

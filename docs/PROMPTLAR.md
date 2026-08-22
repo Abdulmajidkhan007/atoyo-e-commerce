@@ -8,6 +8,9 @@ Bu fayl **token tejash** uchun. Uchta prompt bor:
 | 2 | **Ish sessiyasi** | Bitta vazifa bajariladi, commit + push |
 | 3 | **Boshqa loyihani tahlil** | Notanish loyiha uchun `CLAUDE.md` va tahlil |
 
+Tayyor matnlar: umumiy promptlar — `docs/PROMPTLAR-UMUMIY.md`,
+shu loyihaga xoslari va **audit topshirig'i** — `docs/PROMPTLAR-ATOYO.md`.
+
 **Ish tartibi:** bitta uzoq yashaydigan "rejalashtiruvchi" suhbat
 ochasiz (1-prompt) → u sizga tayyor topshiriq matnini beradi → siz
 **yangi sessiya** ochib o'sha matnni yuborasiz (2-prompt) → ish
