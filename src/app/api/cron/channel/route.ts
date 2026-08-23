@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { drainChannelQueue } from "@/lib/telegram/channel";
 import { channelQueueSummary } from "@/lib/telegram/channel-queue";
 import { reportError } from "@/lib/ops/report-error";
+import { secretMatches } from "@/lib/http/secret-match";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,13 +25,6 @@ export const dynamic = "force-dynamic";
 
 /** Bir chaqiruvda ko'pi bilan shuncha post (tezlik chegarasi ham bor). */
 const BATCH = 5;
-
-function secretMatches(header: string | null, expected: string): boolean {
-  const provided = header?.replace(/^Bearer\s+/i, "").trim() ?? "";
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 export async function POST(request: Request) {
   const expected = process.env.CRON_SECRET ?? "";

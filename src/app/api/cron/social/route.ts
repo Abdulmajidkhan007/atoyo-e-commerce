@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { processQueue, queueSummary } from "@/lib/social/publish";
 import { reportError } from "@/lib/ops/report-error";
+import { secretMatches } from "@/lib/http/secret-match";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,14 +24,6 @@ export const dynamic = "force-dynamic";
 
 /** Bir chaqiruvda nechta post - Telegram/Meta chegaralariga urilmasin. */
 const BATCH = 10;
-
-function secretMatches(header: string | null, expected: string): boolean {
-  const provided = header?.replace(/^Bearer\s+/i, "").trim() ?? "";
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  // `timingSafeEqual` uzunliklar teng bo'lishini talab qiladi.
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 export async function POST(request: Request) {
   const expected = process.env.CRON_SECRET ?? "";
