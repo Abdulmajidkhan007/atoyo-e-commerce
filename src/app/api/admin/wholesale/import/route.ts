@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/firebase/session";
 import { createWholesaleClient, notifyStaff } from "@/lib/wholesale/clients";
 import { parseCsv } from "@/lib/products/csv";
+import { parseXlsx } from "@/lib/products/xlsx";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,26 +41,6 @@ function normalizeHeader(header: string): string {
   return clean;
 }
 
-function cellToText(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  return String(value).trim();
-}
-
-async function parseXlsx(base64: string): Promise<Record<string, string>[]> {
-  const { readSheet } = await import("read-excel-file/node");
-  const rows = (await readSheet(Buffer.from(base64, "base64"))) as unknown[][];
-  if (rows.length < 2) return [];
-
-  const headers = (rows[0] ?? []).map((cell) => normalizeHeader(cellToText(cell)));
-  return rows.slice(1).flatMap((cells) => {
-    const row: Record<string, string> = {};
-    headers.forEach((header, i) => {
-      if (header) row[header] = cellToText(cells[i]);
-    });
-    return Object.values(row).some((value) => value !== "") ? [row] : [];
-  });
-}
-
 export async function POST(request: Request) {
   const admin = await requirePermission("users", request);
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
@@ -69,7 +50,7 @@ export async function POST(request: Request) {
 
   const rows =
     "xlsx" in parsed.data
-      ? await parseXlsx(parsed.data.xlsx)
+      ? await parseXlsx(parsed.data.xlsx, normalizeHeader)
       : parseCsv(parsed.data.csv, { normalizeHeaders: false }).map((row) => {
           const mapped: Record<string, string> = {};
           for (const [key, value] of Object.entries(row)) mapped[normalizeHeader(key)] = value;
