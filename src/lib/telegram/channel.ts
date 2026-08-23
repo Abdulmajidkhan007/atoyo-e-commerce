@@ -13,7 +13,6 @@ import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import { publicDescription } from "@/lib/products/description";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
-import { escapeHtml } from "@/lib/telegram/html";
 import {
   hasVariants,
   minVariantPrice,

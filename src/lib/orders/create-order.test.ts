@@ -33,7 +33,14 @@ let stores: Record<string, Map<string, Record<string, unknown>>>;
 let autoCounter = 0;
 
 function resetStores() {
-  stores = { orders: new Map(), products: new Map(), stats: new Map() };
+  // `orderCosts` — tannarx alohida kolleksiyada (AUDIT 2.1), buyurtma
+  // tranzaksiyasi unga ham yozadi.
+  stores = {
+    orders: new Map(),
+    orderCosts: new Map(),
+    products: new Map(),
+    stats: new Map(),
+  };
   autoCounter = 0;
 }
 resetStores();

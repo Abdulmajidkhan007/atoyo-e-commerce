@@ -18,7 +18,6 @@ import {
 } from "./intake-parser";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { nextProductCode } from "@/lib/products/product-code";
-import { escapeHtml } from "@/lib/telegram/html";
 import { labelOf, suggestTaxonomy } from "@/lib/products/taxonomy";
 import { axisKeyOf, variantIdOf } from "@/lib/products/variants";
 import type { Product, ProductVariant, VariantAxis } from "@/types/product";
