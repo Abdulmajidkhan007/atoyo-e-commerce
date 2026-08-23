@@ -163,3 +163,40 @@ lekin ALOHIDA commitlar bilan:
    publicCacheHeaders(600) (3.6).
 Har commitdan keyin: tsc + eslint + test + build. Oxirida push.
 ```
+
+---
+
+# HOLAT (2026-08-23)
+
+Yetti ish yetti alohida sessiyada bajarilib, yettita alohida branchga
+push qilingan edi — hech biri deploy branchida emasdi. Hammasi
+`claude/plumbing-ecommerce-nextjs-jxpmh5` ga birlashtirildi
+(konfliktlar: `escapeHtml` moduli ikki marta yaratilgan, `search-index`
+ikki xil versiya, `create-order.test.ts` ikki xil soxta baza).
+
+| Ish | Holat |
+|---|---|
+| 1) Storage tozalash qalqoni | ✅ birlashtirildi |
+| 2) Botda HTML escape | ✅ birlashtirildi |
+| 3) Tannarx → `orderCosts` | ✅ birlashtirildi (migratsiya route'i bilan) |
+| 4) `npm test` + hujjat raqamlari | ✅ birlashtirildi |
+| 5) Rate limit (XFF) | ✅ birlashtirildi ⚠️ production'da XFF zanjirini bir marta tekshirish kerak |
+| 6) Arzon g'alabalar (8 ta band) | ✅ birlashtirildi |
+| 7) To'lov yo'llari | ✅ birlashtirildi (merchant kalitlari kelgach test kabinetida sinaladi) |
+
+Tekshiruv birlashtirilgandan keyin: `tsc`, `eslint`, `npm test`
+(262/262, 38 fayl), `npm run build` — hammasi yashil.
+
+## Qolgan ishlar (auditdan, hali qilinmagan)
+
+| # | Ish | Nega qoldi |
+|---|---|---|
+| 2.5 | Katalog indekslari + zaxira so'rovda filtr sahifani kesib tashlashi | Hech qaysi sessiyaga berilmagan. `firestore.indexes.json` da `stock` umuman yo'q; zaxira yo'lda `hasMore` filtrlanmagan songa qarab hisoblanadi |
+| 3.1 | CSV eksport butun katalogni bir so'rovda o'qiydi | Kursor + `maxDuration` kerak |
+| 3.4 | Foydalanuvchilar ro'yxati N+1 (20 × 200 hujjat) | Izohi to'g'rilandi, kodi emas |
+| 2.7 | Narx/yetkazish sozlamasi jimgina standartga tushishi | `reportError` qo'shilmagan |
+| 2.8 | Telegram webhook xatosi faqat konsolga yozilishi | `reportError` qo'shilmagan |
+| 2.9 | `/api/admin/upload` — huquq emas, faqat "xodimmi" tekshiriladi | Tegilmagan |
+| 2.10 | `/k/<id>` cheksiz yozuv (rate limit + mahsulot borligini tekshirish) | Faqat izoh to'g'rilandi |
+| 3.5 | `three.js` ikki chunk (946 KB × 2) | 3D o'chiq bo'lgani uchun mijozga tegmaydi |
+| 3.7 | 800 qatordan katta 7 ta faylni bo'lish | Katta ish, alohida rejalashtiriladi |
