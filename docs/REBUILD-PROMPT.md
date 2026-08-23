@@ -319,6 +319,15 @@ Do'kon ham do'konlarga (optom), ham oddiy xaridorga (dona) sotadi va
   beriladi. Filtr/saralash avvalgidek baza tomonida; kursor —
   oxirgi hujjatning ID si. Testlari: `viewer.test.ts`,
   `catalog-server.test.ts`.
+- **Buyurtma hujjatida tannarx YO'Q.** Mijoz o'z buyurtmasini
+  profilida client SDK bilan (`onSnapshot`) o'qiydi, shuning uchun
+  `orders/{id}.items[]` da `costPrice` saqlanmaydi - u bir xil
+  tranzaksiyada alohida yopiq `orderCosts/{orderId}` hujjatiga
+  (`{ items: [{productId, variantId, costPrice}] }`) yoziladi,
+  `firestore.rules` da `allow read, write: if false`. Hisobot
+  (`/api/admin/reports`) tannarxni o'shandan `db.getAll()` bilan
+  o'qiydi. Eski buyurtmalar bir martalik
+  `/api/admin/maintenance/order-costs` (faqat owner) bilan ko'chiriladi.
 - **Eng kam buyurtma summasi** (standart 100 000 so'm): savatda
   ogohlantirish chiqadi va rasmiylashtirish tugmasi bloklanadi,
   server esa buyurtmani baribir tekshiradi.
@@ -722,8 +731,12 @@ bo'lardi.
   posti ma'lumotlari, sanalar. **`price` — OPTOM narx** (dona narx
   ustama bilan hisoblanadi).
 - `orders` — mijoz, telefon, manzil, joylashuv, `items[]` (mahsulot,
-  tur, narx, soni), summa, promokod, yetkazish narxi, to'lov turi va
-  holati, status, Telegram xabar ID si, sanalar.
+  tur, narx, soni — **tannarxsiz**), summa, promokod, yetkazish narxi,
+  to'lov turi va holati, status, Telegram xabar ID si, sanalar.
+- `orderCosts` — `orders` bilan bir xil ID'da, faqat tannarx
+  (`{ items: [{productId, variantId, costPrice}] }`); yopiq
+  (`allow read, write: if false`), faqat hisobot server tomonidan
+  o'qiydi.
 - `users` — rol va huquqlar, telefon, manzil, Telegram ID,
   `pushTokens[]`. Rol `client` — OPTOM mijoz (optom narxni ko'radi),
   `user` — oddiy (dona) mijoz; optom faollashganda

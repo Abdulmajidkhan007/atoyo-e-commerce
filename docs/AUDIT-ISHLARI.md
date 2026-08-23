@@ -60,7 +60,7 @@ Vazifa:
 Tugagach: tsc + eslint + test + build, commit va push.
 ```
 
-## 3) Tannarxni buyurtmadan chiqarish (AUDIT 2.1) 🔴
+## 3) Tannarxni buyurtmadan chiqarish (AUDIT 2.1) 🔴 ✅ BAJARILDI
 
 ```text
 Buyurtma hujjatida items[].costPrice saqlanadi

@@ -35,6 +35,24 @@ optom narx faqat optom mijozga va admin panelga.
 edi va qaysi narx qaysi kodga tegishli ekani bilinmasdi. Endi:
 QIYMAT → NARX → KOD (`Satin Gold — 91 400 so'm · kod: SJ-03`).
 
+**Tannarx buyurtma hujjatida ham sizib chiqqan edi.** `products`
+yopilgani va `toViewerProduct()` yozilgani mijozni Firestore'dan
+mahsulot o'qishdan to'xtatdi, lekin `createOrder()` sotilgan qatorga
+`costPrice` nusxasini (foyda hisoboti uchun) to'g'ridan-to'g'ri
+`orders/{id}.items[]` ga yozardi — `orders` esa `firestore.rules`da
+`allow read: if ... resource.data.userId == request.auth.uid`, ya'ni
+mijoz O'Z buyurtmasini profilida client SDK bilan (`subscribeToUserOrders`,
+`onSnapshot`) butunligicha o'qirdi. Har qanday mijoz o'zi sotib olgan
+mahsulotning tannarxini brauzer konsolida ko'ra olardi. Endi tannarx
+`orders` bilan bir tranzaksiyada, lekin alohida yopiq
+`orderCosts/{orderId}` hujjatiga yoziladi (`allow read, write: if
+false`); hisobot (`api/admin/reports/route.ts`) tannarxni o'sha
+yerdan `db.getAll()` bilan o'qiydi. Eski buyurtmalar uchun bir
+martalik `/api/admin/maintenance/order-costs` migratsiyasi bor —
+Firestore massiv ICHIDAGI maydonni nuqta yo'li bilan o'chirib
+bo'lmagani uchun (`FieldValue.delete()` faqat xarita maydoniga
+ishlaydi) `items` massivi tannarxsiz holda butunlay qayta yoziladi.
+
 ---
 
 ## 2. Admin API xatolari

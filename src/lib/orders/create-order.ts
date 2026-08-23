@@ -93,6 +93,13 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     const promoSnap = promoRef ? await tx.get(promoRef) : null;
 
     const verifiedItems: OrderItem[] = [];
+    /**
+     * TANNARX buyurtma hujjatiga EMAS - alohida yopiq `orderCosts/{id}`
+     * hujjatiga yoziladi (CLAUDE.md 1-qoidasi: mijoz `orders`ni client
+     * SDK bilan o'z profilida o'qiydi, tannarx u yerga tushmasligi
+     * kerak). Qatorlar `verifiedItems` bilan bir xil tartibda.
+     */
+    const costItems: { productId: string; variantId: string | null; costPrice: number | null }[] = [];
     // Ombor tarixi tranzaksiyadan KEYIN yoziladi (tranzaksiya ichida
     // qo'shimcha yozuv qilmaymiz - u qayta urinishda takrorlanishi mumkin).
     stockMoves.length = 0;
@@ -132,11 +139,15 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
           variantLabel: variantLabel(product, variant),
           name: product.name,
           price: priceOf(variantPrice(variant), product),
-          // Foyda hisoboti uchun tannarx nusxasi (turning o'ziniki
-          // bo'lmasa - mahsulotniki).
-          costPrice: variant.costPrice ?? product.costPrice ?? null,
           quantity: requested.quantity,
           thumbnailUrl: product.thumbnailUrl,
+        });
+        // Foyda hisoboti uchun tannarx nusxasi (turning o'ziniki
+        // bo'lmasa - mahsulotniki).
+        costItems.push({
+          productId: product.id,
+          variantId: variant.id,
+          costPrice: variant.costPrice ?? product.costPrice ?? null,
         });
         continue;
       }
@@ -151,10 +162,10 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
         name: product.name,
         // Narx MIJOZDAN emas, bazadan - chegirma muddati ham tekshiriladi.
         price: priceOf(isDiscountActive(product) ? product.discountPrice! : product.price, product),
-        costPrice: product.costPrice ?? null,
         quantity: requested.quantity,
         thumbnailUrl: product.thumbnailUrl,
       });
+      costItems.push({ productId: product.id, variantId: null, costPrice: product.costPrice ?? null });
     }
 
     const itemsTotal = verifiedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -232,6 +243,8 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
       { totalOrders: FieldValue.increment(1), totalRevenue: FieldValue.increment(total) },
       { merge: true }
     );
+    // Tannarx - yopiq kolleksiyaga, buyurtma hujjatining o'zidan tashqarida.
+    tx.set(db.collection("orderCosts").doc(orderRef.id), { items: costItems, createdAt: now });
 
     return {
       items: verifiedItems,

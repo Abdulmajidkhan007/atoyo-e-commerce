@@ -9,10 +9,12 @@ export interface OrderItem {
   name: string;
   price: number;
   /**
-   * Sotilgan paytdagi TANNARX (nusxa). Keyinchalik mahsulot tannarxi
-   * o'zgarsa ham eski buyurtmaning foydasi o'zgarmaydi.
+   * TANNARX bu yerda YO'Q (CLAUDE.md 1-qoidasi): mijoz `orders`
+   * hujjatini client SDK bilan o'z profilida o'qiy oladi, shuning
+   * uchun tannarx alohida yopiq `orderCosts/{orderId}` hujjatida
+   * saqlanadi (`lib/orders/create-order.ts`, hisobotda
+   * `api/admin/reports/route.ts` o'qiydi).
    */
-  costPrice?: number | null;
   quantity: number;
   thumbnailUrl: string;
 }
