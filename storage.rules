@@ -1,19 +1,14 @@
 rules_version = '2';
 
+// Hamma yozuv Admin SDK orqali ketadi (src/lib/firebase/admin-storage.ts,
+// "server-only"), fayllar esa firebaseStorageDownloadTokens bilan ochiq
+// URL orqali o'qiladi - client Storage SDK'ga umuman kirmaydi. Papkalar
+// (products/<id>, blog, site) va admin ruxsati (src/lib/permissions.ts)
+// tekshiruvi shu Admin SDK yo'lida - Storage qoidalari amalda ishlamaydi,
+// shuning uchun bu yerda faqat bitta yopiq qoida bor.
 service firebase.storage {
-  match /b/{bucket}/o {
-
-    function isAdmin() {
-      return request.auth != null &&
-        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    match /products/{productId}/{fileName} {
-      allow read: if true;
-      allow write: if isAdmin()
-        && request.resource.size < 5 * 1024 * 1024
-        && request.resource.contentType.matches('image/(jpeg|png|webp)');
-    }
+  match /{allPaths=**} {
+    allow read: if false;
+    allow write: if false;
   }
 }
