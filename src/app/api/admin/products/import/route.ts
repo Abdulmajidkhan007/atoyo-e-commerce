@@ -6,6 +6,7 @@ import { requirePermission } from "@/lib/firebase/session";
 import { buildNameTokens } from "@/lib/search/tokens";
 import { registerFacets } from "@/lib/products/facets";
 import { normalizeHeader, parseCsv, variantsFromRows } from "@/lib/products/csv";
+import { parseXlsx } from "@/lib/products/xlsx";
 import { DEFAULT_UNIT, matchTaxonomy, slugify as taxonomySlug } from "@/lib/products/taxonomy";
 import { logAction } from "@/lib/telegram/action-log";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
@@ -26,35 +27,6 @@ const bodySchema = z.union([
   z.object({ csv: z.string().min(1).max(5_000_000), publish: z.boolean().optional() }),
   z.object({ xlsx: z.string().min(1).max(12_000_000), publish: z.boolean().optional() }),
 ]);
-
-/** Excel katakchasidagi qiymatni CSV bilan bir xil matnga keltiradi. */
-function cellToText(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  if (value instanceof Date) {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
-  }
-  if (typeof value === "boolean") return value ? "1" : "0";
-  return String(value).trim();
-}
-
-/** Excel faylini CSV import bilan bir xil qator obyektlariga aylantiradi. */
-async function parseXlsx(base64: string): Promise<Record<string, string>[]> {
-  // `readSheet` - birinchi varaq (namunadagi "Yo'riqnoma" varag'i o'qilmaydi).
-  const { readSheet } = await import("read-excel-file/node");
-  const rows = (await readSheet(Buffer.from(base64, "base64"))) as unknown[][];
-  if (rows.length < 2) return [];
-
-  const headers = (rows[0] ?? []).map((cell) => normalizeHeader(cellToText(cell)));
-  return rows.slice(1).flatMap((cells) => {
-    const row: Record<string, string> = {};
-    headers.forEach((header, i) => {
-      if (header) row[header] = cellToText(cells[i]);
-    });
-    // Butunlay bo'sh qatorlar (Excel'da tez-tez uchraydi) tashlab yuboriladi.
-    return Object.values(row).some((value) => value !== "") ? [row] : [];
-  });
-}
 
 /** Firestore batch chegarasi 500 - xavfsiz oraliq bilan bo'lib yozamiz. */
 const BATCH_SIZE = 400;
@@ -87,7 +59,7 @@ export async function POST(request: Request) {
   let rows: Record<string, string>[];
   if ("xlsx" in parsedBody.data) {
     try {
-      rows = await parseXlsx(parsedBody.data.xlsx);
+      rows = await parseXlsx(parsedBody.data.xlsx, normalizeHeader);
     } catch (error) {
       console.error("Excel faylni o'qishda xato:", error);
       return NextResponse.json(

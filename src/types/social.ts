@@ -9,8 +9,6 @@
 
 export type SocialNetwork = "instagram" | "facebook" | "youtube";
 
-export const SOCIAL_NETWORKS: SocialNetwork[] = ["instagram", "facebook", "youtube"];
-
 export const SOCIAL_LABELS: Record<SocialNetwork, string> = {
   instagram: "Instagram",
   facebook: "Facebook",

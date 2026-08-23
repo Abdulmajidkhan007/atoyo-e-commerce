@@ -134,7 +134,13 @@ export function ProductTable() {
       const res = await fetch("/api/admin/products/search-index", { method: "POST" });
       const data = await res.json();
       setReindexResult(
-        res.ok ? `Qidiruv motoriga ${data.indexed} ta mahsulot yuborildi.` : data.error
+        res.ok
+          ? `Qidiruv motoriga ${data.indexed} ta mahsulot yuborildi.${
+              data.truncated
+                ? " ⚠️ Katalog chegaradan katta - qolgan mahsulotlar indekslanmadi."
+                : ""
+            }`
+          : data.error
       );
     } catch {
       setReindexResult("Qidiruv motoriga ulanib bo'lmadi.");

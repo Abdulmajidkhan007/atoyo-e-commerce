@@ -394,8 +394,3 @@ export async function queueSummary(): Promise<{
     recent: recentSnap.docs.map((doc) => doc.data() as SocialJob),
   };
 }
-
-/** Xabar matni uchun tarmoq nomi. */
-export function networkLabel(network: SocialNetwork): string {
-  return SOCIAL_LABELS[network];
-}

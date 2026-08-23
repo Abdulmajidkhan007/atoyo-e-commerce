@@ -65,6 +65,3 @@ export function installServiceText(settings?: Partial<DeliverySettings> | null):
   const near = city ? `${city} va atrofidagi mijozlarga` : "yaqin mijozlarga";
   return `Moyka, dush kabina va shunga o'xshash mahsulotlarni o'rnatib berish xizmati bor — ${near}. Buyurtma berayotganda ayting.`;
 }
-
-/** Mahsulot sahifasidagi qisqa yorliq. */
-export const INSTALL_BADGE = "O'rnatib berish xizmati bor";

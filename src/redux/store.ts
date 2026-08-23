@@ -46,7 +46,7 @@ export const makeStore = () =>
   });
 
 export const store = makeStore();
-export const persistor = persistStore(store);
+const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof rootReducer>;
 export type AppStore = typeof store;

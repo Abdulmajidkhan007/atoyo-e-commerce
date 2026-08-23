@@ -32,10 +32,6 @@ export function enabledAuthMethods(): AuthMethod[] {
   return list.length > 0 ? list : DEFAULT_METHODS;
 }
 
-export function isAuthMethodEnabled(method: AuthMethod): boolean {
-  return enabledAuthMethods().includes(method);
-}
-
 /** Tugma yozuvlari (brend nomlari tarjima qilinmaydi). */
 export const AUTH_METHOD_LABELS: Record<SocialProvider, string> = {
   google: "Google",

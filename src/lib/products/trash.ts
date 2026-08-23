@@ -79,16 +79,6 @@ export async function listTrash(limit = 100): Promise<TrashedProduct[]> {
   return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as TrashedProduct);
 }
 
-/** Savatdagi mahsulotlar soni (tugma yonida ko'rsatiladi). */
-export async function countTrash(): Promise<number> {
-  try {
-    const snap = await getAdminDb().collection(TRASH).count().get();
-    return snap.data().count;
-  } catch {
-    return 0;
-  }
-}
-
 /**
  * TIKLASH: hujjat `products` ga qaytadi. Mahsulot SAYTDA YOPIQ holda
  * tiklanadi (`isActive: false`) - tasodifan o'chirilgan minglab

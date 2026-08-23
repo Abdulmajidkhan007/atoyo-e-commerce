@@ -14,6 +14,7 @@ import {
   type ExpensePayment,
   type ExpensePeriod,
 } from "@/types/expense";
+import { formatSom } from "@/lib/format";
 
 /**
  * LOYIHA TO'LOVLARI paneli.
@@ -57,10 +58,6 @@ const STATUS_CHIP: Record<string, { label: string; color: "default" | "warning" 
   upcoming: { label: "Muddati bor", color: "success" },
   paid: { label: "To'langan", color: "default" },
 };
-
-function money(value: number): string {
-  return `${Math.round(value).toLocaleString("ru-RU").replace(/ /g, " ")} so'm`;
-}
 
 function dateInput(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
@@ -176,10 +173,10 @@ export function ExpensesPanel() {
       {/* ---- Umumiy ko'rsatkichlar ---- */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          { label: "Oyiga (o'rtacha)", value: money(data?.summary.monthly ?? 0) },
-          { label: "Yiliga", value: money(data?.summary.yearly ?? 0) },
-          { label: "30 kun ichida to'lanadi", value: money(data?.summary.next30 ?? 0) },
-          { label: "Shu oyda to'langan", value: money(data?.summary.paidThisMonth ?? 0) },
+          { label: "Oyiga (o'rtacha)", value: formatSom(data?.summary.monthly ?? 0) },
+          { label: "Yiliga", value: formatSom(data?.summary.yearly ?? 0) },
+          { label: "30 kun ichida to'lanadi", value: formatSom(data?.summary.next30 ?? 0) },
+          { label: "Shu oyda to'langan", value: formatSom(data?.summary.paidThisMonth ?? 0) },
         ].map((card) => (
           <div
             key={card.label}
@@ -254,10 +251,10 @@ export function ExpensesPanel() {
                     {expense.vendor && <span className="block text-xs text-navy-300">{expense.vendor}</span>}
                   </td>
                   <td className="px-3 py-2">
-                    {expense.currency === "USD" ? `$${expense.amount}` : money(expense.amount)}
+                    {expense.currency === "USD" ? `$${expense.amount}` : formatSom(expense.amount)}
                     {expense.currency === "USD" && (
                       <span className="block text-xs text-navy-300">
-                        ≈ {money(toUzs(expense.amount, "USD", usdRate))}
+                        ≈ {formatSom(toUzs(expense.amount, "USD", usdRate))}
                       </span>
                     )}
                   </td>
@@ -424,7 +421,7 @@ export function ExpensesPanel() {
             >
               <span className="text-navy-900 dark:text-white">{payment.name}</span>
               <span className="text-navy-400">
-                {new Date(payment.paidAt).toLocaleDateString("uz-UZ")} • {money(payment.amountUzs)}
+                {new Date(payment.paidAt).toLocaleDateString("uz-UZ")} • {formatSom(payment.amountUzs)}
               </span>
             </div>
           ))}
