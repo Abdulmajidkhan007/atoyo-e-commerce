@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { publicStickerPacks } from "@/lib/telegram/stickers";
+import { publicCacheHeaders } from "@/lib/http/cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +14,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
-    return NextResponse.json({ packs: await publicStickerPacks() });
+    // Ro'yxat deyarli o'zgarmaydi - CDN 10 daqiqa keshlaydi.
+    return NextResponse.json({ packs: await publicStickerPacks() }, { headers: publicCacheHeaders(600) });
   } catch {
     return NextResponse.json({ packs: [] });
   }
