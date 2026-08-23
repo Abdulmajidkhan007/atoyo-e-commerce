@@ -163,28 +163,3 @@ lekin ALOHIDA commitlar bilan:
    publicCacheHeaders(600) (3.6).
 Har commitdan keyin: tsc + eslint + test + build. Oxirida push.
 ```
-
-## 7) To'lov yo'llarini mustahkamlash (AUDIT 2.6 + 2.11) 🟠
-
-> Merchant kalitlari kelishidan **oldin** bajarilsin; hozir shoshilinch emas.
-
-```text
-Payme CancelTransaction (api/payments/payme/route.ts:150-162) va Click
-xato yo'li (click/route.ts:108-111) faqat paymentStatus:"failed" yozadi:
-buyurtma "pending" bo'lib qoladi va zaxira qaytarilmaydi (create-order.ts:216
-da darhol kamaygan edi). Batafsil: docs/AUDIT.md 2.6.
-
-Vazifa:
-1. Ikkala yo'lda applyOrderStatusUpdate(orderId, "cancelled") chaqir —
-   u zaxirani stockReturned bilan BIR MARTA qaytaradi.
-2. click/route.ts catch: {error:-1} o'rniga HTTP 500 (Click qayta
-   urinadi, tranzaksiya yo'qolmaydi).
-3. Imzo solishtirishni timingSafeEqual ga o'tkaz (cron/social dagi
-   secretMatches ni umumiy modulga chiqarib).
-4. Testlar: payme.test.ts (CheckPerform -> Create -> Perform -> Cancel,
-   tiyin hisobi, takroriy Perform), click.test.ts (to'g'ri/noto'g'ri
-   MD5, summa mos kelmasligi), create-order.test.ts (rolga qarab narx,
-   promokod, zaxira), update-status.test.ts (stockReturned ikki marta
-   ishlamasligi), permissions.test.ts.
-Tugagach: tsc + eslint + test + build, commit va push.
-```

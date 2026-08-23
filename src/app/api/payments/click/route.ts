@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { getAdminDb } from "@/lib/firebase/admin";
 import type { Order } from "@/types/order";
 import { reportError } from "@/lib/ops/report-error";
+import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
+import { timingSafeStringEqual } from "@/lib/http/secret-match";
 
 export const runtime = "nodejs";
 
@@ -34,10 +36,12 @@ export async function POST(request: Request) {
     return await handle(request);
   } catch (error) {
     // Pul yo'lidagi xato - xodimlar guruhiga darhol xabar ketsin.
-    // Click 500 javobni qayta yuboradi, shuning uchun xatoni yutib
-    // yubormay, aniq imzo xatosi bilan javob qaytaramiz.
+    // Click imzo xatosi (-1) bilan emas, HTTP 500 bilan javob olishi
+    // kerak: aks holda u "bu so'rov bilan gaplashmayman" deb qayta
+    // urinishni to'xtatadi va PerformTransaction bosqichida pul
+    // mijozdan yechilib, buyurtma "to'lanmagan" bo'lib qolishi mumkin.
     await reportError("Click webhook", error);
-    return NextResponse.json({ error: ERR_SIGN, error_note: "Internal error" });
+    return NextResponse.json({ error: ERR_SIGN, error_note: "Internal error" }, { status: 500 });
   }
 }
 
@@ -71,7 +75,7 @@ async function handle(request: Request) {
 
   const base = { click_trans_id: clickTransId, merchant_trans_id: merchantTransId };
 
-  if (!secret || signString.toLowerCase() !== expectedSign.toLowerCase()) {
+  if (!secret || !timingSafeStringEqual(signString.toLowerCase(), expectedSign.toLowerCase())) {
     return NextResponse.json({ ...base, error: ERR_SIGN, error_note: "Imzo noto'g'ri" });
   }
 
@@ -107,6 +111,11 @@ async function handle(request: Request) {
     // Click o'zi xato yuborgan bo'lsa - to'lov amalga oshmagan.
     if (clickError !== "0") {
       await snap.ref.update({ paymentStatus: "failed", updatedAt: Date.now() });
+      // Buyurtma holati va zaxira - umumiy yo'l orqali. Yuqorida
+      // `order.status === "cancelled"` allaqachon tekshirilgan (ERR_CANCELLED
+      // bilan qaytadi), shuning uchun bu yerga faqat hali bekor
+      // qilinmagan buyurtma yetib keladi - takroriy chaqiruv xavfsiz.
+      await applyOrderStatusUpdate(order.id, "cancelled");
       return NextResponse.json({ ...base, merchant_confirm_id: order.id, error: 0, error_note: "Failed marked" });
     }
     if (order.paymentStatus !== "paid") {

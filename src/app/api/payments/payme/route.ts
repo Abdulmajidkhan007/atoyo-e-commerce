@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
 import type { Order } from "@/types/order";
 import { reportError } from "@/lib/ops/report-error";
+import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
+import { timingSafeStringEqual } from "@/lib/http/secret-match";
 
 export const runtime = "nodejs";
 
@@ -58,7 +60,7 @@ function isAuthorized(request: Request): boolean {
   if (!key) return false;
   const header = request.headers.get("authorization") ?? "";
   const expected = `Basic ${Buffer.from(`Paycom:${key}`).toString("base64")}`;
-  return header === expected;
+  return timingSafeStringEqual(header, expected);
 }
 
 async function getOrder(orderId: string | undefined): Promise<(Order & { paymeState?: number; paymeTransactionId?: string | null; paymeCreateTime?: number; paymePerformTime?: number; paymeCancelTime?: number }) | null> {
@@ -158,6 +160,12 @@ export async function POST(request: Request) {
           paymentStatus: "failed",
           updatedAt: cancelTime,
         });
+        // Buyurtma holati va zaxira - umumiy yo'l orqali (bir marta,
+        // takroriy Cancel chaqiruvi buyurtmani yana bekor qilib
+        // yubormasin va mijozga qayta xabar ketmasin).
+        if (order.status !== "cancelled") {
+          await applyOrderStatusUpdate(doc.id, "cancelled");
+        }
         return rpcResult(id, { transaction: doc.id, cancel_time: cancelTime, state: wasPerformed ? -2 : -1 });
       }
 

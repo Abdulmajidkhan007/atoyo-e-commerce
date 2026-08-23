@@ -1,173 +1,200 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_DELIVERY_SETTINGS } from "@/types/promo";
 
 /**
- * TANNARX BUYURTMA HUJJATIDA BO'LMASLIGI SHART.
+ * `createOrder` - BUYURTMA YARATISHNING YAGONA YO'LI.
  *
- * Ilgari `createOrder()` `items[].costPrice`ni buyurtma hujjatining
- * o'ziga yozardi - mijoz uni o'z profilida client SDK bilan
- * (`subscribeToUserOrders`) ochiq o'qiy olardi (CLAUDE.md 1-qoidasi
- * buzilishi). Endi tannarx alohida yopiq `orderCosts/{orderId}`
- * hujjatiga tushadi, `orders` esa tannarxsiz saqlanadi.
+ * Payme/Click bekor qilish oqimi to'g'ri ishlashi uchun buyurtma
+ * dastlab TO'G'RI holatda yaratilishi kerak: `paymentMethod: "online"`
+ * bo'lsa `paymentStatus: "pending"`, `status: "pending"`,
+ * `stockReturned: false` - shundagina keyinroq `applyOrderStatusUpdate`
+ * zaxirani to'g'ri qaytaradi. Bu yerda zaxira tekshiruvi va boshlang'ich
+ * holat sinaladi.
  */
 
-type FakeDoc = Record<string, unknown>;
-
-const collections: Record<string, Map<string, FakeDoc>> = {
-  products: new Map(),
-  orders: new Map(),
-  orderCosts: new Map(),
-  stats: new Map(),
-};
-
-let autoId = 0;
-
-function applyUpdate(prev: FakeDoc, value: Record<string, unknown>): FakeDoc {
-  const next: FakeDoc = { ...prev };
-  for (const [key, item] of Object.entries(value)) {
-    const increment = (item as { __increment?: number } | undefined)?.__increment;
-    next[key] = typeof increment === "number" ? Number(prev[key] ?? 0) + increment : item;
-  }
-  return next;
+interface Ref {
+  collection: string;
+  id: string;
 }
 
-function makeRef(collectionName: string, id?: string) {
-  const docId = id ?? `auto${autoId++}`;
+function applyFieldValues(
+  prev: Record<string, unknown> | undefined,
+  patch: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    const inc = (value as { __increment?: number } | undefined)?.__increment;
+    result[key] = typeof inc === "number" ? Number((prev ?? {})[key] ?? 0) + inc : value;
+  }
+  return result;
+}
+
+let stores: Record<string, Map<string, Record<string, unknown>>>;
+let autoCounter = 0;
+
+function resetStores() {
+  stores = { orders: new Map(), products: new Map(), stats: new Map() };
+  autoCounter = 0;
+}
+resetStores();
+
+function makeRef(collection: string, id: string): Ref & { set: (v: unknown) => Promise<void>; update: (p: Record<string, unknown>) => Promise<void> } {
   return {
-    id: docId,
-    _collection: collectionName,
-    async get() {
-      const data = collections[collectionName]!.get(docId);
-      return { id: docId, exists: data !== undefined, data: () => data };
+    collection,
+    id,
+    set: async (value: unknown) => {
+      stores[collection]!.set(id, value as Record<string, unknown>);
     },
-    async set(value: FakeDoc) {
-      collections[collectionName]!.set(docId, value);
-    },
-    async update(value: Record<string, unknown>) {
-      const prev = collections[collectionName]!.get(docId) ?? {};
-      collections[collectionName]!.set(docId, applyUpdate(prev, value));
+    update: async (patch: Record<string, unknown>) => {
+      const prev = stores[collection]!.get(id) ?? {};
+      stores[collection]!.set(id, { ...prev, ...applyFieldValues(prev, patch) });
     },
   };
 }
 
-type FakeRef = ReturnType<typeof makeRef>;
-
 const fakeDb = {
-  collection(name: string) {
-    return { doc: (id?: string) => makeRef(name, id) };
-  },
-  doc(path: string) {
-    const [collectionName, id] = path.split("/");
-    return makeRef(collectionName!, id);
-  },
-  async runTransaction(fn: (tx: unknown) => Promise<unknown>) {
+  collection: (name: string) => ({
+    doc: (id?: string) => makeRef(name, id ?? `auto-${autoCounter++}`),
+  }),
+  runTransaction: async <T>(fn: (tx: unknown) => Promise<T>): Promise<T> => {
     const tx = {
-      get: (ref: FakeRef) => ref.get(),
-      set: (ref: FakeRef, value: FakeDoc) => {
-        collections[ref._collection]!.set(ref.id, value);
+      get: async (ref: Ref) => ({
+        exists: stores[ref.collection]!.has(ref.id),
+        id: ref.id,
+        data: () => stores[ref.collection]!.get(ref.id),
+      }),
+      update: (ref: Ref, patch: Record<string, unknown>) => {
+        const prev = stores[ref.collection]!.get(ref.id) ?? {};
+        stores[ref.collection]!.set(ref.id, { ...prev, ...applyFieldValues(prev, patch) });
       },
-      update: (ref: FakeRef, value: Record<string, unknown>) => {
-        const prev = collections[ref._collection]!.get(ref.id) ?? {};
-        collections[ref._collection]!.set(ref.id, applyUpdate(prev, value));
+      set: (ref: Ref, patch: Record<string, unknown>) => {
+        const prev = stores[ref.collection]!.get(ref.id) ?? {};
+        stores[ref.collection]!.set(ref.id, { ...prev, ...applyFieldValues(prev, patch) });
       },
     };
     return fn(tx);
   },
 };
 
+let pricingSettings = { retailMarkupPercent: 5, minOrderAmount: 0 };
+
 vi.mock("firebase-admin/firestore", () => ({
   FieldValue: { increment: (n: number) => ({ __increment: n }) },
 }));
 vi.mock("@/lib/firebase/admin", () => ({ getAdminDb: () => fakeDb }));
-vi.mock("@/lib/telegram/bot", () => ({ sendTopicMessage: async () => ({ message_id: 1 }) }));
+vi.mock("@/lib/telegram/bot", () => ({ sendTopicMessage: vi.fn(async () => ({ message_id: 555 })) }));
 vi.mock("@/lib/telegram/templates", () => ({ formatOrderMessage: () => "" }));
-vi.mock("@/lib/telegram/keyboard", () => ({ buildOrderActionKeyboard: () => ({}) }));
+vi.mock("@/lib/telegram/keyboard", () => ({ buildOrderActionKeyboard: () => undefined }));
 vi.mock("@/lib/orders/pricing", () => ({
-  getDeliverySettings: async () => ({ fee: 0, freeFrom: 0, enabled: false, zones: [] }),
+  getDeliverySettings: async () => DEFAULT_DELIVERY_SETTINGS,
 }));
 vi.mock("@/lib/products/pricing-settings", () => ({
-  getPricingSettings: async () => ({ retailMarkupPercent: 5, minOrderAmount: 0 }),
+  getPricingSettings: async () => pricingSettings,
 }));
-vi.mock("@/lib/inventory/stock-moves", () => ({ recordStockMoves: async () => {} }));
+const recordStockMoves = vi.fn(async (_moves: unknown[]) => {});
+vi.mock("@/lib/inventory/stock-moves", () => ({ recordStockMoves: (moves: unknown[]) => recordStockMoves(moves) }));
 
-const { createOrder } = await import("./create-order");
+const { createOrder, OrderValidationError } = await import("./create-order");
 
-function seedProduct(id: string, data: FakeDoc) {
-  collections.products!.set(id, data);
+function baseProduct(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "prod-1",
+    name: "Kran",
+    price: 10000,
+    costPrice: 8000,
+    discountPrice: null,
+    discountUntil: null,
+    stock: 5,
+    salesCount: 0,
+    isActive: true,
+    isDraft: false,
+    thumbnailUrl: "https://example.com/1.jpg",
+    ...overrides,
+  };
 }
 
 beforeEach(() => {
-  for (const map of Object.values(collections)) map.clear();
-  autoId = 0;
+  resetStores();
+  recordStockMoves.mockClear();
+  pricingSettings = { retailMarkupPercent: 5, minOrderAmount: 0 };
+  stores.products!.set("prod-1", baseProduct());
 });
 
-describe("createOrder - tannarx maxfiyligi", () => {
-  it("oddiy mahsulot: costPrice buyurtmaga emas, orderCosts ga tushadi", async () => {
-    seedProduct("p1", {
-      name: "Kran",
-      isActive: true,
-      isDraft: false,
-      stock: 10,
-      price: 100_000,
-      costPrice: 70_000,
-      discountPrice: null,
-      discountUntil: null,
-      thumbnailUrl: "https://example.com/1.jpg",
-    });
-
+describe("boshlang'ich to'lov holati", () => {
+  it("onlayn to'lovda paymentStatus: pending", async () => {
     const order = await createOrder({
-      customerName: "Ali Aliyev",
+      customerName: "Ali",
       phoneNumber: "+998901234567",
-      items: [{ productId: "p1", name: "Kran", price: 100_000, quantity: 2, thumbnailUrl: "" }],
-      role: "user",
+      items: [{ productId: "prod-1", name: "Kran", price: 10000, quantity: 2, thumbnailUrl: "" }],
+      paymentMethod: "online",
     });
 
-    expect(order.items).toHaveLength(1);
-    expect(order.items[0]).not.toHaveProperty("costPrice");
-
-    const savedOrder = collections.orders!.get(order.id);
-    expect(savedOrder).toBeDefined();
-    const savedItems = savedOrder!.items as Record<string, unknown>[];
-    expect(savedItems[0]).not.toHaveProperty("costPrice");
-
-    const costs = collections.orderCosts!.get(order.id);
-    expect(costs).toBeDefined();
-    expect(costs!.items).toEqual([{ productId: "p1", variantId: null, costPrice: 70_000 }]);
+    expect(order.paymentStatus).toBe("pending");
+    expect(order.status).toBe("pending");
+    expect(order.stockReturned).toBe(false);
   });
 
-  it("turli (variant) mahsulot: tur bo'yicha costPrice orderCosts ga tushadi", async () => {
-    seedProduct("p2", {
-      name: "Parda",
-      isActive: true,
-      isDraft: false,
-      stock: 10,
-      price: 50_000,
-      costPrice: 30_000,
-      discountPrice: null,
-      discountUntil: null,
-      thumbnailUrl: "",
-      variantAxes: [{ key: "olcham", label: "O'lcham", values: ["50x60"] }],
-      variants: [{ id: "50x60", options: { olcham: "50x60" }, price: 55_000, costPrice: 33_000, stock: 5 }],
-    });
-
+  it("naqd to'lovda paymentStatus: not_required", async () => {
     const order = await createOrder({
-      customerName: "Vali Valiyev",
-      phoneNumber: "+998901234568",
-      items: [
-        {
-          productId: "p2",
-          variantId: "50x60",
-          name: "Parda",
-          price: 55_000,
-          quantity: 1,
-          thumbnailUrl: "",
-        },
-      ],
-      role: "user",
+      customerName: "Ali",
+      phoneNumber: "+998901234567",
+      items: [{ productId: "prod-1", name: "Kran", price: 10000, quantity: 2, thumbnailUrl: "" }],
+      paymentMethod: "cash",
     });
 
-    expect(order.items[0]).not.toHaveProperty("costPrice");
+    expect(order.paymentStatus).toBe("not_required");
+  });
+});
 
-    const costs = collections.orderCosts!.get(order.id);
-    expect(costs!.items).toEqual([{ productId: "p2", variantId: "50x60", costPrice: 33_000 }]);
+describe("zaxira tekshiruvi", () => {
+  it("yetarli zaxira bo'lsa mahsulot va statistika yangilanadi", async () => {
+    await createOrder({
+      customerName: "Ali",
+      phoneNumber: "+998901234567",
+      items: [{ productId: "prod-1", name: "Kran", price: 10000, quantity: 2, thumbnailUrl: "" }],
+      paymentMethod: "cash",
+    });
+
+    expect(stores.products!.get("prod-1")!.stock).toBe(3); // 5 - 2
+    expect(stores.products!.get("prod-1")!.salesCount).toBe(2);
+    expect(recordStockMoves).toHaveBeenCalledTimes(1);
+  });
+
+  it("zaxira yetmasa OrderValidationError otadi va hech narsa saqlanmaydi", async () => {
+    await expect(
+      createOrder({
+        customerName: "Ali",
+        phoneNumber: "+998901234567",
+        items: [{ productId: "prod-1", name: "Kran", price: 10000, quantity: 99, thumbnailUrl: "" }],
+        paymentMethod: "cash",
+      })
+    ).rejects.toBeInstanceOf(OrderValidationError);
+
+    expect(stores.products!.get("prod-1")!.stock).toBe(5); // o'zgarmagan
+    expect(stores.orders!.size).toBe(0);
+  });
+
+  it("mahsulot faol bo'lmasa OrderValidationError otadi", async () => {
+    stores.products!.set("prod-1", baseProduct({ isActive: false }));
+    await expect(
+      createOrder({
+        customerName: "Ali",
+        phoneNumber: "+998901234567",
+        items: [{ productId: "prod-1", name: "Kran", price: 10000, quantity: 1, thumbnailUrl: "" }],
+        paymentMethod: "cash",
+      })
+    ).rejects.toBeInstanceOf(OrderValidationError);
+  });
+
+  it("eng kam buyurtma summasidan past bo'lsa rad etiladi", async () => {
+    pricingSettings = { retailMarkupPercent: 5, minOrderAmount: 100000 };
+    await expect(
+      createOrder({
+        customerName: "Ali",
+        phoneNumber: "+998901234567",
+        items: [{ productId: "prod-1", name: "Kran", price: 10000, quantity: 1, thumbnailUrl: "" }],
+        paymentMethod: "cash",
+      })
+    ).rejects.toBeInstanceOf(OrderValidationError);
   });
 });
