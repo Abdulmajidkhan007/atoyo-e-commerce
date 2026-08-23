@@ -23,6 +23,7 @@ import { axisKeyOf, variantIdOf } from "@/lib/products/variants";
 import type { Product, ProductVariant, VariantAxis } from "@/types/product";
 import type { StockIntake } from "@/types/intake";
 import { formatSom } from "@/lib/format";
+import { escapeHtml } from "./html";
 
 /**
  * "KIRIM" TOPIC'i — Telegramdan tez mahsulot qo'shish.
@@ -82,10 +83,6 @@ interface AlbumDoc {
 
 function albumRef(mediaGroupId: string) {
   return getAdminDb().collection("intakeAlbums").doc(mediaGroupId);
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /**

@@ -11,6 +11,7 @@ import { channelReport } from "./channel-report";
 import type { Product, ProductCategory, ProductMaterial } from "@/types/product";
 import type { Order } from "@/types/order";
 import { formatSom } from "@/lib/format";
+import { escapeHtml } from "./html";
 
 /**
  * ADMIN BUYRUQLARI - FAQAT yopiq xodimlar guruhida ishlaydi.
@@ -194,7 +195,7 @@ export async function handleAdminCommand(params: {
         }
         const lines = snapshot.docs.map((d) => {
           const o = d.data() as Order;
-          return `#${d.id.slice(0, 8)} — ${o.customerName}, ${formatSom(o.totalAmount)} [${o.status}]`;
+          return `#${d.id.slice(0, 8)} — ${escapeHtml(o.customerName)}, ${formatSom(o.totalAmount)} [${o.status}]`;
         });
         await reply(`🧾 <b>So'nggi buyurtmalar</b>\n\n${lines.join("\n")}`);
         return;
@@ -214,12 +215,12 @@ export async function handleAdminCommand(params: {
           .limit(5)
           .get();
         if (snapshot.empty) {
-          await reply(`"${argsText}" bo'yicha hech narsa topilmadi.`);
+          await reply(`"${escapeHtml(argsText)}" bo'yicha hech narsa topilmadi.`);
           return;
         }
         const lines = snapshot.docs.map((d) => {
           const p = d.data() as Product;
-          return `${p.name}\n  🆔 <b>${p.code ?? d.id}</b> | ${formatSom(p.price)} | zaxira: ${p.stock}${p.isActive ? "" : " | 🚫 yashirin"}`;
+          return `${escapeHtml(p.name)}\n  🆔 <b>${p.code ?? d.id}</b> | ${formatSom(p.price)} | zaxira: ${p.stock}${p.isActive ? "" : " | 🚫 yashirin"}`;
         });
         await reply(`🔎 Topildi:\n\n${lines.join("\n\n")}`);
         return;
@@ -244,7 +245,7 @@ export async function handleAdminCommand(params: {
         // faqat mahsulot tugab qolib qayta kelgan bo'lsa.
         const afterField = { ...product, [field]: value } as Product;
         await announceProduct(afterField, announceModeFor(product, afterField));
-        await reply(`✅ <b>${product.name}</b>\n${command === "/narx" ? `Yangi narx: ${formatSom(value)}` : `Yangi zaxira: ${value} dona`}`);
+        await reply(`✅ <b>${escapeHtml(product.name)}</b>\n${command === "/narx" ? `Yangi narx: ${formatSom(value)}` : `Yangi zaxira: ${value} dona`}`);
         return;
       }
 
@@ -324,7 +325,7 @@ export async function handleAdminCommand(params: {
         };
         await ref.set(product);
         await announceProduct(product, "new");
-        await reply(`✅ Qo'shildi: <b>${name}</b>\n🆔 ID: <b>${product.code}</b> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo-uz.web.app/admin/katalog`);
+        await reply(`✅ Qo'shildi: <b>${escapeHtml(name)}</b>\n🆔 ID: <b>${product.code}</b> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo-uz.web.app/admin/katalog`);
         return;
       }
 
@@ -373,7 +374,7 @@ export async function handleAdminCommand(params: {
         await getAdminDb().collection("products").doc(id).update(updates);
         const afterEdit = { ...product, ...updates } as Product;
         await announceProduct(afterEdit, announceModeFor(product, afterEdit));
-        await reply(`✅ <b>${product.name}</b> yangilandi (${Object.keys(updates).filter((k) => k !== "updatedAt").join(", ")}).`);
+        await reply(`✅ <b>${escapeHtml(product.name)}</b> yangilandi (${Object.keys(updates).filter((k) => k !== "updatedAt").join(", ")}).`);
         return;
       }
 
@@ -393,7 +394,7 @@ export async function handleAdminCommand(params: {
         await getAdminDb().collection("products").doc(id).update({ isActive, updatedAt: Date.now() });
         const afterVisibility = { ...product, isActive } as Product;
         await announceProduct(afterVisibility, announceModeFor(product, afterVisibility));
-        await reply(isActive ? `✅ <b>${product.name}</b> katalogga qaytarildi.` : `🚫 <b>${product.name}</b> katalogdan yashirildi.`);
+        await reply(isActive ? `✅ <b>${escapeHtml(product.name)}</b> katalogga qaytarildi.` : `🚫 <b>${escapeHtml(product.name)}</b> katalogdan yashirildi.`);
         return;
       }
 

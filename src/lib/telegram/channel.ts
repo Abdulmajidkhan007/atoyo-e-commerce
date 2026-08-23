@@ -37,15 +37,12 @@ import {
 import { freeDeliveryShort, installServiceText } from "@/lib/delivery/text";
 import { logAction } from "./action-log";
 import { truncateHtml } from "./html-truncate";
+import { escapeHtml } from "./html";
 
 const SETTINGS_DOC_PATH = "settings/telegram";
 
 function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app").replace(/\/$/, "");
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /**

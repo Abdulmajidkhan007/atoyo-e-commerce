@@ -26,6 +26,7 @@ import type {
   VariantAxis,
 } from "@/types/product";
 import { formatSom } from "@/lib/format";
+import { escapeHtml } from "./html";
 
 /**
  * INTERAKTIV ADMIN OQIMI (BotFather uslubidagi tugmali menyu).
@@ -385,11 +386,11 @@ async function finalizeNewProduct(userId: number, session: AdminSession, photoFi
   await sendChatMessage(
     session.chatId,
     [
-      `✅ <b>Qo'shildi:</b> ${product.name}`,
+      `✅ <b>Qo'shildi:</b> ${escapeHtml(product.name)}`,
       `🆔 ID: <b>${product.code}</b>`,
       `Kategoriya: ${labelOf((await getTaxonomy()).categories, product.category)}`,
       `Narx: ${formatSom(product.price)} | Zaxira: ${product.stock} dona`,
-      product.brand ? `Brend: ${product.brand}` : "",
+      product.brand ? `Brend: ${escapeHtml(product.brand)}` : "",
       "",
       photoNote,
     ]
@@ -557,7 +558,7 @@ async function sendEditMenu(session: AdminSession, product: Product): Promise<vo
   await sendChatMessage(
     session.chatId,
     [
-      `✏️ <b>Tahrirlash:</b> ${product.name}`,
+      `✏️ <b>Tahrirlash:</b> ${escapeHtml(product.name)}`,
       `🆔 ID: <b>${product.code ?? "-"}</b>`,
       variantCount > 0
         ? `Narx: ${formatSom(product.price)} dan | Jami zaxira: ${product.stock} | Turlari: ${variantCount} ta`
@@ -891,15 +892,15 @@ async function sendVariantMenu(session: AdminSession, product: Product): Promise
   const axes = product.variantAxes ?? [];
   const variants = product.variants ?? [];
 
-  const lines = [`🔀 <b>Turlari:</b> ${product.name}`];
-  if (axes.length > 0) lines.push(`Qatorlar: ${axes.map((axis) => axis.label).join(" • ")}`);
+  const lines = [`🔀 <b>Turlari:</b> ${escapeHtml(product.name)}`];
+  if (axes.length > 0) lines.push(`Qatorlar: ${axes.map((axis) => escapeHtml(axis.label)).join(" • ")}`);
   lines.push("");
   if (variants.length === 0) {
     lines.push("Hali tur qo'shilmagan.");
   } else {
     variants.slice(0, MAX_VARIANT_BUTTONS).forEach((variant, index) => {
-      const label = variantLabel(product, variant) || variant.id;
-      const code = variant.sku ? ` · kod: ${variant.sku}` : "";
+      const label = escapeHtml(variantLabel(product, variant) || variant.id);
+      const code = variant.sku ? ` · kod: ${escapeHtml(variant.sku)}` : "";
       lines.push(`${index + 1}. ${label} — ${formatSom(variant.price)}${code} · ${variant.stock} ta`);
     });
     if (variants.length > MAX_VARIANT_BUTTONS) {
@@ -941,8 +942,8 @@ async function sendVariantActions(
   await sendChatMessage(
     session.chatId,
     [
-      `🔀 <b>${variantLabel(product, variant) || variant.id}</b>`,
-      `Narx: ${formatSom(variant.price)} | Zaxira: ${variant.stock}${variant.sku ? ` | Kod: ${variant.sku}` : ""}`,
+      `🔀 <b>${escapeHtml(variantLabel(product, variant) || variant.id)}</b>`,
+      `Narx: ${formatSom(variant.price)} | Zaxira: ${variant.stock}${variant.sku ? ` | Kod: ${escapeHtml(variant.sku)}` : ""}`,
       "",
       "Nimani o'zgartiramiz?",
     ].join("\n"),
@@ -1032,7 +1033,7 @@ async function applyVariantValue(
     await saveSession(userId, session);
     await reply(
       [
-        `✅ Qator: <b>${label}</b>`,
+        `✅ Qator: <b>${escapeHtml(label)}</b>`,
         "",
         "Endi birinchi turni yuboring:",
         "<code>qiymat - narx - soni - kod</code>",
@@ -1059,7 +1060,7 @@ async function applyVariantValue(
     if (parsed.values.length !== axes.length) {
       await reply(
         `Qiymatlar soni mos emas: ${axes.length} ta kerak (${axes
-          .map((axis) => axis.label)
+          .map((axis) => escapeHtml(axis.label))
           .join("|")}), siz ${parsed.values.length} ta yubordingiz.`
       );
       return;
@@ -1231,7 +1232,7 @@ export async function handleAdminSessionCallback(params: {
           published = true;
           publishedCode = product.code;
           await logAction(
-            `📦 Yangi mahsulot (Telegram kirimi): №${product.code} — ${product.name}, ${formatSom(product.price)}, ${product.stock} ${product.unit}`
+            `📦 Yangi mahsulot (Telegram kirimi): №${product.code} — ${escapeHtml(product.name)}, ${formatSom(product.price)}, ${product.stock} ${product.unit}`
           );
         }
         // Nashr qilinayotgan bo'lsa - albatta; tahrir bo'lsa faqat
@@ -1347,7 +1348,7 @@ export async function handleAdminSessionCallback(params: {
           ? [
               "Yangi turni bitta qatorda yuboring:",
               "<code>qiymat - narx - soni - kod</code>",
-              `Qatorlar: <b>${(product.variantAxes ?? []).map((axis) => axis.label).join("|")}</b>`,
+              `Qatorlar: <b>${(product.variantAxes ?? []).map((axis) => escapeHtml(axis.label)).join("|")}</b>`,
               (product.variantAxes?.length ?? 0) > 1
                 ? "Qiymatlarni <code>|</code> bilan ajrating: <code>50x60|Oq - 96000 - 3 - BS7677</code>"
                 : "Masalan: <code>Satin Gold - 91400 - 5 - SJ-03</code>",

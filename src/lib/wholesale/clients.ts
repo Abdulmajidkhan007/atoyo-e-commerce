@@ -11,6 +11,7 @@ import {
   type WholesaleClient,
   type WholesaleStatus,
 } from "@/types/wholesale";
+import { escapeHtml } from "@/lib/telegram/html";
 
 /**
  * OPTOM MIJOZLAR RO'YXATI (server tomoni).
@@ -318,10 +319,6 @@ export async function notifyStaff(text: string): Promise<void> {
     // Xabar ketmasa ham asosiy amal to'xtamaydi.
     console.error("Optom topikka xabar yuborishda xato:", error);
   }
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /** Telefon bo'yicha optom mijozni topadi (bot uchun). */

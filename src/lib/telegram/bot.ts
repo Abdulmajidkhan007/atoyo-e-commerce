@@ -36,7 +36,16 @@ const RATE_LIMIT_RETRIES = 3;
 /** Telegram aytgan kutishdan ham uzun kutmaymiz (so'rov osilib qolmasin). */
 const MAX_RETRY_WAIT_SECONDS = 30;
 
-async function callTelegramApi<T>(method: string, payload: Record<string, unknown>): Promise<T> {
+/** Telegram HTML tegini o'qiy olmaganda beradigan xato (yopilmagan teg,
+ *  qochirilmagan `<`/`>`/`&`) - xabar butunlay yo'qolmasin uchun tanilib,
+ *  parse_mode'siz qayta yuboriladi. */
+const HTML_PARSE_ERROR = /can't parse entities|can't find end (of the )?tag/i;
+
+async function callTelegramApi<T>(
+  method: string,
+  payload: Record<string, unknown>,
+  triedWithoutParseMode = false
+): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     const response = await fetch(`${TELEGRAM_API_BASE}/bot${await getBotToken()}/${method}`, {
       method: "POST",
@@ -75,6 +84,18 @@ async function callTelegramApi<T>(method: string, payload: Record<string, unknow
     ) {
       await sleep((retryAfter + 1) * 1000);
       continue;
+    }
+
+    /**
+     * HTML QALQON: escapeHtml chaqirilmagan joy qolib ketsa (yopilmagan
+     * `<b>` yoki xom `<`/`>`/`&`), Telegram butun xabarni rad etadi.
+     * Xabar butunlay yo'qolib qolmasligi uchun - parse_mode'siz (formatsiz
+     * oddiy matn) BIR MARTA qayta yuboriladi.
+     */
+    if (!triedWithoutParseMode && payload.parse_mode && HTML_PARSE_ERROR.test(data.description ?? "")) {
+      const rest = { ...payload };
+      delete rest.parse_mode;
+      return callTelegramApi<T>(method, rest, true);
     }
 
     throw new Error(`Telegram API xatosi (${method}): ${data.description ?? "noma'lum xato"}`);
@@ -472,7 +493,11 @@ export async function getStickerSet(name: string): Promise<TelegramStickerSet> {
  * Fayl yuborish (multipart) - stiker rasmini yuklash uchun.
  * `callTelegramApi` faqat JSON yuboradi, shuning uchun alohida.
  */
-async function callTelegramApiForm<T>(method: string, form: FormData): Promise<T> {
+async function callTelegramApiForm<T>(
+  method: string,
+  form: FormData,
+  triedWithoutParseMode = false
+): Promise<T> {
   const response = await fetch(`${TELEGRAM_API_BASE}/bot${await getBotToken()}/${method}`, {
     method: "POST",
     body: form,
@@ -485,7 +510,14 @@ async function callTelegramApiForm<T>(method: string, form: FormData): Promise<T
   } catch {
     throw new Error(`Telegram API'dan kutilmagan javob (${method}): ${rawBody.slice(0, 120)}`);
   }
-  if (!data.ok) throw new Error(`Telegram API xatosi (${method}): ${data.description ?? "xato"}`);
+  if (!data.ok) {
+    // HTML QALQON (bu yerda ham) - qarang: callTelegramApi.
+    if (!triedWithoutParseMode && form.has("parse_mode") && HTML_PARSE_ERROR.test(data.description ?? "")) {
+      form.delete("parse_mode");
+      return callTelegramApiForm<T>(method, form, true);
+    }
+    throw new Error(`Telegram API xatosi (${method}): ${data.description ?? "xato"}`);
+  }
   return data.result as T;
 }
 
