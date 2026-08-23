@@ -84,10 +84,18 @@ ustama `settings/pricing`, standart 5%).
 - Server tomoni (bot, AI, `/tv`, buyurtma) XOM hujjat bilan ishlaydi
   va `priceForRole()` ni o'zi qo'llaydi. Buyurtmada narx serverda
   qayta hisoblanadi (`lib/orders/create-order.ts`).
+- **`orders` hujjatida `costPrice` YO'Q** — mijoz o'z buyurtmasini
+  profilida client SDK bilan o'qiydi, tannarx u yerda bo'lsa
+  raqobatchi o'zi buyurtma berib o'lchab oladi. Tannarx alohida
+  yopiq `orderCosts/{orderId}` hujjatiga yoziladi (bir xil
+  tranzaksiyada, `lib/orders/create-order.ts`), hisobot esa
+  o'shandan `db.getAll()` bilan o'qiydi (`api/admin/reports/route.ts`).
+  Eski buyurtmalar bir martalik `/api/admin/maintenance/order-costs`
+  (faqat owner) bilan ko'chiriladi.
 - Admin formada maydon **"Optom narx"**, ostida hisoblangan dona narx.
 - Yopiq kolleksiyalar: `products`, `deletedProducts`, `secrets/**`,
   `wholesaleClients`, `socialQueue`, `channelQueue`, `channelClicks`,
-  `oauthStates`, `aiUsage`.
+  `oauthStates`, `aiUsage`, `orderCosts`.
 
 ## 2. Server tomoni
 

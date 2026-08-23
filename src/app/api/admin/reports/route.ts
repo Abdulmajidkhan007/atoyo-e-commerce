@@ -44,13 +44,40 @@ export async function GET(request: Request) {
     : Date.now() - days * 24 * 60 * 60 * 1000;
   const to = params.get("to") ? new Date(`${params.get("to")}T23:59:59`).getTime() : Date.now();
 
-  const snap = await getAdminDb()
+  const db = getAdminDb();
+  const snap = await db
     .collection("orders")
     .where("createdAt", ">=", from)
     .where("createdAt", "<=", to)
     .orderBy("createdAt", "desc")
     .limit(2000)
     .get();
+
+  // BEKOR QILINGANLAR hisobga olinmaydi - ularning tannarxini o'qib
+  // o'tirishning hojati yo'q.
+  const includedDocs = snap.docs.filter((doc) => (doc.data() as Order).status !== "cancelled");
+
+  /**
+   * TANNARX endi `orders` hujjatida emas, alohida yopiq
+   * `orderCosts/{orderId}` hujjatida (CLAUDE.md 1-qoidasi). Bir
+   * partiyada o'qiladi - Firestore'ga so'rov sonini oshirmaslik uchun
+   * 300 tadan bo'lib (`db.getAll` cheksiz ref qabul qilmaydi degan
+   * emas, lekin bitta so'rovni shishirmaslik uchun).
+   */
+  const costsByOrder = new Map<string, (number | null)[]>();
+  const COST_BATCH = 300;
+  for (let i = 0; i < includedDocs.length; i += COST_BATCH) {
+    const chunk = includedDocs.slice(i, i + COST_BATCH);
+    const costSnaps = await db.getAll(...chunk.map((doc) => db.collection("orderCosts").doc(doc.id)));
+    for (const costSnap of costSnaps) {
+      if (!costSnap.exists) continue;
+      const data = costSnap.data() as { items?: { costPrice: number | null }[] } | undefined;
+      costsByOrder.set(
+        costSnap.id,
+        (data?.items ?? []).map((item) => item.costPrice ?? null)
+      );
+    }
+  }
 
   const byDay = new Map<string, DayRow>();
   const byProduct = new Map<string, ProductRow>();
@@ -61,9 +88,9 @@ export async function GET(request: Request) {
   let itemsWithCost = 0;
   let itemsTotal = 0;
 
-  for (const doc of snap.docs) {
+  for (const doc of includedDocs) {
     const order = doc.data() as Order;
-    if (order.status === "cancelled") continue;
+    const costs = costsByOrder.get(doc.id);
 
     orders += 1;
     // Qaytarilgan summa tushumdan chiqariladi.
@@ -75,11 +102,11 @@ export async function GET(request: Request) {
     day.revenue += order.totalAmount - refund;
     day.orders += 1;
 
-    for (const item of order.items) {
+    order.items.forEach((item, index) => {
       itemsTotal += 1;
       const lineRevenue = item.price * item.quantity;
       // Tannarx bo'lmasa foyda 0 deb hisoblanadi (ortiqcha ko'rsatmaslik uchun).
-      const cost = item.costPrice ?? null;
+      const cost = costs?.[index] ?? null;
       const lineProfit = cost !== null ? (item.price - cost) * item.quantity : 0;
       if (cost !== null) itemsWithCost += 1;
 
@@ -97,7 +124,7 @@ export async function GET(request: Request) {
       row.revenue += lineRevenue;
       row.profit += lineProfit;
       byProduct.set(item.productId, row);
-    }
+    });
 
     byDay.set(date, day);
   }

@@ -117,6 +117,14 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Sotilgan qatorlarning TANNARX nusxasi (`orders` hujjatini mijoz
+    // o'z profilida client SDK bilan o'qiy oladi - tannarx u yerda
+    // bo'lsa raqobatchi o'zi buyurtma berib o'lchab oladi, CLAUDE.md
+    // 1-qoidasi). Faqat server (Admin SDK, hisobot uchun) yozadi/o'qiydi.
+    match /orderCosts/{orderId} {
+      allow read, write: if false;
+    }
+
     // Obunachilar - faqat server (Admin SDK) yozadi/o'qiydi.
     match /subscribers/{subscriberId} {
       allow read, write: if false;
