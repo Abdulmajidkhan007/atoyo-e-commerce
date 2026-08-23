@@ -36,6 +36,8 @@ import type { Order, OrderItem } from "@/types/order";
 import type { BlogPost } from "@/types/content";
 import { formatSom } from "@/lib/format";
 import { freeDeliveryShort, freeDeliveryText, installServiceText } from "@/lib/delivery/text";
+import { escapeHtml } from "./html";
+import { buildReviewLine } from "./review-text";
 
 /**
  * MIJOZ-BOT - FAQAT shaxsiy (private) chatlarda ishlaydi. Webhook bu
@@ -224,7 +226,7 @@ async function registerWithContact(params: {
     registeredAt: Date.now(),
   };
   await getAdminDb().collection("botUsers").doc(String(userId)).set(botUser);
-  await logAction(`🆕 Botda yangi mijoz: ${botUser.name}, ${botUser.phoneNumber}`);
+  await logAction(`🆕 Botda yangi mijoz: ${escapeHtml(botUser.name)}, ${escapeHtml(botUser.phoneNumber)}`);
   const session = await getSession(chatId);
   await removeReplyKeyboard(chatId, botDict(session.lang).registered);
   if (await ensureAccess(chatId, userId)) {
@@ -276,9 +278,9 @@ async function showProfile(chatId: number, userId: number, t: BotDict): Promise<
   }
   const registered = new Date(user.registeredAt).toLocaleDateString("uz-UZ");
   const lines = [
-    `👤 <b>${user.name}</b>`,
-    `📞 ${user.phoneNumber}`,
-    user.address ? `🏠 ${t.addressLabel}: ${user.address}` : "",
+    `👤 <b>${escapeHtml(user.name)}</b>`,
+    `📞 ${escapeHtml(user.phoneNumber)}`,
+    user.address ? `🏠 ${t.addressLabel}: ${escapeHtml(user.address)}` : "",
     `🗓 ${t.registeredAt}: ${registered}`,
     ``,
     `${t.profileSiteHint}: ${SITE_URL}/profil`,
@@ -389,7 +391,7 @@ async function showCategoryPage(
   rows.push([{ text: t.filter, callback_data: `flt|menu|${category}` }]);
 
   const activeFilter = [filters.brand, filters.material].filter(Boolean).join(" · ");
-  const header = `<b>${t.categories[category] ?? category}</b> — ${page + 1}-${t.page}${activeFilter ? `\n⚙️ ${activeFilter}` : ""}`;
+  const header = `<b>${t.categories[category] ?? category}</b> — ${page + 1}-${t.page}${activeFilter ? `\n⚙️ ${escapeHtml(activeFilter)}` : ""}`;
 
   await sendChatMessage(chatId, `${header}:`, { replyMarkup: { inline_keyboard: rows } });
 }
@@ -459,9 +461,11 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
 
   const unit = labelOf(BUILTIN_UNITS, product.unit) || product.unit || DEFAULT_UNIT;
   const lines = [
-    `<b>${localizedName(product, t.lang)}</b>`,
-    product.sku ? `#️⃣ ${product.sku}` : "",
-    product.brand ? `${product.brand}${product.manufacturerCountry ? ` (${product.manufacturerCountry})` : ""}` : "",
+    `<b>${escapeHtml(localizedName(product, t.lang))}</b>`,
+    product.sku ? `#️⃣ ${escapeHtml(product.sku)}` : "",
+    product.brand
+      ? `${escapeHtml(product.brand)}${product.manufacturerCountry ? ` (${escapeHtml(product.manufacturerCountry)})` : ""}`
+      : "",
     hasVariants(product)
       ? `💰 <b>${formatSom(shownPrice(minVariantPrice(product) ?? price, product, ctx))}</b> dan / ${unit}`
       : `💰 <b>${formatSom(price)}</b> / ${unit}${
@@ -470,7 +474,9 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
             : ""
         }`,
     hasVariants(product)
-      ? `🔀 ${(product.variantAxes ?? []).map((axis) => `${axis.label}: ${axis.values.join(", ")}`).join(" | ")}`
+      ? `🔀 ${(product.variantAxes ?? [])
+          .map((axis) => `${escapeHtml(axis.label)}: ${axis.values.map(escapeHtml).join(", ")}`)
+          .join(" | ")}`
       : "",
     (product.ratingCount ?? 0) > 0
       ? `⭐️ ${product.ratingAvg?.toFixed(1)} (${product.ratingCount})`
@@ -478,7 +484,7 @@ async function showProduct(chatId: number, productId: string, t: BotDict): Promi
     product.stock > 0 ? `${t.inStock}: ${product.stock} ${unit}` : `❌ ${t.outOfStock}`,
     `🚚 ${freeDeliveryShort(delivery)}`,
     product.installService && installServiceText(delivery) ? "🛠 O'rnatib berish xizmati bor" : "",
-    localizedDescription(product, t.lang) ? `\n${localizedDescription(product, t.lang)}` : "",
+    localizedDescription(product, t.lang) ? `\n${escapeHtml(localizedDescription(product, t.lang))}` : "",
   ].filter(Boolean);
 
   const rows: InlineButton[][] = [];
@@ -581,7 +587,7 @@ async function showCart(chatId: number, t: BotDict): Promise<void> {
   const delivery = deliveryFeeFor(await getDeliverySettings(), subtotal - discount);
   const total = subtotal - discount + delivery;
 
-  const lines = session.cart.map((i) => `• ${i.name} — ${i.quantity} × ${formatSom(i.price)}`);
+  const lines = session.cart.map((i) => `• ${escapeHtml(i.name)} — ${i.quantity} × ${formatSom(i.price)}`);
   lines.push("", `${t.subtotalLabel}: ${formatSom(subtotal)}`);
   if (discount > 0) lines.push(`${t.discountLabel} (${session.promoCode}): −${formatSom(discount)}`);
   if (delivery > 0) lines.push(`${t.deliveryLabel}: ${formatSom(delivery)}`);
@@ -659,7 +665,7 @@ async function startCheckout(chatId: number, userId: number, t: BotDict): Promis
   await saveSession(chatId, session);
   await sendChatMessage(
     chatId,
-    `${t.confirmName}\n\n${t.current}: <b>${botUser?.name ?? "—"}</b>`,
+    `${t.confirmName}\n\n${t.current}: <b>${botUser?.name ? escapeHtml(botUser.name) : "—"}</b>`,
     { replyMarkup: { inline_keyboard: [[{ text: `✅ ${botUser?.name ?? t.fullNameShort}`, callback_data: "cfm_name" }]] } }
   );
 }
@@ -805,7 +811,7 @@ async function searchByPhoto(
     if (result.products.length === 0) {
       await sendChatMessage(
         chatId,
-        `${escapeAssistantHtml(result.description)}\n\n${t.photoNoMatch}`,
+        `${escapeHtml(result.description)}\n\n${t.photoNoMatch}`,
         { replyMarkup: { inline_keyboard: [[{ text: t.search, callback_data: "srch" }, { text: t.backToMenu, callback_data: "m|home" }]] } }
       );
       return;
@@ -818,18 +824,13 @@ async function searchByPhoto(
 
     await sendChatMessage(
       chatId,
-      `${escapeAssistantHtml(result.description)}\n\n${t.photoFound}`,
+      `${escapeHtml(result.description)}\n\n${t.photoFound}`,
       { replyMarkup: { inline_keyboard: rows } }
     );
   } catch (error) {
     console.error("Rasm bo'yicha qidiruv xatosi:", error);
     await sendChatMessage(chatId, t.assistantError);
   }
-}
-
-/** Model javobi HTML rejimida yuboriladi - belgilar qochiriladi. */
-function escapeAssistantHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /** Yordamchi rejimini yoqadi (tugma yoki /yordamchi). */
@@ -901,7 +902,7 @@ async function replyWithAssistant(
     buttons.push([{ text: t.backToMenu, callback_data: "m|home" }]);
 
     await clearLoading();
-    await sendChatMessage(chatId, escapeAssistantHtml(reply.answer), {
+    await sendChatMessage(chatId, escapeHtml(reply.answer), {
       replyMarkup: { inline_keyboard: buttons },
     });
 
@@ -972,7 +973,7 @@ async function runSearch(chatId: number, term: string, t: BotDict): Promise<void
     },
   ]);
   rows.push([{ text: t.backToMenu, callback_data: "m|home" }]);
-  await sendChatMessage(chatId, `🔍 "${term}":`, { replyMarkup: { inline_keyboard: rows } });
+  await sendChatMessage(chatId, `🔍 "${escapeHtml(term)}":`, { replyMarkup: { inline_keyboard: rows } });
 }
 
 async function showMyOrders(chatId: number, t: BotDict): Promise<void> {
@@ -1004,7 +1005,7 @@ async function showMyOrders(chatId: number, t: BotDict): Promise<void> {
 
   const lines = orders.map((o) => {
     const date = new Date(o.createdAt).toLocaleDateString("uz-UZ");
-    const items = o.items.map((i) => `  • ${i.name} × ${i.quantity}`).join("\n");
+    const items = o.items.map((i) => `  • ${escapeHtml(i.name)} × ${i.quantity}`).join("\n");
     return `#${o.id.slice(0, 8)} — ${date}\n${items}\n  ${t.total}: <b>${formatSom(o.totalAmount)}</b> | ${t.statusLabels[o.status]}`;
   });
 
@@ -1160,9 +1161,7 @@ async function showReviews(chatId: number, productId: string, t: BotDict): Promi
   const body =
     reviews.length === 0
       ? t.noReviews
-      : reviews
-          .map((r) => `${"⭐️".repeat(r.rating)}\n<b>${r.authorName}</b>: ${r.comment}`)
-          .join("\n\n");
+      : reviews.map((r) => buildReviewLine(r)).join("\n\n");
 
   await sendChatMessage(chatId, `${t.reviewsTitle}\n\n${body}`, {
     replyMarkup: {
@@ -1220,9 +1219,9 @@ async function showBlogPost(chatId: number, postId: string, t: BotDict): Promise
 
   // Telegram xabari 4096 belgidan oshmasin; rasm belgilari olib tashlanadi.
   const clean = post.content.replace(/\[rasm:[^\]]+\]/g, "").trim();
-  const body = clean.length > 2500 ? `${clean.slice(0, 2500)}…` : clean;
+  const body = escapeHtml(clean.length > 2500 ? `${clean.slice(0, 2500)}…` : clean);
 
-  await sendChatMessage(chatId, `<b>${post.title}</b>\n\n${body}`, {
+  await sendChatMessage(chatId, `<b>${escapeHtml(post.title)}</b>\n\n${body}`, {
     photoUrl: post.coverImageUrl || undefined,
     replyMarkup: {
       inline_keyboard: [
@@ -1236,14 +1235,14 @@ async function showBlogPost(chatId: number, postId: string, t: BotDict): Promise
 /** Kontakt + "Biz haqimizda" (admin panelda tahrirlanadigan matn). */
 async function showContactInfo(chatId: number, t: BotDict): Promise<void> {
   const settings = await getSiteSettings();
-  const about = settings.about.body.slice(0, 900);
+  const about = escapeHtml(settings.about.body.slice(0, 900));
 
   const lines = [
     t.contactTitle,
     ``,
-    `📞 ${settings.phone}`,
-    `✉️ ${settings.email}`,
-    `📍 ${settings.address}`,
+    `📞 ${escapeHtml(settings.phone)}`,
+    `✉️ ${escapeHtml(settings.email)}`,
+    `📍 ${escapeHtml(settings.address)}`,
     ``,
     `<b>${t.about}</b>`,
     about,
@@ -1396,7 +1395,7 @@ export async function handleCustomerMessage(params: {
       session.state = "idle";
       session.promoCode = result.ok ? code : null;
       await saveSession(chatId, session);
-      await sendChatMessage(chatId, result.ok ? `${t.promoApplied}: ${code}` : t.promoInvalid);
+      await sendChatMessage(chatId, result.ok ? `${t.promoApplied}: ${escapeHtml(code)}` : t.promoInvalid);
       await showCart(chatId, t);
       return;
     }
@@ -1755,7 +1754,7 @@ export async function handleCustomerCallback(params: {
           console.error("Buyurtmalarni uzishda xato:", error);
         }
         await sendChatMessage(chatId, t.deleteDone);
-        await logAction(`🗑 Bot hisobi o'chirildi: ${deletedUser?.name ?? userId}${deletedUser?.phoneNumber ? `, ${deletedUser.phoneNumber}` : ""}`);
+        await logAction(`🗑 Bot hisobi o'chirildi: ${deletedUser?.name ? escapeHtml(deletedUser.name) : userId}${deletedUser?.phoneNumber ? `, ${escapeHtml(deletedUser.phoneNumber)}` : ""}`);
         return;
       }
       if (arg1 === "no") {
