@@ -419,3 +419,30 @@ Yangi NATIV paket qo'shilganda `mobile/scripts/check-codegen.mjs`
 ro'yxatiga ham qo'shing — u Android SDK'siz, bir necha soniyada
 RN codegen nomuvofiqligini topadi (aks holda Gradle build 3
 daqiqadan keyin yiqiladi).
+
+---
+
+## 23. To'lov bekor qilinganda buyurtma "kutilmoqda" bo'lib qolardi
+
+Payme `CancelTransaction` va Click'ning `action=1` xato yo'li faqat
+`paymentStatus: "failed"` yozardi — `order.status` "pending"da qolib
+ketardi va `create-order.ts` buyurtma yaratilganda darhol kamaytirgan
+zaxira hech qachon qaytmasdi. Bir necha o'nlab tashlab ketilgan
+onlayn to'lov mahsulotni sotilmagan holda "band" qilib qo'yishi
+mumkin edi. Endi ikkala yo'l ham `applyOrderStatusUpdate(orderId,
+"cancelled")` ni chaqiradi — u zaxirani `stockReturned` bayrog'i
+bilan BIR MARTA qaytaradi, shuning uchun Payme/Click'ning takroriy
+so'rovi (retry) uni ikki marta qaytarib yubormaydi.
+
+Click ichki xatosida javob endi `{error: -1}` (imzo xatosi) emas,
+HTTP 500: `-1` Click uchun "bu so'rov bilan gaplashmayman" degani va
+u qayta urinmaydi — agar xato aynan `PerformTransaction` bosqichida
+bo'lsa, pul mijozdan yechilib, buyurtma "to'lanmagan" bo'lib qolishi
+mumkin edi.
+
+Imzo/sir solishtirish `timingSafeEqual`ga o'tkazildi: oddiy `===` bilan
+solishtirish maxfiy kalitning necha belgisi to'g'ri kelganini javob
+vaqtidan bilib olish imkonini beradi. `cron/social` va `cron/channel`
+o'zida takrorlangan `secretMatches` endi `lib/http/secret-match.ts`
+umumiy modulida — ikkala cron route ham, Payme (`isAuthorized`) ham,
+Click (imzo) ham shundan foydalanadi.
