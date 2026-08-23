@@ -447,8 +447,14 @@ printf 'sk-ant-...' | gcloud secrets versions add ANTHROPIC_API_KEY --data-file=
 Taxminiy xarajat: bitta savol-javob ~2 000 kirish + ~300 chiqish token.
 Opus 5 da ~0,017 $ (~210 so'm), Haiku 4.5 da ~0,003 $ (~40 so'm).
 Kuniga 100 savol = oyiga ~50 $ (Opus) yoki ~9 $ (Haiku). Himoya:
-har IP uchun soatiga 30 savol + mavzudan tashqari savollar modelga
-umuman bormaydi.
+har IP uchun soatiga 30 savol (rasm qidiruvida 10) + mavzudan tashqari
+savollar modelga umuman bormaydi. IP `X-Forwarded-For` ning oxirgidan
+oldingi bo'g'iniga bog'langan (`lib/rate-limit.ts` — Firebase Hosting →
+Cloud Run zanjirida oxirgisini Google Front End yozadi, mijoz emas);
+buni ham chetlab o'tishning oldini olish uchun `/api/assistant` va
+`/api/search/image` ga qo'shimcha kunlik chegara bor — kirgan
+foydalanuvchiga `uid` bo'yicha, kirmaganlarga butun sayt bo'yicha
+umumiy.
 
 **2) AI rasm (Nano Banana / Gemini image).** Rasm generatsiyasi uchun:
 

@@ -48,6 +48,31 @@ export async function POST(request: Request) {
     );
   }
 
+  // Ikkinchi qatlam: IP chegarasi (XFF spoofing yoki umumiy tarmoq -
+  // masalan ofis/mobil operator - orqali) chetlab o'tilsa ham,
+  // hisobga bog'liq bo'lgan chegara qoladi. Kirgan foydalanuvchi -
+  // uid bo'yicha kunlik chegara; kirmagan mijozlar bitta identifikator
+  // bermagani uchun butun sayt bo'yicha kunlik umumiy chegara bilan
+  // himoyalanadi.
+  const viewer = await getAppUserFromRequest(request);
+  const secondLimit = viewer
+    ? await checkRateLimit({
+        key: `assistant:uid:${viewer.uid}`,
+        limit: 100,
+        windowMs: 24 * 60 * 60 * 1000,
+      })
+    : await checkRateLimit({
+        key: "assistant:anon:global",
+        limit: 300,
+        windowMs: 24 * 60 * 60 * 1000,
+      });
+  if (!secondLimit.allowed) {
+    return NextResponse.json(
+      { error: "Savollar chegarasi tugadi. Bir oz kutib qayta urinib ko'ring." },
+      { status: 429 }
+    );
+  }
+
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "So'rov noto'g'ri." }, { status: 400 });
@@ -55,7 +80,6 @@ export async function POST(request: Request) {
 
   try {
     // Kim so'ragani narxga ta'sir qiladi: optom mijozga optom narx.
-    const viewer = await getAppUserFromRequest(request);
     const reply = await askAssistant({
       question: parsed.data.question,
       history: parsed.data.history ?? [],
