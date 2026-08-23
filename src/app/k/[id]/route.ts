@@ -26,7 +26,8 @@ export async function GET(
   // Manba ko'rinib tursin (sayt analitikasi uchun ham qulay).
   target.searchParams.set("manba", "telegram");
 
-  // Sanash mijozni kutdirmaydi va yiqilsa ham yo'naltirish ishlaydi.
+  // Sanash `await` bilan kutiladi (redirect'dan oldin) — shuning uchun
+  // mijozni ozgina kutdiradi, lekin yiqilsa ham yo'naltirish ishlaydi.
   await trackChannelClick(id);
 
   const response = NextResponse.redirect(target, 302);
