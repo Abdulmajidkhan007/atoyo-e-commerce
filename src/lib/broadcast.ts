@@ -3,6 +3,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { sendChatMessage } from "@/lib/telegram/bot";
 import { resolveChannelId, channelFooterText } from "@/lib/telegram/channel";
 import { sendGenericEmail, isEmailConfigured } from "@/lib/email/mailer";
+import { escapeHtml } from "@/lib/telegram/html";
 
 /**
  * FOYDALANUVCHILARGA E'LON: har kim o'zi foydalanadigan kanaldan oladi -
@@ -111,6 +112,3 @@ export async function sendBroadcast(params: {
 }
 
 /** Telegram HTML rejimida `<`, `>`, `&` belgilari xato beradi. */
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}

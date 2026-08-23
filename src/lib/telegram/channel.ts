@@ -13,6 +13,7 @@ import { effectivePrice, isDiscountActive } from "@/lib/products/pricing";
 import { publicDescription } from "@/lib/products/description";
 import { BUILTIN_UNITS, DEFAULT_UNIT, labelOf } from "@/lib/products/taxonomy";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { escapeHtml } from "@/lib/telegram/html";
 import {
   hasVariants,
   minVariantPrice,
@@ -42,10 +43,6 @@ const SETTINGS_DOC_PATH = "settings/telegram";
 
 function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app").replace(/\/$/, "");
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /**

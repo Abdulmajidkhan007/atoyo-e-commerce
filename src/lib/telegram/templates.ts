@@ -1,13 +1,7 @@
 import "server-only";
 import type { Order, OrderStatus } from "@/types/order";
 import { formatSom } from "@/lib/format";
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
+import { escapeHtml } from "@/lib/telegram/html";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "🕓 Kutilmoqda",
