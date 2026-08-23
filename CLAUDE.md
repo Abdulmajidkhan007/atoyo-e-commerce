@@ -213,11 +213,17 @@ ustama `settings/pricing`, standart 5%).
 - **Import qilingan mahsulot saytda darhol ko'rinmaydi** —
   `isActive: false`; ochish `/admin/katalog/tartib` dan. `isActive`
   — yagona ko'rinish filtri, yangi "yashirin" maydon qo'shilmaydi.
-- **Katalog indeksi**: `where isActive == true` + `orderBy` uchun
-  kompozit indeks kerak. Indeks yo'q bo'lsa `queryProductsPage`
-  zaxira so'rovga o'tadi (tenglik + `__name__`, saralash xotirada) —
-  katalog ishlaydi, lekin tartib to'liq to'g'ri emas. Yechim:
+- **Katalog indeksi**: `where isActive == true` + filtr + `orderBy`
+  uchun kompozit indeks kerak (`firestore.indexes.json`, 35 ta).
+  Indeks yo'q bo'lsa `queryProductsPage` zaxira so'rovga o'tadi
+  (tenglik + `__name__`, saralash xotirada) — katalog ishlaydi,
+  lekin tartib to'liq to'g'ri emas. Yechim:
   `firebase deploy --only firestore:indexes`.
+  **Zaxira yo'lda zaxira/narx filtri XOTIRADA qo'llanadi**, shuning
+  uchun bazadan `pageSize` ning 4 barobari o'qiladi va sahifa
+  filtrdan KEYIN to'ldiriladi; `hasMore` va kursor ham filtrdan
+  keyingi holatga qarab beriladi (ilgari mijozga 24 ta o'rniga 3 ta
+  mahsulot chiqib qolardi). Testi: `catalog-server.test.ts`.
 
 ## 7. Turlar (variantlar)
 

@@ -149,6 +149,59 @@ describe("queryProductsPage", () => {
   });
 });
 
+describe("zaxira so'rov (indeks yo'q)", () => {
+  /**
+   * Zaxira yo'lda zaxira/narx filtri BAZADA emas, xotirada
+   * qo'llanadi. Ilgari bazadan aynan `pageSize` ta hujjat olinardi:
+   * filtrdan keyin mijozga 24 ta o'rniga 3 ta mahsulot chiqib
+   * qolardi, `hasMore` esa filtrlanmagan songa qarab hisoblanardi.
+   */
+  function makeDocs(count: number, price: (index: number) => number) {
+    return Array.from({ length: count }, (_, index) => ({
+      id: `p${index}`,
+      data: () => ({ name: `M${index}`, price: price(index), stock: 5, isActive: true }),
+    }));
+  }
+
+  it("filtrdan keyin ham sahifani to'ldiradi", async () => {
+    missingIndex = true;
+    // Har 4-mahsulot narx filtridan o'tadi (100), qolganlari - 999.
+    docs = makeDocs(8, (index) => (index % 4 === 0 ? 100 : 999));
+
+    const page = await queryProductsPage({ maxPrice: 500 }, 2);
+
+    // Bazadan pageSize emas, KO'PROQ o'qiladi.
+    expect(argsOf("limit").at(-1)).toEqual([8]);
+    expect(page.products).toHaveLength(2);
+    expect(page.products.every((product) => product.price <= 500)).toBe(true);
+  });
+
+  it("mos mahsulot qolmasa `hasMore` yolg'on", async () => {
+    missingIndex = true;
+    docs = makeDocs(3, () => 100);
+
+    const page = await queryProductsPage({ maxPrice: 500 }, 24);
+
+    expect(page.products).toHaveLength(3);
+    expect(page.hasMore).toBe(false);
+  });
+
+  it("keyingi kursor OXIRGI KO'RILGAN hujjat (o'tmaganlari tashlanmaydi)", async () => {
+    missingIndex = true;
+    // pageSize=1 -> bazadan 4 ta o'qiladi; partiya TO'LIQ tugagani
+    // uchun undan keyin ham hujjat bo'lishi mumkin.
+    docs = makeDocs(4, (index) => (index === 0 ? 100 : 999));
+
+    const page = await queryProductsPage({ maxPrice: 500 }, 1);
+
+    expect(page.products).toHaveLength(1);
+    // Mos kelmagan hujjatlar ham KO'RILGAN - kursor oxirgisida,
+    // aks holda keyingi sahifa ularni qayta o'qirdi.
+    expect(page.nextCursor).toBe("p3");
+    expect(page.hasMore).toBe(true);
+  });
+});
+
 describe("searchProductsServer", () => {
   it("bo'sh so'rovda bazaga bormaydi", async () => {
     expect(await searchProductsServer("   ")).toEqual([]);

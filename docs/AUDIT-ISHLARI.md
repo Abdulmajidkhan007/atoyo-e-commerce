@@ -191,7 +191,7 @@ Tekshiruv birlashtirilgandan keyin: `tsc`, `eslint`, `npm test`
 
 | # | Ish | Nega qoldi |
 |---|---|---|
-| 2.5 | Katalog indekslari + zaxira so'rovda filtr sahifani kesib tashlashi | Hech qaysi sessiyaga berilmagan. `firestore.indexes.json` da `stock` umuman yo'q; zaxira yo'lda `hasMore` filtrlanmagan songa qarab hisoblanadi |
+| ~~2.5~~ | ~~Katalog indekslari + zaxira so'rov~~ | ✅ bajarildi: 15 ta yangi indeks (jumladan `stock`), zaxira yo'lda 4 barobar ortiqcha o'qish + filtrdan keyingi `hasMore`/kursor |
 | 3.1 | CSV eksport butun katalogni bir so'rovda o'qiydi | Kursor + `maxDuration` kerak |
 | 3.4 | Foydalanuvchilar ro'yxati N+1 (20 × 200 hujjat) | Izohi to'g'rilandi, kodi emas |
 | 2.7 | Narx/yetkazish sozlamasi jimgina standartga tushishi | `reportError` qo'shilmagan |

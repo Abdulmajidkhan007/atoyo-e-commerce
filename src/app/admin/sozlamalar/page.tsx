@@ -16,6 +16,7 @@ import { DiagnosticsPanel } from "@/components/admin/DiagnosticsPanel";
 import { AiUsagePanel } from "@/components/admin/AiUsagePanel";
 import { AppUpdateForm } from "@/components/admin/AppUpdateForm";
 import { StorageCleanupPanel } from "@/components/admin/StorageCleanupPanel";
+import { OrderCostsMigrationPanel } from "@/components/admin/OrderCostsMigrationPanel";
 import { channelQueueSummary, getChannelPace } from "@/lib/telegram/channel-queue";
 
 export const dynamic = "force-dynamic";
@@ -147,6 +148,19 @@ export default async function AdminSettingsPage() {
             Storage&apos;da joy bo&apos;shatadi.
           </p>
           <StorageCleanupPanel />
+        </section>
+      )}
+
+      {/* Bir martalik migratsiya - faqat loyiha egasiga. */}
+      {isOwner(user) && (
+        <section>
+          <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">
+            Eski buyurtmalardagi tannarx
+          </h2>
+          <p className="mb-6 text-sm text-navy-300">
+            Bir martalik ish: eski buyurtmalardagi tannarxni yopiq kolleksiyaga ko&apos;chiradi.
+          </p>
+          <OrderCostsMigrationPanel />
         </section>
       )}
 

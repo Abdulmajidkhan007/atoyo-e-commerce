@@ -103,6 +103,12 @@ export async function queryProductsPage(
   }
 }
 
+/**
+ * Zaxira so'rovda bazadan `pageSize` ning shuncha barobari o'qiladi
+ * (zaxira/narx filtri xotirada qo'llangani uchun).
+ */
+const RAW_OVERFETCH = 4;
+
 /** Firestore "kompozit indeks kerak" deb yiqilganmi? */
 function isMissingIndex(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -139,13 +145,46 @@ async function fallbackPage(
     if (cursorDoc.exists) q = q.startAfter(cursorDoc);
   }
 
-  const snapshot = await q.limit(pageSize).get();
-  const products = snapshot.docs.map(docToProduct).filter((product) => {
+  /**
+   * ORTIQCHA O'QISH. Zaxira so'rovda zaxira/narx filtri BAZADA emas,
+   * shu yerda qo'llanadi. Ilgari bazadan aynan `pageSize` ta hujjat
+   * olinardi va filtrdan keyin mijozga 24 ta o'rniga 3 ta mahsulot
+   * chiqib qolardi (`hasMore` esa filtrlanmagan songa qarab
+   * hisoblanardi). Endi ko'proq o'qiladi va sahifa filtrdan KEYIN
+   * to'ldiriladi.
+   */
+  const hasMemoryFilter =
+    filters.inStockOnly || filters.minPrice !== undefined || filters.maxPrice !== undefined;
+  const rawLimit = hasMemoryFilter ? pageSize * RAW_OVERFETCH : pageSize;
+
+  const matches = (product: Product): boolean => {
     if (filters.inStockOnly && (product.stock ?? 0) <= 0) return false;
     if (filters.minPrice !== undefined && product.price < filters.minPrice) return false;
     if (filters.maxPrice !== undefined && product.price > filters.maxPrice) return false;
     return true;
-  });
+  };
+
+  const snapshot = await q.limit(rawLimit).get();
+
+  const products: Product[] = [];
+  let lastConsumed: string | null = null;
+  let hasMore = false;
+
+  for (const doc of snapshot.docs) {
+    const product = docToProduct(doc);
+    const ok = matches(product);
+    // Sahifa to'ldi, lekin yana mos mahsulot bor - keyingi sahifa
+    // aynan shu hujjatdan davom etadi.
+    if (ok && products.length >= pageSize) {
+      hasMore = true;
+      break;
+    }
+    lastConsumed = doc.id;
+    if (ok) products.push(product);
+  }
+
+  // Partiya to'liq tugagan bo'lsa, undan keyin ham hujjat bo'lishi mumkin.
+  if (!hasMore && snapshot.docs.length === rawLimit) hasMore = true;
 
   // Sahifa ichida saralash (butun katalog bo'ylab emas).
   const sorted = [...products].sort((a, b) => {
@@ -161,11 +200,7 @@ async function fallbackPage(
     }
   });
 
-  return {
-    products: sorted,
-    nextCursor: snapshot.docs.at(-1)?.id ?? null,
-    hasMore: snapshot.docs.length === pageSize,
-  };
+  return { products: sorted, nextCursor: lastConsumed, hasMore };
 }
 
 /**
