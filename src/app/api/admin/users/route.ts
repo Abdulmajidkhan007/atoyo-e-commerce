@@ -41,8 +41,8 @@ export async function GET(request: Request) {
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 
     // Har bir foydalanuvchi bo'yicha buyurtmalar soni va umumiy summasi -
-    // "kim qanchalik faol" degan savolga javob beradi. Sanash aggregation
-    // so'rovi bilan (butun hujjatlarni o'qimaydi).
+    // "kim qanchalik faol" degan savolga javob beradi. `.select().get()`
+    // bilan — hujjatlar baribir o'qiladi, faqat kerakli maydonlar tortiladi.
     const stats = await Promise.all(
       users.map(async (user) => {
         try {

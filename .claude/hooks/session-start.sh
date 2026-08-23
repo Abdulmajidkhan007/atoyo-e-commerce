@@ -28,3 +28,13 @@ fi
 if [ ! -d node_modules/next ] || [ ! -d node_modules/swiper ]; then
   npm install
 fi
+
+# 3) vitest.config.ts mobile/src/version.test.ts ni ham oladi, u esa
+#    mobile/tsconfig.json orqali @react-native/typescript-config ga
+#    tayanadi — shu paket bo'lmasa `npm test` "TSConfckParseError" bilan
+#    yiqiladi (docs/AUDIT.md 2.4). CI mobile'da alohida `npm ci` qiladi
+#    (.github/workflows/ci.yml), bu hook esa shu paritetni recycle'dan
+#    keyin ham saqlaydi.
+if [ ! -d mobile/node_modules/@react-native/typescript-config ]; then
+  (cd mobile && npm install --no-audit --no-fund) || true
+fi

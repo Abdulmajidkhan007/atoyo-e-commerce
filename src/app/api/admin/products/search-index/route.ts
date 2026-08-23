@@ -8,9 +8,9 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /**
- * BUTUN KATALOGNI qidiruv motoriga yuborish (bir martalik yoki
- * vaqti-vaqti bilan). Motor sozlanmagan bo'lsa xato qaytaradi -
- * admin nima yetishmayotganini biladi.
+ * Katalogni qidiruv motoriga yuborish (bir martalik yoki vaqti-vaqti
+ * bilan) — `.limit(5000)` bilan cheklangan, BUTUN katalog emas. Motor
+ * sozlanmagan bo'lsa xato qaytaradi - admin nima yetishmayotganini biladi.
  */
 export async function POST(request: Request) {
   const admin = await requirePermission("products", request);

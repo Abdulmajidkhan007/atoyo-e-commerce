@@ -80,9 +80,9 @@ xizmatlarda sozlash qoldi. Har biri uchun aniq yo'riqnoma bor.
 **Nima yaxshi:**
 
 - **TypeScript qat'iy**: butun `src/` da bitta ham `: any` yo'q
-  (432 fayl, ~55 000 qator).
+  (439 fayl, ~56 500 qator).
 - **Har commit oldidan** `tsc --noEmit` + `eslint .` + testlar +
-  `npm run build` — hammasi yashil. Testlar: **26 fayl, 204 test**
+  `npm run build` — hammasi yashil. Testlar: **29 fayl, 215 test**
   (narx, variantlar, kanal matni, navbat, CSV import, taksonomiya,
   yetkazib berish matni, i18n, SEO, jumboq, validatsiya).
 - **Qoidalar bitta joyda**: narx faqat serverda (`toViewerProduct`),
@@ -101,9 +101,12 @@ xizmatlarda sozlash qoldi. Har biri uchun aniq yo'riqnoma bor.
 - **To'lov yo'llari testsiz** — eng katta bo'shliq. Pul bilan
   bog'liq kod (Payme Basic-auth, Click MD5 imzosi) faqat qo'lda
   tekshirilgan.
-- **Uchta katta fayl** (`customer-bot.ts` 1779, `admin-session.ts`
-  1424, `ProductForm.tsx` 1106) — ishlaydi, lekin bo'linishi kerak.
-- **98 ta `console.*`** — endi ular yonida `reportError()` bor,
+- **Yettita 800 qatordan katta fayl** (`customer-bot.ts` 1779,
+  `admin-session.ts` 1613, `ProductForm.tsx` 1106,
+  `CatalogCleanup.tsx` 967, `dictionaries.ts` 949,
+  `StickerManager.tsx` 949, `channel.ts` 873) — ishlaydi, lekin
+  bo'linishi kerak.
+- **100 ta `console.*`** — endi ular yonida `reportError()` bor,
   lekin hammasi o'tkazilmagan.
 - **UI testlari yo'q** — komponentlar brauzerda (Playwright bilan)
   qo'lda tekshirilgan, avtomatik emas.
