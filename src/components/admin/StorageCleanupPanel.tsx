@@ -16,6 +16,7 @@ interface ScanResult {
   count: number;
   bytes: number;
   sample: OrphanSample[];
+  suspicious?: string | null;
 }
 
 function mb(bytes: number): string {
@@ -113,6 +114,14 @@ export function StorageCleanupPanel() {
             </div>
           </div>
 
+          {result.suspicious && (
+            <Alert severity="warning">
+              {result.suspicious} Yetim fayllar soni kutilganidan ancha ko&apos;p — havolalar
+              to&apos;liq yig&apos;ilmagan bo&apos;lishi mumkin, shuning uchun o&apos;chirish
+              bloklandi.
+            </Alert>
+          )}
+
           {result.tooNew > 0 && (
             <p className="text-xs text-navy-300">
               {result.tooNew} ta fayl yaqinda yuklangani uchun tegilmadi (30 kundan yosh).
@@ -136,23 +145,29 @@ export function StorageCleanupPanel() {
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <TextField
-                  size="small"
-                  label="Tasdiq so'zi"
-                  placeholder="TOZALASH"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                />
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={remove}
-                  disabled={confirm !== "TOZALASH" || busy !== null}
-                >
-                  {busy === "delete" ? <CircularProgress size={20} color="inherit" /> : "O'chirish"}
-                </Button>
-              </div>
+              {!result.suspicious && (
+                <div className="flex flex-wrap items-center gap-3">
+                  <TextField
+                    size="small"
+                    label="Tasdiq so'zi"
+                    placeholder="TOZALASH"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                  />
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={remove}
+                    disabled={confirm !== "TOZALASH" || busy !== null}
+                  >
+                    {busy === "delete" ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      "O'chirish"
+                    )}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>

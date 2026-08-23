@@ -34,6 +34,17 @@ const MIN_AGE_DAYS = 30;
 /** Bir marta ko'rib chiqiladigan fayl chegarasi (himoya). */
 const MAX_FILES = 50_000;
 
+/** Kolleksiyalar shu sahifa hajmi bilan kursor orqali o'qiladi. */
+const COLLECTION_PAGE = 500;
+
+/**
+ * Yetimlar ulushi shundan oshsa - qalqon ishga tushadi va hech narsa
+ * o'chirilmaydi. Odatda yetimlar oz foiz bo'ladi; katta ulush ko'pincha
+ * havolalar noto'liq yig'ilganidan (masalan bitta kolleksiya bo'sh
+ * qaytgani) darak beradi.
+ */
+const SUSPICIOUS_ORPHAN_RATIO = 0.4;
+
 /** Havola izlanadigan kolleksiyalar (hammasi to'liq o'qiladi). */
 const COLLECTIONS = [
   "products",
@@ -70,27 +81,45 @@ export interface OrphanReport {
   bytes: number;
   /** Yosh bo'lgani uchun tegilmagan fayllar soni. */
   tooNew: number;
+  /**
+   * Yetimlar ulushi shubhali baland bo'lsa - sabab shu yerda va
+   * `orphans` BO'SH qaytadi (qalqon: hech narsa o'chirilmaydi).
+   */
+  suspicious?: string;
 }
 
-/** Bazadagi hamma Storage havolasini (fayl yo'li ko'rinishida) yig'adi. */
+/**
+ * Bazadagi hamma Storage havolasini (fayl yo'li ko'rinishida) yig'adi.
+ *
+ * Har kolleksiya kursor bilan `COLLECTION_PAGE` tadan o'qiladi - xotira
+ * chegaralangan bo'lsin. Kolleksiya o'qishi yiqilsa xato YUQORIGA
+ * uzatiladi (yutilmaydi): to'liqsiz ro'yxat bilan "yetim" hisoblash
+ * xavfli - band fayllar bo'sh joy sifatida o'chib ketishi mumkin.
+ */
 async function referencedPaths(): Promise<Set<string>> {
   const db = getAdminDb();
   const paths = new Set<string>();
 
   for (const name of COLLECTIONS) {
-    const snap = await db.collection(name).get().catch(() => null);
-    if (!snap) continue;
-    for (const doc of snap.docs) {
-      const json = JSON.stringify(doc.data());
-      for (const match of json.matchAll(URL_RE)) {
-        const encoded = match[1];
-        if (!encoded) continue;
-        try {
-          paths.add(decodeURIComponent(encoded));
-        } catch {
-          // Buzuq havola - e'tiborsiz (fayl "band" deb sanalmaydi).
+    let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+    for (;;) {
+      let query = db.collection(name).orderBy("__name__").limit(COLLECTION_PAGE);
+      if (cursor) query = query.startAfter(cursor);
+      const page = await query.get();
+      for (const doc of page.docs) {
+        const json = JSON.stringify(doc.data());
+        for (const match of json.matchAll(URL_RE)) {
+          const encoded = match[1];
+          if (!encoded) continue;
+          try {
+            paths.add(decodeURIComponent(encoded));
+          } catch {
+            // Buzuq havola - e'tiborsiz (fayl "band" deb sanalmaydi).
+          }
         }
       }
+      if (page.size < COLLECTION_PAGE) break;
+      cursor = page.docs[page.size - 1];
     }
   }
 
@@ -130,7 +159,17 @@ export async function scanOrphanFiles(): Promise<OrphanReport> {
 
   // Kattasi birinchi - hisobotda eng ko'p joy egallagani ko'rinsin.
   orphans.sort((a, b) => b.bytes - a.bytes);
-  return { scanned, referenced: used.size, orphans, bytes, tooNew };
+
+  // Yetimlar ulushi shubhali baland - ko'pincha havolalar noto'liq
+  // yig'ilgani (masalan bitta kolleksiya o'qilmay qolgani) belgisi.
+  // Ro'yxat ko'rish uchun qaytariladi, lekin `deleteOrphanFiles` buni
+  // ko'rib o'chirishdan bosh tortadi.
+  const suspicious =
+    scanned > 0 && orphans.length / scanned > SUSPICIOUS_ORPHAN_RATIO
+      ? "Shubhali natija — qayta ishga tushiring."
+      : undefined;
+
+  return { scanned, referenced: used.size, orphans, bytes, tooNew, suspicious };
 }
 
 /**
@@ -140,6 +179,8 @@ export async function scanOrphanFiles(): Promise<OrphanReport> {
  */
 export async function deleteOrphanFiles(): Promise<{ deleted: number; bytes: number }> {
   const report = await scanOrphanFiles();
+  if (report.suspicious) throw new Error(report.suspicious);
+
   const bucket = getAdminStorage().bucket(
     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? ""
   );

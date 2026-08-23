@@ -171,7 +171,13 @@ ustama `settings/pricing`, standart 5%).
 - Joy bo'shatish: **Sozlamalar → "Storage tozalash"**
   (`lib/storage/cleanup.ts`). Faqat `products/`, `blog/`, `site/`;
   **30 kundan yosh fayllarga tegilmaydi**; o'chirish ro'yxati
-  serverda qayta hisoblanadi; tasdiq so'zi `TOZALASH`.
+  serverda qayta hisoblanadi; tasdiq so'zi `TOZALASH`. Havolalar
+  kolleksiyalardan kursor bilan (500 tadan) yig'iladi; biror
+  kolleksiya o'qilmasa funksiya THROW qiladi (to'liqsiz ro'yxat
+  bilan o'chirish YO'Q). **QALQON**: yetimlar skanerlangan
+  fayllarning 40% dan oshsa — havolalar noto'liq yig'ilgan bo'lishi
+  mumkinligi belgisi — o'chirish bloklanadi va sabab panelda
+  ko'rsatiladi.
 
 ## 6. Mahsulot ma'lumotlari
 

@@ -23,16 +23,24 @@ export async function GET() {
   const owner = await requireOwner();
   if (!owner) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
-  const report = await scanOrphanFiles();
-  return NextResponse.json({
-    scanned: report.scanned,
-    referenced: report.referenced,
-    tooNew: report.tooNew,
-    count: report.orphans.length,
-    bytes: report.bytes,
-    // Ro'yxatning boshi - adminga "nima o'chadi" ko'rinib tursin.
-    sample: report.orphans.slice(0, 20),
-  });
+  try {
+    const report = await scanOrphanFiles();
+    return NextResponse.json({
+      scanned: report.scanned,
+      referenced: report.referenced,
+      tooNew: report.tooNew,
+      count: report.orphans.length,
+      bytes: report.bytes,
+      suspicious: report.suspicious ?? null,
+      // Ro'yxatning boshi - adminga "nima o'chadi" ko'rinib tursin.
+      sample: report.orphans.slice(0, 20),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Tekshirib bo'lmadi." },
+      { status: 500 }
+    );
+  }
 }
 
 const schema = z.object({
@@ -49,9 +57,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
   }
 
-  const result = await deleteOrphanFiles();
-  await logAction(
-    `🧹 Storage tozalandi: ${result.deleted} ta fayl, ${(result.bytes / 1048576).toFixed(1)} MB`
-  );
-  return NextResponse.json(result);
+  try {
+    const result = await deleteOrphanFiles();
+    await logAction(
+      `🧹 Storage tozalandi: ${result.deleted} ta fayl, ${(result.bytes / 1048576).toFixed(1)} MB`
+    );
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Tozalab bo'lmadi." },
+      { status: 409 }
+    );
+  }
 }
