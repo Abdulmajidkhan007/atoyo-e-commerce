@@ -188,3 +188,90 @@ Qoidalar:
 - Hisobot o'zbekcha. Oxirida `docs/AUDIT.md` ni commit qilib push
   qil (branch: claude/plumbing-ecommerce-nextjs-jxpmh5).
 ````
+
+---
+
+# SAYT VA BOT: qolgan muammolarni tekshirish
+
+Kod yozishdan oldin holatni bilish uchun (arzon, Sonnet 5 yetadi):
+
+````text
+Sen bu sessiyada TEKSHIRUVCHISAN: sayt va Telegram bot bo'yicha
+QOLGAN muammolarni topasan. Katta refaktoring qilma — faqat aniq,
+kichik xatolarni tuzat, qolganini ro'yxat qilib ber.
+
+Avval o'qi: docs/AUDIT.md (nima allaqachon ma'lum),
+docs/AUDIT-ISHLARI.md (nima bajarilgan). Ularda borini QAYTA yozma.
+
+Tekshir:
+1. `npx tsc --noEmit`, `npx eslint .`, `npm test`, `npm run build` —
+   to'rttasi ham yashilmi.
+2. Mijoz yo'llari: bosh sahifa, katalog (filtr + "faqat mavjudlar" +
+   narx oralig'i + saralash), mahsulot sahifasi (turlar, video),
+   savat, checkout, profil. Har birida server route javobini o'qi va
+   `toViewerProduct` chetlab o'tilmaganini tekshir.
+3. Bot: `customer-bot.ts` oqimlari (ro'yxatdan o'tish, katalog,
+   savat, checkout, /profil) — HTML escape va matn uzunligi
+   (truncateHtml) bo'yicha qolgan joy bormi.
+4. Admin: mahsulot yaratish/tahrirlash, kirim, kanal e'loni —
+   xato yo'llarida foydalanuvchi SABABNI ko'radimi.
+
+Natija: menga qisqa ro'yxat — (a) darhol tuzatilgan mayda xatolar,
+(b) tuzatilishi kerak, lekin alohida ish bo'ladiganlari (har biriga
+1-2 qatorlik topshiriq matni). Kod o'zgarsa:
+tsc + eslint + test + build, keyin
+claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push (yangi branch OCHMA).
+````
+
+---
+
+# ILOVAGA WIDGET QO'SHISH (Android)
+
+**Muhim:** React Native widget yasay olmaydi — Android bosh ekrani
+widgetlari NATIV kod (Kotlin + Glance/AppWidgetProvider) talab
+qiladi. Shuning uchun ish ikki qatlamda: RN tomoni ma'lumot
+"suratini" saqlaydi, Kotlin widget o'shani chizadi. Widget
+TARMOQQA O'ZI CHIQMAYDI (token boshqaruvi murakkab va xavfli) —
+ilova yangilanganda saqlangan qiymatni ko'rsatadi.
+
+````text
+Vazifa: Android ilovaga bosh ekran widgetlari qo'shish.
+
+Arxitektura (buzilmasin):
+- Ma'lumotni RN tomoni tayyorlaydi va SharedPreferences ga JSON
+  bo'lib yozadi (widget faqat O'QIYDI, tarmoqqa chiqmaydi).
+- Yozish paytlari: ilova ochilganda, buyurtma yaratilganda va
+  buyurtma statusi push orqali kelganda (mobile/src/push.ts).
+- Widget Kotlin'da: androidx.glance (Jetpack Glance) bilan.
+  mobile/android/app/src/main/java/.../widget/ papkasida.
+- Widget bosilganda ilova TEGISHLI ekranda ochilsin (deep link:
+  atoyo://buyurtmalar kabi; MainActivity da qabul qilinsin).
+
+Uchta widget:
+1. "Mening buyurtmam" (2x2): oxirgi buyurtma raqami, holati
+   (🕓/✅/🚚/🎉/❌) va summasi. Buyurtma yo'q bo'lsa "Buyurtma yo'q"
+   va katalogga havola.
+2. "Savat" (2x1): savatdagi mahsulot soni va umumiy summa; bosilsa
+   savat ekrani.
+3. "Xodim uchun: bugungi buyurtmalar" (2x2) — FAQAT admin/xodim
+   hisobida ko'rinsin (rol tekshiruvi RN tomonida: rol xodim
+   bo'lmasa snapshot yozilmaydi va widget "ma'lumot yo'q" deydi):
+   bugungi buyurtmalar soni va umumiy summasi.
+
+Talablar:
+- Widget matnlari o'zbekcha; narx formati saytdagidek
+  (mobile/src/pricing.ts / formatSom bilan bir xil ko'rinish).
+- Tungi/kunduzgi rejimga mos ranglar (theme.tsx dagi palitra).
+- Yangi nativ paket qo'shilsa mobile/scripts/check-codegen.mjs
+  ro'yxatiga ham qo'sh.
+- Versiyani IKKI joyda oshir: mobile/src/update.ts (APP_VERSION) va
+  android/app/build.gradle (versionName + versionCode) — testi bor.
+- mobile/README.md ga "Widgetlar" bo'limi: qanday qo'shiladi,
+  ma'lumot qayerdan keladi, nima uchun tarmoqqa chiqmaydi.
+
+Tekshiruv: cd mobile && npx tsc --noEmit && npx eslint 'src/**/*.tsx'
+--no-ignore && npm run check-codegen; keyin saytning to'liq zanjiri
+(tsc + eslint + test + build). APK ni CI yig'adi — Gradle xatosi
+bo'lsa CI ko'rsatadi.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+````

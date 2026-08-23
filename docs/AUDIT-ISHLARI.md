@@ -200,3 +200,103 @@ Tekshiruv birlashtirilgandan keyin: `tsc`, `eslint`, `npm test`
 | 2.10 | `/k/<id>` cheksiz yozuv (rate limit + mahsulot borligini tekshirish) | Faqat izoh to'g'rilandi |
 | 3.5 | `three.js` ikki chunk (946 KB × 2) | 3D o'chiq bo'lgani uchun mijozga tegmaydi |
 | 3.7 | 800 qatordan katta 7 ta faylni bo'lish | Katta ish, alohida rejalashtiriladi |
+
+---
+
+# Keyingi topshiriqlar (auditdan qolganlari)
+
+Har birini ALOHIDA yangi sessiyada yuboring. Bular aniq belgilangan
+ish — **Sonnet 5 yetadi** (arzonroq); Opus faqat noaniq/arxitektura
+qarorlari va chigal nosozliklar uchun kerak.
+
+**Har bir topshiriqning oxirida shu qator turishi SHART:**
+`Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil
+(yangi branch OCHMA).`
+
+## 8) CSV eksportni kursorga o'tkazish (AUDIT 3.1)
+
+```text
+api/admin/products/export/route.ts:15 butun katalogni bitta so'rovda
+o'qiydi (`collection("products").get()`), cheklov ham, maxDuration ham
+yo'q. 10 000+ mahsulotda bu xotira cho'qqisi va katta o'qish hisobi.
+Batafsil: docs/AUDIT.md 3.1.
+
+Vazifa:
+1. Kursor bilan sahifalab o'qi (500 tadan, reindex/route.ts naqshi).
+2. CSV ni ReadableStream bilan oqim qilib qaytar (butun satr xotirada
+   yig'ilmasin); sarlavha qatori bir marta yozilsin.
+3. export const maxDuration = 300 qo'sh.
+4. Mavjud CSV ustunlari va tartibi O'ZGARMASIN (import shu shaklni
+   kutadi) - csv.test.ts yashil qolsin.
+Tugagach: tsc + eslint + test + build.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+```
+
+## 9) Foydalanuvchilar ro'yxati N+1 (AUDIT 3.4)
+
+```text
+api/admin/users/route.ts:45-56 har bir foydalanuvchi uchun alohida
+so'rov qiladi: bitta sahifa = 1 + 20 so'rov va 4000 tagacha hujjat
+o'qish. Batafsil: docs/AUDIT.md 3.4.
+
+Vazifa:
+1. Foydalanuvchi hujjatida ordersCount, totalSpent, lastOrderAt ni
+   yurit: lib/orders/create-order.ts tranzaksiyasida
+   FieldValue.increment bilan (u yerda stats/summary allaqachon
+   yangilanadi - o'sha joyga qo'sh).
+2. api/admin/users/route.ts shu tayyor qiymatlarni o'qisin (N+1 yo'q).
+3. Eski foydalanuvchilar uchun bir martalik to'ldirish:
+   /api/admin/maintenance/user-stats (faqat owner, kursor bilan),
+   Sozlamalarga tugma - OrderCostsMigrationPanel.tsx naqshi bilan.
+4. create-order testiga: yangi maydonlar yangilanishi.
+Tugagach: tsc + eslint + test + build.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+```
+
+## 10) Jimgina yutilgan xatolar (AUDIT 2.7 + 2.8)
+
+```text
+Ikki joyda xato hech kimga ko'rinmaydi:
+- lib/products/pricing-settings.ts:29 va lib/orders/pricing.ts:16 -
+  Firestore uzilsa sozlama jimgina STANDART qiymatga tushadi (ustama
+  30% o'rniga 5% bo'lib qoladi va buyurtma o'sha narxda qabul
+  qilinadi);
+- api/telegram-webhook/route.ts:301 - bot xatosi faqat console.error.
+Batafsil: docs/AUDIT.md 2.7, 2.8.
+
+Vazifa:
+1. Ikkala sozlama catch'ida reportError(...) chaqir (lib/ops/report-error.ts).
+2. Sozlama xato bo'lganda STANDART emas, oxirgi MUVAFFAQIYATLI
+   keshlangan qiymatni qaytar (TTL tekshiruvini xato yo'lida
+   o'tkazib yubor); kesh bo'sh bo'lsagina standart.
+3. telegram-webhook catch'ini reportError("Telegram webhook", error)
+   ga o'tkaz; api/contact ham shunday.
+4. Test: sozlama o'qishi yiqilganda eski qiymat qaytishi.
+Tugagach: tsc + eslint + test + build.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+```
+
+## 11) Upload huquqi va `/k/<id>` himoyasi (AUDIT 2.9 + 2.10)
+
+```text
+- api/admin/upload/route.ts:17 faqat requireAdminUser() (xodimmi)
+  tekshiradi: masalan faqat "orders" huquqi bor admin ham Storage'ga
+  fayl yuklab, ochiq URL ola oladi.
+- app/k/[id]/route.ts ochiq va rate limit yo'q: skript
+  /k/<tasodifiy> ni chaqirib channelClicks ni cheksiz hujjat bilan
+  to'ldira oladi.
+Batafsil: docs/AUDIT.md 2.9, 2.10.
+
+Vazifa:
+1. upload route: folder ga qarab huquq - "blog" bo'lsa
+   requirePermission("blog", request), qolganida
+   requirePermission("products", request). Ruxsat etilgan prefikslar
+   ro'yxatini qattiq belgila (products/, blog, site) - boshqasi 400.
+2. /k/[id]: checkRateLimit qo'sh va yozishdan oldin mahsulot
+   mavjudligini tekshir (yoki channelMessageId bor mahsulotlarga
+   yoz). Yo'naltirishni kutdirmaslik uchun trackChannelClick ni
+   redirect'dan keyin/parallel qil.
+3. Test: notanish ID ga yozilmasligi.
+Tugagach: tsc + eslint + test + build.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+```
