@@ -3,6 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
+import { formatSom } from "@/lib/format";
 import { sendTopicMessage } from "@/lib/telegram/bot";
 import {
   expenseStatus,
@@ -44,10 +45,6 @@ async function getUsdRate(): Promise<number> {
   return typeof rate === "number" && rate > 0 ? rate : DEFAULT_USD_RATE;
 }
 
-function money(value: number): string {
-  return `${Math.round(value).toLocaleString("ru-RU").replace(/ /g, " ")} so'm`;
-}
-
 /**
  * MUDDAT ESLATMASI. Muddati o'tgan yoki 7 kun ichida keladigan
  * to'lovlar xodimlar guruhiga yoziladi — kuniga BIR MARTA (har bir
@@ -68,7 +65,7 @@ async function sendDueReminders(expenses: Expense[], usdRate: number): Promise<v
   const lines = due.map((expense) => {
     const days = Math.floor((expense.dueDate - now) / 86_400_000);
     const when = days < 0 ? `${Math.abs(days)} kun kechikdi` : days === 0 ? "bugun" : `${days} kun qoldi`;
-    return `• <b>${expense.name}</b> — ${money(toUzs(expense.amount, expense.currency, usdRate))} (${when})`;
+    return `• <b>${expense.name}</b> — ${formatSom(toUzs(expense.amount, expense.currency, usdRate))} (${when})`;
   });
 
   try {

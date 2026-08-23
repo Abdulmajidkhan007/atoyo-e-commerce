@@ -5,6 +5,7 @@ import { searchTermVariants } from "@/lib/search/tokens";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
 import { markupFor, priceForRole } from "@/lib/products/wholesale";
+import { formatSom } from "@/lib/format";
 import type { Product } from "@/types/product";
 import type { UserRole } from "@/types/user";
 
@@ -236,9 +237,6 @@ export interface ToolOutcome {
   hits?: CatalogHit[];
 }
 
-function money(value: number): string {
-  return `${Math.round(value).toLocaleString("ru-RU").replace(/ /g, " ")} so'm`;
-}
 
 /** Model chaqirgan vositani bajaradi. */
 export async function runAssistantTool(
@@ -273,8 +271,8 @@ export async function runAssistantTool(
         content: hits
           .map(
             (hit) =>
-              `id=${hit.id} | ${hit.name}${hit.brand ? ` (${hit.brand})` : ""} | ${money(hit.effectivePrice)}` +
-              `${hit.effectivePrice < hit.price ? ` (chegirma, eski narx ${money(hit.price)})` : ""}` +
+              `id=${hit.id} | ${hit.name}${hit.brand ? ` (${hit.brand})` : ""} | ${formatSom(hit.effectivePrice)}` +
+              `${hit.effectivePrice < hit.price ? ` (chegirma, eski narx ${formatSom(hit.price)})` : ""}` +
               ` | ${hit.stock > 0 ? `zaxirada ${hit.stock}` : "ZAXIRADA YO'Q"} | ${hit.material} | ${hit.url}`
           )
           .join("\n"),
@@ -298,7 +296,7 @@ export async function runAssistantTool(
       const price = show(product, effectivePriceOf(product));
 
       return {
-        content: `"${product.name}" (${quantity} dona, ${money(price)}) savatga qo'shildi.`,
+        content: `"${product.name}" (${quantity} dona, ${formatSom(price)}) savatga qo'shildi.`,
         action: {
           type: "add_to_cart",
           productId: product.id,

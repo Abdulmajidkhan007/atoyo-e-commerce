@@ -6,6 +6,7 @@ import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import { searchTermVariants } from "@/lib/search/tokens";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
 import { markupFor, priceForRole } from "@/lib/products/wholesale";
+import { formatSom } from "@/lib/format";
 import type { Product } from "@/types/product";
 import type { UserRole } from "@/types/user";
 
@@ -34,10 +35,6 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 let shopCache: { text: string; at: number } | null = null;
 
-function money(value: number): string {
-  return `${Math.round(value).toLocaleString("ru-RU").replace(/ /g, " ")} so'm`;
-}
-
 /** Do'kon haqidagi umumiy ma'lumot (keshlanadi). */
 export async function buildShopContext(): Promise<string> {
   if (shopCache && Date.now() - shopCache.at < CACHE_TTL) return shopCache.text;
@@ -52,10 +49,10 @@ export async function buildShopContext(): Promise<string> {
   const deliveryText = !delivery.enabled
     ? "Yetkazib berish narxi hozircha sozlanmagan — operator aniqlashtiradi."
     : [
-        `Standart yetkazib berish: ${money(delivery.fee)}.`,
-        delivery.freeFrom > 0 ? `${money(delivery.freeFrom)} dan yuqori buyurtmaga bepul.` : "",
+        `Standart yetkazib berish: ${formatSom(delivery.fee)}.`,
+        delivery.freeFrom > 0 ? `${formatSom(delivery.freeFrom)} dan yuqori buyurtmaga bepul.` : "",
         zones.length > 0
-          ? `Hududlar: ${zones.map((zone) => `${zone.name} — ${money(zone.fee)}`).join("; ")}.`
+          ? `Hududlar: ${zones.map((zone) => `${zone.name} — ${formatSom(zone.fee)}`).join("; ")}.`
           : "",
       ]
         .filter(Boolean)
@@ -155,8 +152,8 @@ export function formatProducts(products: GroundedProduct[]): string {
   return products
     .map((product) => {
       const price = product.discountPrice && product.discountPrice < product.price
-        ? `${money(product.discountPrice)} (eski narx ${money(product.price)})`
-        : money(product.price);
+        ? `${formatSom(product.discountPrice)} (eski narx ${formatSom(product.price)})`
+        : formatSom(product.price);
       const stock = product.stock > 0 ? `zaxirada ${product.stock} dona` : "ZAXIRADA YO'Q";
       return `- ${product.name}${product.brand ? ` (${product.brand})` : ""} | ${price} | ${stock} | ${product.url}`;
     })
