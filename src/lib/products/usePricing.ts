@@ -93,14 +93,6 @@ export function useDisplayPrice(_product?: Pick<Product, "id">): (value: number)
   return (value: number) => (Number.isFinite(value) ? Math.round(value) : 0);
 }
 
-/** Mahsulot narxlari (asosiy + amaldagi chegirma). */
-export function useProductPrices(product: Product): { price: number; discountPrice: number | null } {
-  return {
-    price: product.price,
-    discountPrice: isDiscountActive(product) ? (product.discountPrice ?? null) : null,
-  };
-}
-
 /** Optom mijozmi (UI da "Optom narx" belgisi uchun). */
 export function useIsWholesale(): boolean {
   return useAppSelector((state) => state.user.profile?.role) === "client";

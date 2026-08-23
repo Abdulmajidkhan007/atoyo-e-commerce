@@ -123,16 +123,6 @@ export async function removeCard(token: string): Promise<void> {
   await callPayme<{ success: boolean }>("cards.remove", { token }, merchantAuth());
 }
 
-/** Token hali ishlayaptimi (muddati o'tmaganmi). */
-export async function checkCard(token: string): Promise<boolean> {
-  try {
-    const result = await callPayme<{ card: PaymeCard }>("cards.check", { token }, merchantAuth());
-    return result.card.verify;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Saqlangan karta bilan to'lash: chek yaratiladi va to'lanadi.
  * Summa TIYINda ketadi (so'm × 100) — Payme shunday talab qiladi.

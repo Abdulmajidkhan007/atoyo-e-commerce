@@ -120,13 +120,6 @@ export async function confirmPhoneLogin(confirmation: ConfirmationResult, code: 
   return credential.user;
 }
 
-export async function signInWithGoogle() {
-  const credential = await signInWithPopup(getFirebaseAuth(), googleProvider);
-  await ensureUserDocument(credential.user);
-  await syncSessionCookie(credential.user);
-  return credential.user;
-}
-
 export async function signInWithEmail(email: string, password: string) {
   const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
   await syncSessionCookie(credential.user);

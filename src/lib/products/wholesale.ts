@@ -84,18 +84,3 @@ export function productPricesForRole(
         : null,
   };
 }
-
-/** Turning (variant) rolga mos narxi. */
-export function variantPriceForRole(
-  variant: Pick<ProductVariant, "price" | "discountPrice">,
-  role: UserRole | undefined,
-  markupPercent: number
-): { price: number; discountPrice: number | null } {
-  return {
-    price: priceForRole(variant.price, role, markupPercent),
-    discountPrice:
-      variant.discountPrice && variant.discountPrice > 0
-        ? priceForRole(variant.discountPrice, role, markupPercent)
-        : null,
-  };
-}

@@ -107,17 +107,6 @@ export async function searchProductsByPrefix(
   return data.products ?? [];
 }
 
-/** Mijoz o'z buyurtmasi statusini real-vaqtda kuzatishi uchun. */
-export function listenToOrderStatus(
-  orderId: string,
-  callback: (status: OrderStatus | null) => void
-): Unsubscribe {
-  return onSnapshot(doc(getFirebaseDb(), ORDERS_COLLECTION, orderId), (snapshot) => {
-    const order = snapshot.data() as Order | undefined;
-    callback(order?.status ?? null);
-  });
-}
-
 /**
  * Profil sahifasida foydalanuvchining so'nggi buyurtmalarini real-vaqtda
  * ko'rsatadi - admin Telegram tugmasidan statusni o'zgartirganda, mijoz

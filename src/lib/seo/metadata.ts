@@ -55,9 +55,6 @@ export function siteDescription(address?: string | null): string {
   return `${DESCRIPTION_HEAD} ${middle} ${DESCRIPTION_TAIL}`;
 }
 
-/** Sozlama o'qilmagan holat uchun (shaharsiz). */
-export const SITE_DESCRIPTION = siteDescription();
-
 /**
  * KALIT SO'ZLAR. Uzbek (lotin + kirill), rus va ingliz variantlari —
  * O'zbekistonda odamlar uch xil yozadi va qidiruv tizimi har birini

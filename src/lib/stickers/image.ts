@@ -187,13 +187,3 @@ export async function ensureStickerWebp(input: Buffer): Promise<Buffer> {
     .toBuffer();
   return compress(square);
 }
-
-/** Ikki rasmni ustma-ust qo'yish (masalan yozuvli ramka). */
-export async function overlay(bottom: Buffer, top: Buffer): Promise<Buffer> {
-  const composed = await sharp(bottom)
-    .resize(SIZE, SIZE, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .composite([{ input: await sharp(top).resize(SIZE, SIZE, { fit: "contain" }).png().toBuffer() }])
-    .png()
-    .toBuffer();
-  return compress(composed);
-}

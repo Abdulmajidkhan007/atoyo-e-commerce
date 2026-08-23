@@ -26,7 +26,6 @@ function dataUri(svg: string): string {
  * statik stikerda (`logoMark`, SVG matn sifatida) va animatsiyali
  * stikerda (`animate.ts`, Lottie egri chiziqlariga aylantiriladi).
  */
-export const LOGO_VIEWBOX = { width: 120, height: 104 };
 export const LOGO_LETTER_PATH =
   "M12 100 L44 20 C48 9 53 4 60 4 C67 4 72 9 76 20 L108 100 L84 100 L60 38 L36 100 Z";
 export const LOGO_WAVE_PATHS = [
