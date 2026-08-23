@@ -42,6 +42,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Rasm qidiruvi chegarasi tugadi. Keyinroq urinib ko'ring." }, { status: 429 });
   }
 
+  // Ikkinchi qatlam: IP chegarasi chetlab o'tilsa ham (bu chaqiruv
+  // Claude vision - pulli), hisobga bog'liq chegara qoladi. Kirgan
+  // foydalanuvchi - uid bo'yicha kunlik chegara; kirmagan mijozlar
+  // butun sayt bo'yicha kunlik umumiy chegara bilan himoyalanadi.
+  const viewer = await getAppUserFromRequest(request);
+  const secondLimit = viewer
+    ? await checkRateLimit({
+        key: `imgsearch:uid:${viewer.uid}`,
+        limit: 30,
+        windowMs: 24 * 60 * 60 * 1000,
+      })
+    : await checkRateLimit({
+        key: "imgsearch:anon:global",
+        limit: 100,
+        windowMs: 24 * 60 * 60 * 1000,
+      });
+  if (!secondLimit.allowed) {
+    return NextResponse.json({ error: "Rasm qidiruvi chegarasi tugadi. Keyinroq urinib ko'ring." }, { status: 429 });
+  }
+
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "So'rov noto'g'ri." }, { status: 400 });
 
@@ -56,7 +76,6 @@ export async function POST(request: Request) {
 
   try {
     // Narx rolga qarab: optom mijoz optom narxni, qolganlar dona narxni ko'radi.
-    const viewer = await getAppUserFromRequest(request);
     const result = await searchByImage({
       base64,
       mimeType,
