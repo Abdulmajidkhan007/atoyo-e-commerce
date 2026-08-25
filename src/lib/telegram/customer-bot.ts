@@ -38,6 +38,7 @@ import { formatSom } from "@/lib/format";
 import { freeDeliveryShort, freeDeliveryText, installServiceText } from "@/lib/delivery/text";
 import { escapeHtml } from "./html";
 import { buildReviewLine } from "./review-text";
+import { truncateHtml } from "./html-truncate";
 
 /**
  * MIJOZ-BOT - FAQAT shaxsiy (private) chatlarda ishlaydi. Webhook bu
@@ -1163,7 +1164,11 @@ async function showReviews(chatId: number, productId: string, t: BotDict): Promi
       ? t.noReviews
       : reviews.map((r) => buildReviewLine(r)).join("\n\n");
 
-  await sendChatMessage(chatId, `${t.reviewsTitle}\n\n${body}`, {
+  // 10 ta sharh (har biri 1000 belgigacha) 4096 chegarasidan osha oladi -
+  // teg o'rtasidan kesilsa Telegram butun xabarni rad etadi (2.2-band).
+  const text = truncateHtml(`${t.reviewsTitle}\n\n${body}`, 4096);
+
+  await sendChatMessage(chatId, text, {
     replyMarkup: {
       inline_keyboard: [
         [{ text: t.writeReview, callback_data: `rw|${productId}` }],

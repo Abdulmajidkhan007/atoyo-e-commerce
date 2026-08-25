@@ -3,6 +3,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
+import { validationMessage } from "@/lib/http/validation";
 import { logAction } from "@/lib/telegram/action-log";
 import { registerFacets } from "@/lib/products/facets";
 import { recordStockMoves } from "@/lib/inventory/stock-moves";
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = intakeSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
 
   const db = getAdminDb();
   const batch = db.batch();

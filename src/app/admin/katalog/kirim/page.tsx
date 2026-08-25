@@ -276,7 +276,10 @@ function IntakeContent() {
           })),
         }),
       });
-      if (!res.ok) throw new Error("failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error ?? "Kirimni saqlashda xatolik.");
+      }
       const published = rows.filter((r) => r.isDraft).length;
       setToast(
         published > 0
@@ -285,8 +288,8 @@ function IntakeContent() {
       );
       setRows([]);
       loadRecent();
-    } catch {
-      setToast("❌ Kirimni saqlashda xatolik. Qayta urinib ko'ring.");
+    } catch (e) {
+      setToast(`❌ ${e instanceof Error ? e.message : "Kirimni saqlashda xatolik."}`);
     } finally {
       setIsSaving(false);
     }
