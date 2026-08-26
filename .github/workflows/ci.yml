@@ -165,9 +165,20 @@ jobs:
             fs.writeFileSync(file, source.replace(/export const GOOGLE_WEB_CLIENT_ID = '.*';/, \"export const GOOGLE_WEB_CLIENT_ID = '\" + id + \"';\"));
           "
 
+      # Gradle yiqilganda Kotlin xatolari ("e: file:...") logning
+      # O'RTASIDA qoladi va tashqaridan ko'rinmaydi (CI log tanasini
+      # faqat oxiridan o'qish mumkin). Shuning uchun chiqish faylga
+      # yozilib, yiqilganda xato satrlari OXIRIDA qayta chiqariladi.
       - name: Release APK yig'ish
         working-directory: mobile/android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/gradle.log" || {
+            echo "::group::Kotlin/Java xatolari"
+            grep -E "^(e: |w: .*error|.*error:)" "$RUNNER_TEMP/gradle.log" | tail -60 || true
+            echo "::endgroup::"
+            exit 1
+          }
 
       - name: APK'ni yuklash
         uses: actions/upload-artifact@v4
