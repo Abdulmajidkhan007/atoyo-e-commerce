@@ -210,8 +210,17 @@ ish — **Sonnet 5 yetadi** (arzonroq); Opus faqat noaniq/arxitektura
 qarorlari va chigal nosozliklar uchun kerak.
 
 **Har bir topshiriqning oxirida shu qator turishi SHART:**
-`Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil
-(yangi branch OCHMA).`
+
+```
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
+menga ayt (men birlashtiraman).
+```
+
+> Nega ikkinchi jumla kerak: bir necha sessiyada ishchi branchga
+> push qilishga ruxsat berilmadi (muhitning o'z tekshiruvi) va ish
+> boshqa branchda qolib ketdi. Shunda hech bo'lmasa branch nomi
+> ma'lum bo'ladi.
 
 ## 8) CSV eksportni kursorga o'tkazish (AUDIT 3.1)
 
@@ -299,4 +308,27 @@ Vazifa:
 3. Test: notanish ID ga yozilmasligi.
 Tugagach: tsc + eslint + test + build.
 Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+```
+
+## 12) Xato xabarlari: qolgan route va formalar
+
+```text
+docs/AUDIT.md dagi "Admin API xatolari" qoidasi hamma joyda
+qo'llanmagan: ~28 ta admin route hali `validationMessage()` siz
+(quruq "Ma'lumotlar noto'g'ri."), 7 ta mijoz formasi esa serverdan
+kelgan xato MATNINI tashlab, o'zining qattiq yozilgan xabarini
+ko'rsatadi.
+
+Vazifa:
+1. `grep -rn "Ma'lumotlar noto'g'ri" src/app/api` bilan ro'yxatni ol
+   va hammasini `validationMessage(parsed.error)` ga o'tkaz
+   (lib/http/validation.ts).
+2. Mijoz formalarida (savat, checkout, sharh, kontakt, obuna,
+   profil) `res.json().error` bo'lsa - O'SHA matn ko'rsatilsin;
+   bo'lmasa hozirgi zaxira matn qolsin.
+3. Bittasiga test: noto'g'ri maydon nomi javobda ko'rinishi.
+Tugagach: tsc + eslint + test + build.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
+menga ayt.
 ```
