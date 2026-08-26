@@ -281,6 +281,20 @@ qo'shiladi:
 
 Secret qo'yilmagan bo'lsa CI shu qadamni jimgina o'tkazib yuboradi.
 
+> ⚠️ **HOZIRGI HOLAT (2026-08-26): secret QO'YILMAGAN.** CI'dagi
+> "Firestore qoidalari" ishi yashil ko'rinadi, lekin logda
+> `FIREBASE_SERVICE_ACCOUNT secret'i yo'q - qoidalar deploy
+> qilinmadi` deb turibdi. Ya'ni **`firestore.rules` va
+> `firestore.indexes.json` dagi hech bir o'zgarish hali bazaga
+> qo'llanmagan** — jumladan yangi yopiq `orderCosts` qoidasi va
+> katalog uchun 15 ta yangi indeks. Secret qo'yilishi bilan
+> keyingi push'da hammasi birdaniga qo'llanadi.
+>
+> Kalitdagi service account'ga IAM'da **Firebase Admin** (yoki
+> `Firebase Rules Admin` + `Cloud Datastore Index Admin`) roli
+> berilgan bo'lishi kerak, aks holda deploy "permission denied"
+> beradi.
+
 **Qo'lda** (lokal kompyuter yoki Cloud Shell):
 
 ```bash
