@@ -34,6 +34,54 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- Bosh ekran widgetlari shu sxema bilan ochadi (masalan
+             atoyo://buyurtmalar) - React Navigation `linking` ni
+             `App.tsx` da qabul qiladi. -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="atoyo" />
+        </intent-filter>
       </activity>
+
+      <!-- BOSH EKRAN WIDGETLARI (androidx.glance). Ma'lumot RN tomonidan
+           SharedPreferences'ga yoziladi (`AtoyoWidgetsModule.kt`); widget
+           tarmoqqa o'zi chiqmaydi, faqat o'sha yozuvni o'qiydi. -->
+      <receiver
+        android:name=".widget.OrderWidgetReceiver"
+        android:exported="true"
+        android:label="@string/widget_order_label">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/order_widget_info" />
+      </receiver>
+
+      <receiver
+        android:name=".widget.CartWidgetReceiver"
+        android:exported="true"
+        android:label="@string/widget_cart_label">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/cart_widget_info" />
+      </receiver>
+
+      <receiver
+        android:name=".widget.StaffWidgetReceiver"
+        android:exported="true"
+        android:label="@string/widget_staff_label">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/staff_widget_info" />
+      </receiver>
     </application>
 </manifest>

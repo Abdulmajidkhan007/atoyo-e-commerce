@@ -1,6 +1,11 @@
 import React from 'react';
 import {StatusBar} from 'react-native';
-import {NavigationContainer, DarkTheme, DefaultTheme} from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+  type LinkingOptions,
+} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
@@ -12,6 +17,29 @@ import {LocaleProvider} from './i18n';
 import {ToastProvider} from './components/Toast';
 import {UpdateBanner} from './components/UpdateBanner';
 import {usePushNotifications} from './push';
+import {useWidgetSync} from './widgets';
+import type {RootStackParamList} from './navigation/types';
+
+/**
+ * Bosh ekran widgetlari bosilganda shu yo'llar orqali ochiladi
+ * (`MainActivity` `atoyo://` sxemasini qabul qiladi). Widget qanday
+ * ma'lumot yozishi haqida - `widgets.ts`.
+ */
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['atoyo://'],
+  config: {
+    screens: {
+      Buyurtmalarim: 'buyurtmalar',
+      Savat: 'savat',
+      AdminBuyurtmalar: 'xodim-buyurtmalar',
+      Tabs: {
+        screens: {
+          Katalog: 'katalog',
+        },
+      },
+    },
+  },
+};
 
 /**
  * Navigatsiya temasi ilova temasidan olinadi - shunda ekran orqasi,
@@ -39,10 +67,11 @@ function ThemedApp() {
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={palette.chrome}
       />
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer theme={navTheme} linking={linking}>
         {/* Push bildirishnomalar navigatsiya ichida - xabar bosilganda
             kerakli ekranni ocha olishi uchun. */}
         <PushGate />
+        <WidgetGate />
         <RootNavigator />
         {/* Yangi versiya chiqqan bo'lsa - tepada eslatma. */}
         <UpdateBanner />
@@ -54,6 +83,12 @@ function ThemedApp() {
 /** Push bildirishnomalarni yoqadi (o'zi hech narsa chizmaydi). */
 function PushGate() {
   usePushNotifications();
+  return null;
+}
+
+/** Bosh ekran widgetlarini yangilab turadi (o'zi hech narsa chizmaydi). */
+function WidgetGate() {
+  useWidgetSync();
   return null;
 }
 

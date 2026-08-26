@@ -5,6 +5,7 @@ import {useNavigation} from '@react-navigation/native';
 import {savePushToken, deletePushToken} from './api';
 import {useAuth} from './auth';
 import {useToast} from './components/Toast';
+import {refreshOrderWidgetFromPush} from './widgets';
 
 /**
  * PUSH BILDIRISHNOMALAR.
@@ -122,6 +123,12 @@ export function usePushNotifications(): void {
       else if (screen) go.navigate(screen);
     };
 
+    /** Buyurtma statusi push'i - "Mening buyurtmam" widget'ini yangilaydi. */
+    const refreshWidget = (data?: {[key: string]: string | object | number}) => {
+      const orderId = typeof data?.orderId === 'string' ? data.orderId : null;
+      if (orderId) void refreshOrderWidgetFromPush(orderId);
+    };
+
     const setup = async () => {
       if (!(await ensurePermission())) return;
 
@@ -150,10 +157,12 @@ export function usePushNotifications(): void {
       const title = message.notification?.title ?? '';
       const body = message.notification?.body ?? '';
       if (title || body) toast.info([title, body].filter(Boolean).join(' — '));
+      refreshWidget(message.data);
     });
 
     // Fon rejimidagi bildirishnoma bosilgani.
     const unsubscribeOpened = messaging().onNotificationOpenedApp(message => {
+      refreshWidget(message.data);
       open(message.data);
     });
 
@@ -161,7 +170,10 @@ export function usePushNotifications(): void {
     messaging()
       .getInitialNotification()
       .then(message => {
-        if (message) open(message.data);
+        if (message) {
+          refreshWidget(message.data);
+          open(message.data);
+        }
       })
       .catch(() => {});
 
