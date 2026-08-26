@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Atoyo</string>
+
+    <!-- Bosh ekran widgetlari - nomi va tavsifi widget tanlagichida ko'rinadi. -->
+    <string name="widget_order_label">Mening buyurtmam</string>
+    <string name="widget_order_description">Oxirgi buyurtmangiz holati va summasi</string>
+    <string name="widget_cart_label">Savat</string>
+    <string name="widget_cart_description">Savatdagi mahsulot soni va summa</string>
+    <string name="widget_staff_label">Xodim: bugungi buyurtmalar</string>
+    <string name="widget_staff_description">Bugungi buyurtmalar soni va summasi (faqat xodim uchun)</string>
 </resources>

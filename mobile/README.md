@@ -121,6 +121,51 @@ src/
 - Onlayn to'lov saytdagi `/tolov/<id>` sahifasiga yo'naltiradi (Payme/Click
   kalitlari ulangach ishlaydi).
 
+## Widgetlar (Android bosh ekrani)
+
+Uchta bosh ekran widget'i bor, hammasi `androidx.glance` (Jetpack
+Glance) bilan Kotlin'da yozilgan — `android/app/src/main/java/com/atoyoapp/widget/`:
+
+1. **Mening buyurtmam** (2x2) — oxirgi buyurtma raqami, holati
+   (🕓/✅/🚚/🎉/❌) va summasi; buyurtma yo'q bo'lsa "Buyurtma yo'q" va
+   katalogga havola.
+2. **Savat** (2x1) — savatdagi mahsulot soni va umumiy summa.
+3. **Xodim uchun: bugungi buyurtmalar** (2x2) — FAQAT admin/xodim
+   hisobida ma'lumot bor (rol tekshiruvi RN tomonida — xodim
+   bo'lmasa yozilmaydi va widget "Ma'lumot yo'q" deydi).
+
+**Arxitektura — widget tarmoqqa O'ZI CHIQMAYDI.** React Native
+tomoni (`src/widgets.ts`) ma'lumotni tayyorlaydi (narxni
+`formatSom()` bilan formatlaydi, xodim uchun rolni tekshiradi) va
+nativ modul (`AtoyoWidgetsModule.kt`, `NativeModules.AtoyoWidgets`)
+orqali oddiy JSON qilib **SharedPreferences**'ga yozadi. Glance
+widget shu yozuvni FAQAT O'QIYDI va chizadi — token boshqarish yoki
+Firestore/HTTP so'rovi widget kodida yo'q, bu xavfsizroq va tezroq
+(widget alohida process'da ham ishga tushishi mumkin).
+
+Yozish (`writeOrderWidget`/`writeCartWidget`/`writeStaffWidget`)
+quyidagi paytlarda bo'ladi:
+
+- **Ilova ochilganda** — `useWidgetSync()` (`App.tsx`) oxirgi
+  buyurtmani va (xodim bo'lsa) bugungi statistikani Firestore'dan
+  o'qib yozadi.
+- **Buyurtma yaratilganda** — `CheckoutScreen` hujjatni o'qib
+  (narx serverda qayta hisoblangani uchun) widget'ni yangilaydi.
+- **Buyurtma statusi push orqali kelganda** — `push.ts` va
+  `index.js` (ilova fonda/yopiq bo'lganda ham) `orderId`ni o'qib
+  hujjatni Firestore'dan qayta oladi.
+- **Savat o'zgarganda** — `useWidgetSync()` har Redux o'zgarishida
+  yozadi (bu to'liq lokal, tarmoq kerak emas).
+
+Widget bosilganda ilova `atoyo://` sxemasi bilan tegishli ekranda
+ochiladi (`atoyo://buyurtmalar`, `atoyo://savat`,
+`atoyo://xodim-buyurtmalar`, `atoyo://katalog`) — `MainActivity`
+buni qabul qiladi, `App.tsx` dagi React Navigation `linking`
+konfiguratsiyasi ekranga yo'naltiradi.
+
+Ranglar `theme.tsx` dagi Deep Navy/Aqua-Gold palitrasi bilan bir xil
+(`widget/WidgetTheme.kt`) va tungi/kunduzgi rejimga qarab tanlanadi.
+
 ## APK'ni GitHub'da yig'ish (kompyuterda Android Studio kerak emas)
 
 Repoda `.github/workflows/ci.yml` bor: har push'da avval tekshiruv
@@ -196,7 +241,7 @@ APK to'g'ridan-to'g'ri tarqatiladi, ya'ni telefon ilovani o'zi
 yangilamaydi. Yangi versiya chiqarish tartibi:
 
 1. `mobile/android/app/build.gradle` da `versionCode` ni +1 qiling va
-   `versionName` ni oshiring (hozirgi: `versionCode 3`, `1.2`).
+   `versionName` ni oshiring (hozirgi: `versionCode 4`, `1.3`).
 2. **`mobile/src/update.ts` dagi `APP_VERSION` ni ham o'sha raqamga
    moslang** — ilova o'zini shu bilan solishtiradi.
 3. Commit + push. CI APK yig'adi; `main` ga tushganda
@@ -209,6 +254,11 @@ yangilamaydi. Yangi versiya chiqarish tartibi:
 Shundan keyin foydalanuvchi ilovani ochganda oyna chiqadi va
 "Yangilash" tugmasi APK ni brauzerda yuklab beradi; bildirishnoma
 belgilangan bo'lsa ilovani ochmaganlar ham xabar oladi.
+
+### 1.3 versiyasida nima o'zgardi
+
+- **Bosh ekran widgetlari** (Android) — pastga qarang, "Widgetlar"
+  bo'limi.
 
 ### 1.2 versiyasida nima o'zgardi
 

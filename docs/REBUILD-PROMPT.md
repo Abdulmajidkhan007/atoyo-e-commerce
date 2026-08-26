@@ -607,6 +607,13 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
   release'dagi `latest` teg bilan solishtiradi).
 - APK GitHub Actions'da yig'iladi va `latest` release'ga yuklanadi;
   saytdagi footerdagi tugma o'sha faylga qaraydi.
+- **Bosh ekran widgetlari** (Android, `androidx.glance`): "Mening
+  buyurtmam", "Savat", "Xodim uchun: bugungi buyurtmalar" (faqat
+  admin/xodim). RN tomoni (`mobile/src/widgets.ts`) ma'lumotni
+  SharedPreferences'ga JSON qilib yozadi (ilova ochilganda, buyurtma
+  yaratilganda, status push kelganda) - widget tarmoqqa o'zi chiqmaydi,
+  faqat o'qiydi. Bosilganda `atoyo://` sxemasi bilan tegishli ekranda
+  ochiladi. Batafsil: `mobile/README.md` "Widgetlar" bo'limi.
 
 ## 3a. BOT STIKERLARI
 

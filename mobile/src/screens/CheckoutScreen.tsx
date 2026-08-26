@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {ScrollView, Text, View, Pressable} from 'react-native';
+import firestore from '@react-native-firebase/firestore';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {useAppDispatch, useAppSelector} from '../store';
@@ -13,9 +14,11 @@ import {
   type DeliverySettings,
 } from '../api';
 import {useAuth} from '../auth';
+import type {Order} from '../types';
 import type {StackScreenProps} from '../navigation/types';
 import {useToast} from '../components/Toast';
 import {DeliveryNote} from '../components/DeliveryNote';
+import {writeOrderWidget} from '../widgets';
 
 /**
  * Buyurtmani rasmiylashtirish. Hisob faqat ko'rsatish uchun - yakuniy
@@ -90,6 +93,17 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
       dispatch(clearCart());
       toast.success(t.orderNumber(orderId.slice(0, 8)));
       navigation.navigate('Buyurtmalarim');
+
+      // Widget uchun - narx serverda qayta hisoblangani uchun hujjatning
+      // o'zi o'qiladi, mahalliy hisoblangan `total` ishlatilmaydi.
+      firestore()
+        .collection('orders')
+        .doc(orderId)
+        .get()
+        .then(doc => {
+          if (doc.exists) writeOrderWidget({id: doc.id, ...doc.data()} as Order);
+        })
+        .catch(() => {});
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.orderFailed);
     } finally {
