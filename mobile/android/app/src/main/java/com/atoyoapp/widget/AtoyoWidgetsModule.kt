@@ -3,6 +3,9 @@ package com.atoyoapp.widget
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+// `updateAll` - androidx.glance.appwidget dagi KENGAYTMA funksiya:
+// importsiz "Unresolved reference" bo'ladi (CI shundan yiqilgan edi).
+import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
