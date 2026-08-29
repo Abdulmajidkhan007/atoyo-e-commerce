@@ -323,7 +323,7 @@ export function AssistantWidget() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Yordamchi"
-          className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-aqua-500 text-navy-900 shadow-lg transition hover:bg-aqua-400 md:bottom-6"
+          className="glass-strong fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full text-aqua-600 transition hover:-translate-y-0.5 md:bottom-6 dark:text-aqua-300"
         >
           <SmartToyOutlinedIcon />
         </button>

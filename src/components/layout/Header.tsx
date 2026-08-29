@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,6 +22,26 @@ export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
   const favoritesCount = useAppSelector((s) => s.favorites.items.length);
   const userProfile = useAppSelector((s) => s.user.profile);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Header qatorlari ekranga (va 3D almashtirgichga) qarab balandligi
+  // o'zgaradi - katalogdagi yopishib turuvchi filtr paneli xuddi shu
+  // balandlikdan boshlab yopishishi kerak, shuning uchun `--header-height`
+  // CSS o'zgaruvchisiga yoziladi (qattiq son ishlatib bo'lmaydi).
+  // ResizeObserver o'zi HAR QANDAY balandlik o'zgarishini ushlaydi -
+  // qayta obuna bo'lish uchun render sababiga bog'liq emas.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const height = entries[0]?.contentRect.height;
+      if (height !== undefined) {
+        document.documentElement.style.setProperty("--header-height", `${height}px`);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const navLinks = [
     { href: "/", label: dict.nav.home },
@@ -37,7 +57,7 @@ export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
   };
 
   return (
-    <header className="no-print sticky top-0 z-30 border-b border-navy-100 bg-white/95 backdrop-blur dark:border-navy-500 dark:bg-navy-900/95">
+    <header ref={headerRef} className="glass no-print sticky top-0 z-30">
       <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
         {/* Brend bloki qisqara oladi (min-w-0), tugmalar esa qisqarmaydi -
             shunda tor telefonda nom kesiladi, tugmalar chiqib ketmaydi. */}

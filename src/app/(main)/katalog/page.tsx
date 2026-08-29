@@ -35,8 +35,9 @@ function CatalogContent() {
       <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">{dict.nav.catalog}</h1>
 
       {/* Qidiruv + filtr tugmasi. Filtrlar sahifada doim turmaydi -
-          tugma bosilganda modal ochiladi. */}
-      <div className="mb-4 flex items-center gap-2">
+          tugma bosilganda modal ochiladi. Panel skrollda header ostida
+          yopishib qoladi (`--header-height` - Header.tsx). */}
+      <div className="glass sticky top-[var(--header-height,64px)] z-20 mb-4 flex items-center gap-2 rounded-xl2 px-3 py-2">
         <SearchBar value={searchTerm} onChange={setSearchTerm} className="flex-1 lg:max-w-md" />
         <FilterDialog />
       </div>

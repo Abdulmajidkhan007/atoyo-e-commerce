@@ -157,7 +157,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
         />
 
         <div className="flex flex-col gap-3">
-          <Chip label={(dict.categories as Record<string, string>)[product.category] ?? categoryLabel} size="small" className="!w-fit !bg-aqua-50 !text-aqua-700 dark:!bg-navy-500 dark:!text-aqua-100" />
+          <Chip label={(dict.categories as Record<string, string>)[product.category] ?? categoryLabel} size="small" className="glass !w-fit !text-aqua-700 dark:!text-aqua-100" />
 
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-2xl font-bold text-navy-900 dark:text-white">{name}</h1>

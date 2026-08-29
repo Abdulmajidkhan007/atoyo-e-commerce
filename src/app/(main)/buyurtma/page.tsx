@@ -285,7 +285,7 @@ export default function CheckoutPage() {
           {promoError && <p className="mt-1 text-xs text-red-500">{promoError}</p>}
         </div>
 
-        <div className="flex flex-col gap-1 rounded-xl2 border border-navy-100 p-4 text-sm dark:border-navy-500">
+        <div className="glass flex flex-col gap-1 rounded-xl2 p-4 text-sm">
           <div className="flex justify-between text-navy-500 dark:text-navy-100">
             <span>{dict.checkout.subtotal}</span>
             <span>{formatSom(subtotal)}</span>

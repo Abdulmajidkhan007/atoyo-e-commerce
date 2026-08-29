@@ -7,6 +7,12 @@
   --color-bg-elevated: #f3f7fa;
   --color-fg: #072d40;
   --color-border: #dfe8ee;
+
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.28);
+  --glass-blur: 14px;
+  --glass-shadow: 0 8px 24px rgba(7, 45, 64, 0.1);
 }
 
 .dark {
@@ -14,12 +20,86 @@
   --color-bg-elevated: #0b3b54;
   --color-fg: #edf4f8;
   --color-border: #175071;
+
+  --glass-bg: rgba(11, 59, 84, 0.62);
+  --glass-bg-strong: rgba(11, 59, 84, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ---------------------------------------------------------------------
+   SHISHA (glass) QATLAM — docs/UI-SHISHA.md.
+
+   Faqat suzuvchi "chrome" qatlamlari uchun (header, pastki navigatsiya,
+   MUI Dialog/Menu/Popover, yopishib turuvchi panellar, toast, chiplar).
+   Komponentda xom qiymat (`bg-white/70` kabi) YOZILMAYDI — shu ikki
+   klass yagona manba. `!important` ATAYLAB: MUI Paper'ning o'z
+   ranglari runtime'da Emotion orqali keyinroq qo'shiladi va oddiy
+   sinf ustunligi bilan yutib qoladi.
+--------------------------------------------------------------------- */
+.glass,
+.glass-strong {
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+}
+
+.glass {
+  background-color: var(--glass-bg) !important;
+}
+
+.glass-strong {
+  background-color: var(--glass-bg-strong) !important;
+}
+
+/* ZAXIRA YO'LLAR — shisha hech qachon o'qishga xalaqit bermasin.
+   Hammasi QATTIQ fonga tushadi (blur o'chadi). Tartib MUHIM: bu
+   bloklar yuqoridagi qoidadan KEYIN turishi shart, aks holda teng
+   ustunlikdagi (!important) qoidalarda oxirgisi g'alaba qiladi. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-strong {
+    background-color: var(--color-bg-elevated) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-strong {
+    background-color: var(--color-bg-elevated) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .glass,
+  .glass-strong {
+    background-color: var(--color-bg-elevated) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: var(--color-fg) !important;
+    border-color: var(--color-border) !important;
+  }
+}
+
+/* Sekin qurilma/tejamkor rejim — `data-glass="off"` sahifa
+   bo'yalishidan OLDIN qo'yiladi (`lib/ui-mode/config.ts`,
+   `GLASS_INIT_SCRIPT`), `useDeviceTier` dagi `low` mezonlariga mos. */
+html[data-glass="off"] .glass,
+html[data-glass="off"] .glass-strong {
+  background-color: var(--color-bg-elevated) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* CHEK CHOP ETISH: sahifa chop etilganda faqat chek qismi qolsin.

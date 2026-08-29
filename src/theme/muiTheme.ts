@@ -22,4 +22,36 @@ export const getMuiTheme = (mode: PaletteMode) =>
     typography: {
       fontFamily: "var(--font-inter), sans-serif",
     },
+    components: {
+      /**
+       * SUZUVCHI MUI PANELLARI — shisha ko'rinish (`docs/UI-SHISHA.md`).
+       * Bitta umumiy tema ishlatilgani uchun bu admin panelga ham
+       * qo'llanadi (ataylab - vazifada shunday so'ralgan).
+       *
+       * `.glass-strong` klass orqali (styleOverrides EMAS): shunda
+       * `globals.css` dagi zaxira yo'llar (@supports, kontrast, sekin
+       * qurilma) avtomatik ishlaydi. Menu o'z Popover'ini ICHKI
+       * chizadi va paper slotini har doim aniq (bo'lsa ham bo'sh)
+       * obyekt bilan uzatadi, shuning uchun `MuiPopover` standartlari
+       * yolg'iz Menu'ga yetib bormaydi - ikkalasi ham kerak.
+       */
+      MuiDialog: {
+        defaultProps: { slotProps: { paper: { className: "glass-strong" } } },
+      },
+      MuiMenu: {
+        defaultProps: { slotProps: { paper: { className: "glass-strong" } } },
+      },
+      MuiPopover: {
+        defaultProps: { slotProps: { paper: { className: "glass-strong" } } },
+      },
+      /* Toast (Snackbar'ning standart xabar qutisi). Xatolik/muvaffaqiyat
+         rangli `Alert`lar (admin formalari) ATAYLAB tegilmagan - ularning
+         qattiq rangi shoshilinch xabarni ajratib turishi kerak. */
+      MuiSnackbarContent: {
+        defaultProps: { className: "glass-strong" },
+        styleOverrides: {
+          root: { color: "var(--color-fg)" },
+        },
+      },
+    },
   });

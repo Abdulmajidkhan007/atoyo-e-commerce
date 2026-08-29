@@ -18,7 +18,7 @@ export function CartSummary() {
   const belowMinimum = minOrderAmount > 0 && items.length > 0 && totalAmount < minOrderAmount;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-700">
+    <div className="glass flex flex-col gap-3 rounded-xl2 p-4">
       <div className="flex items-center justify-between text-sm text-navy-300">
         <span>{dict.product.products} ({totalCount})</span>
         <span>{formatSom(totalAmount)}</span>

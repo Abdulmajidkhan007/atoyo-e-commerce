@@ -137,3 +137,33 @@ export function persistForce3d(value: boolean): void {
     /* localStorage yopiq - majburiy rejim shu sessiyada ishlamaydi */
   }
 }
+
+/**
+ * SHISHA (glass) YOQ/O'CHIQ — `<html data-glass="off">`.
+ *
+ * `docs/UI-SHISHA.md`: sekin qurilmada `backdrop-filter` skrollni
+ * sekinlashtiradi, shuning uchun u yerda qattiq fonga tushiladi.
+ * Mezon `useDeviceTier` dagi `"low"` bilan BIR XIL (qurilma xotirasi,
+ * yadro soni, tarmoq, harakatni kamaytirish) - lekin WebGL tekshiruvi
+ * YO'Q, chunki u shishaga aloqasi yo'q. Skript `UI_MODE_INIT_SCRIPT`
+ * bilan bir xil naqshda: sahifa bo'yalishidan OLDIN, sinxron ishlaydi
+ * - `useDeviceTier` esa bo'sh vaqtda (idle callback) o'lchaydi va
+ * flash ko'rinardi.
+ */
+export const GLASS_ATTRIBUTE = "data-glass";
+
+export const GLASS_INIT_SCRIPT = `
+try {
+  var low = false;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) low = true;
+  var nav = navigator;
+  if (nav.connection) {
+    if (nav.connection.saveData) low = true;
+    var et = nav.connection.effectiveType || '';
+    if (et === 'slow-2g' || et === '2g' || et === '3g') low = true;
+  }
+  if (typeof nav.deviceMemory === 'number' && nav.deviceMemory < 2) low = true;
+  if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency < 4) low = true;
+  if (low) document.documentElement.setAttribute('${GLASS_ATTRIBUTE}', 'off');
+} catch (e) {}
+`;
