@@ -94,6 +94,7 @@ docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 | `docs/PROMPTLAR.md` | Rejalashtiruvchi sessiya, kundalik ish va boshqa loyihani tahlil promptlari |
 | `docs/PROMPTLAR-UMUMIY.md` | Umumiy promptlar kutubxonasi (istalgan loyihaga mos) |
 | `docs/YANGI-LOYIHA-NAMUNASI.md` | Shu ish tartibini boshqa loyihaga ko'chirish namunasi |
+| `docs/PROMPT-ORGANICK-PLATFORMA.md` | Organick loyihasini to'liq platformaga aylantirish uchun bosh prompt |
 | `docs/PROMPTLAR-ATOYO.md` | Shu loyihaga xos promptlar va loyiha auditi topshirig'i |
 | `docs/AUDIT.md` / `docs/AUDIT-ISHLARI.md` | Audit natijasi va undan chiqqan ishlar navbati |
 | `docs/DEPLOY.md` | Hosting, env va secret sozlash tartibi |

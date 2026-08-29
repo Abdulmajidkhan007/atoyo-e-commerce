@@ -379,6 +379,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/PROMPTLAR.md` | Rejalashtiruvchi sessiya + boshqa loyihani tahlil qilish prompti |
 | `docs/PROMPTLAR-UMUMIY.md` | Umumiy (istalgan loyihaga mos) promptlar kutubxonasi |
 | `docs/PROMPTLAR-ATOYO.md` | Shu loyihaga xos promptlar + **loyiha auditi** topshirig'i |
+| `docs/YANGI-LOYIHA-NAMUNASI.md` + `docs/PROMPT-ORGANICK-PLATFORMA.md` | Ish tartibini boshqa loyihaga ko'chirish; organick uchun bosh prompt |
 
 # MA'LUM BLOKLAR VA KUTILAYOTGAN ISHLAR
 
