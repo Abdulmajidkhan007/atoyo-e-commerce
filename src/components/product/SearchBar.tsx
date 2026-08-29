@@ -22,7 +22,10 @@ export function SearchBar({ value, onChange, onSubmit, placeholder, className }:
         e.preventDefault();
         onSubmit?.();
       }}
-      className={`flex items-center gap-1 rounded-full border border-navy-100 bg-white px-3 py-1.5 dark:border-navy-500 dark:bg-navy-700 ${className ?? ""}`}
+      /* iOS uslubidagi maydon: to'liq yumaloq, chegarasiz, yumshoq
+         kulrang fon (`--glass-field`). */
+      className={`flex items-center gap-1 rounded-full border-0 px-3 py-1.5 ${className ?? ""}`}
+      style={{ backgroundColor: "var(--glass-field)" }}
     >
       <SearchIcon fontSize="small" className="text-navy-300" />
       <InputBase

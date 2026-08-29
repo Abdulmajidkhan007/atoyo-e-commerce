@@ -19,7 +19,10 @@ import { formatSom } from "@/lib/format";
 import { useImmersive } from "@/lib/ui-mode/useImmersive";
 
 /** Kartochka ko'rinishi rejimga qarab (mazmuni bir xil). */
-const CLASSIC_CARD = "border-navy-100 bg-white hover:shadow-lg dark:border-navy-500 dark:bg-navy-700";
+/* Kartochka YUZASI qattiq qoladi (matn o'qilishi uchun), lekin
+   ko'rinishi iOS uslubida: chegara o'rniga yumshoq soya. */
+const CLASSIC_CARD =
+  "border-transparent bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.12)] dark:bg-white/[0.06] dark:shadow-none dark:hover:bg-white/[0.10]";
 const GLASS_CARD =
   "border-navy-100/80 bg-white/60 backdrop-blur-md hover:-translate-y-1 hover:shadow-[0_14px_36px_rgba(7,45,64,0.18)] dark:border-white/10 dark:bg-navy-800/50";
 
@@ -52,7 +55,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div
-      className={`group relative flex flex-col overflow-hidden rounded-xl2 border transition duration-300 ${
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border transition duration-300 ${
         immersive ? GLASS_CARD : CLASSIC_CARD
       }`}
     >

@@ -84,3 +84,43 @@ ro'yxatiga ham qo'shiladi va APK ni CI yig'ib tekshiradi.
 - sahifa tuzilishi, tugmalar joyi, oqimlar — faqat YUZA ko'rinishi;
 - 3D rejim va `SiteSettings.show3dMode` mantig'i;
 - widgetlar (bosh ekranda o'z brend rangida qoladi).
+
+---
+
+## 8. Ikki tuzoq (bir marta ikkalasiga ham tushilgan)
+
+### 8.1. `-webkit-backdrop-filter` ni QO'LDA yozmang
+
+CSS'da ikkalasi yonma-yon yozilgan edi:
+
+```css
+backdrop-filter: blur(24px) saturate(180%);
+-webkit-backdrop-filter: blur(24px) saturate(180%);
+```
+
+Minifikator (Lightning CSS) ularni "bir xil" deb hisoblab, **standart
+`backdrop-filter` ni tashlab yubordi** — natijada blur UMUMAN
+ishlamadi va shisha shunchaki yarim shaffof qatlamga aylandi
+(brauzerda `getComputedStyle(header).backdropFilter === "none"`).
+
+**Qoida:** faqat standart `backdrop-filter` yoziladi; prefiksni asbob
+o'zi qo'shadi.
+
+**Tekshirish usuli** (taxmin qilmang — o'lchang):
+
+```js
+getComputedStyle(document.querySelector('header')).backdropFilter
+// "blur(24px) saturate(1.8)" bo'lishi kerak, "none" EMAS
+```
+
+### 8.2. Kontent ustidagi qatlam 0.9 shaffoflikda bo'lsin
+
+Kartochka ostida qattiq fon turadi — u yerda 0.65 xavfsiz. Lekin
+**header va navigatsiya kontent ustida suzadi**: Telegram/Instagram
+ichidagi brauzer, eski WebView yoki tejamkor rejim `backdrop-filter`
+ni jimgina tashlab ketishi mumkin, o'shanda 0.65 qatlam ostidagi
+katta matn o'qilib turadi va sahifa buzilgandek ko'rinadi.
+
+Shuning uchun: `--glass-bg` (kartochka) `0.65`, `--glass-bg-strong`
+(header) va `--glass-nav-bg` (navigatsiya) **`0.9`**. Blur ishlasa —
+iOS'dagi "qalin material", ishlamasa ham toza ko'rinadi.

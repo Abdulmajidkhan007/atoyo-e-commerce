@@ -38,7 +38,9 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
       <div className="flex min-h-screen flex-col">
         <Header show3dMode={show3dMode} />
-        <main className="flex-1 pb-16 md:pb-0">{children}</main>
+        {/* Suzuvchi pastki panel kontentni yopmasin: uning balandligi +
+            chekka bo'shlig'i qadar joy qoldiriladi (faqat telefonda). */}
+        <main className="flex-1 pb-24 md:pb-0">{children}</main>
         <Footer />
         <MobileBottomNav />
         {/* AI yordamchi - kalit sozlangan bo'lsagina ko'rinadi. */}

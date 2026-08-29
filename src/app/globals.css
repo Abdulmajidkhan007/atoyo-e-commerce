@@ -8,11 +8,35 @@
   --color-fg: #072d40;
   --color-border: #dfe8ee;
 
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-bg-strong: rgba(255, 255, 255, 0.86);
-  --glass-border: rgba(255, 255, 255, 0.28);
-  --glass-blur: 14px;
-  --glass-shadow: 0 8px 24px rgba(7, 45, 64, 0.1);
+  /* Liquid Glass (iOS uslubi). Yuza NEYTRAL - brend ranglari
+     urg'ularda (tugma, sarlavha, logotip) qoladi. */
+  /* Kartochka/konteyner: ostida QATTIQ fon turadi, shuning uchun
+     yengil shaffoflik xavfsiz. */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  /*
+   * SARLAVHA VA NAVIGATSIYA QUYUQROQ (0.9) - ATAYLAB.
+   *
+   * Ular KONTENT ustida suzadi. `backdrop-filter` esa hamma joyda
+   * ishlamaydi: Telegram/Instagram ichidagi brauzerlar, eski
+   * WebView va tejamkor rejim uni JIMGINA tashlab ketadi. O'shanda
+   * yengil shaffof qatlam ostidagi katta matn o'qilib turadi va
+   * sahifa buzilgandek ko'rinadi (bir marta shunday bo'lgan).
+   * Quyuq fon bilan blur bo'lmaganda ham toza ko'rinadi, blur
+   * bo'lganda esa iOS'dagi "qalin material" effekti chiqadi.
+   */
+  --glass-bg-strong: rgba(255, 255, 255, 0.9);
+  --glass-nav-bg: rgba(245, 245, 247, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.35);
+  --glass-blur: 24px;
+  --glass-saturate: 180%;
+  /* Yuqori qirradagi ichki yorug'lik - shishaning "sinishi" shundan
+     bilinadi; usiz element oddiy xira dog' bo'lib qoladi. */
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+  --glass-radius: 20px;
+  /* Shisha ustidagi matn - past kontrastli kulrang EMAS. */
+  --glass-fg: #1c1c1e;
+  --glass-fg-muted: rgba(60, 60, 67, 0.6);
+  --glass-field: rgba(142, 142, 147, 0.12);
 }
 
 .dark {
@@ -21,10 +45,14 @@
   --color-fg: #edf4f8;
   --color-border: #175071;
 
-  --glass-bg: rgba(11, 59, 84, 0.62);
-  --glass-bg-strong: rgba(11, 59, 84, 0.82);
+  --glass-bg: rgba(30, 30, 30, 0.6);
+  --glass-bg-strong: rgba(28, 28, 30, 0.9);
+  --glass-nav-bg: rgba(28, 28, 30, 0.9);
   --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.12);
+  --glass-fg: #f2f2f7;
+  --glass-fg-muted: rgba(235, 235, 245, 0.6);
+  --glass-field: rgba(118, 118, 128, 0.24);
 }
 
 body {
@@ -44,11 +72,25 @@ body {
    sinf ustunligi bilan yutib qoladi.
 --------------------------------------------------------------------- */
 .glass,
-.glass-strong {
+.glass-strong,
+.glass-nav {
   border: 1px solid var(--glass-border) !important;
   box-shadow: var(--glass-shadow) !important;
-  backdrop-filter: blur(var(--glass-blur)) !important;
-  -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  /* `saturate` - Apple ko'rinishining yarmi: ostidagi ranglar
+     jonlanadi va yuza "muzli shisha" bo'lib chiqadi. */
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) !important;
+  color: var(--glass-fg);
+}
+
+/* Suzuvchi navigatsiya paneli: quyuqroq fon va kuchliroq blur -
+   ostidan matn "sizib" chiqmasligi uchun. */
+.glass-nav {
+  background-color: var(--glass-nav-bg) !important;
+  /* Telefondagi jest chizig'i ustiga tushmasin. */
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+  --glass-blur: 30px;
+  --glass-saturate: 190%;
+  border-radius: var(--glass-radius);
 }
 
 .glass {
@@ -65,28 +107,28 @@ body {
    ustunlikdagi (!important) qoidalarda oxirgisi g'alaba qiladi. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass,
-  .glass-strong {
+  .glass-strong,
+  .glass-nav {
     background-color: var(--color-bg-elevated) !important;
     backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .glass,
-  .glass-strong {
+  .glass-strong,
+  .glass-nav {
     background-color: var(--color-bg-elevated) !important;
     backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
   }
 }
 
 @media (prefers-contrast: more) {
   .glass,
-  .glass-strong {
+  .glass-strong,
+  .glass-nav {
     background-color: var(--color-bg-elevated) !important;
     backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
     color: var(--color-fg) !important;
     border-color: var(--color-border) !important;
   }
@@ -96,10 +138,10 @@ body {
    bo'yalishidan OLDIN qo'yiladi (`lib/ui-mode/config.ts`,
    `GLASS_INIT_SCRIPT`), `useDeviceTier` dagi `low` mezonlariga mos. */
 html[data-glass="off"] .glass,
-html[data-glass="off"] .glass-strong {
+html[data-glass="off"] .glass-strong,
+html[data-glass="off"] .glass-nav {
   background-color: var(--color-bg-elevated) !important;
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 
 /* CHEK CHOP ETISH: sahifa chop etilganda faqat chek qismi qolsin.

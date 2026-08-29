@@ -57,7 +57,7 @@ export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
   };
 
   return (
-    <header ref={headerRef} className="glass no-print sticky top-0 z-30">
+    <header ref={headerRef} className="glass-strong no-print sticky top-0 z-30">
       <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
         {/* Brend bloki qisqara oladi (min-w-0), tugmalar esa qisqarmaydi -
             shunda tor telefonda nom kesiladi, tugmalar chiqib ketmaydi. */}
