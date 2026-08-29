@@ -5,10 +5,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
+import androidx.glance.LocalSize
 import androidx.glance.GlanceModifier
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -29,6 +31,9 @@ import org.json.JSONObject
  * va widget "Ma'lumot yo'q" deydi.
  */
 class StaffWidget : GlanceAppWidget() {
+    /** O'lcham o'zgarganda qayta chizilsin (mos ko'rinish uchun). */
+    override val sizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val raw = WidgetPrefs.read(context, WidgetPrefs.KEY_STAFF)
         val palette = WidgetColors.forContext(context)
@@ -41,28 +46,33 @@ class StaffWidget : GlanceAppWidget() {
     @Composable
     private fun Content(context: Context, raw: String?, palette: WidgetColors.Palette) {
         val data = raw?.let { runCatching { JSONObject(it) }.getOrNull() }
+        val compact = LocalSize.current.height < 90.dp
 
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(ColorProvider(palette.bg))
-                .padding(12.dp)
+                .padding(horizontal = 12.dp, vertical = if (compact) 6.dp else 10.dp)
                 .clickable(onClick = actionStartActivity(widgetOpenIntent(context, "xodim-buyurtmalar"))),
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.Start,
         ) {
-            Text(
-                text = "Bugungi buyurtmalar",
-                style = TextStyle(color = ColorProvider(palette.muted), fontSize = 11.sp),
-            )
+            if (!compact) {
+                Text(
+                    text = "Bugungi buyurtmalar",
+                    style = TextStyle(color = ColorProvider(palette.muted), fontSize = 11.sp),
+                    maxLines = 1,
+                )
+            }
             if (data == null) {
                 Text(
                     text = "Ma'lumot yo'q",
                     style = TextStyle(
                         color = ColorProvider(palette.text),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        fontSize = if (compact) 13.sp else 15.sp,
                     ),
+                    maxLines = 1,
                 )
             } else {
                 Text(
@@ -70,16 +80,18 @@ class StaffWidget : GlanceAppWidget() {
                     style = TextStyle(
                         color = ColorProvider(palette.text),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = if (compact) 14.sp else 17.sp,
                     ),
+                    maxLines = 1,
                 )
                 Text(
                     text = data.optString("total"),
                     style = TextStyle(
                         color = ColorProvider(palette.accent),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
+                        fontSize = if (compact) 12.sp else 15.sp,
                     ),
+                    maxLines = 1,
                 )
             }
         }

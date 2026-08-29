@@ -6,9 +6,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.LocalSize
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -23,11 +25,13 @@ import androidx.glance.unit.ColorProvider
 import org.json.JSONObject
 
 /**
- * "Savat" (2x1). Ma'lumot `writeCartWidget()` (mobile/src/widgets.ts)
- * yozadi: mahsulot soni va umumiy summa. Har doim to'liq lokal (Redux) -
- * savat o'zgarganda darhol yangilanadi.
+ * "Savat" (2x1 - past va tor). Shuning uchun bu yerda MATN kam:
+ * bo'sh bo'lsa bitta qator, aks holda "N ta" va summa. Widget
+ * kattalashtirilsa (`SizeMode.Exact`) sarlavha ham qo'shiladi.
  */
 class CartWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val raw = WidgetPrefs.read(context, WidgetPrefs.KEY_CART)
         val palette = WidgetColors.forContext(context)
@@ -40,6 +44,7 @@ class CartWidget : GlanceAppWidget() {
     @Composable
     private fun Content(context: Context, raw: String?, palette: WidgetColors.Palette) {
         val data = raw?.let { runCatching { JSONObject(it) }.getOrNull() }
+        val roomy = LocalSize.current.height >= 90.dp
 
         Column(
             modifier = GlanceModifier
@@ -50,6 +55,14 @@ class CartWidget : GlanceAppWidget() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.Start,
         ) {
+            if (roomy) {
+                Text(
+                    text = "Savat",
+                    style = TextStyle(color = ColorProvider(palette.muted), fontSize = 11.sp),
+                    maxLines = 1,
+                )
+            }
+
             if (data == null) {
                 Text(
                     text = "Savat bo'sh",
@@ -58,19 +71,26 @@ class CartWidget : GlanceAppWidget() {
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                     ),
+                    maxLines = 1,
                 )
             } else {
                 Text(
-                    text = "Savat: ${data.optInt("count")} ta",
-                    style = TextStyle(color = ColorProvider(palette.muted), fontSize = 11.sp),
+                    text = "${data.optInt("count")} ta mahsulot",
+                    style = TextStyle(
+                        color = ColorProvider(palette.text),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                    ),
+                    maxLines = 1,
                 )
                 Text(
                     text = data.optString("total"),
                     style = TextStyle(
-                        color = ColorProvider(palette.text),
+                        color = ColorProvider(palette.accent),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        fontSize = 13.sp,
                     ),
+                    maxLines = 1,
                 )
             }
         }

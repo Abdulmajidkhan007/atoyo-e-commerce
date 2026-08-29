@@ -2,44 +2,35 @@ package com.atoyoapp.widget
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
 
 /**
- * `mobile/src/theme.tsx` dagi Deep Navy / Aqua-Gold palitrasi bilan bir
- * xil qiymatlar - widget ham tungi/kunduzgi rejimga mos bo'lishi uchun.
+ * Widget rangi HAR DOIM brend (Deep Navy + gold) - telefon mavzusiga
+ * qarab o'zgarmaydi.
+ *
+ * Nega: widget bosh ekranda, foydalanuvchining o'z fon rasmi ustida
+ * turadi. Tizim mavzusiga ergashganda u yorug' rejimda OQ QUTI bo'lib
+ * qolardi va ilovaga aloqasi bilinmasdi. Brend rangi esa har qanday
+ * fonda o'qiladi va ilova sarlavhasi bilan bir xil ko'rinadi
+ * (`mobile/src/theme.tsx` dagi NAVY/GOLD qiymatlari).
  */
 object WidgetColors {
     data class Palette(
         val bg: Color,
-        val surface: Color,
         val text: Color,
         val muted: Color,
         val accent: Color,
     )
 
-    private val LIGHT = Palette(
-        bg = Color(0xFFFFFFFF),
-        surface = Color(0xFFEDF4F8),
-        text = Color(0xFF072D40),
-        muted = Color(0xFF5E8CA6),
-        accent = Color(0xFFC49A6C),
-    )
-
-    private val DARK = Palette(
-        bg = Color(0xFF04202F),
-        surface = Color(0xFF0B3B54),
+    private val BRAND = Palette(
+        bg = Color(0xFF072D40),
         text = Color(0xFFFFFFFF),
-        muted = Color(0xFFC9DCE6),
+        muted = Color(0xFF9FC0D0),
         accent = Color(0xFFDCC09A),
     )
 
-    fun forContext(context: Context): Palette {
-        val isDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        return if (isDark) DARK else LIGHT
-    }
+    fun forContext(@Suppress("UNUSED_PARAMETER") context: Context): Palette = BRAND
 }
 
 /** Widget bosilganda ilovani `atoyo://<path>` bilan ochadi (`App.tsx` dagi `linking`, `MainActivity`). */
