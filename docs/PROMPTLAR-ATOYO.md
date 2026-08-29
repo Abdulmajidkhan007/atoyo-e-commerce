@@ -275,3 +275,80 @@ Tekshiruv: cd mobile && npx tsc --noEmit && npx eslint 'src/**/*.tsx'
 bo'lsa CI ko'rsatadi.
 Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
 ````
+
+---
+
+# SHISHA (GLASS) KO'RINISHGA O'TISH
+
+Qoidalar: **`docs/UI-SHISHA.md`** (avval o'sha o'qiladi). Ish ikkiga
+bo'linadi — avval sayt, keyin ilova. Ikkalasi ham Sonnet 5 uchun mos.
+
+## A) Sayt: shisha qatlam va tokenlar
+
+```text
+Vazifa: saytni shisha (glass) ko'rinishga o'tkazish.
+Avval O'QI: docs/UI-SHISHA.md - nimaga shisha qo'yiladi, nimaga
+qo'yilmaydi va zaxira yo'llar shu yerda. Undan chetga chiqma.
+
+1. src/app/globals.css ga token qatlami: --glass-bg, --glass-border,
+   --glass-blur, --glass-shadow (yorug' va to'q tema uchun alohida)
+   + `.glass` va `.glass-strong` yordamchi klasslari (backdrop-filter,
+   chegara, soya). Komponentlarda xom qiymat (bg-white/70 kabi)
+   YOZILMAYDI.
+2. Zaxira yo'llar shu klasslar ichida: @supports not (backdrop-filter),
+   prefers-reduced-transparency, prefers-contrast: more - hammasida
+   QATTIQ fon. Sekin qurilmada ham qattiq: `useDeviceTier` dagi `low`
+   bo'lsa <html> ga `data-glass="off"` qo'yiladigan kichik mantiq
+   (mavjud UI_MODE_INIT_SCRIPT naqshi bilan, hydration buzilmasin).
+3. Shisha QO'YILADIGAN joylar: Header (skrollda), MobileBottomNav,
+   MUI Dialog/Menu/Popover (theme override - admin ham shunday
+   bo'lsin), katalogdagi yopishib turuvchi filtr paneli, savat/
+   checkout ostidagi summa paneli, toast, AssistantWidget tugmasi,
+   kategoriya chiplari.
+4. Shisha QO'YILMAYDIGAN joylar (tegmaysan): mahsulot kartochkasi,
+   forma maydonlari, jadvallar, blog matni, hisobot bloklari.
+5. 3D rejimga (docs/UI-3D.md) va show3dMode mantig'iga TEGMA.
+6. Kontrast: shisha yuzadagi matn WCAG AA (4.5:1) dan past bo'lmasin -
+   eng yorug' mahsulot rasmi ustidagi header bilan tekshir.
+7. csp.test.ts va mavjud testlar yashil qolsin; globals.css uchun
+   kichik test shart emas, lekin `.glass` klassi ishlatilgan joylar
+   ro'yxatini commit xabarida yoz.
+
+Tugagach: tsc + eslint + test + build.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
+menga ayt.
+```
+
+## B) Ilova: BlurView va yarim shaffof yuzalar
+
+> Saytdagi ish (A) tugab, birlashtirilgandan KEYIN boshlanadi —
+> ikkalasi bir xil qoidaga tayanadi.
+
+```text
+Vazifa: ilovani shisha ko'rinishga o'tkazish.
+Avval O'QI: docs/UI-SHISHA.md, ayniqsa 6-bo'lim (RN tomoni).
+
+1. @react-native-community/blur qo'sh; mobile/scripts/check-codegen.mjs
+   ro'yxatiga ham qo'sh (CI Gradle bilan tekshiradi).
+2. BlurView FAQAT uchta joyda: pastki tab navigatsiyasi, ekran
+   sarlavhasi (BrandHeader) va modal/dialog foni.
+3. Android'da Platform.Version < 31 bo'lsa BlurView ISHLATILMAYDI -
+   yarim shaffof rang (rgba) + chegara. Sabab: eski Android'da blur
+   sekin va skrollni buzadi.
+4. Qolgan joylarda (kartochka, forma, ro'yxat) blur YO'Q - faqat
+   yarim shaffof yuza va 1px chegara, theme.tsx palitrasidan.
+5. Ranglar va o'lchamlar theme.tsx da token bo'lsin (surfaceGlass,
+   borderGlass) - ekranlarda xom rgba yozilmasin.
+6. Kontrast: to'q va yorug' rejimda ham matn o'qilsin.
+7. Versiyani IKKI joyda oshir (mobile/src/update.ts APP_VERSION va
+   android/app/build.gradle versionName + versionCode).
+   mobile/README.md ga qisqa bo'lim.
+
+Tekshiruv: cd mobile && npx tsc --noEmit && npx eslint 'src/**/*.tsx'
+--no-ignore && npm run check-codegen; keyin saytning to'liq zanjiri.
+APK ni CI yig'adi - Gradle xatosi bo'lsa CI log oxirida ko'rsatadi.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
+menga ayt.
+```

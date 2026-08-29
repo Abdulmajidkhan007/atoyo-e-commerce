@@ -370,6 +370,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/HISOBOT.md` | Bajarilgan / kutilayotgan ish va kod sifati bahosi |
 | `docs/AUDIT.md` + `docs/AUDIT-ISHLARI.md` | Mustaqil audit va undan chiqqan ishlar navbati (tayyor topshiriqlar) |
 | `docs/KIRIM-VA-IMPORT.md` | Kirim va Excel import tartibi |
+| `docs/UI-SHISHA.md` | Shisha (glass) ko'rinish qoidalari — sayt va ilova |
 | `docs/UI-3D.md`, `docs/TV.md`, `docs/DESKTOP.md`, `docs/STICKERS.md` | Bo'limga xos |
 | `docs/TYPESENSE.md` | Tezkor qidiruvni yoqish |
 | `docs/BACKUP.md`, `docs/PLAY-STORE.md` | Zaxira, Play Store |
