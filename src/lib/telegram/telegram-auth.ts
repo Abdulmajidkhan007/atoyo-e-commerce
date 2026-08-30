@@ -2,6 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { logAction } from "./action-log";
+import { getTelegramSecrets } from "./secrets";
 
 /**
  * TELEGRAM ORQALI KIRISH - "deep link" usuli.
@@ -44,7 +45,9 @@ export async function createLoginCode(): Promise<{ code: string; url: string }> 
     expiresAt: Date.now() + CODE_TTL_MS,
   });
 
-  const bot = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "Atoyo_uz_bot";
+  // Bot useri panel sozlamasidan (bot almashtirilsa deploy kutilmasin).
+  const { botUsername } = await getTelegramSecrets();
+  const bot = botUsername || "Atoyo_uz_bot";
   return { code, url: `https://t.me/${bot}?start=login_${code}` };
 }
 

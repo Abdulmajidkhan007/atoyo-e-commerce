@@ -3,7 +3,11 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { requireOwner } from "@/lib/firebase/session";
 import { consumeChallenge } from "@/lib/security/challenge";
-import { clearTelegramSecretsCache, describeTelegramSecrets } from "@/lib/telegram/secrets";
+import {
+  clearTelegramSecretsCache,
+  describeTelegramSecrets,
+  normalizeBotUsername,
+} from "@/lib/telegram/secrets";
 import { setTelegramWebhook } from "@/lib/telegram/bot";
 import { logAction } from "@/lib/telegram/action-log";
 
@@ -25,6 +29,8 @@ const patchSchema = z.object({
   botToken: z.string().max(200).default(""),
   chatId: z.string().max(60).default(""),
   webhookSecret: z.string().max(200).default(""),
+  /** Bot useri (`@` siz yoki havola ko'rinishida - o'zi tozalanadi). */
+  botUsername: z.string().max(120).default(""),
   /** Yangi sir bilan webhook'ni Telegram'da qayta ro'yxatdan o'tkazish. */
   resetWebhook: z.boolean().default(false),
 });
@@ -58,10 +64,10 @@ export async function PATCH(request: Request) {
   // "-" = panel qiymatini olib tashlash (server env'idagi qiymat ishlaydi).
   const updates: Record<string, string> = {};
   const changed: string[] = [];
-  for (const key of ["botToken", "chatId", "webhookSecret"] as const) {
+  for (const key of ["botToken", "chatId", "webhookSecret", "botUsername"] as const) {
     const value = parsed.data[key].trim();
     if (!value) continue;
-    updates[key] = value === "-" ? "" : value;
+    updates[key] = value === "-" ? "" : key === "botUsername" ? normalizeBotUsername(value) : value;
     changed.push(key);
   }
 

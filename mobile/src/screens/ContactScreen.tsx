@@ -1,9 +1,9 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Linking, ScrollView, Text} from 'react-native';
 import {makeStyles, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {Button, Card, Field} from '../components/ui';
-import {sendContactRequest} from '../api';
+import {DEFAULT_BOT_USERNAME, fetchBotUsername, sendContactRequest} from '../api';
 import {useAuth} from '../auth';
 import {useToast} from '../components/Toast';
 
@@ -21,6 +21,18 @@ export function ContactScreen() {
   const [phone, setPhone] = useState(user?.phoneNumber ?? '');
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
+  const [bot, setBot] = useState(DEFAULT_BOT_USERNAME);
+
+  // Bot useri serverdan olinadi (bot almashtirilishi mumkin).
+  useEffect(() => {
+    let alive = true;
+    fetchBotUsername().then(name => {
+      if (alive) setBot(name);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const submit = async () => {
     if (name.trim().length < 2) {
@@ -66,7 +78,7 @@ export function ContactScreen() {
         title="Telegram"
         icon="telegram"
         variant="outline"
-        onPress={() => Linking.openURL('https://t.me/Atoyo_uz_bot')}
+        onPress={() => Linking.openURL(`https://t.me/${bot}`)}
       />
     </ScrollView>
   );

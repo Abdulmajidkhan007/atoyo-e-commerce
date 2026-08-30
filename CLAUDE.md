@@ -344,7 +344,10 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 - `channel.ts`, `channel-queue.ts`, `channel-stats.ts`,
   `channel-report.ts` — kanal posti, navbat va statistika.
 - Sirlar: `secrets/telegram` (`lib/telegram/secrets.ts`) env'dan
-  ustun; sozlamani saqlash "jumboq" bilan himoyalangan.
+  ustun; sozlamani saqlash "jumboq" bilan himoyalangan. **Bot useri**
+  ham shu yerda (`botUsername`) — bot almashtirilganda `t.me/<bot>`
+  havolalari (sayt kirishi, ilovadagi tugma) deploy'siz yangilanadi.
+  Botni almashtirish tartibi: `docs/DEPLOY.md` oxirida.
 - Stikerlar: `settings/stickers`, yuborish hech qachon asosiy oqimni
   to'xtatmaydi. Sayt stikerni o'zi chizadi (`lib/stickers/`, `next/og`)
   va `.tgs` ni ham o'zi yasaydi (`node:zlib`, ffmpeg kerak emas;

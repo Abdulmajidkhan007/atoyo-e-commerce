@@ -102,7 +102,7 @@ SMTP yoki Payme/Click ishlatilsa — o'shalar ham xuddi shunday.
 |---|---|---|
 | `NEXT_PUBLIC_FIREBASE_*` (6 ta) | ❌ kerak emas | App Hosting `FIREBASE_WEBAPP_CONFIG` ni o'zi beradi, `next.config.ts` o'qib oladi |
 | `NEXT_PUBLIC_SITE_URL`, `ALLOWED_ORIGINS` | `apphosting.yaml` | Deploy tugagach chiqadigan domen |
-| `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` | `apphosting.yaml` | Bot useri (`Atoyo_uz_bot`) |
+| `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` | `apphosting.yaml` | Bot useri (`Atoyo_uz_bot`). **Zaxira** — panelda (Sozlamalar → Maxfiy kalitlar → "Bot useri") yozilgani ustun turadi |
 | `TELEGRAM_BOT_TOKEN` | Secret Manager | @BotFather → bot → API Token |
 | `TELEGRAM_CHAT_ID` | Secret Manager | Xodimlar guruhi ID si (`-100...`) |
 | `TELEGRAM_CHANNEL_ID` | Secret Manager | E'lon kanali (`@username` yoki `-100...`) |
@@ -814,3 +814,42 @@ Shu oyda nechta rasm chizilgani ko'rinadi va oylik chegara qo'yiladi
 (standart 200 ta; 0 — cheksiz). Chegara to'lganda generatsiya
 to'xtaydi va sababi o'zbekcha aytiladi. Hisob `aiUsage/<YYYY-MM>`
 hujjatida, sozlama `settings/ai` da.
+
+
+---
+
+## Botni almashtirish (yangi bot ochilganda)
+
+Bot BotFather'da ochilgani uchun u ochgan Telegram hisobiga bog'liq:
+hisob o'chirilsa bot ham yo'qoladi. Yangi bot ochilganda **Google
+Cloud'ga kirish shart emas** — hammasi admin panelidan qilinadi.
+
+1. **Sozlamalar → Maxfiy kalitlar** (faqat egasi ko'radi):
+   - "Bot tokeni" — BotFather bergan yangi token;
+   - "Bot useri" — yangi bot useri (`@` siz, havola ko'chirilsa ham
+     bo'ladi — o'zi tozalanadi);
+   - "Webhook siri" — o'zgartirish shart emas (bo'sh qoldirilsa
+     avvalgisi qoladi);
+   - **"Saqlagach webhook'ni Telegram'da qayta o'rnatish" — YOQILADI.**
+     Bu qadamsiz yangi bot saytdan xabar olmaydi.
+   - Jumboqqa javob berib saqlanadi.
+2. **Telegram tomonida:**
+   - yangi bot xodimlar guruhiga qo'shiladi va **admin** qilinadi
+     (topiklar ko'rinishi uchun);
+   - kanalga qo'shiladi va admin qilinadi: *Post Messages*,
+     *Edit Messages*, *Delete Messages* — uchalasi ham;
+   - guruh/kanal o'zgarmagan bo'lsa "Xodimlar guruhi ID" va topik
+     raqamlari o'zgarmaydi; yangisi ochilgan bo'lsa Sozlamalar →
+     Bot sozlamalaridan yangilanadi.
+3. **Eski kanal postlari.** Ularni ESKI bot yuborgan — yangi bot
+   ularni tahrirlay olmaydi. Kod buni o'zi tanidi: Telegram
+   `message can't be edited` desa bog'lanish uziladi va mahsulot
+   keyingi safar YANGI post bo'lib chiqadi (`classify()` →
+   `"missing"`, `channel.ts`). Kanalda qolib ketgan eski postlar
+   qo'lda o'chiriladi.
+4. **Mijozlar.** Telegram botga faqat o'zi "Start" bosgan odamga
+   yozishga ruxsat beradi — eski bot foydalanuvchilari yangi botga
+   qaytadan kirishi kerak. Kanalga yangi bot havolasi bilan e'lon
+   berilsin.
+5. **Ilova.** "Telegram" tugmasi bot userini `/api/app/version` dan
+   oladi — yangi APK chiqarish shart emas.

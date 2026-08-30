@@ -171,6 +171,20 @@ export function installServiceText(settings?: Partial<DeliverySettings> | null):
   return `Moyka, dush kabina va shunga o'xshash mahsulotlarni o'rnatib berish xizmati bor — ${near}. Buyurtma berayotganda ayting.`;
 }
 
+/** Bot useri serverdan - bot almashtirilsa ilova qayta yig'ilmasin. */
+export const DEFAULT_BOT_USERNAME = 'Atoyo_uz_bot';
+
+export async function fetchBotUsername(): Promise<string> {
+  try {
+    const response = await fetch(`${SITE_URL}/api/app/version`);
+    if (!response.ok) return DEFAULT_BOT_USERNAME;
+    const data = (await response.json()) as {botUsername?: string};
+    return data.botUsername?.trim() || DEFAULT_BOT_USERNAME;
+  } catch {
+    return DEFAULT_BOT_USERNAME;
+  }
+}
+
 export async function fetchDeliverySettings(): Promise<DeliverySettings> {
   const data = await request<{delivery: DeliverySettings}>('/api/delivery');
   return data.delivery;

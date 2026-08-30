@@ -25,6 +25,22 @@ export interface TelegramSecrets {
   chatId: string;
   /** Webhook so'rovlarini tasdiqlovchi maxfiy so'z. */
   webhookSecret: string;
+  /**
+   * Bot useri (`@` siz). Maxfiy emas, lekin shu yerda turadi: bot
+   * almashtirilganda `t.me/<bot>?start=login_...` havolasi ham
+   * o'zgarishi kerak, aks holda "Telegram orqali kirish" ESKI botga
+   * olib boradi. Panelda o'zgartiriladi - deploy kutilmaydi.
+   */
+  botUsername: string;
+}
+
+/** `@bot`, `https://t.me/bot` kabi ko'rinishlardan sof userni ajratadi. */
+export function normalizeBotUsername(value: string): string {
+  const clean = value
+    .trim()
+    .replace(/^https?:\/\/(?:t\.me|telegram\.me)\//i, "")
+    .replace(/^@/, "");
+  return clean.split(/[/?\s]/)[0] ?? "";
 }
 
 let cache: { value: TelegramSecrets; at: number } | null = null;
@@ -34,6 +50,7 @@ function fromEnv(): TelegramSecrets {
     botToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
     chatId: process.env.TELEGRAM_CHAT_ID ?? "",
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET ?? "",
+    botUsername: normalizeBotUsername(process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? ""),
   };
 }
 
@@ -48,6 +65,7 @@ export async function getTelegramSecrets(): Promise<TelegramSecrets> {
       botToken: data.botToken?.trim() || env.botToken,
       chatId: data.chatId?.trim() || env.chatId,
       webhookSecret: data.webhookSecret?.trim() || env.webhookSecret,
+      botUsername: normalizeBotUsername(data.botUsername ?? "") || env.botUsername,
     };
     cache = { value, at: Date.now() };
     return value;
@@ -84,10 +102,12 @@ export async function describeTelegramSecrets(): Promise<
     stored = {};
   }
 
-  const describe = (key: keyof TelegramSecrets) => {
+  // Bot useri maxfiy emas - u to'liq ko'rsatiladi, qolgani niqoblanadi.
+  const describe = (key: keyof TelegramSecrets, secret = true) => {
+    const show = (value: string) => (secret ? maskSecret(value) : value);
     const panelValue = stored[key]?.trim();
-    if (panelValue) return { masked: maskSecret(panelValue), source: "panel" as const };
-    if (env[key]) return { masked: maskSecret(env[key]), source: "env" as const };
+    if (panelValue) return { masked: show(panelValue), source: "panel" as const };
+    if (env[key]) return { masked: show(env[key]), source: "env" as const };
     return { masked: "", source: "none" as const };
   };
 
@@ -95,5 +115,6 @@ export async function describeTelegramSecrets(): Promise<
     botToken: describe("botToken"),
     chatId: describe("chatId"),
     webhookSecret: describe("webhookSecret"),
+    botUsername: describe("botUsername", false),
   };
 }

@@ -13,6 +13,7 @@ export interface SecretsSnapshot {
   botToken: SecretView;
   chatId: SecretView;
   webhookSecret: SecretView;
+  botUsername: SecretView;
 }
 
 const SOURCE_LABELS: Record<SecretView["source"], string> = {
@@ -34,6 +35,7 @@ export function SecretsForm({ initial }: { initial: SecretsSnapshot }) {
   const [botToken, setBotToken] = useState("");
   const [chatId, setChatId] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [botUsername, setBotUsername] = useState("");
   const [resetWebhook, setResetWebhook] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -43,7 +45,13 @@ export function SecretsForm({ initial }: { initial: SecretsSnapshot }) {
     event.preventDefault();
     setMessage(null);
 
-    if (!botToken.trim() && !chatId.trim() && !webhookSecret.trim() && !resetWebhook) {
+    if (
+      !botToken.trim() &&
+      !chatId.trim() &&
+      !webhookSecret.trim() &&
+      !botUsername.trim() &&
+      !resetWebhook
+    ) {
       setMessage({ type: "error", text: "O'zgartirish uchun kamida bitta maydonni to'ldiring." });
       return;
     }
@@ -61,6 +69,7 @@ export function SecretsForm({ initial }: { initial: SecretsSnapshot }) {
           botToken: botToken.trim(),
           chatId: chatId.trim(),
           webhookSecret: webhookSecret.trim(),
+          botUsername: botUsername.trim(),
           resetWebhook,
         }),
       });
@@ -73,6 +82,7 @@ export function SecretsForm({ initial }: { initial: SecretsSnapshot }) {
       setBotToken("");
       setChatId("");
       setWebhookSecret("");
+      setBotUsername("");
       setResetWebhook(false);
 
       // Yangilangan niqoblarni qayta o'qiymiz.
@@ -119,6 +129,18 @@ export function SecretsForm({ initial }: { initial: SecretsSnapshot }) {
         value={webhookSecret}
         onChange={setWebhookSecret}
       />
+
+      <SecretField
+        label="Bot useri (@ siz, masalan Atoyo_uz_bot)"
+        current={snapshot.botUsername}
+        value={botUsername}
+        onChange={setBotUsername}
+      />
+      <p className="-mt-2 text-xs text-navy-300">
+        Bot almashtirilganda shu ham yangilanadi:{" "}
+        <code>t.me/&lt;bot&gt;?start=login_...</code> havolasi (saytdagi &quot;Telegram orqali
+        kirish&quot;) shundan yasaladi.
+      </p>
 
       <FormControlLabel
         control={<Switch checked={resetWebhook} onChange={(e) => setResetWebhook(e.target.checked)} />}
