@@ -381,6 +381,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/ARXITEKTURA-TARIXI.md` | Qoidalarning sababi: qaysi nosozlikdan keyin paydo bo'lgani |
 | `docs/REBUILD-PROMPT.md` | Loyihaning to'liq holati (boshqa AI ga topshiriq) |
 | `docs/DEPLOY.md` | Deploy, env, sirlar, cron, ijtimoiy tarmoq ulash |
+| `docs/QADAMLAR.md` | Egasi QO'LDA bajaradigan qadamlar (GitHub secret, migratsiya, domen, ilova relizi, cron) |
 | `docs/HISOBOT.md` | Bajarilgan / kutilayotgan ish va kod sifati bahosi |
 | `docs/AUDIT.md` + `docs/AUDIT-ISHLARI.md` | Mustaqil audit va undan chiqqan ishlar navbati (tayyor topshiriqlar) |
 | `docs/KIRIM-VA-IMPORT.md` | Kirim va Excel import tartibi |
