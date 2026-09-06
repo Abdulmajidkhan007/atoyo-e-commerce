@@ -84,3 +84,110 @@ me what you deliberately left out.
 Kutubxonadan ATAYLAB olinmaganlar: Linear/Terraform/GCP/Sentry'ga
 bog'liq promptlar (bizda bu vositalar yo'q) va CLAUDE.md bilan
 takrorlanadiganlar (repo tanishuvi kabi).
+
+---
+
+## Xato kuzatuvi — Sentry'siz, Telegram bot + topikli guruh
+
+Atoyo'da ishlagan naqsh: xato Telegram guruhidagi topikka tushadi
+(`lib/telegram/action-log.ts` → "Actions" topigi). Uchinchi tomon
+xizmati yo'q, xato to'g'ridan-to'g'ri telefonga keladi.
+
+**Bu prompt boshqa loyihaga o'tkazish uchun.** Qabul qilgan sessiya
+avval arxitekturani O'ZI ko'radi va qayerda qilish kerakligini aytadi
+(frontend serverida, mavjud backendda yoki kichik alohida xizmatda).
+
+````text
+Vazifa: bu loyihada XATO KUZATUVI qilamiz — Sentry va shunga o'xshash
+uchinchi tomon xizmatisiz. Xato Telegram guruhidagi topikka tushsin
+(guruh topiklarga bo'lingan: masalan "Xatolar", "Backend", "Frontend").
+
+BU SESSIYADA AVVAL TAHLIL, KEYIN KOD. Tahlil natijasini menga
+ko'rsatib, qaysi variantni tanlaganingni ASOSLAB ber; men "boshla"
+degandan keyingina kod yozasan.
+
+=== 1. AVVAL ANIQLA (taxmin qilma - fayl bilan ko'rsat) ===
+- Frontend nima: SPA (Vite/CRA) mi yoki server tomoni bor (Next.js,
+  Nuxt, Remix)? Ya'ni bizning O'Z serverimiz bormi?
+- Backend nima: til, framework, versiya; global xato ushlagichi
+  bormi (masalan Spring'da @ControllerAdvice), loglar qayerga
+  yozilyapti va kim o'qiydi?
+- Deploy: har ikkalasi qayerda turadi, sirlar (secret) qayerda
+  saqlanadi, yangi env qo'shish qanchalik oson?
+- Hozir xato bo'lsa kim biladi? (Ehtimol hech kim - shuni tasdiqla.)
+
+=== 2. VARIANTLARNI SOLISHTIR ===
+Uchta yo'l bor, har biri uchun "shu loyihada nima bo'ladi" deb yoz:
+
+  A) BACKEND ichida (mavjud tilda, masalan Java) endpoint:
+     `POST /api/client-errors` frontend xatosini qabul qiladi va
+     Telegram'ga yuboradi; backendning O'Z xatolari ham shu yerdan
+     o'tadi. Bitta joy, token serverda qoladi. Kamchiligi: backend
+     jamoasidan vaqt so'raladi.
+
+  B) FRONTEND SERVERIDA (agar Next.js kabi server tomoni bo'lsa):
+     API route xatoni qabul qiladi va Telegram'ga yuboradi.
+     Backendga tegilmaydi, lekin backend xatolari qamrab olinmaydi.
+
+  C) KICHIK ALOHIDA XIZMAT (Node/serverless):
+     yangi deploy, yangi monitoring - eng oxirgi variant. Faqat
+     A ham, B ham mumkin bo'lmasa tavsiya qil.
+
+TAVSIYANGNI BITTA TANLA va nega boshqasi emasligini yoz.
+
+=== 3. QAT'IY TAQIQ ===
+- **Bot tokeni FRONTENDGA CHIQMAYDI.** Brauzerdan to'g'ridan-to'g'ri
+  `api.telegram.org` ga murojaat QILINMAYDI: token DevTools'da
+  ko'rinadi va istalgan odam guruhga spam yozadi yoki post
+  o'chiradi. Token faqat server tomonida.
+- Xato ma'lumotida MAXFIY narsa ketmaydi: token, cookie, parol,
+  `Authorization` sarlavhasi, to'liq ism/telefon/karta. Yuborishdan
+  oldin tozalaydigan funksiya bo'lsin va uning testi bo'lsin.
+
+=== 4. YECHIM SHU TALABLARGA JAVOB BERSIN ===
+1. **Toshqin bo'lmasin.** Bitta xato 1000 marta takrorlansa 1000 ta
+   xabar ketmaydi: xatoning "barmoq izi" (xabar + fayl + qator)
+   bo'yicha guruhlansin, oynada (masalan 5 daqiqa) bittasi
+   yuborilsin, qolgani "yana N marta" bo'lib qo'shilsin.
+2. **Telegram cheklovlari.** Xabar 4096 belgi — stack uzun bo'lsa
+   teg o'rtasidan kesilmasin (HTML parse_mode bo'lsa matn escape
+   qilinsin); guruhga daqiqasiga ~20 xabar cheklovi bor.
+3. **Xato kuzatuvi ASOSIY OQIMNI TO'XTATMAYDI.** Telegram yiqilsa
+   ham foydalanuvchi so'rovi normal tugaydi (fire-and-forget,
+   `try/catch`, qisqa timeout).
+4. **Frontendda nimalar ushlanadi:** `window.onerror`,
+   `unhandledrejection`, React error boundary, muvaffaqiyatsiz
+   API so'rovlari (5xx). Foydalanuvchiga esa tushunarli xabar
+   ko'rsatilsin.
+5. **Kontekst bo'lsin:** URL, foydalanuvchi ID (ismi emas), brauzer,
+   ilova versiyasi/commit, vaqt, so'rov ID (backend bilan
+   bog'lash uchun).
+6. **Stack o'qilsin:** minifikatsiya qilingan kodda stack foydasiz —
+   source map bilan nima qilishni ayt (build'da saqlash yoki
+   xatoni server tomonda ochish).
+7. **Endpoint himoyalansin:** u OCHIQ yozuv nuqtasi — IP bo'yicha
+   rate-limit, hajm chegarasi (masalan 16 KB), faqat o'z
+   domenimizdan (Origin tekshiruvi), ortiqchasi jimgina tashlanadi.
+8. **Yoqish/o'chirish** sozlama orqali bo'lsin (env yoki bazada), va
+   sozlanmagan bo'lsa xizmat jimgina o'tkazib yuborsin — xato
+   kuzatuvi tufayli loyiha ishga tushmay qolmasin.
+
+=== 5. HALOL BAHO (buni ham yoz) ===
+Telegram — kuniga o'nlab xato uchun zo'r, lekin minglab xato uchun
+emas: qidiruv, trend, "shu hafta nechta" degan hisob yo'q. Shu
+loyihada kunlik xato hajmi taxminan qancha bo'lishini bahola va
+kelajakda kerak bo'lsa nima qilish kerakligini bir abzasda yoz
+(masalan bazaga ham yozib qo'yish).
+
+=== 6. NATIJA ===
+1. Tahlil va TAVSIYA (yuqoridagi bandlar bo'yicha).
+2. Ish rejasi: qaysi fayl, qaysi bosqich, kim qiladi (frontend
+   jamoasimi yoki backend jamoasi).
+3. Agar backend jamoasi qiladigan bo'lsa — ularga beriladigan
+   TAYYOR topshiriq matni (endpoint shakli, JSON maydonlari,
+   xavfsizlik talablari bilan).
+4. Menga bitta savol: "boshlaymizmi?" — men tasdiqlaganimdan keyin
+   kod yozasan va testlar bilan birga push qilasan.
+
+Til: javob va kod izohlari o'zbekcha.
+````
