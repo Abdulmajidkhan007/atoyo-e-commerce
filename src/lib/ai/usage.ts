@@ -19,6 +19,66 @@ import { getAdminDb } from "@/lib/firebase/admin";
 
 export const DEFAULT_MONTHLY_IMAGE_LIMIT = 200;
 
+/**
+ * MATN/VISION TOKENLARI (Anthropic).
+ *
+ * Anthropic "qolgan balans" ni API orqali bermaydi — Usage & Cost
+ * Admin API faqat SARFNI qaytaradi va u tashkilot (organization)
+ * hisobini talab qiladi. Shuning uchun sarfni O'ZIMIZ sanaymiz:
+ * har javobning `usage` maydoni shu yerda jamlanadi va narxnoma
+ * bo'yicha taxminiy summa chiqariladi. Aniq raqam — Console → Cost.
+ *
+ * Narxlar: 1 000 000 token uchun dollarda (2026-06 holatiga).
+ */
+const MODEL_PRICES: Record<string, { input: number; output: number }> = {
+  "claude-opus-5": { input: 5, output: 25 },
+  "claude-opus-4-8": { input: 5, output: 25 },
+  "claude-opus-4-7": { input: 5, output: 25 },
+  "claude-opus-4-6": { input: 5, output: 25 },
+  "claude-sonnet-5": { input: 2, output: 10 },
+  "claude-sonnet-4-6": { input: 3, output: 15 },
+  "claude-haiku-4-5": { input: 1, output: 5 },
+  "claude-fable-5": { input: 10, output: 50 },
+  "claude-fable-5-1": { input: 10, output: 50 },
+};
+
+/** Narxnomada yo'q model uchun - eng qimmatini olamiz (kam ko'rsatgandan yaxshi). */
+const FALLBACK_PRICE = { input: 10, output: 50 };
+
+export interface TokenCounts {
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  cache_read_input_tokens?: number | null;
+  cache_creation_input_tokens?: number | null;
+}
+
+export interface AiTokenUsage {
+  month: string;
+  requests: number;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
+/**
+ * Bitta javobning taxminiy narxi (dollarda).
+ * Keshdan o'qilgan token ~0.1x, keshga yozilgani ~1.25x kirim narxida.
+ */
+export function estimateCostUsd(model: string, usage: TokenCounts): number {
+  const price = MODEL_PRICES[model] ?? FALLBACK_PRICE;
+  const input = usage.input_tokens ?? 0;
+  const output = usage.output_tokens ?? 0;
+  const cacheRead = usage.cache_read_input_tokens ?? 0;
+  const cacheWrite = usage.cache_creation_input_tokens ?? 0;
+  const dollars =
+    (input * price.input +
+      cacheRead * price.input * 0.1 +
+      cacheWrite * price.input * 1.25 +
+      output * price.output) /
+    1_000_000;
+  return Math.max(0, dollars);
+}
+
 export interface AiUsage {
   /** "2026-08" - hisob shu oy uchun. */
   month: string;
@@ -85,6 +145,49 @@ export async function assertImageQuota(): Promise<void> {
 
 /** Chegara to'lganda tashlanadigan xato (boshqa xatolardan ajratish uchun). */
 export class QuotaError extends Error {}
+
+/** Joriy oydagi token sarfi (admin panelda ko'rsatiladi). */
+export async function getTokenUsage(): Promise<AiTokenUsage> {
+  const month = currentMonthKey();
+  const snap = await getAdminDb().doc(`aiUsage/${month}`).get().catch(() => null);
+  const data = snap?.data() ?? {};
+  const num = (value: unknown) => (typeof value === "number" && value > 0 ? value : 0);
+  return {
+    month,
+    requests: num(data.requests),
+    inputTokens: num(data.inputTokens),
+    outputTokens: num(data.outputTokens),
+    costUsd: num(data.costUsd),
+  };
+}
+
+/**
+ * Anthropic javobidan keyin chaqiriladi. Hisob yozilmasa ish
+ * TO'XTAMAYDI - bu yordamchi o'lchov, asosiy oqim emas.
+ */
+export async function recordTokenUse(model: string, usage: TokenCounts | null): Promise<void> {
+  if (!usage) return;
+  try {
+    await getAdminDb()
+      .doc(`aiUsage/${currentMonthKey()}`)
+      .set(
+        {
+          requests: FieldValue.increment(1),
+          inputTokens: FieldValue.increment(
+            (usage.input_tokens ?? 0) +
+              (usage.cache_read_input_tokens ?? 0) +
+              (usage.cache_creation_input_tokens ?? 0)
+          ),
+          outputTokens: FieldValue.increment(usage.output_tokens ?? 0),
+          costUsd: FieldValue.increment(estimateCostUsd(model, usage)),
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
+  } catch {
+    // Jimgina o'tamiz - javob allaqachon berilgan.
+  }
+}
 
 /** Rasm muvaffaqiyatli chizilgach chaqiriladi. */
 export async function recordImageUse(count = 1): Promise<void> {

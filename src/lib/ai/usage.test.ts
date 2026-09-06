@@ -32,8 +32,16 @@ vi.mock("@/lib/firebase/admin", () => ({
   }),
 }));
 
-const { assertImageQuota, currentMonthKey, getImageUsage, recordImageUse, setImageLimit } =
-  await import("./usage");
+const {
+  assertImageQuota,
+  currentMonthKey,
+  estimateCostUsd,
+  getImageUsage,
+  getTokenUsage,
+  recordImageUse,
+  recordTokenUse,
+  setImageLimit,
+} = await import("./usage");
 
 const monthPath = () => `aiUsage/${currentMonthKey()}`;
 
@@ -72,5 +80,50 @@ describe("AI rasm chegarasi", () => {
     await recordImageUse(3);
     expect(docs.get(monthPath())?.images).toBe(3);
     expect(docs.has("aiUsage/1999-01")).toBe(false);
+  });
+});
+
+describe("estimateCostUsd", () => {
+  it("model narxnomasi bo'yicha hisoblaydi", () => {
+    // Opus 5: kirim 5 $/M, chiqim 25 $/M.
+    const cost = estimateCostUsd("claude-opus-5", {
+      input_tokens: 1_000_000,
+      output_tokens: 1_000_000,
+    });
+    expect(cost).toBeCloseTo(30, 6);
+  });
+
+  it("keshdan o'qilgan token arzon, keshga yozilgani qimmat", () => {
+    const read = estimateCostUsd("claude-opus-5", { cache_read_input_tokens: 1_000_000 });
+    const write = estimateCostUsd("claude-opus-5", { cache_creation_input_tokens: 1_000_000 });
+    expect(read).toBeCloseTo(0.5, 6);
+    expect(write).toBeCloseTo(6.25, 6);
+  });
+
+  it("notanish model uchun eng qimmat narxni oladi (kam ko'rsatmaslik uchun)", () => {
+    const cost = estimateCostUsd("claude-kelajak-9", { input_tokens: 1_000_000 });
+    expect(cost).toBeCloseTo(10, 6);
+  });
+
+  it("bo'sh hisobda 0 qaytaradi", () => {
+    expect(estimateCostUsd("claude-opus-5", {})).toBe(0);
+  });
+});
+
+describe("token sarfi", () => {
+  it("so'rov, tokenlar va taxminiy summa jamlanadi", async () => {
+    await recordTokenUse("claude-opus-5", { input_tokens: 1000, output_tokens: 200 });
+    await recordTokenUse("claude-opus-5", { input_tokens: 1000, output_tokens: 200 });
+
+    const usage = await getTokenUsage();
+    expect(usage.requests).toBe(2);
+    expect(usage.inputTokens).toBe(2000);
+    expect(usage.outputTokens).toBe(400);
+    expect(usage.costUsd).toBeCloseTo(2 * (1000 * 5 + 200 * 25) / 1_000_000, 8);
+  });
+
+  it("usage bo'lmasa hech narsa yozmaydi", async () => {
+    await recordTokenUse("claude-opus-5", null);
+    expect((await getTokenUsage()).requests).toBe(0);
   });
 });

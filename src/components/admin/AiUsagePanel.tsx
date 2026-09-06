@@ -19,11 +19,25 @@ interface Usage {
   limit: number;
 }
 
+interface Tokens {
+  month: string;
+  requests: number;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+
+/** 1 234 567 -> "1 234 567" (o'qish oson bo'lsin). */
+function groupDigits(value: number): string {
+  return Math.round(value).toLocaleString("uz-UZ").replace(/,/g, " ");
+}
+
 /** Taxminiy narx (Google narxnomasi o'zgarishi mumkin). */
 const USD_PER_IMAGE = 0.04;
 
 export function AiUsagePanel() {
   const [usage, setUsage] = useState<Usage | null>(null);
+  const [tokens, setTokens] = useState<Tokens | null>(null);
   const [limit, setLimit] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -37,8 +51,10 @@ export function AiUsagePanel() {
     let cancelled = false;
     fetch("/api/admin/ai/usage")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { usage?: Usage } | null) => {
-        if (!cancelled && data?.usage) apply(data.usage);
+      .then((data: { usage?: Usage; tokens?: Tokens } | null) => {
+        if (cancelled) return;
+        if (data?.usage) apply(data.usage);
+        if (data?.tokens) setTokens(data.tokens);
       })
       .catch(() => {});
     return () => {
@@ -55,9 +71,14 @@ export function AiUsagePanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ monthlyImageLimit: Math.max(0, Math.round(Number(limit) || 0)) }),
       });
-      const body = (await res.json().catch(() => ({}))) as { usage?: Usage; error?: string };
+      const body = (await res.json().catch(() => ({}))) as {
+        usage?: Usage;
+        tokens?: Tokens;
+        error?: string;
+      };
       if (!res.ok || !body.usage) throw new Error(body.error ?? "Saqlanmadi.");
       apply(body.usage);
+      if (body.tokens) setTokens(body.tokens);
       setMessage({ kind: "ok", text: "Chegara saqlandi." });
     } catch (error) {
       setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
@@ -125,6 +146,25 @@ export function AiUsagePanel() {
       </div>
 
       {message && <Alert severity={message.kind === "ok" ? "success" : "error"}>{message.text}</Alert>}
+
+      {tokens && (
+        <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
+          <p className="text-sm font-semibold text-navy-900 dark:text-white">
+            Matn va rasm tahlili (Anthropic)
+          </p>
+          <p className="mt-1 text-sm text-navy-900 dark:text-white">
+            <b>{tokens.month}</b>: {groupDigits(tokens.requests)} ta so&apos;rov ·{" "}
+            {groupDigits(tokens.inputTokens)} kirim + {groupDigits(tokens.outputTokens)} chiqim
+            token · <b>~{tokens.costUsd.toFixed(2)} $</b>
+          </p>
+          <p className="mt-1 text-xs text-navy-300">
+            Bu — SAYT o&apos;zi sanagan taxminiy sarf (narxnoma bo&apos;yicha). Anthropic
+            &quot;qolgan balans&quot; ni API orqali bermaydi — aniq raqam va balans{" "}
+            <b>console.anthropic.com → Cost / Billing</b> sahifasida. Kalitning muddati yo&apos;q:
+            u o&apos;zi eskirmaydi, faqat balans tugasa ishlamay qoladi.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

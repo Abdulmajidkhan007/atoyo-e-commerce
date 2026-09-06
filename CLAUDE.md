@@ -305,7 +305,13 @@ bot va kanal posti. `O'rnatib berish` mahsulotga bog'liq
   qaytaradi.
 - `images.ts` + `usage.ts` — Gemini rasm PULLIK (~0.04 $): har rasm
   `aiUsage/<YYYY-MM>` da sanaladi, `settings/ai.monthlyImageLimit`
-  to'lganda to'xtaydi.
+  to'lganda to'xtaydi. **Anthropic tokenlari ham shu hujjatda**
+  (`requests/inputTokens/outputTokens/costUsd`): har `messages.create`
+  dan keyin `recordTokenUse()` chaqiriladi, narx `MODEL_PRICES` dan
+  (notanish model — eng qimmat narx). Anthropic "qolgan balans" ni
+  API orqali BERMAYDI (Usage & Cost API faqat sarfni beradi va
+  tashkilot hisobini talab qiladi) — panelda shuning uchun O'ZIMIZ
+  sanagan taxminiy summa ko'rsatiladi.
 
 ## 13. Mobil ilova (`mobile/`)
 

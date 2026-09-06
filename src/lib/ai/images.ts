@@ -17,7 +17,7 @@ import { AI_MODEL, getAnthropic, isAiConfigured } from "./config";
  * aks holda mijoz suratdagi narsani olmaydi (bu qonuniy muammo ham).
  */
 
-import { assertImageQuota, recordImageUse } from "./usage";
+import { assertImageQuota, recordImageUse, recordTokenUse } from "./usage";
 
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -390,6 +390,7 @@ export async function analyzeProductImage(imageUrl: string, hint?: string): Prom
       },
     ],
   });
+  await recordTokenUse(AI_MODEL, response.usage);
 
   const text = response.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")

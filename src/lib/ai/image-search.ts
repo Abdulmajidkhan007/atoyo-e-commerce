@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { AI_MODEL, getAnthropic, isAiConfigured } from "./config";
+import { recordTokenUse } from "./usage";
 import { searchCatalog, type CatalogHit } from "./tools";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import type { UserRole } from "@/types/user";
@@ -86,6 +87,7 @@ export async function searchByImage(image: {
       },
     ],
   });
+  await recordTokenUse(AI_MODEL, response.usage);
 
   const text = response.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
