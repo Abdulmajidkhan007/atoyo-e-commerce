@@ -184,7 +184,7 @@ function extractMessage(body: string): string {
  * inglizcha keladi va do'kon xodimi undan nima qilishni bilmaydi -
  * shuning uchun yoniga aniq qadam yoziladi.
  */
-function uzbekHint(message: string): string | null {
+export function uzbekHint(message: string): string | null {
   if (/prepayment credits|depleted|insufficient funds/i.test(message)) {
     // MUHIM: Gemini API "prepay" bilan ishlaydi - Cloud Billing hisobi
     // ochiq bo'lsa ham KREDIT alohida sotib olinadi. Ilgari bu yerda
@@ -195,6 +195,18 @@ function uzbekHint(message: string): string | null {
       "loyihani (atoyo-uz) tanlang → Billing/Plan bo'limidan kredit qo'shing " +
       "(5-10 $ bir necha yuz rasmga yetadi; \"auto-recharge\" ni yoqsangiz o'zi to'ldirib turadi). " +
       "Agar Google shaxsni tasdiqlashni so'rayotgan bo'lsa - avval o'shani yakunlang."
+    );
+  }
+  // "Lightning dunning decision is deny" - Google'ning to'lov undirish
+  // tizimi loyihani BLOKLAGAN: to'lanmagan hisob yoki karta o'tmagan.
+  // Xabarda "billing" so'zi yo'q, shuning uchun alohida naqsh kerak.
+  if (/dunning|CONSUMER_SUSPENDED|account.*suspended/i.test(message)) {
+    return (
+      "➜ Google loyihani TO'LOV sababli bloklagan (to'lanmagan hisob yoki karta o'tmagan). " +
+      "console.cloud.google.com/billing ni oching → loyihaning to'lov hisobini tanlang → " +
+      "\"Payment overview\" da qarz bo'lsa to'lang va kartani yangilang. " +
+      "To'lovdan keyin blok bir necha soat ichida ochiladi. " +
+      "Shoshilinch bo'lsa: boshqa to'lov hisobi ulangan loyihada yangi GEMINI_API_KEY oching."
     );
   }
   if (/billing account.*(closed|disabled)|billing.*not.*active/i.test(message)) {
