@@ -3,6 +3,7 @@ import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
 import { isAiConfigured } from "@/lib/ai/config";
 import { MAX_SEARCH_IMAGE_BYTES, searchByImage } from "@/lib/ai/image-search";
+import { QuotaError } from "@/lib/ai/usage";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
 
@@ -84,6 +85,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof QuotaError) {
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
     if (error instanceof Anthropic.RateLimitError) {
       return NextResponse.json({ error: "Xizmat band. Bir daqiqadan so'ng urinib ko'ring." }, { status: 429 });
     }

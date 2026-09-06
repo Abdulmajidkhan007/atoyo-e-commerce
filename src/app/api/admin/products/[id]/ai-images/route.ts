@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { requirePermission } from "@/lib/firebase/session";
 import { uploadProductImageAdmin } from "@/lib/firebase/admin-storage";
 import { isAiConfigured } from "@/lib/ai/config";
+import { QuotaError } from "@/lib/ai/usage";
 import {
   analyzeProductImage,
   generateProductImages,
@@ -69,8 +70,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (!isAiConfigured()) {
         return NextResponse.json({ error: "ANTHROPIC_API_KEY sozlanmagan." }, { status: 503 });
       }
-      const suggestion = await analyzeProductImage(sourceUrl, product.name);
-      return NextResponse.json({ suggestion });
+      try {
+        const suggestion = await analyzeProductImage(sourceUrl, product.name);
+        return NextResponse.json({ suggestion });
+      } catch (error) {
+        // Chegara to'lgani - adminga sababi va yechimi bilan.
+        if (error instanceof QuotaError) {
+          return NextResponse.json({ error: error.message }, { status: 429 });
+        }
+        throw error;
+      }
     }
 
     // ---- Bitta rasmdan bir nechta savdo rasmi ----

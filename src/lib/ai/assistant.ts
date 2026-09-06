@@ -1,7 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { AI_MAX_TOKENS, AI_MODEL, getAnthropic, isAiConfigured } from "./config";
-import { recordTokenUse } from "./usage";
+import { assertTokenQuota, recordTokenUse } from "./usage";
 import { buildShopContext, findRelevantProducts, formatProducts, type GroundedProduct } from "./context";
 import { checkQuestion, MAX_HISTORY_MESSAGES, REFUSAL_TEXT, sanitizeAnswer } from "./guard";
 import { assistantTools, runAssistantTool, type AssistantAction, type CatalogHit } from "./tools";
@@ -138,6 +138,9 @@ export async function askAssistant(params: {
   if (!isAiConfigured()) {
     throw new Error("AI kaliti sozlanmagan");
   }
+
+  // Oylik $ chegarasi to'lgan bo'lsa modelga umuman bormaymiz.
+  await assertTokenQuota();
 
   const [shopContext, seedProducts, taxonomy] = await Promise.all([
     buildShopContext(),

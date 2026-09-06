@@ -25,6 +25,7 @@ interface Tokens {
   inputTokens: number;
   outputTokens: number;
   costUsd: number;
+  limitUsd: number;
 }
 
 /** 1 234 567 -> "1 234 567" (o'qish oson bo'lsin). */
@@ -38,6 +39,7 @@ const USD_PER_IMAGE = 0.04;
 export function AiUsagePanel() {
   const [usage, setUsage] = useState<Usage | null>(null);
   const [tokens, setTokens] = useState<Tokens | null>(null);
+  const [costLimit, setCostLimit] = useState("");
   const [limit, setLimit] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -47,6 +49,11 @@ export function AiUsagePanel() {
     setLimit(String(next.limit));
   };
 
+  const applyTokens = (next: Tokens) => {
+    setTokens(next);
+    setCostLimit(String(next.limitUsd));
+  };
+
   useEffect(() => {
     let cancelled = false;
     fetch("/api/admin/ai/usage")
@@ -54,7 +61,7 @@ export function AiUsagePanel() {
       .then((data: { usage?: Usage; tokens?: Tokens } | null) => {
         if (cancelled) return;
         if (data?.usage) apply(data.usage);
-        if (data?.tokens) setTokens(data.tokens);
+        if (data?.tokens) applyTokens(data.tokens);
       })
       .catch(() => {});
     return () => {
@@ -69,7 +76,10 @@ export function AiUsagePanel() {
       const res = await fetch("/api/admin/ai/usage", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthlyImageLimit: Math.max(0, Math.round(Number(limit) || 0)) }),
+        body: JSON.stringify({
+          monthlyImageLimit: Math.max(0, Math.round(Number(limit) || 0)),
+          monthlyCostLimitUsd: Math.max(0, Number(costLimit) || 0),
+        }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         usage?: Usage;
@@ -78,8 +88,8 @@ export function AiUsagePanel() {
       };
       if (!res.ok || !body.usage) throw new Error(body.error ?? "Saqlanmadi.");
       apply(body.usage);
-      if (body.tokens) setTokens(body.tokens);
-      setMessage({ kind: "ok", text: "Chegara saqlandi." });
+      if (body.tokens) applyTokens(body.tokens);
+      setMessage({ kind: "ok", text: "Chegaralar saqlandi." });
     } catch (error) {
       setMessage({ kind: "error", text: error instanceof Error ? error.message : "Xatolik." });
     } finally {
@@ -96,6 +106,8 @@ export function AiUsagePanel() {
   }
 
   const percent = usage.limit > 0 ? Math.min(100, (usage.used / usage.limit) * 100) : 0;
+  const costPercent =
+    tokens && tokens.limitUsd > 0 ? Math.min(100, (tokens.costUsd / tokens.limitUsd) * 100) : 0;
   const cost = usage.used * USD_PER_IMAGE;
 
   return (
@@ -163,6 +175,34 @@ export function AiUsagePanel() {
             <b>console.anthropic.com → Cost / Billing</b> sahifasida. Kalitning muddati yo&apos;q:
             u o&apos;zi eskirmaydi, faqat balans tugasa ishlamay qoladi.
           </p>
+
+          {tokens.limitUsd > 0 && (
+            <LinearProgress
+              className="!mt-3"
+              variant="determinate"
+              value={costPercent}
+              color={costPercent >= 100 ? "error" : costPercent >= 80 ? "warning" : "primary"}
+            />
+          )}
+
+          {tokens.limitUsd > 0 && tokens.costUsd >= tokens.limitUsd && (
+            <Alert severity="warning" className="!mt-3">
+              Chegara to&apos;ldi — AI yordamchi, rasm tahlili va rasm bo&apos;yicha qidiruv
+              vaqtincha javob bermaydi. Chegarani oshiring yoki keyingi oyni kuting.
+            </Alert>
+          )}
+
+          <div className="mt-3">
+            <TextField
+              size="small"
+              type="number"
+              label="Oylik chegara, $ (0 — cheksiz)"
+              value={costLimit}
+              onChange={(event) => setCostLimit(event.target.value)}
+              helperText="Shu summaga yetganda AI yordamchisi to'xtaydi. Yuqoridagi «Saqlash» bilan birga saqlanadi."
+              className="!w-64"
+            />
+          </div>
         </div>
       )}
     </div>

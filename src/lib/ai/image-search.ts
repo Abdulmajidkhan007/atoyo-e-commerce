@@ -1,7 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { AI_MODEL, getAnthropic, isAiConfigured } from "./config";
-import { recordTokenUse } from "./usage";
+import { assertTokenQuota, recordTokenUse } from "./usage";
 import { searchCatalog, type CatalogHit } from "./tools";
 import { getTaxonomy } from "@/lib/products/taxonomy-server";
 import type { UserRole } from "@/types/user";
@@ -53,6 +53,7 @@ export async function searchByImage(image: {
   viewerRole?: UserRole;
 }): Promise<ImageSearchResult> {
   if (!isAiConfigured()) throw new Error("AI kaliti sozlanmagan");
+  await assertTokenQuota();
 
   const taxonomy = await getTaxonomy();
   const categories = taxonomy.categories.map((item) => `${item.slug} (${item.label})`).join(", ");

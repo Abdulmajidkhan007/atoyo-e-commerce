@@ -311,7 +311,12 @@ bot va kanal posti. `O'rnatib berish` mahsulotga bog'liq
   (notanish model — eng qimmat narx). Anthropic "qolgan balans" ni
   API orqali BERMAYDI (Usage & Cost API faqat sarfni beradi va
   tashkilot hisobini talab qiladi) — panelda shuning uchun O'ZIMIZ
-  sanagan taxminiy summa ko'rsatiladi.
+  sanagan taxminiy summa ko'rsatiladi. **Oylik $ chegarasi**
+  (`settings/ai.monthlyCostLimitUsd`, standart 25 $, 0 — cheksiz):
+  `assertTokenQuota()` yordamchi, rasm tahlili va rasm qidiruvining
+  BOSHIDA chaqiriladi, to'lgan bo'lsa `QuotaError` va route 429 bilan
+  SABABINI aytadi ("band" degan chalg'ituvchi xabar emas). Hisob
+  o'qilmasa ish TO'XTAMAYDI.
 
 ## 13. Mobil ilova (`mobile/`)
 

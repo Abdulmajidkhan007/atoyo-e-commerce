@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePermission } from "@/lib/firebase/session";
-import { getImageUsage, getTokenUsage, setImageLimit } from "@/lib/ai/usage";
+import { getImageUsage, getTokenUsage, setCostLimit, setImageLimit } from "@/lib/ai/usage";
 import { NO_STORE_HEADERS } from "@/lib/http/cache";
 
 export const runtime = "nodejs";
@@ -21,6 +21,8 @@ export const dynamic = "force-dynamic";
 const schema = z.object({
   /** 0 - cheksiz. */
   monthlyImageLimit: z.number().int().min(0).max(100_000),
+  /** Matn/vision uchun oylik $ chegarasi (0 - cheksiz). */
+  monthlyCostLimitUsd: z.number().min(0).max(100_000).default(0),
 });
 
 export async function GET(request: Request) {
@@ -39,6 +41,7 @@ export async function PUT(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Qiymat noto'g'ri." }, { status: 400 });
 
   await setImageLimit(parsed.data.monthlyImageLimit);
+  await setCostLimit(parsed.data.monthlyCostLimitUsd);
   const [usage, tokens] = await Promise.all([getImageUsage(), getTokenUsage()]);
   return NextResponse.json({ usage, tokens }, { headers: NO_STORE_HEADERS });
 }

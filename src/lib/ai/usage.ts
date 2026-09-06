@@ -20,6 +20,17 @@ import { getAdminDb } from "@/lib/firebase/admin";
 export const DEFAULT_MONTHLY_IMAGE_LIMIT = 200;
 
 /**
+ * MATN/VISION UCHUN OYLIK $ CHEGARASI.
+ *
+ * Rasmda chegara DONA bilan o'lchanadi, bu yerda esa DOLLAR bilan:
+ * bitta savolning narxi savol uzunligiga qarab o'zgaradi, shuning
+ * uchun "nechta so'rov" degan hisob himoya bermaydi.
+ *
+ * 0 - cheksiz.
+ */
+export const DEFAULT_MONTHLY_COST_LIMIT_USD = 25;
+
+/**
  * MATN/VISION TOKENLARI (Anthropic).
  *
  * Anthropic "qolgan balans" ni API orqali bermaydi — Usage & Cost
@@ -58,6 +69,8 @@ export interface AiTokenUsage {
   inputTokens: number;
   outputTokens: number;
   costUsd: number;
+  /** Oylik $ chegarasi (0 - cheksiz). */
+  limitUsd: number;
 }
 
 /**
@@ -146,10 +159,54 @@ export async function assertImageQuota(): Promise<void> {
 /** Chegara to'lganda tashlanadigan xato (boshqa xatolardan ajratish uchun). */
 export class QuotaError extends Error {}
 
+async function readCostLimit(): Promise<number> {
+  try {
+    const snap = await getAdminDb().doc("settings/ai").get();
+    const value = snap.data()?.monthlyCostLimitUsd;
+    return typeof value === "number" && value >= 0 ? value : DEFAULT_MONTHLY_COST_LIMIT_USD;
+  } catch {
+    return DEFAULT_MONTHLY_COST_LIMIT_USD;
+  }
+}
+
+/** Oylik $ chegarasini o'zgartirish (0 - cheksiz). */
+export async function setCostLimit(limitUsd: number): Promise<void> {
+  await getAdminDb()
+    .doc("settings/ai")
+    .set(
+      { monthlyCostLimitUsd: Math.max(0, Math.round(limitUsd * 100) / 100), updatedAt: Date.now() },
+      { merge: true }
+    );
+}
+
+/**
+ * Oylik $ chegarasi to'lganmi? To'lgan bo'lsa XATO tashlaydi.
+ *
+ * Rasm chegarasidagi kabi: hisob o'qib bo'lmasa ish TO'XTATILMAYDI -
+ * hisoblagich tufayli yordamchi jim bo'lib qolmasligi kerak.
+ */
+export async function assertTokenQuota(): Promise<void> {
+  try {
+    const { costUsd, limitUsd } = await getTokenUsage();
+    if (limitUsd > 0 && costUsd >= limitUsd) {
+      throw new QuotaError(
+        `Bu oyda AI chegarasi to'ldi (~${costUsd.toFixed(2)} $ / ${limitUsd} $). ` +
+          "Sozlamalar → «AI sarfi» bo'limidan chegarani oshiring."
+      );
+    }
+  } catch (error) {
+    if (error instanceof QuotaError) throw error;
+    // Hisoblagichni o'qib bo'lmadi - ishga xalaqit bermaymiz.
+  }
+}
+
 /** Joriy oydagi token sarfi (admin panelda ko'rsatiladi). */
 export async function getTokenUsage(): Promise<AiTokenUsage> {
   const month = currentMonthKey();
-  const snap = await getAdminDb().doc(`aiUsage/${month}`).get().catch(() => null);
+  const [limitUsd, snap] = await Promise.all([
+    readCostLimit(),
+    getAdminDb().doc(`aiUsage/${month}`).get().catch(() => null),
+  ]);
   const data = snap?.data() ?? {};
   const num = (value: unknown) => (typeof value === "number" && value > 0 ? value : 0);
   return {
@@ -158,6 +215,7 @@ export async function getTokenUsage(): Promise<AiTokenUsage> {
     inputTokens: num(data.inputTokens),
     outputTokens: num(data.outputTokens),
     costUsd: num(data.costUsd),
+    limitUsd,
   };
 }
 

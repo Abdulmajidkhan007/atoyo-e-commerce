@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
 import { askAssistant } from "@/lib/ai/assistant";
+import { QuotaError } from "@/lib/ai/usage";
 import { isAiConfigured } from "@/lib/ai/config";
 import { MAX_HISTORY_MESSAGES, MAX_QUESTION_LENGTH } from "@/lib/ai/guard";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -88,6 +89,10 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(reply);
   } catch (error) {
+    // Oylik $ chegarasi to'lgan - sababi OCHIQ aytiladi, "band" emas.
+    if (error instanceof QuotaError) {
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
     if (error instanceof Anthropic.RateLimitError) {
       return NextResponse.json(
         { error: "Yordamchi hozir band. Bir daqiqadan so'ng urinib ko'ring." },

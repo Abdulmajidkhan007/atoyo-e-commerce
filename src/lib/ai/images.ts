@@ -17,7 +17,7 @@ import { AI_MODEL, getAnthropic, isAiConfigured } from "./config";
  * aks holda mijoz suratdagi narsani olmaydi (bu qonuniy muammo ham).
  */
 
-import { assertImageQuota, recordImageUse, recordTokenUse } from "./usage";
+import { assertImageQuota, assertTokenQuota, recordImageUse, recordTokenUse } from "./usage";
 
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -356,6 +356,7 @@ export interface ImageAnalysis {
  */
 export async function analyzeProductImage(imageUrl: string, hint?: string): Promise<ImageAnalysis> {
   if (!isAiConfigured()) throw new Error("ANTHROPIC_API_KEY sozlanmagan.");
+  await assertTokenQuota();
 
   const source = await fetchSourceImage(imageUrl);
   const response = await getAnthropic().messages.create({

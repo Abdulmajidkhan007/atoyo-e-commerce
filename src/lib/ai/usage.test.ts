@@ -35,11 +35,13 @@ vi.mock("@/lib/firebase/admin", () => ({
 const {
   assertImageQuota,
   currentMonthKey,
+  assertTokenQuota,
   estimateCostUsd,
   getImageUsage,
   getTokenUsage,
   recordImageUse,
   recordTokenUse,
+  setCostLimit,
   setImageLimit,
 } = await import("./usage");
 
@@ -125,5 +127,30 @@ describe("token sarfi", () => {
   it("usage bo'lmasa hech narsa yozmaydi", async () => {
     await recordTokenUse("claude-opus-5", null);
     expect((await getTokenUsage()).requests).toBe(0);
+  });
+});
+
+describe("oylik $ chegarasi", () => {
+  it("standart chegara 25 $", async () => {
+    expect((await getTokenUsage()).limitUsd).toBe(25);
+  });
+
+  it("chegara to'lmagan bo'lsa o'tkazadi", async () => {
+    await setCostLimit(1);
+    await recordTokenUse("claude-opus-5", { input_tokens: 1000, output_tokens: 100 });
+    await expect(assertTokenQuota()).resolves.toBeUndefined();
+  });
+
+  it("chegara to'lganda to'xtatadi va sababini aytadi", async () => {
+    await setCostLimit(0.01);
+    // 1M kirim + 1M chiqim = 30 $ - chegaradan ancha yuqori.
+    await recordTokenUse("claude-opus-5", { input_tokens: 1_000_000, output_tokens: 1_000_000 });
+    await expect(assertTokenQuota()).rejects.toThrow(/chegarasi to'ldi/);
+  });
+
+  it("chegara 0 bo'lsa cheksiz", async () => {
+    await setCostLimit(0);
+    await recordTokenUse("claude-opus-5", { input_tokens: 1_000_000, output_tokens: 1_000_000 });
+    await expect(assertTokenQuota()).resolves.toBeUndefined();
   });
 });
