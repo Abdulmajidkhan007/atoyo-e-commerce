@@ -8,6 +8,7 @@ import AppleIcon from "@mui/icons-material/Apple";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import WindowIcon from "@mui/icons-material/Window";
 import PhoneIphoneIcon from "@mui/icons-material/PhoneIphone";
+import { authErrorKind } from "@/lib/firebase/auth-errors";
 import {
   signInWithEmail,
   registerWithEmail,
@@ -46,6 +47,27 @@ export function LoginForm() {
   const [smsCode, setSmsCode] = useState("");
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Firebase xatosini TUSHUNARLI sababga aylantiradi. Ilgari hamma
+   * xato "Kirishda xatolik yuz berdi" bo'lib chiqardi va domen
+   * almashganda (atoyo.uz) sababni topib bo'lmasdi. Kod konsolga
+   * ham yoziladi - admin uni darhol ko'radi.
+   */
+  const showAuthError = (err: unknown) => {
+    const kind = authErrorKind(err);
+    if (kind === "generic") console.error("Kirish xatosi:", err);
+    const messages: Record<string, string> = {
+      wrongCredentials: dict.auth.errorWrongCredentials,
+      tooMany: dict.auth.errorTooMany,
+      network: dict.auth.errorNetwork,
+      emailInUse: dict.auth.errorEmailInUse,
+      weakPassword: dict.auth.errorWeakPassword,
+      domain: dict.auth.errorDomain,
+      generic: dict.auth.error,
+    };
+    setError(messages[kind] ?? dict.auth.error);
+  };
   const [info, setInfo] = useState<string | null>(null);
 
   const switchMode = (next: "login" | "register" | "reset") => {
@@ -125,8 +147,8 @@ export function LoginForm() {
     try {
       await signInWithProvider(provider);
       router.push("/");
-    } catch {
-      setError(dict.auth.error);
+    } catch (err) {
+      showAuthError(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -166,8 +188,8 @@ export function LoginForm() {
         await registerWithEmail(email, password);
       }
       router.push("/");
-    } catch {
-      setError(dict.auth.error);
+    } catch (err) {
+      showAuthError(err);
     } finally {
       setIsSubmitting(false);
     }

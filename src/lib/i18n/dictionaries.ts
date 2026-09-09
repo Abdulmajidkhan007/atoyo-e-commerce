@@ -166,6 +166,13 @@ export interface Dictionary {
     noAccount: string;
     haveAccount: string;
     error: string;
+    /** Kirish xatosining ANIQ sababi (auth-errors.ts dagi turlarga mos). */
+    errorWrongCredentials: string;
+    errorTooMany: string;
+    errorNetwork: string;
+    errorEmailInUse: string;
+    errorWeakPassword: string;
+    errorDomain: string;
     forgot: string;
     resetSent: string;
     enterEmailFirst: string;
@@ -402,6 +409,14 @@ const uz: Dictionary = {
     noAccount: "Hisobingiz yo'qmi? Ro'yxatdan o'ting",
     haveAccount: "Hisobingiz bormi? Kiring",
     error: "Kirishda xatolik yuz berdi. Ma'lumotlaringizni tekshirib qayta urinib ko'ring.",
+    errorWrongCredentials: "Email yoki parol noto'g'ri.",
+    errorTooMany: "Juda ko'p urinish bo'ldi. Bir necha daqiqadan keyin qayta urining.",
+    errorNetwork: "Internetga ulanib bo'lmadi. Aloqani tekshiring.",
+    errorEmailInUse: "Bu email allaqachon ro'yxatdan o'tgan. Kirishni tanlang.",
+    errorWeakPassword: "Parol juda oddiy — kamida 6 ta belgi bo'lsin.",
+    errorDomain:
+      "Sayt manzili Firebase ro'yxatida yo'q. Admin: Authentication → Settings → Authorized domains " +
+      "va API kalitining domen cheklovini tekshirsin.",
     forgot: "Parolni unutdingizmi?",
     resetSent: "Parolni tiklash havolasi emailingizga yuborildi. Pochtangizni tekshiring.",
     enterEmailFirst: "Avval yuqoriga email manzilingizni kiriting.",
@@ -635,6 +650,14 @@ const en: Dictionary = {
     noAccount: "No account? Sign up",
     haveAccount: "Already have an account? Sign in",
     error: "Sign-in failed. Check your details and try again.",
+    errorWrongCredentials: "Wrong email or password.",
+    errorTooMany: "Too many attempts. Try again in a few minutes.",
+    errorNetwork: "No connection. Check your internet.",
+    errorEmailInUse: "This email is already registered. Try signing in.",
+    errorWeakPassword: "Password is too weak — use at least 6 characters.",
+    errorDomain:
+      "This site address is not allowed in Firebase. Admin: check Authentication → Settings → " +
+      "Authorized domains and the API key restrictions.",
     forgot: "Forgot password?",
     resetSent: "A password reset link was sent to your email. Check your inbox.",
     enterEmailFirst: "Enter your email address above first.",
@@ -868,6 +891,14 @@ const ru: Dictionary = {
     noAccount: "Нет аккаунта? Зарегистрируйтесь",
     haveAccount: "Уже есть аккаунт? Войдите",
     error: "Не удалось войти. Проверьте данные и попробуйте снова.",
+    errorWrongCredentials: "Неверный email или пароль.",
+    errorTooMany: "Слишком много попыток. Повторите через несколько минут.",
+    errorNetwork: "Нет соединения. Проверьте интернет.",
+    errorEmailInUse: "Этот email уже зарегистрирован. Войдите в аккаунт.",
+    errorWeakPassword: "Пароль слишком простой — минимум 6 символов.",
+    errorDomain:
+      "Адрес сайта не разрешён в Firebase. Админу: проверьте Authentication → Settings → " +
+      "Authorized domains и ограничения API-ключа.",
     forgot: "Забыли пароль?",
     resetSent: "Ссылка для сброса пароля отправлена на ваш email. Проверьте почту.",
     enterEmailFirst: "Сначала введите email выше.",

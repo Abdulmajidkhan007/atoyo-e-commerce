@@ -464,3 +464,43 @@ vaqtidan bilib olish imkonini beradi. `cron/social` va `cron/channel`
 o'zida takrorlangan `secretMatches` endi `lib/http/secret-match.ts`
 umumiy modulida — ikkala cron route ham, Payme (`isAuthorized`) ham,
 Click (imzo) ham shundan foydalanadi.
+
+---
+
+## Yangi domenga o'tish (atoyo.uz) — ikkita tuzoq
+
+**1. `deletedProducts` indeksi CI ni yiqitdi.** `FIREBASE_SERVICE_ACCOUNT`
+qo'yilgach `firestore-rules` qadami nihoyat ishga tushdi va darhol
+yiqildi:
+
+```
+Request to .../collectionGroups/deletedProducts/indexes had HTTP Error: 400,
+this index is not necessary, configure using single field index controls
+```
+
+Sababi: `firestore.indexes.json` da `deletedProducts` uchun BITTA
+maydonli (`deletedAt DESC`) indeks yozilgan edi. Firestore bitta
+maydonli indekslarni O'ZI yaratadi va ularni kompozit sifatida
+e'lon qilishni rad etadi. Indeks olib tashlandi (35 → 34).
+
+**Qoida:** `firestore.indexes.json` ga faqat IKKI va undan ortiq
+maydonli indeks yoziladi.
+
+**2. Kirish ishlamay qoldi, sabab esa ko'rinmadi.** `atoyo.uz` ga
+o'tilgach kirish "Kirishda xatolik yuz berdi" deb turaverdi.
+`LoginForm` HAR QANDAY xatoni shu bitta xabarga aylantirardi
+(`catch { setError(dict.auth.error) }`), shuning uchun haqiqiy sabab —
+parol xatosimi, tarmoqmi, yoki yangi domen Firebase'da ruxsat
+etilmaganmi — na mijozga, na adminga ko'rinmadi.
+
+Endi `lib/firebase/auth-errors.ts` xatoni turlarga ajratadi
+(`wrongCredentials` / `tooMany` / `network` / `emailInUse` /
+`weakPassword` / `domain` / `generic`) va uchala tilda aniq xabar
+chiqadi; tanilmagani konsolga to'liq yoziladi. Domen turi ikkita
+chegarani qamrab oladi: Authentication → Authorized domains va API
+kalitidagi "Website restrictions" (`requests-from-referer ... blocked`).
+
+**Qoida:** tashqi xizmat xatosi foydalanuvchiga chiqayotgan bo'lsa,
+u KAMIDA turkumlanadi — "xatolik yuz berdi" bilan muammoni topib
+bo'lmaydi.
+

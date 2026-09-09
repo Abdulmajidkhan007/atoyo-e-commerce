@@ -307,16 +307,6 @@
       ]
     },
     {
-      "collectionGroup": "deletedProducts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "deletedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "products",
       "queryScope": "COLLECTION",
       "fields": [
