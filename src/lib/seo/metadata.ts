@@ -1,4 +1,6 @@
-import { siteUrl, SITE_NAME } from "./json-ld";
+import { cityFromAddress, siteUrl, SITE_NAME } from "./json-ld";
+
+export { cityFromAddress };
 
 /**
  * SAYT META MA'LUMOTLARI (SEO).
@@ -32,19 +34,6 @@ const DESCRIPTION_HEAD =
 
 const DESCRIPTION_TAIL =
   "Сантехника и отопление: трубы, фитинги, смесители, радиаторы, котлы — доставка и гарантия.";
-
-/**
- * Manzildan shahar nomini ajratadi: "Qo'qon, Navbahor ko'chasi 45p"
- * → "Qo'qon". Vergul bo'lmasa birinchi so'z olinadi ("Toshkent
- * shahri" → "Toshkent").
- */
-export function cityFromAddress(address: string | undefined | null): string {
-  const value = (address ?? "").trim();
-  if (!value) return "";
-  const head = (value.split(",")[0] ?? "").trim();
-  // "Qo'qon shahri" / "Toshkent shahar" kabi qo'shimchani olib tashlaymiz.
-  return head.replace(/\s+(shahri|shahar|sh\.?|город|г\.)$/i, "").trim();
-}
 
 /** Shaharni hisobga olgan tavsif (shahar bo'lmasa — usiz). */
 export function siteDescription(address?: string | null): string {

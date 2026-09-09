@@ -27,7 +27,14 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   return (
     <LocaleProvider initialLocale={locale}>
       {/* Do'kon va sayt haqidagi sxema - hamma sahifada. */}
-      <JsonLd data={organizationJsonLd()} />
+      <JsonLd
+        data={organizationJsonLd({
+          phone: settings?.phone,
+          email: settings?.email,
+          address: settings?.address,
+          socialUrls: (settings?.socials ?? []).map((item) => item.url).filter(Boolean),
+        })}
+      />
       {/* 3D DUNYO: butun do'kon ortidagi yagona sahna. Sahifa
           almashganda qayta yaratilmaydi - kamera boshqa "bekat"ga
           uchib boradi (`lib/world/stations.ts`). Klassik rejimda

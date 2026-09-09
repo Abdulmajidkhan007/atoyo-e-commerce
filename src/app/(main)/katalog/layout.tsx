@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
+import { siteDescription } from "@/lib/seo/metadata";
+import { getSiteSettings } from "@/lib/firebase/admin-content";
 
 /**
- * Katalog sahifasi client komponent (filtrlar brauzerda ishlaydi),
- * shuning uchun SEO ma'lumotlari shu layout orqali beriladi.
+ * KATALOG SAHIFASINING META MA'LUMOTI.
+ *
+ * Sahifaning o'zi `"use client"` (filtrlar Redux'da), shuning uchun
+ * undan `metadata` eksport qilib bo'lmaydi — layout orqali beriladi.
+ *
+ * MUHIM: `canonical` ATAYLAB shu yerda belgilanadi. Root layout'da
+ * `canonical: "/"` turibdi va Next.js uni bolaga MEROS qiladi —
+ * ya'ni canonical'siz katalog o'zini BOSH SAHIFA deb e'lon qilardi
+ * va Google ikkalasini dublikat deb hisoblardi. Filtr/qidiruv
+ * (`?q=`, `?brand=`) ham shu bitta manzilga yig'iladi.
  */
-export const metadata: Metadata = {
-  title: "Katalog — santexnika va isitish mahsulotlari",
-  description:
-    "Quvurlar, muftalar, kranlar, dush tizimlari, radiatorlar va isitish qozonlari. Narx, brend va material bo'yicha filtr; zaxirada bori darhol ko'rinadi. Каталог сантехники и отопления с фильтрами по цене и бренду.",
-  alternates: { canonical: "/katalog" },
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings().catch(() => null);
+  return {
     title: "Katalog — santexnika va isitish mahsulotlari",
-    description:
-      "10 000+ mahsulot: quvurlar, kranlar, radiatorlar, qozonlar. Filtr, narx va zaxira bir sahifada.",
-  },
-};
+    description: siteDescription(settings?.address),
+    alternates: { canonical: "/katalog" },
+  };
+}
 
-export default function KatalogLayout({ children }: { children: React.ReactNode }) {
+export default function CatalogLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

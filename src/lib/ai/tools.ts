@@ -25,7 +25,7 @@ import type { UserRole } from "@/types/user";
  * to'ldiradi va rasmiylashtirish sahifasiga olib chiqadi.
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo-uz.web.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.atoyo.uz";
 
 /** Kanal bajaradigan amal (savat/checkout). */
 export type AssistantAction =

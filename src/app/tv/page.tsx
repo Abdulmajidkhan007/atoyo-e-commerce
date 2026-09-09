@@ -4,7 +4,7 @@ import { TvScreen } from "@/components/tv/TvScreen";
 /**
  * DO'KONDAGI TELEVIZOR uchun sahifa.
  *
- * Manzil: https://atoyo-uz.web.app/tv — televizor brauzeri (yoki
+ * Manzil: https://atoyo.uz/tv — televizor brauzeri (yoki
  * Android TV box) kiosk rejimida shuni ochadi. Sahifa saytning
  * header/footer'isiz, butun ekranni egallaydi va o'zini o'zi
  * yangilaydi (tartib `docs/TV.md` da).

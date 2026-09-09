@@ -42,7 +42,7 @@ import { escapeHtml } from "./html";
 const SETTINGS_DOC_PATH = "settings/telegram";
 
 function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz").replace(/\/$/, "");
 }
 
 /**

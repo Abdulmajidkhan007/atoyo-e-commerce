@@ -92,28 +92,26 @@ chiqmaydi (bu xato emas).
 
 ---
 
-## 4. `atoyo.uz` domenini olish va ulash 🟢
+## 4. `atoyo.uz` domeni ✅ BAJARILDI
 
-**Bo'shligini tekshirish.** Sandbox'dan tashqi tarmoq bloklangan,
-shuning uchun men ayta olmayman. O'zingiz tekshiring: **cctld.uz**
-(yoki istalgan `.uz` registratori — ahost.uz, uzhost.uz, billur.uz)
-saytida `atoyo.uz` ni qidiring. Bo'sh bo'lsa "свободен / available"
-deb chiqadi.
+Domen **ahost** dan olindi va Firebase Hosting'ga ulandi:
+`www.atoyo.uz` — **Connected**, `atoyo.uz` — unga **Redirect**.
+Ya'ni saytni haqiqatda **www.atoyo.uz** beradi; kodda ham
+(`apphosting.yaml` → `NEXT_PUBLIC_SITE_URL`) shu manzil turibdi —
+canonical, sitemap, OAuth va Telegram webhook bir xil manzilni
+ko'rsatishi uchun. Apex (`atoyo.uz`) ni asosiy qilmoqchi bo'lsangiz —
+Firebase Console'da yo'naltirishni teskari qiling va menga ayting,
+bir qatorni almashtiraman.
 
-**Qadamlar.**
-1. Registratordan domenni sotib oling (`.uz` uchun hujjat talab
-   qilinishi mumkin — registrator aytadi).
-2. Firebase Console → **Hosting** → **Add custom domain** →
-   `atoyo.uz` (va `www.atoyo.uz`) → Continue.
-3. Firebase ko'rsatgan **TXT** (tasdiqlash) va **A** yozuvlarini
-   registratorning DNS panelida qo'shing.
-4. Tasdiq va SSL sertifikati chiqishini kuting (odatda 1-24 soat).
-5. Domen ishlagach kodda ikkita joy yangilanadi (buni menga ayting,
-   men qilaman): `apphosting.yaml` dagi `NEXT_PUBLIC_SITE_URL` va
-   `ALLOWED_ORIGINS`.
-6. So'ng **Sozlamalar → Maxfiy kalitlar** da «webhook'ni qayta
-   o'rnatish» tugmachasini yoqib saqlang — Telegram yangi domenga
-   yozadigan bo'ladi.
+**Qolgan yagona qadam (deploy chiqqach):** **Sozlamalar → Maxfiy
+kalitlar** da «Saqlagach webhook'ni Telegram'da qayta o'rnatish»
+tugmachasini yoqib saqlang — Telegram endi yangi domenga yozadi.
+
+Shundan keyin ixtiyoriy, lekin foydali: **Google Search Console**
+(https://search.google.com/search-console) ga `www.atoyo.uz` ni
+qo'shing (tasdiqlash uchun DNS TXT yoki Firebase orqali) va
+`https://www.atoyo.uz/sitemap.xml` ni yuboring — indekslash
+tezlashadi. Yandex uchun ham xuddi shu: webmaster.yandex.uz.
 
 **Tekshiruv.** `https://atoyo.uz` ochiladi, qulf belgisi bor, botga
 xabar yozganda javob keladi.

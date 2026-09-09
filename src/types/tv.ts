@@ -58,7 +58,7 @@ export const DEFAULT_TV_SETTINGS: TvSettings = {
   showPrice: true,
   showQr: true,
   headline: "Atoyo Santexnika & Otopleniye",
-  ticker: "Optom va dona savdo · Yetkazib berish · atoyo-uz.web.app",
+  ticker: "Optom va dona savdo · Yetkazib berish · atoyo.uz",
   phone: "",
 };
 

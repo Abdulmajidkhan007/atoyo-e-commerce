@@ -164,7 +164,7 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
     const shortId = updatedOrder.id.slice(0, 8);
     await sendSms(
       updatedOrder.phoneNumber,
-      `Atoyo: buyurtmangiz #${shortId} — ${SMS_STATUS_TEXT[updatedOrder.status]}. Savol: atoyo-uz.web.app`
+      `Atoyo: buyurtmangiz #${shortId} — ${SMS_STATUS_TEXT[updatedOrder.status]}. Savol: atoyo.uz`
     );
   }
 

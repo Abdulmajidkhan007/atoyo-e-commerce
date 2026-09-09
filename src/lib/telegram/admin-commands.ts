@@ -325,7 +325,7 @@ export async function handleAdminCommand(params: {
         };
         await ref.set(product);
         await announceProduct(product, "new");
-        await reply(`✅ Qo'shildi: <b>${escapeHtml(name)}</b>\n🆔 ID: <b>${product.code}</b> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo-uz.web.app/admin/katalog`);
+        await reply(`✅ Qo'shildi: <b>${escapeHtml(name)}</b>\n🆔 ID: <b>${product.code}</b> | ${formatSom(price)} | ${stock} dona\n\nRasmni admin paneldan yuklang: atoyo.uz/admin/katalog`);
         return;
       }
 

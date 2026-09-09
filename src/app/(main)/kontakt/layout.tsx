@@ -1,17 +1,30 @@
 import type { Metadata } from "next";
+import { cityFromAddress } from "@/lib/seo/json-ld";
+import { getSiteSettings } from "@/lib/firebase/admin-content";
 
-/** Kontakt sahifasi client komponent - SEO ma'lumotlari shu yerda. */
-export const metadata: Metadata = {
-  title: "Bog'lanish",
-  description:
-    "Atoyo Santexnika bilan bog'laning: telefon, manzil va ariza qoldirish. Savolingizga operator javob beradi. Свяжитесь с нами: телефон, адрес, заявка.",
-  alternates: { canonical: "/kontakt" },
-  openGraph: {
-    title: "Bog'lanish — Atoyo Santexnika",
-    description: "Telefon, manzil va ariza qoldirish. Operator qisqa vaqtda javob beradi.",
-  },
-};
+/**
+ * KONTAKT SAHIFASINING META MA'LUMOTI.
+ *
+ * Sahifa `"use client"` (forma), shuning uchun layout orqali.
+ * Manzil va telefon admin sozlamasidan olinadi — mahalliy qidiruvda
+ * ("santexnika Qo'qon") aynan shu matn ko'rinadi.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings().catch(() => null);
+  const city = cityFromAddress(settings?.address);
+  const parts = [
+    city ? `Do'kon manzili: ${settings?.address}.` : null,
+    settings?.phone ? `Telefon: ${settings.phone}.` : null,
+    "Savol va buyurtma uchun bog'laning — yetkazib berish va o'rnatish xizmati bor.",
+  ].filter(Boolean);
 
-export default function KontaktLayout({ children }: { children: React.ReactNode }) {
+  return {
+    title: city ? `Kontakt — ${city}` : "Kontakt",
+    description: parts.join(" "),
+    alternates: { canonical: "/kontakt" },
+  };
+}
+
+export default function ContactLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

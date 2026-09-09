@@ -11,6 +11,6 @@ export const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.upload";
 
 export function youtubeRedirectUri(): string {
   const base =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo-uz.web.app";
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.atoyo.uz";
   return `${base}/api/admin/social/youtube/callback`;
 }

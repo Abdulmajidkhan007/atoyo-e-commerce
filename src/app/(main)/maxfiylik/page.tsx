@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
  * MAXFIYLIK SIYOSATI.
  *
  * Play Store ilovani qabul qilishi uchun ochiq maxfiylik siyosati
- * havolasi SHART (`https://atoyo-uz.web.app/maxfiylik`). Matn shu
+ * havolasi SHART (`https://atoyo.uz/maxfiylik`). Matn shu
  * loyihada haqiqatan yig'iladigan ma'lumotlarga mos yozilgan —
  * "Data safety" anketasi ham shu ro'yxat bilan to'ldiriladi.
  */
@@ -31,7 +31,7 @@ export default async function PrivacyPage() {
       <div className="flex flex-col gap-6 text-sm leading-6 text-navy-600 dark:text-navy-100">
         <p>
           Ushbu siyosat &laquo;Atoyo Santexnika &amp; Otopleniye&raquo; sayti
-          (atoyo-uz.web.app), Android ilovasi va Telegram boti uchun amal qiladi. Ulardan
+          (atoyo.uz), Android ilovasi va Telegram boti uchun amal qiladi. Ulardan
           foydalanish orqali siz quyidagi shartlarga rozilik bildirasiz.
         </p>
 

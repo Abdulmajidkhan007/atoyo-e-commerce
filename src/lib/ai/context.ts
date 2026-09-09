@@ -30,7 +30,7 @@ export interface GroundedProduct {
   url: string;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo-uz.web.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.atoyo.uz";
 const CACHE_TTL = 5 * 60 * 1000;
 
 let shopCache: { text: string; at: number } | null = null;

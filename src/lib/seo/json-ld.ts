@@ -12,13 +12,45 @@ import type { Product } from "@/types/product";
 
 export const SITE_NAME = "Atoyo Santexnika";
 
-export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app").replace(/\/$/, "");
+/**
+ * Manzildan shahar nomini ajratadi: "Qo'qon, Navbahor ko'chasi 45p"
+ * → "Qo'qon". Vergul bo'lmasa birinchi so'z olinadi ("Toshkent
+ * shahri" → "Toshkent").
+ */
+export function cityFromAddress(address: string | undefined | null): string {
+  const value = (address ?? "").trim();
+  if (!value) return "";
+  const head = (value.split(",")[0] ?? "").trim();
+  // "Qo'qon shahri" / "Toshkent shahar" kabi qo'shimchani olib tashlaymiz.
+  return head.replace(/\s+(shahri|shahar|sh\.?|город|г\.)$/i, "").trim();
 }
 
-/** Do'kon va sayt (bosh sahifa uchun). */
-export function organizationJsonLd(): object {
+
+export function siteUrl(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz").replace(/\/$/, "");
+}
+
+/** Do'kon sxemasi uchun admin sozlamasidan keladigan qism. */
+export interface StoreContact {
+  phone?: string;
+  email?: string;
+  address?: string;
+  /** Ijtimoiy tarmoq havolalari — Google ularni `sameAs` da kutadi. */
+  socialUrls?: string[];
+}
+
+/**
+ * Do'kon va sayt (bosh sahifa uchun).
+ *
+ * MANZIL VA TELEFON ADMIN SOZLAMASIDAN keladi va sxemaga QO'SHILADI:
+ * Google mahalliy qidiruvda ("santexnika Qo'qon") do'konni aynan shu
+ * maydonlar bilan taniydi. Sozlama o'qilmasa sxema baribir chiqadi —
+ * shunchaki manzilsiz.
+ */
+export function organizationJsonLd(contact: StoreContact = {}): object {
   const url = siteUrl();
+  const address = (contact.address ?? "").trim();
+  const locality = cityFromAddress(address);
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -32,6 +64,20 @@ export function organizationJsonLd(): object {
         image: `${url}/icon.jpg`,
         priceRange: "$$",
         areaServed: "UZ",
+        currenciesAccepted: "UZS",
+        ...(contact.phone?.trim() ? { telephone: contact.phone.trim() } : {}),
+        ...(contact.email?.trim() ? { email: contact.email.trim() } : {}),
+        ...(address
+          ? {
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: address,
+                ...(locality ? { addressLocality: locality } : {}),
+                addressCountry: "UZ",
+              },
+            }
+          : {}),
+        ...(contact.socialUrls?.length ? { sameAs: contact.socialUrls } : {}),
       },
       {
         "@type": "WebSite",

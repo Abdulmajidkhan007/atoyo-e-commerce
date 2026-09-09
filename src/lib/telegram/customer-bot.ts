@@ -107,7 +107,7 @@ interface InlineButton {
   url?: string;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo-uz.web.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz";
 
 // next/og orqali serverda generatsiya qilinadigan brendlangan rasmlar.
 const WELCOME_IMAGE_URL = `${SITE_URL}/api/og/welcome`;
