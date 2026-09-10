@@ -504,3 +504,21 @@ kalitidagi "Website restrictions" (`requests-from-referer ... blocked`).
 u KAMIDA turkumlanadi — "xatolik yuz berdi" bilan muammoni topib
 bo'lmaydi.
 
+## Google orqali kirish hisob so'ramasdan kirib ketardi
+
+Saytdagi "Google" tugmasi bosilganda hisob tanlash oynasi CHIQMASDAN
+brauzerdagi oxirgi hisobga kirib ketardi. Bitta telefonda ikki hisob
+bo'lsa (shaxsiy va do'kon) — mijoz noto'g'risiga kirib qolardi va
+buni tushunmasdi.
+
+Sabab: `new GoogleAuthProvider()` standart holatda `prompt`
+bermaydi, Google esa `prompt` bo'lmasa mavjud seansdan foydalanadi.
+
+Yechim: `googleProvider.setCustomParameters({ prompt: "select_account" })`
+(Microsoft provayderiga ham qo'shildi).
+
+Bu — YouTube kanalini ulashda uchragan nosozlikning AYNAN o'zi:
+o'shanda ham noto'g'ri (shaxsiy) kanalga ulanib qolgan edi va yechim
+ham shu parametr bo'lgan. Ya'ni qoida umumiy: **OAuth oqimida hisob
+tanlash imkoni bo'lishi kerak.**
+

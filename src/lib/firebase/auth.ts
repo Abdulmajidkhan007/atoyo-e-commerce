@@ -17,7 +17,18 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb } from "./client";
 import type { AppUser } from "@/types/user";
 
+/**
+ * GOOGLE ORQALI KIRISH.
+ *
+ * `prompt: "select_account"` MAJBURIY: usiz Google brauzerdagi
+ * OXIRGI hisobga jimgina kirib ketadi va foydalanuvchi boshqa
+ * hisobni tanlay olmaydi (bitta telefonda ikki hisob bo'lsa —
+ * masalan shaxsiy va do'kon hisobi — noto'g'risiga kirib qoladi).
+ * Xuddi shu sabab YouTube'ni ulashda ham noto'g'ri kanalga ulanib
+ * qolgan edi — `docs/ARXITEKTURA-TARIXI.md`.
+ */
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 /**
  * Foydalanuvchi birinchi marta kirganda Firestore `users` kolleksiyasiga
@@ -78,8 +89,11 @@ function providerFor(name: SocialProvider) {
       provider.addScope("name");
       return provider;
     }
-    case "microsoft":
-      return new OAuthProvider("microsoft.com");
+    case "microsoft": {
+      const provider = new OAuthProvider("microsoft.com");
+      provider.setCustomParameters({ prompt: "select_account" });
+      return provider;
+    }
     case "facebook": {
       const provider = new FacebookAuthProvider();
       provider.addScope("email");
