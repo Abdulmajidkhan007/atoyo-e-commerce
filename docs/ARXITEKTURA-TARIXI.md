@@ -522,3 +522,50 @@ o'shanda ham noto'g'ri (shaxsiy) kanalga ulanib qolgan edi va yechim
 ham shu parametr bo'lgan. Ya'ni qoida umumiy: **OAuth oqimida hisob
 tanlash imkoni bo'lishi kerak.**
 
+## Xavfsizlik auditi (2026-09): uchta o'zgarish
+
+**1. `/admin` rad etilganda bosh sahifaga tashlanardi.** Proxy ham,
+admin layout ham `redirect("/")` qilardi. Foydalanuvchi nima
+bo'lganini bilmasdi — "havola ishlamadi" deb o'ylardi va qayta-qayta
+bosardi. Endi `/kirish?redirect=<yo'l>&reason=<sabab>` ga boradi,
+kirish sahifasi sababni yozadi, kirgach o'zi so'ragan bo'limga
+tushadi.
+
+Bu yerda YANGI zaiflik paydo bo'lishi mumkin edi: `?redirect=` ga
+tashqi manzil yozib yuborilsa (`?redirect=https://saxta.uz`), kirgan
+mijoz begona saytga olib chiqilardi — fishing uchun tayyor qurol.
+Shuning uchun `loginUrl()` ham, `LoginForm` ham faqat `/` bilan
+boshlanadigan va `//` bo'lmagan yo'lni qabul qiladi. Testi:
+`src/proxy.test.ts`.
+
+**2. CSP `'unsafe-inline'` — endi nonce bilan.** Ilgari CSP
+`next.config.ts` dagi statik sarlavhada edi, ya'ni har so'rovga
+o'zgaradigan qiymat qo'yib bo'lmasdi. Endi u `src/proxy.ts` da
+yasaladi va har so'rovga bir martalik `nonce` oladi.
+
+Nonce ikki joyga qo'yiladi: `x-nonce` sarlavhasiga (bizning layout
+o'qiydi) va SO'ROV `content-security-policy` sarlavhasiga — Next.js
+uni o'zi o'qib O'ZINING inline skriptlariga qo'yadi. O'lchov bilan
+tasdiqlangan: `npm start` da `/kirish` sahifasida 18 ta inline
+skriptdan 17 tasida nonce bor, qolgani `application/ld+json`
+(bajarilmaydigan ma'lumot bloki, CSP unga tegmaydi).
+
+`'unsafe-inline'` ro'yxatda ATAYLAB qoldirildi: nonce bor bo'lsa
+zamonaviy brauzer uni e'tiborsiz qoldiradi, eski brauzerda esa sayt
+ishlashda davom etadi (CSP3 migratsiya naqshi).
+
+JSON-LD blokiga ham nonce qo'yib ko'rilgan va QAYTARILGAN: `JsonLd`
+komponenti client komponentlardan ham chaqiriladi, `next/headers` ni
+o'qisa build yiqiladi ("You're importing a module that depends on
+next/headers").
+
+**3. `/api/admin/upload` faqat "xodimmi?" deb qarardi.** Katalogga
+ruxsati yo'q xodim ham blog va sayt rasmlarini almashtira olardi.
+Endi huquq PAPKAGA qarab tekshiriladi (`products/` → `products`,
+`blog/` → `blog`, qolgani → `settings`) va papka nomida `..` bo'lsa
+rad etiladi.
+
+Shu bilan birga `/api/auth/session` va `/api/auth/telegram/exchange`
+ga rate-limit qo'shildi — ikkalasi ham autentifikatsiyasiz ochiq
+edi va har chaqiruvda Firebase'ga so'rov yuborardi.
+

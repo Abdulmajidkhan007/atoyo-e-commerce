@@ -173,6 +173,10 @@ export interface Dictionary {
     errorEmailInUse: string;
     errorWeakPassword: string;
     errorDomain: string;
+    /** `/admin` ga kirmoqchi bo'lgan mehmonga. */
+    needLogin: string;
+    /** Kirgan, lekin admin emas. */
+    needAdmin: string;
     forgot: string;
     resetSent: string;
     enterEmailFirst: string;
@@ -417,6 +421,9 @@ const uz: Dictionary = {
     errorDomain:
       "Sayt manzili Firebase ro'yxatida yo'q. Admin: Authentication → Settings → Authorized domains " +
       "va API kalitining domen cheklovini tekshirsin.",
+    needLogin: "Bu bo'limga kirish uchun avval hisobingizga kiring.",
+    needAdmin:
+      "Bu bo'lim faqat xodimlar uchun. Agar sizda boshqa (ish) hisobi bo'lsa - o'sha bilan kiring.",
     forgot: "Parolni unutdingizmi?",
     resetSent: "Parolni tiklash havolasi emailingizga yuborildi. Pochtangizni tekshiring.",
     enterEmailFirst: "Avval yuqoriga email manzilingizni kiriting.",
@@ -658,6 +665,8 @@ const en: Dictionary = {
     errorDomain:
       "This site address is not allowed in Firebase. Admin: check Authentication → Settings → " +
       "Authorized domains and the API key restrictions.",
+    needLogin: "Please sign in to open this section.",
+    needAdmin: "This section is for staff only. If you have a work account, sign in with it.",
     forgot: "Forgot password?",
     resetSent: "A password reset link was sent to your email. Check your inbox.",
     enterEmailFirst: "Enter your email address above first.",
@@ -899,6 +908,8 @@ const ru: Dictionary = {
     errorDomain:
       "Адрес сайта не разрешён в Firebase. Админу: проверьте Authentication → Settings → " +
       "Authorized domains и ограничения API-ключа.",
+    needLogin: "Войдите в аккаунт, чтобы открыть этот раздел.",
+    needAdmin: "Раздел только для сотрудников. Если есть рабочий аккаунт — войдите под ним.",
     forgot: "Забыли пароль?",
     resetSent: "Ссылка для сброса пароля отправлена на ваш email. Проверьте почту.",
     enterEmailFirst: "Сначала введите email выше.",

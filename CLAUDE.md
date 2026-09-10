@@ -101,7 +101,12 @@ ustama `settings/pricing`, standart 5%).
 
 - **`src/proxy.ts` edge-safe** — firebase-admin import QILINMAYDI.
   U faqat session-cookie borligini tekshiradi; haqiqiy `role: admin`
-  tekshiruvi `src/app/admin/layout.tsx` da (Node).
+  tekshiruvi `src/app/admin/layout.tsx` da (Node). Ikkalasi ham rad
+  etganda **bosh sahifaga emas, `/kirish?redirect=...&reason=...` ga**
+  yuboradi (`reason`: `login` — umuman kirmagan, `forbidden` — kirgan
+  lekin xodim emas). `redirect` faqat ICHKI yo'l bo'lishi mumkin —
+  `loginUrl()` tekshiradi (ochiq yo'naltirish zaifligi), testi
+  `src/proxy.test.ts`.
 - **Barcha admin yozuvlari server route'lari orqali** (`/api/admin/*`,
   Admin SDK). Client Firestore yozuvi admin panelda osilib qoladi.
 - Rasm/video yuklash: Admin SDK Storage +
@@ -123,6 +128,20 @@ ustama `settings/pricing`, standart 5%).
   **CSP'da ko'rsatilmagan tur jimgina bloklanadi.** Yangi tashqi
   manba qo'shilsa — ro'yxatga qo'shing va testga yozing. Rasm/video
   uchun `https:` ochiq.
+- **CSP `src/proxy.ts` da yasaladi, `next.config.ts` da EMAS** — har
+  so'rovga bir martalik `nonce` kerak, konfigdagi sarlavha esa build
+  vaqtida qotib qoladi. Nonce ikki joyga qo'yiladi: `x-nonce`
+  (bizning layout o'qiydi) va SO'ROV `content-security-policy`
+  sarlavhasi (Next.js o'zining hydration skriptlariga o'zi qo'yadi).
+- **Yangi inline `<script>` ga `nonce` QO'YISH SHART** — usiz
+  zamonaviy brauzer uni bloklaydi (nonce bor bo'lsa `'unsafe-inline'`
+  e'tiborsiz qoladi). Nonce server komponentda
+  `(await headers()).get("x-nonce")` dan olinadi.
+  `type="application/ld+json"` bloklari — istisno: ular bajarilmaydi
+  va CSP ularga tegmaydi (`components/seo/JsonLd.tsx` client
+  komponentlardan ham chaqiriladi, `next/headers` ni o'qiy olmaydi).
+- Style tomonida nonce YO'Q va bo'lmaydi: kodda `style={{...}}`
+  atributlari bor, ularni nonce qoplamaydi.
 - Firebase Hosting rewrite backendga **faqat `__session` cookie**
   ni o'tkazadi. Shuning uchun OAuth `state`, bir martalik kodlar
   cookie'da EMAS, Firestore'da (`lib/social/oauth-state.ts`).

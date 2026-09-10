@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { contentSecurityPolicy } from "@/lib/http/csp";
 
 /**
  * XAVFSIZLIK ARXITEKTURASI (/admin himoyasi ikki qatlamda):
@@ -33,15 +34,61 @@ import { NextResponse, type NextRequest } from "next/server";
 const SESSION_COOKIE_NAME = "__session";
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  /**
+   * HAMMA sahifa: CSP nonce har so'rovga yangi yasaladi. Statik
+   * fayllar (`_next/static`, rasm, favicon) chetda - ular HTML emas
+   * va ularga CSP kerak emas, ortiqcha ishlov esa har so'rovga
+   * qo'shilardi.
+   */
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.jpg|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|mp4|webm|txt|xml)$).*)"],
 };
 
 export function proxy(request: NextRequest) {
+  // Har so'rovga bir martalik nonce. `crypto` — Web Crypto API,
+  // Edge runtime'da ham bor (Node'ning `crypto` moduli emas).
+  const nonce = btoa(crypto.randomUUID());
+  const csp = contentSecurityPolicy(undefined, nonce);
+
+  const isAdmin = request.nextUrl.pathname.startsWith("/admin");
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
-  if (!sessionCookie) {
-    return NextResponse.redirect(new URL("/", request.url));
+  if (isAdmin && !sessionCookie) {
+    // ILGARI bosh sahifaga tashlanardi va foydalanuvchi NIMA
+    // bo'lganini bilmasdi: "havola ishlamadi" deb o'ylardi. Endi
+    // kirish sahifasiga, qaytish manzili bilan boradi - kirgach
+    // o'zi so'ragan bo'limga tushadi.
+    return NextResponse.redirect(loginUrl(request.nextUrl.pathname, request.url, "login"));
   }
 
-  return NextResponse.next();
+  const headers = new Headers(request.headers);
+  // Layout `redirect(...)` da qaysi bo'limga kirmoqchi bo'lganini
+  // bilishi uchun yo'lni sarlavhada uzatamiz (Next.js server
+  // komponentga so'rov yo'lini bermaydi).
+  headers.set("x-invoked-path", request.nextUrl.pathname);
+  // Nonce ikki joyga qo'yiladi:
+  //   • `x-nonce` — bizning layout uni o'qib inline skriptlarga beradi;
+  //   • CSP SO'ROV sarlavhasida — Next.js uni o'zi o'qib O'ZINING
+  //     inline skriptlariga (hydration ma'lumotlari) qo'yadi.
+  headers.set("x-nonce", nonce);
+  headers.set("content-security-policy", csp);
+
+  const response = NextResponse.next({ request: { headers } });
+  response.headers.set("content-security-policy", csp);
+  return response;
+}
+
+/**
+ * Kirish sahifasiga qaytish manzili bilan yo'naltirish.
+ *
+ * `next` faqat ICHKI yo'l bo'lishi mumkin (`/` bilan boshlanadi va
+ * `//` emas) - aks holda ochiq yo'naltirish (open redirect) zaifligi
+ * paydo bo'ladi: `?redirect=https://saxta.uz` bilan mijozni begona
+ * saytga olib chiqib ketish mumkin edi.
+ */
+export function loginUrl(next: string, base: string, reason: "login" | "forbidden"): URL {
+  const url = new URL("/kirish", base);
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/admin";
+  url.searchParams.set("redirect", safeNext);
+  url.searchParams.set("reason", reason);
+  return url;
 }

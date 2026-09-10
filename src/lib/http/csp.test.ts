@@ -65,4 +65,16 @@ describe("contentSecurityPolicy", () => {
     expect(directive("script-src", contentSecurityPolicy(true))).toContain("'unsafe-eval'");
     expect(directive("script-src", contentSecurityPolicy(false))).not.toContain("'unsafe-eval'");
   });
+
+  it("nonce berilsa script-src ga tushadi va boshqa turlarga tegmaydi", () => {
+    const policy = contentSecurityPolicy(false, "abc123");
+    expect(directive("script-src", policy)).toContain("'nonce-abc123'");
+    // Eski brauzerlar uchun zaxira ataylab qoldirilgan.
+    expect(directive("script-src", policy)).toContain("'unsafe-inline'");
+    expect(directive("style-src", policy)).not.toContain("'nonce-abc123'");
+  });
+
+  it("nonce berilmasa script-src o'zgarmaydi", () => {
+    expect(contentSecurityPolicy(false)).not.toContain("nonce-");
+  });
 });

@@ -12,11 +12,20 @@
  * ochiq yozilgan; yangi tashqi manba qo'shilsa shu ro'yxat
  * yangilanadi va `csp.test.ts` ga tekshiruv qo'shiladi.
  *
+ * SKRIPTLAR — `nonce` bilan. Har so'rovga tasodifiy nonce yasaladi
+ * (`src/proxy.ts`), CSP'ga yoziladi va HAR BIR inline `<script>` ga
+ * qo'yiladi. Zamonaviy brauzer nonce ko'rsa `'unsafe-inline'` ni
+ * E'TIBORSIZ qoldiradi — ya'ni XSS orqali sahifaga qo'shilgan begona
+ * inline skript (nonce'ni bilmaydi) ishlamaydi. `'unsafe-inline'`
+ * ro'yxatda ataylab qoldirilgan: nonce'ni tushunmaydigan eski
+ * brauzerlarda sayt ishlashda davom etsin (CSP3 migratsiya naqshi).
+ *
  * Ataylab yumshoq qo'yilgan joylar (busiz sayt ishlamaydi):
  *   • `'unsafe-inline'` (style) — MUI/emotion uslublarni inline
- *     `<style>` sifatida joylashtiradi, `nonce`siz boshqa yo'l yo'q.
- *   • `'unsafe-inline'` (script) — root layout'dagi tema skripti va
- *     Next.js'ning hydration ma'lumotlari inline keladi.
+ *     `<style>` sifatida joylashtiradi. Bundan tashqari kodda
+ *     `style={{...}}` atributlari bor; nonce ularni QOPLAMAYDI
+ *     (atribut uchun `'unsafe-hashes'` kerak bo'lardi), shuning
+ *     uchun style tomonda nonce foyda bermaydi.
  *   • `'unsafe-eval'` — faqat ishlab chiqish rejimida (React Fast
  *     Refresh talab qiladi); productionda qo'shilmaydi.
  *   • `img-src` / `media-src` da `https:` — mahsulot rasm va
@@ -24,11 +33,15 @@
  *     domen bo'yicha qotirib qo'yish har yangi manbada saytni
  *     buzardi.
  */
-export function contentSecurityPolicy(isDev = process.env.NODE_ENV === "development"): string {
+export function contentSecurityPolicy(
+  isDev = process.env.NODE_ENV === "development",
+  nonce?: string
+): string {
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
     "script-src": [
       "'self'",
+      ...(nonce ? [`'nonce-${nonce}'`] : []),
       "'unsafe-inline'",
       ...(isDev ? ["'unsafe-eval'"] : []),
       "https://www.googletagmanager.com",

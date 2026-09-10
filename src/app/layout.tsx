@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { Providers } from "./providers";
@@ -97,17 +98,21 @@ try {
 } catch (e) {}
 `;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // CSP nonce - `src/proxy.ts` har so'rovga yangisini yasaydi.
+  // Nonce'siz inline skript zamonaviy brauzerda ISHLAMAYDI.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="uz" suppressHydrationWarning>
       <body className={inter.variable}>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {/* Ko'rinish rejimi (klassik/3D) ham bo'yashdan OLDIN qo'yiladi -
             "klassik" tanlagan mijoz 3D qatlamini bir lahza ham ko'rmaydi. */}
-        <script dangerouslySetInnerHTML={{ __html: UI_MODE_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: UI_MODE_INIT_SCRIPT }} />
         {/* Shisha (glass) ko'rinish sekin qurilmada qattiq fonga
             tushadi - `docs/UI-SHISHA.md`, `lib/ui-mode/config.ts`. */}
-        <script dangerouslySetInnerHTML={{ __html: GLASS_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: GLASS_INIT_SCRIPT }} />
         {/* JS ishlamasa skrollda chiqadigan bloklar (Reveal) shaffof
             holda qolib ketmasin - kontent har doim ko'rinishi shart. */}
         <noscript
@@ -131,7 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Providers>{children}</Providers>
         </AppRouterCacheProvider>
         {/* NEXT_PUBLIC_GA_ID qo'yilgan bo'lsagina yuklanadi. */}
-        <Analytics />
+        <Analytics nonce={nonce} />
       </body>
     </html>
   );

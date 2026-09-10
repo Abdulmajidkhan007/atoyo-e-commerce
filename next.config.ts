@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 // CSP alohida modulda - u yerda testi ham bor (`src/lib/http/csp.test.ts`).
-import { contentSecurityPolicy } from "./src/lib/http/csp";
 
 /**
  * FIREBASE APP HOSTING'da client SDK sozlamalari.
@@ -81,7 +80,9 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: contentSecurityPolicy() },
+          // CSP BU YERDA EMAS: unda har so'rovga o'zgaradigan `nonce`
+          // ni qo'yib bo'lmaydi (bu sarlavhalar build vaqtida qotib
+          // qoladi). U `src/proxy.ts` da yasaladi.
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

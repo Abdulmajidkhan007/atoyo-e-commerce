@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button, TextField, Divider, Alert, CircularProgress } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
 import AppleIcon from "@mui/icons-material/Apple";
@@ -35,6 +35,19 @@ const PROVIDER_ICONS: Record<SocialProvider, React.ReactNode> = {
 export function LoginForm() {
   const router = useRouter();
   const { dict } = useI18n();
+  const params = useSearchParams();
+
+  /**
+   * Kirgandan keyin qayerga qaytish. Proxy `/admin` ga kirmoqchi
+   * bo'lgan mehmonni shu sahifaga `?redirect=/admin` bilan yuboradi.
+   * FAQAT ichki yo'lga ruxsat: tashqi manzil yozilsa e'tiborsiz
+   * qoldiriladi (ochiq yo'naltirish zaifligi bo'lmasin).
+   */
+  const rawNext = params.get("redirect") ?? "/";
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+  /** `login` — umuman kirmagan; `forbidden` — kirgan, lekin huquqi yo'q. */
+  const reason = params.get("reason");
+
   const [mode, setMode] = useState<"login" | "register" | "reset">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -146,7 +159,7 @@ export function LoginForm() {
     setIsSubmitting(true);
     try {
       await signInWithProvider(provider);
-      router.push("/");
+      router.push(nextPath);
     } catch (err) {
       showAuthError(err);
     } finally {
@@ -168,7 +181,7 @@ export function LoginForm() {
         setInfo(dict.auth.phoneCodeSent);
       } else {
         await confirmPhoneLogin(confirmation, smsCode.trim());
-        router.push("/");
+        router.push(nextPath);
       }
     } catch {
       setError(dict.auth.phoneInvalid);
@@ -187,7 +200,7 @@ export function LoginForm() {
       } else {
         await registerWithEmail(email, password);
       }
-      router.push("/");
+      router.push(nextPath);
     } catch (err) {
       showAuthError(err);
     } finally {
@@ -200,6 +213,10 @@ export function LoginForm() {
       <h1 className="text-xl font-bold text-navy-900 dark:text-white">
         {mode === "login" ? dict.auth.loginTitle : dict.auth.registerTitle}
       </h1>
+
+      {/* Nega bu sahifaga tushdi - foydalanuvchi bilib tursin. */}
+      {reason === "login" && <Alert severity="info">{dict.auth.needLogin}</Alert>}
+      {reason === "forbidden" && <Alert severity="warning">{dict.auth.needAdmin}</Alert>}
 
       {/* Ijtimoiy kirish: Google va Telegram yonma-yon, bir xil o'lchamda
           (to'liq kenglikda emas). Telegram oqimi bot orqali - domen
