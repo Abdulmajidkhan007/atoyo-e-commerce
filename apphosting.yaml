@@ -13,13 +13,14 @@ runConfig:
   memoryMiB: 1024
 
 env:
-  # ASOSIY DOMEN. Firebase Hosting'da `atoyo.uz` → `www.atoyo.uz` ga
-  # yo'naltiradi (Redirect), ya'ni saytni HAQIQATDA www beradi.
-  # Shuning uchun canonical, sitemap, OAuth qaytish manzili va
-  # Telegram webhook — hammasi www bilan. Eski manzillar
-  # (atoyo-uz.web.app, …hosted.app) ishlayveradi.
+  # ASOSIY DOMEN — qisqasi. Firebase Hosting'da `atoyo.uz` saytni
+  # O'ZI beradi, `www.atoyo.uz` esa unga yo'naltiradi. Canonical,
+  # sitemap, OAuth qaytish manzili va Telegram webhook — hammasi shu
+  # bitta manzilni ko'rsatishi SHART, aks holda har havolada ortiqcha
+  # yo'naltirish bo'ladi. Eski manzillar (atoyo-uz.web.app,
+  # …hosted.app) ishlayveradi.
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://www.atoyo.uz
+    value: https://atoyo.uz
     availability:
       - BUILD
       - RUNTIME
@@ -28,7 +29,7 @@ env:
   # (atoyo-uz.web.app) Firebase Hosting orqali ulanadi - firebase.json
   # dagi rewrite shu backendga yo'naltiradi.
   - variable: ALLOWED_ORIGINS
-    value: www.atoyo.uz,atoyo.uz,atoyo-uz.web.app,atoyo-uz.firebaseapp.com,atoyo-e-commerce--atoyo-uz.us-east4.hosted.app
+    value: atoyo.uz,www.atoyo.uz,atoyo-uz.web.app,atoyo-uz.firebaseapp.com,atoyo-e-commerce--atoyo-uz.us-east4.hosted.app
     availability:
       - BUILD
       - RUNTIME

@@ -79,7 +79,7 @@ export async function PATCH(request: Request) {
   let webhookNote: string | null = null;
   if (parsed.data.resetWebhook) {
     try {
-      const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz").replace(
+      const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo.uz").replace(
         /\/$/,
         ""
       );

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * kanalga video yuklay oladi.
  */
 function back(message: string, ok = false): NextResponse {
-  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.atoyo.uz";
+  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo.uz";
   const url = new URL(`${base}/admin/sozlamalar`);
   url.searchParams.set(ok ? "youtube" : "youtubeError", message);
   return NextResponse.redirect(url.toString());

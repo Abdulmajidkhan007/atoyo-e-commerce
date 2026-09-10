@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const GRAPH = "https://graph.facebook.com/v21.0";
 
 function back(message: string, ok = false): NextResponse {
-  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.atoyo.uz";
+  const base = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo.uz";
   const url = new URL(`${base}/admin/sozlamalar`);
   url.searchParams.set(ok ? "meta" : "metaError", message);
   return NextResponse.redirect(url.toString());

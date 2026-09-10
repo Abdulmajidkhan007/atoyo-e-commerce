@@ -31,7 +31,7 @@ import { formatSom } from "@/lib/format";
 const COLLECTION = "socialQueue";
 const MAX_ATTEMPTS = 3;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.atoyo.uz";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo.uz";
 
 /**
  * POST MATNI. Ijtimoiy tarmoqda DONA (chakana) narx ko'rsatiladi -

@@ -8,7 +8,7 @@ import type {CartItem, Product as AdminProduct, Review} from './types';
  * `Authorization: Bearer ...` sarlavhasida yuboriladi (server tomonda
  * `getAppUserFromRequest` uni qabul qiladi).
  */
-export const SITE_URL = 'https://atoyo-uz.web.app';
+export const SITE_URL = 'https://atoyo.uz';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getIdToken();

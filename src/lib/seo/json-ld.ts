@@ -27,7 +27,7 @@ export function cityFromAddress(address: string | undefined | null): string {
 
 
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo.uz").replace(/\/$/, "");
 }
 
 /** Do'kon sxemasi uchun admin sozlamasidan keladigan qism. */

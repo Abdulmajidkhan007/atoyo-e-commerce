@@ -34,7 +34,7 @@ interface ProductPageParams {
   params: Promise<{ id: string }>;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo.uz";
 
 export async function generateMetadata({ params }: ProductPageParams): Promise<Metadata> {
   const { id } = await params;

@@ -10,7 +10,7 @@ import type { Product } from "@/types/product";
  */
 export const revalidate = 3600;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo.uz";
 
 /** Google bitta xaritada 50 000 URL gacha qabul qiladi. */
 const MAX_PRODUCTS = 20000;

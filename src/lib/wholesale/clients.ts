@@ -31,7 +31,7 @@ const COUNTER = { collection: "metadata", doc: "wholesaleCounter" } as const;
 /** Chalkashadigan belgilar (0/O, 1/I) ishlatilmaydi - telefonda aytish oson. */
 const KEY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.atoyo.uz";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://atoyo.uz";
 
 function randomBlock(length: number): string {
   let out = "";

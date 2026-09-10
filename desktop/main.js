@@ -21,7 +21,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 /** Standart manzil. `ATOYO_URL` bilan yoki menyudan o'zgartiriladi. */
-const DEFAULT_URL = "https://atoyo-uz.web.app";
+const DEFAULT_URL = "https://atoyo.uz";
 
 const configPath = () => path.join(app.getPath("userData"), "config.json");
 
@@ -119,7 +119,16 @@ function attachGuards(win) {
 
   win.webContents.on("will-navigate", (event, url) => {
     // Firebase/Google kirish oynalari ham ochilishi kerak.
-    const allowed = [origin, "https://accounts.google.com", "https://atoyo-uz.firebaseapp.com"];
+    const allowed = [
+      origin,
+      "https://accounts.google.com",
+      "https://atoyo-uz.firebaseapp.com",
+      // Eski manzillar ham ochilaveradi - foydalanuvchida
+      // saqlanib qolgan yorliq ilovadan tashqariga otilmasin.
+      "https://atoyo-uz.web.app",
+      "https://atoyo.uz",
+      "https://atoyo.uz",
+    ];
     if (allowed.some((item) => url.startsWith(item))) return;
     event.preventDefault();
     void shell.openExternal(url);

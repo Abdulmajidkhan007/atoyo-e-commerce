@@ -92,31 +92,61 @@ chiqmaydi (bu xato emas).
 
 ---
 
-## 4. `atoyo.uz` domeni ✅ BAJARILDI
+## 4. `atoyo.uz` domeni — qisqa manzilni ASOSIY qilish 🟠
 
-Domen **ahost** dan olindi va Firebase Hosting'ga ulandi:
-`www.atoyo.uz` — **Connected**, `atoyo.uz` — unga **Redirect**.
-Ya'ni saytni haqiqatda **www.atoyo.uz** beradi; kodda ham
-(`apphosting.yaml` → `NEXT_PUBLIC_SITE_URL`) shu manzil turibdi —
-canonical, sitemap, OAuth va Telegram webhook bir xil manzilni
-ko'rsatishi uchun. Apex (`atoyo.uz`) ni asosiy qilmoqchi bo'lsangiz —
-Firebase Console'da yo'naltirishni teskari qiling va menga ayting,
-bir qatorni almashtiraman.
+Domen **ahost** dan olindi, ikkala nom ham Firebase'da **Connected**.
+Lekin hozir `atoyo.uz` → `www.atoyo.uz` ga **yo'naltiryapti**, ya'ni
+saytni haqiqatda `www` beryapti. Siz qisqasini asosiy qilishni
+tanladingiz, kodda ham shunday qilindi (`NEXT_PUBLIC_SITE_URL =
+https://atoyo.uz`). Endi Firebase tomonida yo'naltirishni **teskari**
+qilish kerak.
 
-**Qolgan yagona qadam (deploy chiqqach):** **Sozlamalar → Maxfiy
-kalitlar** da «Saqlagach webhook'ni Telegram'da qayta o'rnatish»
-tugmachasini yoqib saqlang — Telegram endi yangi domenga yozadi.
+> Firebase yo'naltirish yo'nalishini joyida o'zgartirishga ruxsat
+> bermaydi — domenni olib tashlab, qayta qo'shish kerak. Shuning
+> uchun tartib MUHIM: avval `atoyo.uz` ni to'g'rilang, keyin `www` ni.
+> Kechqurun yoki mijoz kam paytda qiling.
 
-Shundan keyin ixtiyoriy, lekin foydali: **Google Search Console**
-(https://search.google.com/search-console) ga `www.atoyo.uz` ni
-qo'shing (tasdiqlash uchun DNS TXT yoki Firebase orqali) va
-`https://www.atoyo.uz/sitemap.xml` ni yuboring — indekslash
-tezlashadi. Yandex uchun ham xuddi shu: webmaster.yandex.uz.
+**Qadamlar.** Firebase Console → **Hosting** → **Manage site** →
+**Domains**:
 
-**Tekshiruv.** `https://atoyo.uz` ochiladi, qulf belgisi bor, botga
-xabar yozganda javob keladi.
+1. `atoyo.uz` qatoridagi ⋮ menyudan **Delete / Remove** (hozir u
+   shunchaki yo'naltiruvchi, sayt `www` da ishlab turaveradi).
+2. **Add custom domain** → `atoyo.uz` → **"Redirect to another
+   domain" belgisini QO'YMANG** → Continue. DNS allaqachon to'g'ri
+   (`@ A 199.36.158.100`), shuning uchun tasdiq tez o'tadi.
+3. `atoyo.uz` **Connected** bo'lishini kuting va brauzerda ochib
+   ko'ring — sayt endi `www` ga sakramasligi kerak.
+4. Endi `www.atoyo.uz` qatorini **Delete / Remove**.
+5. **Add custom domain** → `www.atoyo.uz` → bu safar **"Redirect to
+   another domain"** ni belgilang → `atoyo.uz` ni tanlang.
+6. Sertifikat qayta chiqarilishini kuting (bir necha soatgacha).
 
----
+**Tekshiruv.** `www.atoyo.uz` yozganda manzil satri `atoyo.uz` ga
+o'zgarishi kerak; teskarisi emas.
+
+**Shundan keyin (majburiy):**
+- **Sozlamalar → Maxfiy kalitlar** → «webhook'ni qayta o'rnatish»
+  tugmachasini yoqib saqlang.
+- Firebase Console → **Authentication → Settings → Authorized
+  domains** ga `atoyo.uz` va `www.atoyo.uz` ni qo'shing — **busiz
+  saytdan kirish ishlamaydi**.
+- Google Cloud → **APIs & Services → Credentials** → "Browser key
+  (auto created by Firebase)" → agar "Website restrictions" bo'lsa,
+  `https://atoyo.uz/*` va `https://www.atoyo.uz/*` ni qo'shing.
+- Google Cloud → **APIs & Services → Credentials → OAuth 2.0 Client
+  IDs** (YouTube ulash uchun) → **Authorized redirect URIs** ga
+  `https://atoyo.uz/api/admin/social/youtube/callback` qo'shing.
+- Meta for Developers → ilova sozlamalarida **Valid OAuth Redirect
+  URIs** ga `https://atoyo.uz/api/admin/social/meta/callback`.
+- **Google Search Console** (search.google.com/search-console):
+  `atoyo.uz` ni **Domain** turi bilan qo'shing (DNS TXT orqali
+  tasdiqlanadi — ahost DNS panelida), so'ng
+  `https://atoyo.uz/sitemap.xml` ni yuboring.
+- **Yandex Webmaster** (webmaster.yandex.uz) — xuddi shunday.
+  O'zbekistonda Yandex ulushi katta.
+- Ilova va Electron yangi manzilga o'tkazildi, lekin bu **yangi
+  build** bilan yetadi: hozirgi APK eski manzilda ishlayveradi
+  (u yopilmaydi).
 
 ## 5. Gemini krediti (AI rasm) 🟡
 

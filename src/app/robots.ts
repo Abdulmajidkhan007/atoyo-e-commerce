@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.atoyo.uz";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://atoyo.uz";
 
 /** Qidiruv robotlari uchun qoidalar: admin va API yopiq, qolgani ochiq. */
 export default function robots(): MetadataRoute.Robots {
