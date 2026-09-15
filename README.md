@@ -2,7 +2,7 @@
 
 "Santexnika & Otopleniye" onlayn do'koni: 10,000+ mahsulot, Telegram bot integratsiyasi va rolga asoslangan admin panel.
 
-**Jonli sayt:** https://atoyo-uz.web.app
+**Jonli sayt:** https://atoyo.uz
 
 ## Texnologiyalar
 
@@ -61,7 +61,7 @@ node scripts/make-admin.js EMAIL  # foydalanuvchini admin qilish
 Brauzerda oching (qiymatlarni o'zingiznikiga almashtiring):
 
 ```
-https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://atoyo-uz.web.app/api/telegram-webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>&allowed_updates=["callback_query"]
+https://api.telegram.org/bot<BOT_TOKEN>/setWebhook?url=https://atoyo.uz/api/telegram-webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>&allowed_updates=["callback_query"]
 ```
 
 ## Loyiha strukturasi

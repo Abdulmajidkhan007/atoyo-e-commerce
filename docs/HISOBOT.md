@@ -45,7 +45,7 @@ xizmatlarda sozlash qoldi. Har biri uchun aniq yo'riqnoma bor.
 | **YouTube'ni to'g'ri kanalga ulash** | Hozir boshqa hisobga ulangan | `docs/DEPLOY.md` → 2a bo'limi |
 | **Typesense** (ixtiyoriy, 0 $ variant bor) | 3800+ mahsulotda xato yozilgan so'z topilmayapti | `docs/TYPESENSE.md` |
 | **Payme/Click merchant kalitlari** | To'lov kodi tayyor, kalit kutilmoqda | `docs/DEPLOY.md` → To'lovlar |
-| **Haqiqiy domen** (`atoyo.uz`) | Do'kon uchun ishonch; hozir `atoyo-uz.web.app` | DNS + Firebase Hosting |
+| ~~**Haqiqiy domen** (`atoyo.uz`)~~ | ✅ ulandi: `atoyo.uz` saytni beradi, `www` unga yo'naltiradi | — |
 
 ### `CRON_SECRET` haqida qisqa javob
 

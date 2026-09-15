@@ -181,8 +181,8 @@ avtomatik bo'shatish (cron)»):**
    sir yarating va qiymatni qo'ying; App Hosting backendiga o'qish
    huquqini bering.
 3. **Cloud Scheduler** → ikkita ish yarating:
-   - `POST https://atoyo-uz.web.app/api/cron/social` — har soatda
-   - `POST https://atoyo-uz.web.app/api/cron/channel` — har 10 daqiqada
+   - `POST https://atoyo.uz/api/cron/social` — har soatda
+   - `POST https://atoyo.uz/api/cron/channel` — har 10 daqiqada
    - ikkalasiga ham sarlavha: `x-cron-secret: <siringiz>`
 4. **Run now** bilan sinab ko'ring.
 

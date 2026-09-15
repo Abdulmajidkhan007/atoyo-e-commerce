@@ -17,7 +17,9 @@ UI tili — o'zbekcha. Dizayn: Deep Navy/Slate + Aqua `#00D2C4`.
   branch'ga push QILINMAYDI. PR faqat foydalanuvchi so'raganda.
 - **Deploy = git push.** Sayt **Firebase App Hosting** da (backend
   `atoyo-e-commerce`, loyiha `atoyo-uz`, region `us-east4`), har
-  push'da avtomatik rollout. Domen: **https://atoyo-uz.web.app**.
+  push'da avtomatik rollout. Domen: **https://atoyo.uz**
+  (`www.atoyo.uz` unga yo'naltiradi; eski `atoyo-uz.web.app` ham
+  ishlayveradi).
   Sozlama `apphosting.yaml`; `NEXT_PUBLIC_FIREBASE_*` kerak emas —
   App Hosting `FIREBASE_WEBAPP_CONFIG` ni o'zi beradi.
   Sandbox'dan hech qaysi hostingga to'g'ridan-to'g'ri deploy

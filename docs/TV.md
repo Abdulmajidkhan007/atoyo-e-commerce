@@ -5,7 +5,7 @@ katta rasm, katta narx, brend, "Sotuvda bor" belgisi va QR kod —
 mijoz telefon kamerasini QR ga tutsa, o'sha mahsulot sahifasi ochiladi.
 
 **Televizorga ILOVA o'rnatilmaydi.** Ekran — bu shunchaki saytdagi
-sahifa: `https://atoyo-uz.web.app/tv`. Shuning uchun Samsung, LG,
+sahifa: `https://atoyo.uz/tv`. Shuning uchun Samsung, LG,
 Xiaomi, Android TV — brauzeri bor har qanday televizorda ishlaydi va
 Play Store moderatsiyasini kutish shart emas.
 
@@ -29,7 +29,7 @@ sahifa 3 daqiqada bir marta kichik so'rov yuboradi).
 1. Televizor brauzerini oching va manzilni yozing:
 
    ```
-   https://atoyo-uz.web.app/tv
+   https://atoyo.uz/tv
    ```
 
 2. Brauzerni **to'liq ekran** (kiosk) rejimiga o'tkazing.

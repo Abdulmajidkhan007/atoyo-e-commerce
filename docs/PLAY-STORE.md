@@ -92,7 +92,7 @@ Keyin chap menyuda to'ldiriladigan bo'limlar:
 
 | Bo'lim | Nima kerak |
 |---|---|
-| **App content** | Maxfiylik siyosati URL: `https://atoyo-uz.web.app/maxfiylik` |
+| **App content** | Maxfiylik siyosati URL: `https://atoyo.uz/maxfiylik` |
 | | Data safety — anketa: ism, telefon, manzil, email yig'iladi (buyurtma uchun), uchinchi tomonga sotilmaydi |
 | | Ads: yo'q. Content rating: anketa (savdo ilovasi — 3+) |
 | **Store listing** | Qisqa tavsif (80 belgi), to'liq tavsif (4000 gacha) |

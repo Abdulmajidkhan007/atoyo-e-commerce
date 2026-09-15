@@ -11,7 +11,7 @@ o'zgartirmasdan yuborish mumkin (Telegram, e'lon, tanishtiruv).
 tizimlari do'koni. Endi bizda faqat do'kon emas, to'liq onlayn
 xizmat bor:
 
-**🌐 Sayt — https://atoyo-uz.web.app**
+**🌐 Sayt — https://atoyo.uz**
 10 000 dan ortiq mahsulot uchun mo'ljallangan katalog: kategoriya,
 brend, ishlab chiqarilgan davlat va narx bo'yicha filtr, tezkor
 qidiruv, sevimlilar, savat va onlayn buyurtma. Mahsulotning turlari

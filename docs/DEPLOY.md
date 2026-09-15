@@ -136,6 +136,12 @@ curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://<yangi-domen>/a
 
 ### 4a. Qisqa domen (`atoyo-uz.web.app`)
 
+> **Eslatma (2026-09):** asosiy manzil endi **`atoyo.uz`** —
+> `www.atoyo.uz` unga yo'naltiradi. Quyidagi bo'lim Firebase'ning
+> STANDART domenini ulash haqida; u hali ham ishlaydi va zaxira
+> sifatida qoladi, lekin canonical/sitemap/OAuth — hammasi
+> `atoyo.uz` bilan (`apphosting.yaml` → `NEXT_PUBLIC_SITE_URL`).
+
 App Hosting bergan manzil uzun:
 `atoyo-e-commerce--atoyo-uz.us-east4.hosted.app`. Qisqartirishning
 bepul yo'li — Firebase Hosting'ning `web.app` subdomenini shu backendga
@@ -599,7 +605,7 @@ gcloud scheduler jobs create http atoyo-social-queue \
   --location=us-east4 \
   --schedule="0 * * * *" \
   --time-zone="Asia/Tashkent" \
-  --uri="https://atoyo-uz.web.app/api/cron/social" \
+  --uri="https://atoyo.uz/api/cron/social" \
   --http-method=POST \
   --headers="Authorization=Bearer <yuqoridagi satr>"
 ```
@@ -608,9 +614,9 @@ Tekshirish:
 
 ```bash
 # Sirsiz - 401
-curl -i -X POST https://atoyo-uz.web.app/api/cron/social
+curl -i -X POST https://atoyo.uz/api/cron/social
 # Sir bilan - 200 va navbat holati
-curl -X POST https://atoyo-uz.web.app/api/cron/social \
+curl -X POST https://atoyo.uz/api/cron/social \
   -H "Authorization: Bearer <satr>"
 ```
 
@@ -627,7 +633,7 @@ gcloud scheduler jobs create http atoyo-channel-queue \
   --location=us-east4 \
   --schedule="*/5 * * * *" \
   --time-zone="Asia/Tashkent" \
-  --uri="https://atoyo-uz.web.app/api/cron/channel" \
+  --uri="https://atoyo.uz/api/cron/channel" \
   --http-method=POST \
   --headers="Authorization=Bearer <o'sha CRON_SECRET>"
 ```
@@ -666,7 +672,7 @@ kiritiladi (faqat loyiha egasiga ko'rinadi) va Firestore'ning
 3. Ilovaga **Facebook Login** mahsulotini qo'shing va uning
    sozlamalarida **"Valid OAuth Redirect URIs"** ga panelda ko'rsatilgan
    manzilni yozing:
-   `https://atoyo-uz.web.app/api/admin/social/meta/callback`
+   `https://atoyo.uz/api/admin/social/meta/callback`
 4. App Dashboard → Settings → Basic dan **App ID** va **App Secret** ni
    olib, panelga (Sozlamalar → Ijtimoiy tarmoqlar → Kalitlar) kiriting
    va **saqlang**.
@@ -721,9 +727,9 @@ Tartib:
    application** (Desktop EMAS!). Ikkita maydon bor, ularni
    ADASHTIRMANG:
    - **Authorized JavaScript origins** → faqat domen:
-     `https://atoyo-uz.web.app`
+     `https://atoyo.uz`
    - **Authorized redirect URIs** → to'liq yo'l bilan:
-     `https://atoyo-uz.web.app/api/admin/social/youtube/callback`
+     `https://atoyo.uz/api/admin/social/youtube/callback`
 4. Client ID va Secret panelga (Sozlamalar → Ijtimoiy tarmoqlar)
    kiritilib **saqlanadi**.
 5. **"YouTube'ga ulanish"** tugmasi bosiladi → kanal egasining Google

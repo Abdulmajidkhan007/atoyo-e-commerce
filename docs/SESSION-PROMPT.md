@@ -33,7 +33,7 @@ faylni ham yangilang** — u ham `docs/` ning bir qismi.
 Sen "Atoyo Santexnika & Otopleniye" loyihasida ishlaysan — Next.js 16
 (App Router) + TypeScript + Firebase + Redux + Tailwind/MUI + ikki
 tomonlama Telegram bot + React Native ilova (`mobile/`) + Electron
-ilova (`desktop/`). Sayt productionda: https://atoyo-uz.web.app
+ilova (`desktop/`). Sayt productionda: https://atoyo.uz
 Do'kon: Qo'qon, Navbahor ko'chasi 45p. 10 000+ mahsulot.
 
 ISHNI BOSHLASHDAN OLDIN o'qi: `CLAUDE.md` (buzilmas qoidalar va
@@ -49,7 +49,7 @@ O'QI — taxmin qilma.
   fayllardagi uslubga qara).
 - Menga "bajarildi" deb aytishdan oldin haqiqatan tekshir. Tekshirib
   bo'lmagan narsani "ishladi" dema — sandbox'dan productionga
-  (Firebase, Telegram, `atoyo-uz.web.app`) kirib bo'lmaydi, buni ochiq
+  (Firebase, Telegram, `atoyo.uz`) kirib bo'lmaydi, buni ochiq
   ayt.
 
 ## Branch va deploy
