@@ -97,6 +97,7 @@ docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 | `docs/PROMPT-ORGANICK-PLATFORMA.md` | Organick loyihasini to'liq platformaga aylantirish uchun bosh prompt |
 | `docs/PROMPTLAR-ATOYO.md` | Shu loyihaga xos promptlar va loyiha auditi topshirig'i |
 | `docs/AUDIT.md` / `docs/AUDIT-ISHLARI.md` | Audit natijasi va undan chiqqan ishlar navbati |
+| `docs/TEXNOLOGIYALAR.md` | Loyiha nimadan qurilgan: har bir qism qaysi texnologiyada va nega |
 | `docs/QADAMLAR.md` | Qo'lda bajariladigan qadamlar (secret, migratsiya, domen, cron, ilova relizi) |
 | `docs/DEPLOY.md` | Hosting, env va secret sozlash tartibi |
 | `docs/KIRIM-VA-IMPORT.md` | Kirim, Excel/CSV import, 1C narxnomasi |
