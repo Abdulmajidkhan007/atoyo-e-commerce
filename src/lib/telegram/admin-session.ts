@@ -1037,7 +1037,8 @@ async function applyVariantValue(
         "",
         "Endi birinchi turni yuboring:",
         "<code>qiymat - narx - soni - kod</code>",
-        "Masalan: <code>Satin Gold - 91400 - 5 - SJ-03</code>",
+        "Masalan: <code>Satin Gold - 91400 - 5 - SJ-03 - 78000</code>",
+        "(qiymat - narx - soni - kod - tannarx; oxirgi ikkitasi ixtiyoriy)",
       ].join("\n")
     );
     return;
@@ -1048,7 +1049,9 @@ async function applyVariantValue(
     const parsed = parseVariantLine(value);
     if (!parsed) {
       await reply(
-        "Tushunmadim. Shu ko'rinishda yuboring:\n<code>Satin Gold - 91400 - 5 - SJ-03</code>"
+        "Tushunmadim. Shu ko'rinishda yuboring:\n" +
+          "<code>Satin Gold - 91400 - 5 - SJ-03 - 78000</code>\n" +
+          "(qiymat - narx - soni - kod - tannarx; oxirgi ikkitasi ixtiyoriy)"
       );
       return;
     }
@@ -1081,7 +1084,14 @@ async function applyVariantValue(
     const variants = already
       ? existing.map((variant) =>
           variant.id === id
-            ? { ...variant, price: parsed.price, stock: parsed.stock, sku: parsed.sku || variant.sku }
+            ? {
+                ...variant,
+                price: parsed.price,
+                stock: parsed.stock,
+                sku: parsed.sku || variant.sku,
+                // Yozilmagan bo'lsa eski tannarx saqlanadi.
+                costPrice: parsed.costPrice ?? variant.costPrice ?? null,
+              }
             : variant
         )
       : [
@@ -1093,6 +1103,7 @@ async function applyVariantValue(
             discountPrice: null,
             stock: parsed.stock,
             ...(parsed.sku ? { sku: parsed.sku } : {}),
+            ...(parsed.costPrice !== null ? { costPrice: parsed.costPrice } : {}),
           },
         ];
 

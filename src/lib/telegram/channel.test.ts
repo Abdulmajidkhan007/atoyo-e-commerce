@@ -20,7 +20,7 @@ vi.mock("./bot", () => ({
   deleteMessage: async () => {},
 }));
 
-const { buildProductText } = await import("./channel");
+const { buildProductText, normalizeOwnLink } = await import("./channel");
 const { formatSom } = await import("@/lib/format");
 
 const base = {
@@ -127,5 +127,26 @@ describe("buildProductText", () => {
     expect(installAt).toBeGreaterThan(-1);
     // Tavsif eng oxirida qoladi.
     expect(text.indexOf("Qisqa tavsif")).toBeGreaterThan(installAt);
+  });
+});
+
+describe("normalizeOwnLink", () => {
+  it("o'z eski domenimizni joriy manzilga almashtiradi", () => {
+    expect(normalizeOwnLink("https://atoyo-uz.web.app/katalog")).toBe("https://atoyo.uz/katalog");
+    expect(normalizeOwnLink("https://www.atoyo.uz/about")).toBe("https://atoyo.uz/about");
+  });
+
+  it("begona saytlarga TEGMAYDI", () => {
+    expect(normalizeOwnLink("https://t.me/atoyo_uz")).toBe("https://t.me/atoyo_uz");
+    expect(normalizeOwnLink("https://instagram.com/atoyo")).toBe("https://instagram.com/atoyo");
+  });
+
+  it("joriy domen o'zgarmaydi", () => {
+    expect(normalizeOwnLink("https://atoyo.uz/kontakt")).toBe("https://atoyo.uz/kontakt");
+  });
+
+  it("URL bo'lmasa o'zini qaytaradi", () => {
+    expect(normalizeOwnLink("  salom ")).toBe("salom");
+    expect(normalizeOwnLink("")).toBe("");
   });
 });

@@ -431,3 +431,30 @@ Boou dush 8276 | 5
 Ro'yxat qo'shilgandan keyin ham har bir qatorni tahrirlash mumkin
 (soni, narxi, turi, kimdan kelgani) — "Kirimni saqlash" bosilgunicha
 hammasi chernovik holatida turadi.
+
+---
+
+## Tur qatorining ustunlari (yangilangan)
+
+```
+qiymatlar  -  NARX  -  soni  -  kod  -  TANNARX
+50x60|Oq|0.8mm  -  96000  -  3  -  BS7677  -  78000
+```
+
+| Ustun | Majburiymi | Izoh |
+|---|---|---|
+| qiymatlar | ha | `Tur nomi:` dagi qatorlar bilan bir xil tartibda, `\|` bilan |
+| NARX | ha | **Optom narx** (mijoz ko'radigan dona narx undan hisoblanadi) |
+| soni | yo'q | Yozilmasa 0 |
+| kod | yo'q | Shu turning artikuli |
+| **TANNARX** | yo'q | **Shu turning o'z tannarxi.** Yozilmasa mahsulotning umumiy `Tannarx:` qiymati ishlatiladi |
+
+Eski to'rt ustunli qatorlar o'zgarishsiz ishlayveradi.
+
+**Nega kerak:** bir xil moykaning `0.8mm` va `1.0mm` qalinligi bizga
+har xil narxda tushadi. Ilgari tannarx faqat butun mahsulot uchun
+bitta bo'lgani sababli foyda hisoboti noto'g'ri chiqardi.
+
+Butun mahsulot uchun tannarx avvalgidek alohida qatorda:
+`Tannarx: 78000` (yoki `Tan narx:`, `Kelish narxi:`, `Себестоимость:`).
+

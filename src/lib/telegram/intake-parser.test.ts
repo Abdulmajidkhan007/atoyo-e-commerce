@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseIntakeCaption } from "./intake-parser";
+import { parseIntakeCaption, parseVariantLine } from "./intake-parser";
 import { BUILTIN_TAXONOMY } from "@/lib/products/taxonomy";
 
 const taxonomy = BUILTIN_TAXONOMY;
@@ -48,6 +48,7 @@ describe("parseIntakeCaption", () => {
     expect(parsed.variants).toHaveLength(3);
     expect(parsed.variants[0]).toEqual({
       values: ["50x60"],
+      costPrice: null,
       price: 850000,
       stock: 4,
       sku: "BS-5060",
@@ -259,5 +260,52 @@ describe("parseIntakeCaption", () => {
       parseIntakeCaption([...base, "O'rnatib berish: yo'q"].join("\n"), taxonomy).installService
     ).toBe(false);
     expect(parseIntakeCaption(base.join("\n"), taxonomy).installService).toBeNull();
+  });
+});
+
+describe("tur tannarxi (5-ustun)", () => {
+  it("yozilgan tannarxni o'qiydi", () => {
+    const parsed = parseVariantLine("50x60|Oq|0.8mm - 96000 - 3 - BS7677 - 78000");
+    expect(parsed).toMatchObject({
+      values: ["50x60", "Oq", "0.8mm"],
+      price: 96000,
+      stock: 3,
+      sku: "BS7677",
+      costPrice: 78000,
+    });
+  });
+
+  it("ESKI to'rt ustunli qator buzilmaydi", () => {
+    const parsed = parseVariantLine("Satin Gold - 91400 - 5 - SJ-03");
+    expect(parsed).toMatchObject({ price: 91400, stock: 5, sku: "SJ-03", costPrice: null });
+  });
+
+  it("kodsiz ham tannarx yozib bo'ladi emas — kod o'rni bo'sh qolmaydi", () => {
+    // Uch ustunli qatorda 4-si kod deb o'qiladi, 5-si yo'q.
+    expect(parseVariantLine("50x60 - 96000 - 3")).toMatchObject({ sku: "", costPrice: null });
+  });
+
+  it("nol yoki manfiy tannarx yozilmagan deb hisoblanadi", () => {
+    expect(parseVariantLine("50x60 - 96000 - 3 - KOD - 0")?.costPrice).toBeNull();
+  });
+
+  it("kirim izohidagi turlar ham tannarxni oladi", () => {
+    const parsed = parseIntakeCaption(
+      [
+        "Basu moyka",
+        "Kategoriya: santexnika",
+        "Sotish turi: dona",
+        "Kimdan: Akmal aka",
+        "Tannarx: 78000",
+        "Tur nomi: O'lcham|Rangi",
+        "Turlar:",
+        "50x60|Oq - 96000 - 3 - BS7677",
+        "60x80|Qora - 128000 - 4 - BS7690 - 104000",
+      ].join("\n"),
+      taxonomy
+    );
+    expect(parsed.costPrice).toBe(78000);
+    expect(parsed.variants[0]?.costPrice).toBeNull();
+    expect(parsed.variants[1]?.costPrice).toBe(104000);
   });
 });

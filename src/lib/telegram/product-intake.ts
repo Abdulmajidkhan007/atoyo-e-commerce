@@ -444,6 +444,10 @@ export async function handleIntakeMessage(params: IntakeMessageParams): Promise<
       discountPrice: null,
       stock: item.stock,
       sku: item.sku,
+      // Turning O'Z tannarxi yozilgan bo'lsa - o'sha; yo'q bo'lsa
+      // buyurtmada mahsulotning umumiy tannarxi ishlatiladi
+      // (`create-order.ts`: variant.costPrice ?? product.costPrice).
+      costPrice: item.costPrice,
     };
   });
 

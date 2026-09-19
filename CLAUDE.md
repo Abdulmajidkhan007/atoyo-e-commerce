@@ -186,6 +186,11 @@ ustama `settings/pricing`, standart 5%).
   (`Satin Gold — 91 400 so'm · kod: SJ-03`). Post tartibi: nomi →
   brend/davlat → kategoriya → narx → turlar → material
   (`buildProductText`, testi `channel.test.ts`).
+- **Footer havolalari `normalizeOwnLink()` dan o'tadi**: admin
+  qo'lda yozgan havolada BIZNING eski domenimiz bo'lsa (masalan
+  `atoyo-uz.web.app`) joriy manzilga almashtiriladi. Begona saytlarga
+  (t.me, instagram.com) tegilmaydi. Sabab: domen almashganda kod
+  yangilanadi, bazadagi matn esa eski holicha qolardi.
 - **Statistika**: Telegram postni kim ko'rganini bermaydi. O'lchanadigan
   narsa — tugma bosilishi: tugma `/k/<id>` ga qaraydi va
   `channelClicks/{productId}` ga yoziladi (`click-days.ts`, 90 kundan
@@ -253,7 +258,13 @@ ustama `settings/pricing`, standart 5%).
   mantiq `lib/products/csv.ts`, testi `csv.test.ts`.
 - Telegram kirimida `Tur nomi:` + `Turlar:` bloki
   (`intake-parser.ts`), **3 qatordan ko'p emas**, qiymatlar soni mos
-  kelmasa qator tashlanadi va bot sababini aytadi.
+  kelmasa qator tashlanadi va bot sababini aytadi. Tur qatori:
+  `qiymatlar - NARX - soni - kod - TANNARX` (oxirgi ikkitasi
+  ixtiyoriy). Tur tannarxi yozilmasa mahsulotning umumiy tannarxi
+  ishlatiladi (`variant.costPrice ?? product.costPrice`,
+  `create-order.ts`). **Qator FAQAT `parseVariantLine()` bilan
+  o'qiladi** — ilgari `parseIntakeCaption` ichida uning nusxasi bor
+  edi va format o'zgarganda faqat bittasi yangilangan.
 - **Mavjud bo'lmagan kombinatsiya** `Product.variantsExcluded` ga
   tushadi va `normalizeVariants()` uni QAYTA YASAMAYDI.
 - **Tur tanlagich** (`SegmentedPicker`, sayt va ilovada bir xil):

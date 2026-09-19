@@ -343,7 +343,18 @@ export function splitVariantLine(line: string): string[] {
 }
 
 /**
- * BITTA tur qatorini o'qiydi: "Satin Gold - 91400 - 5 - SJ-03".
+ * BITTA tur qatorini o'qiydi:
+ * "Satin Gold - 91400 - 5 - SJ-03 - 78000".
+ *
+ * Ustunlar: qiymatlar - NARX - soni - kod - TANNARX.
+ * Oxirgi ikkitasi ixtiyoriy.
+ *
+ * TANNARX nega oxirida: format ilgari to'rt ustunli edi va minglab
+ * eski izoh shu ko'rinishda yozilgan. Beshinchi ustun qo'shilishi
+ * ularning hech biriga tegmaydi - yozilmasa mahsulotning umumiy
+ * tannarxi ishlaydi (`Variant.costPrice ?? Product.costPrice`,
+ * `lib/orders/create-order.ts`).
+ *
  * Botdagi "➕ Yangi tur" tugmasi ham, kirim izohi ham shuni ishlatadi -
  * format ikkalasida bir xil bo'lishi uchun.
  */
@@ -351,7 +362,7 @@ export function parseVariantLine(line: string): ParsedVariant | null {
   const parts = splitVariantLine(line);
   if (parts.length < 2) return null;
 
-  const [rawValues, rawPrice, rawStock, rawSku] = parts;
+  const [rawValues, rawPrice, rawStock, rawSku, rawCostPrice] = parts;
   const price = parseAmount(rawPrice!);
   if (price === null || price <= 0) return null;
 
@@ -361,11 +372,16 @@ export function parseVariantLine(line: string): ParsedVariant | null {
     .filter(Boolean);
   if (values.length === 0) return null;
 
+  // Tannarx 0 yoki manfiy bo'lsa - yozilmagan deb hisoblaymiz
+  // (mahsulotning umumiy tannarxi ishlatiladi).
+  const costPrice = parseAmount(rawCostPrice ?? "");
+
   return {
     values,
     price,
     stock: Math.max(0, Math.round(parseAmount(rawStock ?? "") ?? 0)),
     sku: (rawSku ?? "").trim(),
+    costPrice: costPrice !== null && costPrice > 0 ? costPrice : null,
   };
 }
 
@@ -375,6 +391,8 @@ export interface ParsedVariant {
   price: number;
   stock: number;
   sku: string;
+  /** Shu turning O'Z tannarxi. Yozilmasa - mahsulotnikidan olinadi. */
+  costPrice: number | null;
 }
 
 export interface ParsedIntake {
@@ -543,30 +561,26 @@ export function parseIntakeCaption(caption: string, taxonomy: Taxonomy): ParsedI
     .map((label) => label.trim())
     .filter(Boolean);
 
+  /**
+   * Tur qatorlari `parseVariantLine()` BILAN o'qiladi - ilgari shu
+   * yerda uning nusxasi turgan edi va formatga yangi ustun
+   * qo'shilganda faqat bittasi yangilanib qolgan (tur tannarxi
+   * kirimda yo'qolardi). Endi bitta joy - botdagi "➕ Yangi tur"
+   * tugmasi ham shu funksiyani chaqiradi.
+   */
   const variants: ParsedVariant[] = [];
   for (const line of variantLines) {
-    const parts = splitVariantLine(line);
-    if (parts.length < 2) {
-      warnings.push(`Tur qatori tushunilmadi: "${line}"`);
+    const parsedVariant = parseVariantLine(line);
+    if (!parsedVariant) {
+      // Sababini ajratamiz: qator umuman tushunilmadimi yoki narxmi.
+      warnings.push(
+        splitVariantLine(line).length < 2
+          ? `Tur qatori tushunilmadi: "${line}"`
+          : `Tur narxi o'qilmadi: "${line}"`
+      );
       continue;
     }
-
-    const [rawValues, rawPrice, rawStock, rawSku] = parts;
-    const variantPrice = parseAmount(rawPrice!);
-    if (variantPrice === null || variantPrice <= 0) {
-      warnings.push(`Tur narxi o'qilmadi: "${line}"`);
-      continue;
-    }
-
-    variants.push({
-      values: rawValues!
-        .split("|")
-        .map((value) => value.trim())
-        .filter(Boolean),
-      price: variantPrice,
-      stock: Math.max(0, Math.round(parseAmount(rawStock ?? "") ?? 0)),
-      sku: (rawSku ?? "").trim(),
-    });
+    variants.push(parsedVariant);
   }
 
   // Qiymatlar soni qatorlar soniga mos kelmasa - o'sha tur tashlanadi.
@@ -701,6 +715,7 @@ export const INTAKE_VARIANT_TEMPLATE = [
   "Material: polat",
   "Sotish turi: dona",
   "Kimdan: Akmal aka",
+  "Tannarx: 700000",
   "Tur nomi: O'lcham",
   "Turlar:",
   "50x60 - 850000 - 4 - BS-5060",
@@ -721,11 +736,12 @@ export const INTAKE_MULTI_AXIS_TEMPLATE = [
   "Kategoriya: santexnika",
   "Sotish turi: dona",
   "Kimdan: Akmal aka",
+  "Tannarx: 78000",
   "Tur nomi: O'lcham|Rangi|Qalinlik",
   "Turlar:",
   "50x60|Oq|0.8mm - 96000 - 3 - BS7677",
-  "50x60|Qora|0.8mm - 96000 - 2 - BS7678",
-  "60x80|Oq|1.0mm - 128000 - 4 - BS7690",
+  "50x60|Qora|0.8mm - 96000 - 2 - BS7678 - 79000",
+  "60x80|Oq|1.0mm - 128000 - 4 - BS7690 - 104000",
 ].join("\n");
 
 /** Xato bo'lganda ko'rsatiladigan namuna. */

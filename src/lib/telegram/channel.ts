@@ -152,6 +152,41 @@ async function publish(
 }
 
 /**
+ * BIZNING ESKI DOMENLARIMIZ.
+ *
+ * Footer havolalari admin QO'LDA yozadi va ular Firestore'da turadi.
+ * Domen almashganda (`atoyo-uz.web.app` -> `atoyo.uz`) kod yangilandi,
+ * lekin bazadagi matn eski holicha qoladi - natijada har bir yangi
+ * post yana ESKI manzilni ko'rsatardi va buni faqat admin qo'lda
+ * tuzatishi mumkin edi.
+ *
+ * Shuning uchun post yasalayotganda O'Z eski domenlarimiz joriy
+ * manzilga almashtiriladi. Faqat HOST almashadi - yo'l, parametr va
+ * begona saytlarga (t.me, instagram.com) tegilmaydi.
+ */
+const LEGACY_HOSTS = new Set([
+  "atoyo-uz.web.app",
+  "atoyo-uz.firebaseapp.com",
+  "www.atoyo.uz",
+  "atoyo-e-commerce--atoyo-uz.us-east4.hosted.app",
+]);
+
+export function normalizeOwnLink(url: string): string {
+  const trimmed = url.trim();
+  try {
+    const parsed = new URL(trimmed);
+    if (!LEGACY_HOSTS.has(parsed.host)) return trimmed;
+    const current = new URL(siteUrl());
+    parsed.protocol = current.protocol;
+    parsed.host = current.host;
+    return parsed.toString().replace(/\/$/, "");
+  } catch {
+    // URL emas (bo'sh yoki noto'g'ri) - tegmaymiz.
+    return trimmed;
+  }
+}
+
+/**
  * POST FOOTERI: telefon(lar) -> shior -> manzil -> havolalar.
  * Admin panel > Sozlamalar > "Kanal posti footeri" dan boshqariladi.
  * Hech narsa yozilmagan bo'lsa footer umuman qo'shilmaydi.
@@ -175,7 +210,10 @@ function buildFooter(footer: ChannelPostFooter | undefined): string {
   // Havolalar bitta qatorda: Telegram | Instagram | YouTube | Operator | Sayt
   const links = footer.links
     .filter((link) => link.title.trim() && link.url.trim())
-    .map((link) => `<a href="${escapeHtml(link.url.trim())}">${escapeHtml(link.title.trim())}</a>`);
+    .map(
+      (link) =>
+        `<a href="${escapeHtml(normalizeOwnLink(link.url))}">${escapeHtml(link.title.trim())}</a>`
+    );
   if (links.length > 0) blocks.push(links.join(" | "));
 
   return blocks.length > 0 ? `\n\n${blocks.join("\n\n")}` : "";
