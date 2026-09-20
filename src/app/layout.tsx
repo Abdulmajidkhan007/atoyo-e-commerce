@@ -8,6 +8,7 @@ import { SITE_NAME, siteUrl } from "@/lib/seo/json-ld";
 import { ogImage, siteDescription, SITE_KEYWORDS, SITE_TITLE } from "@/lib/seo/metadata";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { UI_MODE_INIT_SCRIPT, GLASS_INIT_SCRIPT } from "@/lib/ui-mode/config";
+import { getLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
@@ -24,8 +25,15 @@ export async function generateMetadata(): Promise<Metadata> {
   // Tavsifdagi SHAHAR admin sozlamasidagi manzildan olinadi - u
   // o'zgarsa Telegram/Google kartochkasi ham o'zgaradi. Sozlama
   // serverda 60 soniya keshlangan, ya'ni bu qo'shimcha so'rov emas.
-  const settings = await getSiteSettings().catch(() => null);
+  const [settings, locale] = await Promise.all([
+    getSiteSettings().catch(() => null),
+    getLocale(),
+  ]);
   const description = siteDescription(settings?.address);
+  // OG lokali joriy tilga mos - qolganlari muqobil sifatida qoladi.
+  const OG_LOCALES: Record<typeof locale, string> = { uz: "uz_UZ", ru: "ru_RU", en: "en_US" };
+  const ogLocale = OG_LOCALES[locale];
+  const alternateOgLocales = Object.values(OG_LOCALES).filter((l) => l !== ogLocale);
 
   return {
     metadataBase: new URL(siteUrl()),
@@ -40,23 +48,20 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: SITE_NAME,
     publisher: SITE_NAME,
     category: "shopping",
-    alternates: {
-      canonical: "/",
-      languages: {
-        uz: "/",
-        "uz-UZ": "/",
-        ru: "/",
-        en: "/",
-      },
-    },
+    // MUHIM: `alternates` bu yerda ATAYLAB yo'q. Ilgari shu yerda
+    // to'rttasi ham "/" ga qarab turgan noto'g'ri qiymat bor edi va
+    // Next.js uni HAR bir sahifaga meros qilib berardi (mahsulot,
+    // katalog... hammasi o'zini bosh sahifa deb e'lon qilardi). Endi
+    // har sahifa `localeAlternates()` bilan O'ZINING to'g'ri
+    // canonical/hreflang'ini beradi (`lib/seo/locale-alternates.ts`).
     openGraph: {
       type: "website",
       siteName: SITE_NAME,
       title: SITE_TITLE,
       description,
       url: siteUrl(),
-      locale: "uz_UZ",
-      alternateLocale: ["ru_RU", "en_US"],
+      locale: ogLocale,
+      alternateLocale: alternateOgLocales,
       images: [ogImage()],
     },
     twitter: {
@@ -101,10 +106,13 @@ try {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // CSP nonce - `src/proxy.ts` har so'rovga yangisini yasaydi.
   // Nonce'siz inline skript zamonaviy brauzerda ISHLAMAYDI.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const [nonce, locale] = await Promise.all([
+    headers().then((h) => h.get("x-nonce") ?? undefined),
+    getLocale(),
+  ]);
 
   return (
-    <html lang="uz" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={inter.variable}>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {/* Ko'rinish rejimi (klassik/3D) ham bo'yashdan OLDIN qo'yiladi -

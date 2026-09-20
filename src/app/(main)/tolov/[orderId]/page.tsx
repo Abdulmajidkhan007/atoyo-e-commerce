@@ -11,6 +11,8 @@ import {
 } from "@/lib/payments/config";
 import type { Order } from "@/types/order";
 import { formatSom } from "@/lib/format";
+import { getLocale } from "@/lib/i18n/server";
+import { localeHref } from "@/lib/i18n/href";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,7 @@ export const metadata: Metadata = { title: "To'lov | Atoyo Santexnika" };
  */
 export default async function PaymentPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
+  const locale = await getLocale();
   const snap = await getAdminDb().collection("orders").doc(orderId).get();
   if (!snap.exists) notFound();
   const order = { id: snap.id, ...snap.data() } as Order;
@@ -71,7 +74,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ orderI
           </div>
         )}
 
-        <Link href="/profil" className="mt-6 inline-block text-sm text-aqua-600 hover:underline dark:text-aqua-300">
+        <Link href={localeHref("/profil", locale)} className="mt-6 inline-block text-sm text-aqua-600 hover:underline dark:text-aqua-300">
           Buyurtmalarim sahifasiga qaytish
         </Link>
       </div>

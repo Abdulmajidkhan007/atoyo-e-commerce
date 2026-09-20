@@ -1,10 +1,19 @@
+import type { Metadata } from "next";
 import { Advantages } from "@/components/home/Advantages";
 import { Hero } from "@/components/home/Hero";
 import { HomeCategories } from "@/components/home/HomeCategories";
 import { ShowcaseGrid } from "@/components/home/ShowcaseGrid";
 import { Reveal } from "@/components/motion/Reveal";
-import { getDictionary } from "@/lib/i18n/server";
+import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { loadShowcaseForViewer } from "@/lib/products/storefront";
+import { localeAlternates } from "@/lib/seo/locale-alternates";
+
+// Root layout'dagi umumiy `canonical` yo'q endi (`src/app/layout.tsx`) -
+// bosh sahifa O'ZINING tilga mos canonical/hreflang'ini shu yerdan beradi.
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return { alternates: localeAlternates("/", locale) };
+}
 
 /**
  * BOSH SAHIFA — endi SERVER komponent.

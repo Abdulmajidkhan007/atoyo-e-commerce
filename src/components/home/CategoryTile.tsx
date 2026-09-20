@@ -6,6 +6,8 @@ import { useAppDispatch } from "@/redux/hooks";
 import { setFilters } from "@/redux/slices/filterSlice";
 import type { ProductCategory } from "@/types/product";
 import { useImmersive } from "@/lib/ui-mode/useImmersive";
+import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref } from "@/lib/i18n/href";
 
 interface CategoryTileProps {
   category: ProductCategory;
@@ -28,12 +30,13 @@ export function CategoryTile({ category, label, Icon }: CategoryTileProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { immersive } = useImmersive();
+  const { locale } = useI18n();
 
   return (
     <button
       onClick={() => {
         dispatch(setFilters({ category }));
-        router.push("/katalog");
+        router.push(localeHref("/katalog", locale));
       }}
       className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition duration-300 ${
         immersive ? GLASS_TILE : CLASSIC_TILE

@@ -23,6 +23,7 @@ import { AUTH_METHOD_LABELS, enabledAuthMethods } from "@/lib/firebase/auth-prov
 import { TelegramLoginButton } from "./TelegramLoginButton";
 import { useTelegramLogin } from "./useTelegramLogin";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref } from "@/lib/i18n/href";
 
 /** Provayder belgilari (Microsoft uchun MUI'da alohida logotip yo'q - "Window"). */
 const PROVIDER_ICONS: Record<SocialProvider, React.ReactNode> = {
@@ -34,17 +35,20 @@ const PROVIDER_ICONS: Record<SocialProvider, React.ReactNode> = {
 
 export function LoginForm() {
   const router = useRouter();
-  const { dict } = useI18n();
+  const { dict, locale } = useI18n();
   const params = useSearchParams();
 
   /**
    * Kirgandan keyin qayerga qaytish. Proxy `/admin` ga kirmoqchi
-   * bo'lgan mehmonni shu sahifaga `?redirect=/admin` bilan yuboradi.
+   * bo'lgan mehmonni shu sahifaga `?redirect=/admin` bilan yuboradi -
+   * bu manzil har doim ICHKI va admin uz-only bo'lgani uchun
+   * tilga tegilmaydi. Standart holat (redirect berilmagan) esa
+   * joriy tildagi bosh sahifaga qaytaradi.
    * FAQAT ichki yo'lga ruxsat: tashqi manzil yozilsa e'tiborsiz
    * qoldiriladi (ochiq yo'naltirish zaifligi bo'lmasin).
    */
-  const rawNext = params.get("redirect") ?? "/";
-  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+  const rawNext = params.get("redirect") ?? localeHref("/", locale);
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : localeHref("/", locale);
   /** `login` — umuman kirmagan; `forbidden` — kirgan, lekin huquqi yo'q. */
   const reason = params.get("reason");
 

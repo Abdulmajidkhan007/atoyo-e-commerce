@@ -381,6 +381,35 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   Yangi nativ paket qo'shilsa `scripts/check-codegen.mjs` ro'yxatiga
   ham qo'shing.
 
+## 14. Ko'p tillik (i18n) va URL marshrutlari
+
+- **Tilni URL BERADI, cookie EMAS.** O'zbekcha — asosiy, prefiks'siz
+  manzilda (`/katalog`); ruscha — `/ru` prefiksida (`/ru/katalog`).
+  Sahifa kodi TAKRORLANMAGAN: `src/proxy.ts` `/ru/...` so'rovini
+  ICHKI ravishda prefiks'siz manzilga `rewrite` qiladi va qaysi
+  tilda chizish kerakligini `x-locale` sarlavhasida uzatadi.
+  `getLocale()` (`lib/i18n/server.ts`) AVVAL shu sarlavhadan, keyin
+  (zaxira sifatida) cookie'dan o'qiydi. `/admin`, `/api`, `/k`, `/tv`
+  ga `/ru` prefiksi TEGMAYDI (`docs/ARXITEKTURA-TARIXI.md` 24-band).
+- **Ichki havola YOZILGANDA doim "mantiqiy" (o'zbekcha, prefiks'siz)
+  yo'l ishlatiladi** ("/katalog", "/mahsulot/123"), tilga moslash esa
+  avtomatik: client komponentda `next/link` o'rniga
+  `import { Link } from "@/lib/i18n/LocaleLink"`, server komponentda
+  `localeHref(yo'l, locale)` (`lib/i18n/href.ts`). Qo'lda
+  `` `/ru${yo'l}` `` yozish TAQIQLANADI.
+  `Breadcrumbs` `locale` ni PROP sifatida oladi (o'zi `getLocale()`
+  chaqirmaydi) — u client sahifalarda ham ishlatiladi va
+  `next/headers` bog'lagan modul client bog'lamiga sizib kirsa build
+  yiqiladi.
+- **Har sahifa `alternates`ni `localeAlternates()` bilan o'zi
+  beradi** (`lib/seo/locale-alternates.ts`) — root layout'da umumiy
+  `alternates` YO'Q (ilgari bor edi va hammasi "/" ga qarab turardi).
+  `sitemap.ts` har sahifa uchun uz VA ru yozuvini chiqaradi.
+- Inglizcha lug'ati tayyor, marshruti YO'Q. Qo'shilganda faqat
+  `ROUTED_LOCALES` ga (`lib/i18n/config.ts`) `"en"` qo'shiladi —
+  proxy, sitemap, `LanguageSwitcher`, `localeAlternates()` hammasi
+  shu ro'yxatdan o'qiydi.
+
 ---
 
 # XARITA (qayerda nima turadi)
@@ -452,7 +481,8 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   (`FIREBASE_SERVICE_ACCOUNT` secret'i kerak). `firestore.rules` va
   `firestore.indexes.json` ni yangilab, commit qilib qo'ying.
 - Payme/Click: kod tayyor, merchant kalitlari kutilmoqda.
-- Ko'p tillik: interfeys uz/en/ru tayyor; mahsulot uchun ixtiyoriy
+- Ko'p tillik: uz/ru URL marshruti ishlaydi (14-band). Inglizcha
+  lug'ati tayyor, `/en` marshruti hali YO'Q. Mahsulot uchun ixtiyoriy
   `nameRu/nameEn/descriptionRu/descriptionEn` (`lib/products/i18n.ts`).
 - Keyingi bosqichlar: rasmsiz mahsulotlar ish navbati → Typesense →
   PWA → to'lov testlari → `customer-bot.ts` ni bo'lish → Uzum Pay.

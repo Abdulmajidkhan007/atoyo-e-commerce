@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { usePathname } from "next/navigation";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
@@ -9,9 +9,10 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import { Badge } from "@mui/material";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { stripLocalePrefix } from "@/lib/i18n/href";
 
 export function MobileBottomNav() {
-  const pathname = usePathname();
+  const pathname = stripLocalePrefix(usePathname()).path;
   const { dict } = useI18n();
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
   const favoritesCount = useAppSelector((s) => s.favorites.items.length);

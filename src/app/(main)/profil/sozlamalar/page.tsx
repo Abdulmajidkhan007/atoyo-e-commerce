@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { useRouter } from "next/navigation";
 import {
   TextField,
@@ -28,11 +28,12 @@ import { normalizePhone, isValidName } from "@/lib/validation";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { signOut as signOutAction } from "@/redux/slices/userSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref } from "@/lib/i18n/href";
 
 export default function ProfileSettingsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { dict } = useI18n();
+  const { dict, locale } = useI18n();
   const { profile, status } = useAppSelector((s) => s.user);
   const [displayName, setDisplayName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -76,7 +77,7 @@ export default function ProfileSettingsPage() {
       // Auth hisobi o'chdi - lokal sessiyani ham tozalab bosh sahifaga qaytamiz.
       await signOutUser().catch(() => {});
       dispatch(signOutAction());
-      router.push("/");
+      router.push(localeHref("/", locale));
     } catch (e) {
       setDeleteError(e instanceof Error && e.message !== "failed" ? e.message : dict.common.errorRetry);
       setIsDeleting(false);
@@ -168,7 +169,7 @@ export default function ProfileSettingsPage() {
       });
       if (!res.ok) throw new Error("failed");
       setResult("success");
-      setTimeout(() => router.push("/profil"), 800);
+      setTimeout(() => router.push(localeHref("/profil", locale)), 800);
     } catch {
       setResult("error");
     } finally {

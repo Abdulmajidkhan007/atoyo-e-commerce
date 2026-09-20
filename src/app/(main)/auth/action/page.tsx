@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { useSearchParams } from "next/navigation";
 import { TextField, Button, Alert, CircularProgress } from "@mui/material";
 import { verifyPasswordResetCode, confirmPasswordReset, applyActionCode } from "firebase/auth";

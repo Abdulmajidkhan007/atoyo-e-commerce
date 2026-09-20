@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { Button } from "@mui/material";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { useSiteInfo } from "@/lib/site/SiteInfoContext";

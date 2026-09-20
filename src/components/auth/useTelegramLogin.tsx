@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { signInWithCustomToken } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { ensureSessionCookie } from "@/lib/firebase/auth";
+import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref } from "@/lib/i18n/href";
 
 /**
  * TELEGRAM ORQALI KIRISH (deep link).
@@ -37,6 +39,7 @@ export interface TelegramLoginState {
 
 export function useTelegramLogin(): TelegramLoginState {
   const router = useRouter();
+  const { locale } = useI18n();
   const [tgBusy, setTgBusy] = useState(false);
   const [tgError, setTgError] = useState(false);
   const [tgWaiting, setTgWaiting] = useState(false);
@@ -63,7 +66,7 @@ export function useTelegramLogin(): TelegramLoginState {
       setTgBusy(false);
       setTgWaiting(false);
       if (ok) {
-        router.replace("/profil");
+        router.replace(localeHref("/profil", locale));
       } else {
         setTgError(true);
       }
@@ -111,7 +114,7 @@ export function useTelegramLogin(): TelegramLoginState {
         popup?.close();
         finish(false);
       });
-  }, [router]);
+  }, [router, locale]);
 
   return { tgBusy, tgError, tgWaiting, startTelegramLogin };
 }

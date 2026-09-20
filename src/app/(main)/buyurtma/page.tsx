@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { useRouter } from "next/navigation";
 import {
   TextField,
@@ -22,11 +22,12 @@ import { deliveryFeeFor } from "@/lib/orders/promo";
 import { DeliveryNote } from "@/components/layout/DeliveryNote";
 import { DEFAULT_DELIVERY_SETTINGS, type DeliverySettings } from "@/types/promo";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref } from "@/lib/i18n/href";
 import { formatSom } from "@/lib/format";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { dict } = useI18n();
+  const { dict, locale } = useI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.cart.items);
   const { profile, status } = useAppSelector((s) => s.user);
@@ -155,7 +156,8 @@ export default function CheckoutPage() {
 
       dispatch(clearCart());
       // Onlayn to'lovda mijoz Payme/Click tanlash sahifasiga yo'naltiriladi.
-      router.push(paymentMethod === "online" && orderId ? `/tolov/${orderId}` : "/profil");
+      const nextPath = paymentMethod === "online" && orderId ? `/tolov/${orderId}` : "/profil";
+      router.push(localeHref(nextPath, locale));
     } catch {
       setSubmitError(dict.checkout.submitError);
     } finally {

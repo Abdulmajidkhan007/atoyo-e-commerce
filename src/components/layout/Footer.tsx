@@ -4,7 +4,8 @@ import { AppDownloadCard } from "./AppDownloadCard";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { getDeliverySettings } from "@/lib/orders/pricing";
 import { freeDeliveryShort } from "@/lib/delivery/text";
-import { getDictionary } from "@/lib/i18n/server";
+import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { localeHref } from "@/lib/i18n/href";
 import type { SocialLink } from "@/types/content";
 
 const SOCIAL_LABELS: Record<SocialLink["platform"], string> = {
@@ -15,10 +16,11 @@ const SOCIAL_LABELS: Record<SocialLink["platform"], string> = {
 };
 
 export async function Footer() {
-  const [settings, dict, delivery] = await Promise.all([
+  const [settings, dict, delivery, locale] = await Promise.all([
     getSiteSettings(),
     getDictionary(),
     getDeliverySettings(),
+    getLocale(),
   ]);
   const socials = settings.socials.filter((s) => s.url);
 
@@ -60,7 +62,7 @@ export async function Footer() {
 
         <nav className="flex flex-col gap-2">
           {footerLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm hover:text-aqua-300">
+            <Link key={link.href} href={localeHref(link.href, locale)} className="text-sm hover:text-aqua-300">
               {link.label}
             </Link>
           ))}

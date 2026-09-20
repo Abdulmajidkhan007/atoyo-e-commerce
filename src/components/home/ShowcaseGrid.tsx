@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { Button } from "@mui/material";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductCardSkeletons } from "@/components/product/ProductCardSkeleton";

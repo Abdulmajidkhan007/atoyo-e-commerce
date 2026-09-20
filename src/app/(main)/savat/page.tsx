@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { Button } from "@mui/material";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
@@ -10,12 +10,12 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { DeliveryNote } from "@/components/layout/DeliveryNote";
 
 export default function CartPage() {
-  const { dict } = useI18n();
+  const { dict, locale } = useI18n();
   const items = useAppSelector((s) => s.cart.items);
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-8">
-      <Breadcrumbs items={[{ name: dict.cart.title }]} />
+      <Breadcrumbs items={[{ name: dict.cart.title }]} locale={locale} />
       <h1 className="mb-6 text-2xl font-bold text-navy-900 dark:text-white">{dict.cart.title}</h1>
 
       {items.length === 0 ? (

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { getLocale } from "@/lib/i18n/server";
+import { localeAlternates } from "@/lib/seo/locale-alternates";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +13,15 @@ export const dynamic = "force-dynamic";
  * loyihada haqiqatan yig'iladigan ma'lumotlarga mos yozilgan —
  * "Data safety" anketasi ham shu ro'yxat bilan to'ldiriladi.
  */
-export const metadata: Metadata = {
-  title: "Maxfiylik siyosati",
-  description:
-    "Atoyo Santexnika qanday ma'lumot yig'adi, nima uchun ishlatadi va uni qanday himoya qiladi. Политика конфиденциальности Atoyo.",
-  alternates: { canonical: "/maxfiylik" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: "Maxfiylik siyosati",
+    description:
+      "Atoyo Santexnika qanday ma'lumot yig'adi, nima uchun ishlatadi va uni qanday himoya qiladi. Политика конфиденциальности Atoyo.",
+    alternates: localeAlternates("/maxfiylik", locale),
+  };
+}
 
 const UPDATED_AT = "2026-yil 3-avgust";
 

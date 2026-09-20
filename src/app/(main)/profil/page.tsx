@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { useRouter } from "next/navigation";
 import { Avatar, Button, Chip } from "@mui/material";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";

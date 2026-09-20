@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { IconButton, Menu, MenuItem } from "@mui/material";
-import { LOCALES, type Locale } from "@/lib/i18n/config";
+import { ROUTED_LOCALES, type Locale } from "@/lib/i18n/config";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref, stripLocalePrefix } from "@/lib/i18n/href";
 
 /**
  * TIL ALMASHTIRISH.
@@ -73,15 +74,22 @@ function Flag({ locale }: { locale: Locale }) {
 
 export function LanguageSwitcher({ className }: { className?: string } = {}) {
   const router = useRouter();
-  const { locale, setLocale } = useI18n();
+  const pathname = usePathname();
+  const { locale } = useI18n();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
+  /**
+   * MANZILNI almashtiradi, cookie'ni EMAS: mahsulot va katalog sahifasi
+   * endi /ru prefiksiga qarab chiziladi (`src/proxy.ts`), shuning uchun
+   * til faqat URL orqali o'zgarishi kerak - aks holda manzil bilan
+   * ko'rsatilgan kontent mos kelmay qoladi.
+   */
   const handleSelect = (next: Locale) => {
     setAnchorEl(null);
     if (next === locale) return;
-    setLocale(next);
-    // Server komponentlar (Footer va h.k.) yangi cookie bilan qayta render bo'lsin.
-    router.refresh();
+    const { path } = stripLocalePrefix(pathname);
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    router.push(`${localeHref(path, next)}${search}`);
   };
 
   return (
@@ -100,7 +108,7 @@ export function LanguageSwitcher({ className }: { className?: string } = {}) {
       </IconButton>
 
       <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={() => setAnchorEl(null)}>
-        {LOCALES.map((l) => (
+        {ROUTED_LOCALES.map((l) => (
           <MenuItem
             key={l}
             selected={l === locale}

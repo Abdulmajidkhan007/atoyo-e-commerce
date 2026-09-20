@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy } from "@/lib/http/csp";
+import { stripLocalePrefix } from "@/lib/i18n/href";
+import { DEFAULT_LOCALE, LOCALE_HEADER } from "@/lib/i18n/config";
 
 /**
  * XAVFSIZLIK ARXITEKTURASI (/admin himoyasi ikki qatlamda):
@@ -33,6 +35,18 @@ import { contentSecurityPolicy } from "@/lib/http/csp";
 
 const SESSION_COOKIE_NAME = "__session";
 
+/**
+ * Bu bo'limlarga `/ru` prefiksi TEGMAYDI — admin faqat o'zbekcha
+ * (`CLAUDE.md` 13-band), API/klik/TV sahifa manzillari esa til
+ * tushunchasiga umuman ega emas. `/ru/admin/...` kabi so'rov shunchaki
+ * mos sahifa topmay 404 qaytaradi (rewrite qilinmaydi).
+ */
+const NON_LOCALIZED_PREFIXES = ["/admin", "/api", "/k", "/tv"];
+
+function isNonLocalizedPath(path: string): boolean {
+  return NON_LOCALIZED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
 export const config = {
   /**
    * HAMMA sahifa: CSP nonce har so'rovga yangi yasaladi. Statik
@@ -60,11 +74,20 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl(request.nextUrl.pathname, request.url, "login"));
   }
 
+  // TIL: `/ru/katalog` kabi manzil ICHKI ravishda `/katalog` ga
+  // yo'naltiriladi (brauzer manzil qatori o'zgarmaydi) - sahifa kodi
+  // TAKRORLANMAYDI, faqat `x-locale` sarlavhasi orqali qaysi tilda
+  // chizish kerakligi uzatiladi (`lib/i18n/server.ts` shundan o'qiydi).
+  const { locale: urlLocale, path: routedPath } = stripLocalePrefix(request.nextUrl.pathname);
+  const shouldRouteLocale = urlLocale !== DEFAULT_LOCALE && !isNonLocalizedPath(routedPath);
+  const locale = shouldRouteLocale ? urlLocale : DEFAULT_LOCALE;
+
   const headers = new Headers(request.headers);
   // Layout `redirect(...)` da qaysi bo'limga kirmoqchi bo'lganini
   // bilishi uchun yo'lni sarlavhada uzatamiz (Next.js server
   // komponentga so'rov yo'lini bermaydi).
   headers.set("x-invoked-path", request.nextUrl.pathname);
+  headers.set(LOCALE_HEADER, locale);
   // Nonce ikki joyga qo'yiladi:
   //   • `x-nonce` — bizning layout uni o'qib inline skriptlarga beradi;
   //   • CSP SO'ROV sarlavhasida — Next.js uni o'zi o'qib O'ZINING
@@ -72,7 +95,14 @@ export function proxy(request: NextRequest) {
   headers.set("x-nonce", nonce);
   headers.set("content-security-policy", csp);
 
-  const response = NextResponse.next({ request: { headers } });
+  let response: NextResponse;
+  if (shouldRouteLocale) {
+    const url = request.nextUrl.clone();
+    url.pathname = routedPath;
+    response = NextResponse.rewrite(url, { request: { headers } });
+  } else {
+    response = NextResponse.next({ request: { headers } });
+  }
   response.headers.set("content-security-policy", csp);
   return response;
 }

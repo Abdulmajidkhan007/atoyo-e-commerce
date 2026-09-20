@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { Chip, Button } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { useAppDispatch } from "@/redux/hooks";

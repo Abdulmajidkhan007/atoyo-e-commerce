@@ -4,12 +4,14 @@ import { isDiscountActive } from "@/lib/products/pricing";
 import { hasVariants, minVariantPrice } from "@/lib/products/variants";
 import type { Product } from "@/types/product";
 import { formatSom } from "@/lib/format";
+import { getLocale } from "@/lib/i18n/server";
+import { localeHref } from "@/lib/i18n/href";
 
 /**
  * O'XSHASH MAHSULOTLAR - mahsulot sahifasining pastida.
  * Server komponenti: qo'shimcha JS yubormaydi, shunchaki havolalar.
  */
-export function RelatedProducts({
+export async function RelatedProducts({
   products,
   /** Sarlavha; bo'sh matn berilsa umuman chiqmaydi (almashtiruvchilar bloki). */
   title = "O'xshash mahsulotlar",
@@ -18,6 +20,7 @@ export function RelatedProducts({
   title?: string;
 }) {
   if (products.length === 0) return null;
+  const locale = await getLocale();
 
   const priceOf = (product: Product) => {
     if (hasVariants(product)) return minVariantPrice(product) ?? product.price;
@@ -34,7 +37,7 @@ export function RelatedProducts({
         {products.map((product) => (
           <Link
             key={product.id}
-            href={`/mahsulot/${product.id}`}
+            href={localeHref(`/mahsulot/${product.id}`, locale)}
             className="flex flex-col overflow-hidden rounded-xl2 border border-navy-100 bg-white transition hover:shadow-lg dark:border-navy-500 dark:bg-navy-700"
           >
             <span className="relative block aspect-square bg-navy-50 dark:bg-navy-900">

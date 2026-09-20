@@ -6,21 +6,26 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { Advantages } from "@/components/home/Advantages";
+import { getLocale } from "@/lib/i18n/server";
+import { localeAlternates } from "@/lib/seo/locale-alternates";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Biz haqimizda | Atoyo Santexnika",
-  alternates: { canonical: "/about" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: "Biz haqimizda | Atoyo Santexnika",
+    alternates: localeAlternates("/about", locale),
+  };
+}
 
 export default async function AboutPage() {
-  const settings = await getSiteSettings();
+  const [settings, locale] = await Promise.all([getSiteSettings(), getLocale()]);
   const socials = settings.socials.filter((s) => s.url);
 
   return (
     <section className="mx-auto max-w-5xl px-4 py-10">
-      <Breadcrumbs items={[{ name: settings.about.title }]} />
+      <Breadcrumbs items={[{ name: settings.about.title }]} locale={locale} />
       <h1 className="text-3xl font-bold text-navy-900 dark:text-white sm:text-4xl">{settings.about.title}</h1>
 
       <div className="mt-8 grid gap-8 md:grid-cols-2 md:items-start">

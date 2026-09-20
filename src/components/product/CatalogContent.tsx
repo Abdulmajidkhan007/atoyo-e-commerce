@@ -22,7 +22,7 @@ export function CatalogContent({
   initialHasMore,
 }: CatalogContentProps) {
   const searchParams = useSearchParams();
-  const { dict } = useI18n();
+  const { dict, locale } = useI18n();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") ?? "");
   const filters = useAppSelector((s) => s.filters);
 
@@ -42,6 +42,7 @@ export function CatalogContent({
               ]
             : [{ name: dict.nav.catalog }]
         }
+        locale={locale}
       />
       <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">{dict.nav.catalog}</h1>
 

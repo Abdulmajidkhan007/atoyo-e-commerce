@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { useRouter } from "next/navigation";
 import { CircularProgress, IconButton, TextField } from "@mui/material";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
@@ -13,6 +13,8 @@ import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
 import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
 import { formatSom } from "@/lib/format";
+import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref } from "@/lib/i18n/href";
 
 /**
  * ATOYO YORDAMCHISI — saytdagi suzuvchi oyna.
@@ -91,6 +93,7 @@ interface AssistantAction {
 
 export function AssistantWidget() {
   const router = useRouter();
+  const { locale } = useI18n();
   const dispatch = useAppDispatch();
   const [enabled, setEnabled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -239,7 +242,7 @@ export function AssistantWidget() {
       ]);
       if (goCheckout) {
         setOpen(false);
-        router.push("/buyurtma");
+        router.push(localeHref("/buyurtma", locale));
       }
     } catch {
       setMessages((prev) => [

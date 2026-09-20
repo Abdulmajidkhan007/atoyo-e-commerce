@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import PlumbingOutlinedIcon from "@mui/icons-material/PlumbingOutlined";
 import SettingsInputComponentOutlinedIcon from "@mui/icons-material/SettingsInputComponentOutlined";
 import WaterDropOutlinedIcon from "@mui/icons-material/WaterDropOutlined";

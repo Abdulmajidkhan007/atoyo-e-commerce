@@ -29,6 +29,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { productJsonLd } from "@/lib/seo/json-ld";
 import { formatSom } from "@/lib/format";
+import { localeHref } from "@/lib/i18n/href";
+import { localeAlternates } from "@/lib/seo/locale-alternates";
 
 interface ProductPageParams {
   params: Promise<{ id: string }>;
@@ -53,16 +55,15 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
   return {
     title,
     description,
-    // MUHIM: canonical ATAYLAB shu yerda qayta belgilanadi. Root
-    // layout'da `alternates.canonical: "/"` turibdi va Next.js uni
-    // ichki sahifalarga MEROS qilib beradi - ya'ni har bir mahsulot
-    // sahifasi o'zini bosh sahifa deb e'lon qilardi va Google
-    // 10 000 mahsulotni "dublikat" deb hisoblardi.
-    alternates: { canonical: `/mahsulot/${id}` },
+    // MUHIM: canonical ATAYLAB shu yerda qayta belgilanadi - aks holda
+    // har bir mahsulot sahifasi o'zini bosh sahifa deb e'lon qilardi va
+    // Google 10 000 mahsulotni "dublikat" deb hisoblardi. Endi tilga
+    // ham mos: ruscha sahifa `/ru/mahsulot/<id>` ni ko'rsatadi.
+    alternates: localeAlternates(`/mahsulot/${id}`, locale),
     openGraph: {
       title,
       description,
-      url: `${SITE_URL}/mahsulot/${id}`,
+      url: `${SITE_URL}${localeHref(`/mahsulot/${id}`, locale)}`,
       images: [{ url: ogImage, width: 1200, height: 630 }],
       type: "website",
     },
@@ -137,6 +138,7 @@ export default async function ProductPage({ params }: ProductPageParams) {
           },
           { name },
         ]}
+        locale={locale}
       />
 
       {/* Tugagan mahsulot - mijoz bo'sh qaytmasin: shu vazifadagi

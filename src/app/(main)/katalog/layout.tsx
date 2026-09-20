@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { siteDescription } from "@/lib/seo/metadata";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { getLocale } from "@/lib/i18n/server";
+import { localeAlternates } from "@/lib/seo/locale-alternates";
 
 /**
  * KATALOG SAHIFASINING META MA'LUMOTI.
@@ -15,11 +17,14 @@ import { getSiteSettings } from "@/lib/firebase/admin-content";
  * (`?q=`, `?brand=`) ham shu bitta manzilga yig'iladi.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSiteSettings().catch(() => null);
+  const [settings, locale] = await Promise.all([
+    getSiteSettings().catch(() => null),
+    getLocale(),
+  ]);
   return {
     title: "Katalog — santexnika va isitish mahsulotlari",
     description: siteDescription(settings?.address),
-    alternates: { canonical: "/katalog" },
+    alternates: localeAlternates("/katalog", locale),
   };
 }
 

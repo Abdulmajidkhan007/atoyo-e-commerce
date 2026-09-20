@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { Alert, Button, CircularProgress, TextField } from "@mui/material";
 import { useAppSelector } from "@/redux/hooks";
 import { ensureSessionCookie } from "@/lib/firebase/auth";

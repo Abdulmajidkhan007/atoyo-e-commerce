@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { Button, IconButton } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -13,13 +13,13 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 
 /** Sevimli mahsulotlar ro'yxati (localStorage'da saqlanadi). */
 export default function FavoritesPage() {
-  const { dict } = useI18n();
+  const { dict, locale } = useI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector((s) => s.favorites.items);
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-8">
-      <Breadcrumbs items={[{ name: dict.favorites.title }]} />
+      <Breadcrumbs items={[{ name: dict.favorites.title }]} locale={locale} />
       <h1 className="mb-6 flex items-center gap-2 text-2xl font-bold text-navy-900 dark:text-white">
         <FavoriteBorderIcon className="text-red-500" /> {dict.favorites.title}
       </h1>

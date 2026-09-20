@@ -7,6 +7,9 @@ import { BlogContent } from "@/components/blog/BlogContent";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { articleJsonLd } from "@/lib/seo/json-ld";
+import { getLocale } from "@/lib/i18n/server";
+import { localeHref } from "@/lib/i18n/href";
+import { localeAlternates } from "@/lib/seo/locale-alternates";
 
 export const dynamic = "force-dynamic";
 
@@ -16,20 +19,20 @@ interface BlogPostPageParams {
 
 export async function generateMetadata({ params }: BlogPostPageParams): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const [post, locale] = await Promise.all([getPostBySlug(slug), getLocale()]);
   if (!post) return { title: "Maqola topilmadi", robots: { index: false, follow: false } };
 
   return {
     title: `${post.title} | Atoyo Blog`,
     description: post.excerpt?.slice(0, 160) || undefined,
     // Root layout'dagi `canonical: "/"` meros bo'lib qolmasin.
-    alternates: { canonical: `/blog/${post.slug}` },
+    alternates: localeAlternates(`/blog/${post.slug}`, locale),
   };
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageParams) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const [post, locale] = await Promise.all([getPostBySlug(slug), getLocale()]);
 
   if (!post || !post.isPublished) notFound();
 
@@ -44,8 +47,8 @@ export default async function BlogPostPage({ params }: BlogPostPageParams) {
           createdAt: post.createdAt,
         })}
       />
-      <Breadcrumbs items={[{ name: "Blog", href: "/blog" }, { name: post.title }]} />
-      <Link href="/blog" className="text-sm text-aqua-600 hover:underline dark:text-aqua-300">← Blogga qaytish</Link>
+      <Breadcrumbs items={[{ name: "Blog", href: "/blog" }, { name: post.title }]} locale={locale} />
+      <Link href={localeHref("/blog", locale)} className="text-sm text-aqua-600 hover:underline dark:text-aqua-300">← Blogga qaytish</Link>
       <h1 className="mt-4 text-3xl font-bold text-navy-900 dark:text-white">{post.title}</h1>
       <p className="mt-2 text-sm text-navy-300">{new Date(post.createdAt).toLocaleDateString("uz-UZ")}</p>
 

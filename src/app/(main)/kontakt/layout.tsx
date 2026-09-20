@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { cityFromAddress } from "@/lib/seo/json-ld";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
+import { getLocale } from "@/lib/i18n/server";
+import { localeAlternates } from "@/lib/seo/locale-alternates";
 
 /**
  * KONTAKT SAHIFASINING META MA'LUMOTI.
@@ -10,7 +12,10 @@ import { getSiteSettings } from "@/lib/firebase/admin-content";
  * ("santexnika Qo'qon") aynan shu matn ko'rinadi.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSiteSettings().catch(() => null);
+  const [settings, locale] = await Promise.all([
+    getSiteSettings().catch(() => null),
+    getLocale(),
+  ]);
   const city = cityFromAddress(settings?.address);
   const parts = [
     city ? `Do'kon manzili: ${settings?.address}.` : null,
@@ -21,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: city ? `Kontakt — ${city}` : "Kontakt",
     description: parts.join(" "),
-    alternates: { canonical: "/kontakt" },
+    alternates: localeAlternates("/kontakt", locale),
   };
 }
 

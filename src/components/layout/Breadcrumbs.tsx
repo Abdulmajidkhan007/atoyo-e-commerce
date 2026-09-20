@@ -2,6 +2,8 @@ import Link from "next/link";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { localeHref } from "@/lib/i18n/href";
+import type { Locale } from "@/lib/i18n/config";
 
 /**
  * "QAYERDAMAN" ZANJIRI.
@@ -14,7 +16,11 @@ import { breadcrumbJsonLd } from "@/lib/seo/json-ld";
  * Bir vaqtning o'zida Google uchun `BreadcrumbList` sxemasi ham
  * chiziladi (qidiruv natijasida uzun URL o'rniga shu zanjir chiqadi).
  *
- * Server komponenti - qo'shimcha JS yubormaydi.
+ * Server VA client sahifalarda ham ishlatiladi (masalan `savat`,
+ * `sevimlilar` - `"use client"`), shuning uchun `locale` PROP sifatida
+ * qabul qilinadi - ichida `getLocale()` (`next/headers`) chaqirilmaydi,
+ * aks holda "server-only" moduli client bog'lamiga sizib kirib build
+ * yiqiladi.
  */
 
 export interface Crumb {
@@ -25,10 +31,12 @@ export interface Crumb {
 
 export function Breadcrumbs({
   items,
+  locale,
   className = "",
 }: {
   /** "Bosh sahifa" AVTOMATIK qo'shiladi - uni yozish shart emas. */
   items: Crumb[];
+  locale: Locale;
   className?: string;
 }) {
   const trail: Crumb[] = [{ name: "Bosh sahifa", href: "/" }, ...items];
@@ -50,7 +58,7 @@ export function Breadcrumbs({
               )}
               {crumb.href && !last ? (
                 <Link
-                  href={crumb.href}
+                  href={localeHref(crumb.href, locale)}
                   className="rounded px-0.5 py-0.5 transition hover:text-aqua-600 dark:hover:text-aqua-300"
                 >
                   {crumb.name}

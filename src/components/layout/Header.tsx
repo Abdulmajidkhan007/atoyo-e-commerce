@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/LocaleLink";
 import { usePathname, useRouter } from "next/navigation";
 import { Badge, IconButton, Avatar, Button } from "@mui/material";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { localeHref, stripLocalePrefix } from "@/lib/i18n/href";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { UiModeSwitch } from "./UiModeSwitch";
@@ -18,7 +19,7 @@ import { MobileMenu } from "./MobileMenu";
 export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { dict } = useI18n();
+  const { dict, locale } = useI18n();
   const [searchTerm, setSearchTerm] = useState("");
   const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
   const favoritesCount = useAppSelector((s) => s.favorites.items.length);
@@ -54,7 +55,8 @@ export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
 
   const handleSearchSubmit = () => {
     const query = searchTerm.trim();
-    router.push(query ? `/katalog?q=${encodeURIComponent(query)}` : "/katalog");
+    const path = query ? `/katalog?q=${encodeURIComponent(query)}` : "/katalog";
+    router.push(localeHref(path, locale));
   };
 
   return (
@@ -133,7 +135,7 @@ export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
 
       {/* Katalog sahifasining o'z (jonli) qidiruvi bor - u yerda bu
           qatorni ko'rsatmaymiz, aks holda ikkita bir xil maydon chiqadi. */}
-      {!pathname.startsWith("/katalog") && (
+      {!stripLocalePrefix(pathname).path.startsWith("/katalog") && (
         <div className="border-t border-navy-100 px-4 py-2 md:hidden dark:border-navy-500">
           <SearchBar value={searchTerm} onChange={setSearchTerm} onSubmit={handleSearchSubmit} />
         </div>

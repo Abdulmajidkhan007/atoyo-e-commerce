@@ -569,3 +569,84 @@ Shu bilan birga `/api/auth/session` va `/api/auth/telegram/exchange`
 ga rate-limit qo'shildi — ikkalasi ham autentifikatsiyasiz ochiq
 edi va har chaqiruvda Firebase'ga so'rov yuborardi.
 
+---
+
+## 24. Ruscha marshrutlar: nega `/ru` prefiks, sahifa kodi qanday takrorlanmagan
+
+Til ilgari faqat cookie bilan almashardi (`NEXT_LOCALE`), URL doim
+bir xil qolardi. Google'ning nuqtai nazaridan bu degani — ruscha
+sahifa UMUMAN YO'Q: robot cookie yubormaydi, shuning uchun
+`/katalog` ni har doim o'zbekcha ko'rardi va uni ruscha so'rovlar
+uchun indekslay olmasdi ("santexnika магазин Ташкент" kabi so'rovda
+sayt topilmasdi).
+
+**Nega alohida `app/ru/...` papkasi ochilmadi.** 40 dan ortiq sahifa
+bor, ularni ikki marta yozish — birinchi o'zgarishda ikkalasi
+sinxronlanmay qolishi kafolatlangan xato manbai. Buning o'rniga
+`src/proxy.ts` (edge middleware) `/ru/katalog` so'rovini ICHKI
+ravishda `/katalog` ga `NextResponse.rewrite()` bilan yo'naltiradi —
+brauzer manzil qatori `/ru/katalog` bo'lib qoladi, lekin Next.js xuddi
+o'sha `app/(main)/katalog/page.tsx` faylini chizadi. Qaysi tilda
+chizish kerakligi `x-locale` sarlavhasi orqali uzatiladi
+(`lib/i18n/config.ts` → `LOCALE_HEADER`), `getLocale()`
+(`lib/i18n/server.ts`) esa AVVAL shu sarlavhadan, keyin (sarlavha
+bo'lmagan noodatiy holatda) cookie'dan o'qiydi.
+
+**Nega `/admin`, `/api`, `/k`, `/tv` `/ru` ostiga tushmaydi.** Admin
+panel faqat o'zbekcha (`CLAUDE.md`), API va klik-hisoblagich esa til
+tushunchasiga umuman ega emas. `src/proxy.ts` bularni
+`NON_LOCALIZED_PREFIXES` bilan chetlab o'tadi — `/ru/admin/...` kabi
+so'rov rewrite qilinmaydi va shunchaki mos sahifa topmay 404
+qaytaradi (maxsus bloklash kodi kerak emas).
+
+**Ichki havolalar `/ru` ni qanday saqlab qoladi.** Har bir ichki
+`href` "mantiqiy" (o'zbekcha, prefiks'siz) yo'l sifatida yoziladi,
+masalan `"/katalog"`. Ikkita yordamchi shu yo'lni joriy tilga
+moslaydi:
+
+- `localeHref(path, locale)` (`lib/i18n/href.ts`) — sof funksiya,
+  server va client'da bab-baravar ishlaydi;
+- `<Link>` — `lib/i18n/LocaleLink.tsx`, `next/link` ning o'rami:
+  client komponentlar `import { Link } from "@/lib/i18n/LocaleLink"`
+  qiladi (oddiy `next/link` EMAS) va u `useI18n()` orqali joriy
+  tilni o'zi topib `href` ni avtomatik moslaydi.
+
+Server komponentlar (`Breadcrumbs`, `Footer`, `RelatedProducts`,
+mahsulot/blog sahifalari) `getLocale()` dan olingan tilni to'g'ridan-
+to'g'ri `localeHref()` ga beradi. **`Breadcrumbs` ATAYLAB
+`getLocale()` ni o'zi chaqirmaydi** — u `savat`/`sevimlilar` kabi
+`"use client"` sahifalarda ham ishlatiladi, agar ichida
+`next/headers` bo'lgan modul (`getLocale`) chaqirilsa, "server-only"
+moduli client bog'lamiga sizib kirib build yiqiladi
+("You're importing a module that depends on next/headers... in the
+Pages Router" xatosi). Shuning uchun `locale` PROP sifatida
+uzatiladi — server chaqiruvchilar `getLocale()` dan, client
+chaqiruvchilar `useI18n().locale` dan oladi.
+
+**Til almashtirgich endi manzilni almashtiradi, cookie'ni emas.**
+`LanguageSwitcher` avval `setLocale()` + cookie + `router.refresh()`
+qilardi. Endi `stripLocalePrefix(pathname)` bilan joriy "mantiqiy"
+yo'lni topadi va `router.push(localeHref(yo'l, yangiTil) + qidiruv)`
+qiladi — manzil chindan `/katalog` ⇄ `/ru/katalog` bo'lib
+almashadi, mos ravishda server sahifa boshqa tilda qayta chiziladi.
+
+**SEO: `alternates` endi har sahifada TO'G'RI.** Ilgari
+`src/app/layout.tsx` da global `alternates.languages` bor edi va
+to'rttasi ham `"/"` ga qarab turardi — Next.js buni HAR bir ichki
+sahifaga meros qilib berardi, ya'ni mahsulot/katalog sahifalari
+o'zini bosh sahifa deb e'lon qilardi. O'chirildi; endi har sahifa
+`localeAlternates(mantiqiyYo'l, locale)` (`lib/seo/locale-alternates.ts`)
+bilan O'ZINING `canonical` + `hreflang` (uz/ru/x-default) qiymatini
+beradi. `sitemap.ts` ham har statik/mahsulot/blog sahifasi uchun
+IKKITA yozuv chiqaradi (uz va ru), ikkalasi ham bir-biriga
+`alternates.languages` bilan bog'langan.
+
+**Inglizcha keyinroq.** Lug'ati (`dictionaries.ts`) tayyor, lekin
+marshruti yo'q. Kod shunga tayyor: `LOCALE_PREFIXES` da `/en` allaqachon
+turibdi, `ROUTED_LOCALES` (`lib/i18n/config.ts`) esa hozircha
+`["uz", "ru"]` — shu ro'yxatga `"en"` qo'shilsa (va proxy'dagi
+`stripLocalePrefix` allaqachon `LOCALE_PREFIXES` ning O'ZIDAN
+ishlaydi, o'zgartirish shart emas) `/en` avtomatik yoqiladi:
+`LanguageSwitcher`, `sitemap.ts`, `localeAlternates()` — hammasi
+`ROUTED_LOCALES` dan o'qiydi.
+
