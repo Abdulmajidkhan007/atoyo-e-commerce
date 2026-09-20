@@ -75,6 +75,13 @@ ustama `settings/pricing`, standart 5%).
   `/api/products/*` orqali (`lib/products/catalog-server.ts`).
 - **Ustama foizi mijozga BERILMAYDI** (`/api/pricing` faqat
   `minOrderAmount`) — bilinsa optom narx teskari hisoblanadi.
+- **Katalog va bosh sahifaning BIRINCHI sahifasi SERVERDA chiziladi**
+  (`lib/products/storefront.ts` → `loadStorefrontPage`,
+  `loadShowcaseForViewer`). Ilgari ikkalasi ham client edi va HTMLda
+  "Hech qanday mahsulot topilmadi" turardi — Google bo'sh do'kon
+  ko'rardi. Server yo'li ham `toViewerProducts()` dan O'TADI; testi
+  `storefront.test.ts` (tannarx/supplier chiqmasligi qulflangan).
+  Showcase mantiqi BITTA joyda — route ham shu funksiyani chaqiradi.
 - Mahsulot qaytaradigan YANGI route: `toViewerProducts()` +
   `no-store` (`lib/http/cache.ts`). Rolga bog'liq javob keshlanmaydi.
 - Mijoz tomonidagi hook'lar (`usePricing.ts`, `mobile/src/pricing.ts`)

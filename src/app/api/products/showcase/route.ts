@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
-import { getTaxonomy } from "@/lib/products/taxonomy-server";
+import { loadShowcaseRaw } from "@/lib/products/storefront";
 import { getPricingSettings } from "@/lib/products/pricing-settings";
 import { storefrontRole, toViewerProducts } from "@/lib/products/viewer";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
@@ -22,15 +21,7 @@ export const dynamic = "force-dynamic";
  * o'nlab so'rov ketmasin.
  */
 
-/** Nechta mahsulot ko'rsatiladi (= nechta kategoriya). */
-const SHOWCASE_SIZE = 6;
-/** Bitta kategoriyadan shuncha nomzod olinadi (zaxirasi borini tanlash uchun). */
-const CANDIDATES = 5;
-/** Ko'rib chiqiladigan kategoriyalar chegarasi (bo'shlari ham bo'lishi mumkin). */
-const MAX_CATEGORIES = 14;
-const TTL = 5 * 60 * 1000;
 
-let cache: { at: number; products: Product[] } | null = null;
 
 export async function GET(request: Request) {
   // Kesh XOM mahsulotlarni saqlaydi; javob esa har so'rovda
@@ -47,38 +38,10 @@ export async function GET(request: Request) {
       { headers: NO_STORE_HEADERS }
     );
 
-  if (cache && Date.now() - cache.at < TTL) {
-    return respond(cache.products);
-  }
-
   try {
-    const taxonomy = await getTaxonomy();
-    const db = getAdminDb();
-    const picked: Product[] = [];
-
-    for (const category of taxonomy.categories.slice(0, MAX_CATEGORIES)) {
-      if (picked.length >= SHOWCASE_SIZE) break;
-
-      const snapshot = await db
-        .collection("products")
-        .where("isActive", "==", true)
-        .where("category", "==", category.slug)
-        .orderBy("createdAt", "desc")
-        .limit(CANDIDATES)
-        .get();
-
-      const items = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }) as Product)
-        .filter((product) => !product.isDraft);
-      if (items.length === 0) continue;
-
-      // Zaxirasi bori oldinda: mijoz darhol sotib ola oladigan mahsulot.
-      const best = items.find((product) => (product.stock ?? 0) > 0) ?? items[0]!;
-      picked.push(best);
-    }
-
-    cache = { at: Date.now(), products: picked };
-    return respond(picked);
+    // Tanlash mantiqi `lib/products/storefront.ts` da - bosh sahifaning
+    // SERVER renderi ham xuddi shu ro'yxatni oladi (nusxa bo'lmasin).
+    return respond(await loadShowcaseRaw());
   } catch (error) {
     console.error("Bosh sahifa namunasini olishda xato:", error);
     // Bosh sahifa baribir ochilishi kerak - bo'sh ro'yxat qaytadi.

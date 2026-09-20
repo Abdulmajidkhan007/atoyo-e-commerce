@@ -1,56 +1,50 @@
-"use client";
+import { Suspense } from "react";
+import { CatalogContent } from "@/components/product/CatalogContent";
+import { loadStorefrontPage } from "@/lib/products/storefront";
+import type { ProductFilterParams } from "@/types/product";
 
-import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { useAppSelector } from "@/redux/hooks";
-import { useI18n } from "@/lib/i18n/LocaleContext";
-import { FilterDialog } from "@/components/product/FilterDialog";
-import { SearchBar } from "@/components/product/SearchBar";
-import { ProductGrid } from "@/components/product/ProductGrid";
-import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
+/**
+ * KATALOG — birinchi sahifa SERVERDA chiziladi.
+ *
+ * Ilgari bu sahifa butunlay client edi va HTML'da
+ * "Hech qanday mahsulot topilmadi" deb turardi: Google ham, sekin
+ * internetdagi mijoz ham bo'sh do'kon ko'rardi. Endi birinchi 24 ta
+ * mahsulot HTML bilan birga keladi; filtr/qidiruv va cheksiz skroll
+ * avvalgidek client tomonda ishlaydi.
+ *
+ * Narx `toViewerProducts()` dan o'tadi (`lib/products/storefront.ts`) —
+ * optom narx HTMLga TUSHMAYDI.
+ */
+export default async function CatalogPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const one = (key: string): string | undefined => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
 
-function CatalogContent() {
-  const searchParams = useSearchParams();
-  const { dict } = useI18n();
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") ?? "");
-  const filters = useAppSelector((s) => s.filters);
+  // Manzildagi filtrlar serverda ham qo'llanadi - shunda
+  // `/katalog?category=faucets` havolasi to'g'ri ro'yxat bilan ochiladi.
+  const filters: ProductFilterParams = {
+    category: one("category"),
+    brand: one("brand"),
+    material: one("material"),
+    manufacturerCountry: one("country"),
+    sortBy: "newest",
+  };
 
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-6">
-      {/* Filtrlangan bo'lsa zanjirda kategoriya ham ko'rinadi. */}
-      <Breadcrumbs
-        items={
-          filters.category
-            ? [
-                { name: dict.nav.catalog, href: "/katalog" },
-                {
-                  name:
-                    (dict.categories as Record<string, string>)[filters.category] ??
-                    filters.category,
-                },
-              ]
-            : [{ name: dict.nav.catalog }]
-        }
-      />
-      <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">{dict.nav.catalog}</h1>
+  const page = await loadStorefrontPage(filters);
 
-      {/* Qidiruv + filtr tugmasi. Filtrlar sahifada doim turmaydi -
-          tugma bosilganda modal ochiladi. Panel skrollda header ostida
-          yopishib qoladi (`--header-height` - Header.tsx). */}
-      <div className="glass sticky top-[var(--header-height,64px)] z-20 mb-4 flex items-center gap-2 rounded-xl2 px-3 py-2">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} className="flex-1 lg:max-w-md" />
-        <FilterDialog />
-      </div>
-
-      <ProductGrid filters={filters} searchTerm={searchTerm} />
-    </section>
-  );
-}
-
-export default function CatalogPage() {
   return (
     <Suspense fallback={null}>
-      <CatalogContent />
+      <CatalogContent
+        initialProducts={page.products}
+        initialCursor={page.nextCursor}
+        initialHasMore={page.hasMore}
+      />
     </Suspense>
   );
 }

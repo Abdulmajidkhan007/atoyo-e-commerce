@@ -1,44 +1,24 @@
-"use client";
-
-import Link from "next/link";
-import PlumbingOutlinedIcon from "@mui/icons-material/PlumbingOutlined";
-import SettingsInputComponentOutlinedIcon from "@mui/icons-material/SettingsInputComponentOutlined";
-import WaterDropOutlinedIcon from "@mui/icons-material/WaterDropOutlined";
-import ShowerOutlinedIcon from "@mui/icons-material/ShowerOutlined";
-import LocalFireDepartmentOutlinedIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
-import DeviceThermostatOutlinedIcon from "@mui/icons-material/DeviceThermostatOutlined";
-import WaterOutlinedIcon from "@mui/icons-material/WaterOutlined";
-import BathtubOutlinedIcon from "@mui/icons-material/BathtubOutlined";
-import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
-import type { SvgIconComponent } from "@mui/icons-material";
-import { CategoryTile } from "@/components/home/CategoryTile";
-import { ShowcaseGrid } from "@/components/home/ShowcaseGrid";
 import { Advantages } from "@/components/home/Advantages";
 import { Hero } from "@/components/home/Hero";
+import { HomeCategories } from "@/components/home/HomeCategories";
+import { ShowcaseGrid } from "@/components/home/ShowcaseGrid";
 import { Reveal } from "@/components/motion/Reveal";
-import { useI18n } from "@/lib/i18n/LocaleContext";
-import { useCategories } from "@/lib/products/useTaxonomy";
+import { getDictionary } from "@/lib/i18n/server";
+import { loadShowcaseForViewer } from "@/lib/products/storefront";
 
-/** Standart kategoriyalarning belgilari; qolganlari umumiy belgi bilan. */
-const CATEGORY_ICONS: Record<string, SvgIconComponent> = {
-  pipes: PlumbingOutlinedIcon,
-  fittings: SettingsInputComponentOutlinedIcon,
-  faucets: WaterDropOutlinedIcon,
-  "shower-systems": ShowerOutlinedIcon,
-  boilers: LocalFireDepartmentOutlinedIcon,
-  radiators: DeviceThermostatOutlinedIcon,
-  pumps: WaterOutlinedIcon,
-  "sanitary-ware": BathtubOutlinedIcon,
-};
-
-/** Bosh sahifada ko'rinadigan kategoriyalar soni (qolgani katalogda). */
-const HOME_CATEGORIES = 11;
-
-export default function HomePage() {
-  const { dict } = useI18n();
-  // Bosh sahifadagi bo'limlar ro'yxati ham `/api/taxonomy` dan -
-  // admin yangi kategoriya ochsa shu yerda ham paydo bo'ladi.
-  const categories = useCategories();
+/**
+ * BOSH SAHIFA — endi SERVER komponent.
+ *
+ * Ilgari butun sahifa client edi: "Yangi mahsulotlar" sarlavhasi
+ * HTMLda bor, mahsulotlar esa yo'q edi — Google va sekin internetdagi
+ * mijoz bo'sh do'kon ko'rardi. Endi namuna ro'yxati HTML bilan birga
+ * keladi (`loadShowcaseForViewer`, narx `toViewerProducts` dan o'tgan).
+ *
+ * Interaktiv qismlar client bo'lib qoladi: Hero (3D/animatsiya) va
+ * kategoriyalar to'ri (`/api/taxonomy` dan jonli o'qiydi).
+ */
+export default async function HomePage() {
+  const [dict, showcase] = await Promise.all([getDictionary(), loadShowcaseForViewer()]);
 
   return (
     <>
@@ -46,37 +26,7 @@ export default function HomePage() {
           hozirgi tekis fon. Matn ikkalasida bir xil. */}
       <Hero />
 
-      <Reveal as="section" className="mx-auto max-w-7xl px-4 py-10">
-        <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">{dict.home.categories}</h2>
-        {/*
-          Kategoriyalar ko'p (import bilan o'nlab yangisi qo'shildi) -
-          bosh sahifada asosiylari turadi, qolgani katalogda.
-        */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-          {/* Kafellar KETMA-KET chiqadi (har biri 40 ms kechikish bilan) -
-              3D rejim farqi telefonda ham sezilsin. Kechikish 6 tadan
-              keyin qayta boshlanadi: pastdagi kafel 0.5 soniya kutib
-              turmasin. */}
-          {categories.slice(0, HOME_CATEGORIES).map((item, index) => (
-            <Reveal key={item.slug} delay={(index % 6) * 0.04}>
-              <CategoryTile
-                category={item.slug}
-                label={item.label}
-                Icon={CATEGORY_ICONS[item.slug] ?? CategoryOutlinedIcon}
-              />
-            </Reveal>
-          ))}
-          {categories.length > HOME_CATEGORIES && (
-            <Link
-              href="/katalog"
-              className="flex flex-col items-center justify-center gap-2 rounded-xl2 border border-dashed border-navy-200 p-4 text-center text-sm font-medium text-navy-500 transition hover:border-aqua-500 hover:text-aqua-600 dark:border-navy-500 dark:text-navy-100"
-            >
-              <CategoryOutlinedIcon />
-              +{categories.length - HOME_CATEGORIES} ta yana
-            </Link>
-          )}
-        </div>
-      </Reveal>
+      <HomeCategories title={dict.home.categories} />
 
       {/* Bizning ustunligimiz: bepul yetkazish + o'rnatib berish
           xizmati (matn sozlamadan keladi). */}
@@ -85,8 +35,10 @@ export default function HomePage() {
       </Reveal>
 
       <Reveal as="section" delay={0.05} className="mx-auto max-w-7xl px-4 pb-16 pt-6">
-        <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">{dict.home.newProducts}</h2>
-        <ShowcaseGrid />
+        <h2 className="mb-4 text-xl font-bold text-navy-900 dark:text-white">
+          {dict.home.newProducts}
+        </h2>
+        <ShowcaseGrid initialProducts={showcase} />
       </Reveal>
     </>
   );

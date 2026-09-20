@@ -16,11 +16,13 @@ import type { Product } from "@/types/product";
  * chalg'itadi - mijoz nima sotilishini bir qarashda ko'rsin, keyin
  * katalogga o'tsin. Ro'yxatni server tayyorlaydi (`/api/products/showcase`).
  */
-export function ShowcaseGrid() {
+export function ShowcaseGrid({ initialProducts }: { initialProducts?: Product[] }) {
   const { dict } = useI18n();
-  const [products, setProducts] = useState<Product[] | null>(null);
+  const [products, setProducts] = useState<Product[] | null>(initialProducts ?? null);
 
   useEffect(() => {
+    // Server allaqachon ro'yxatni berdi - qayta so'ramaymiz.
+    if (initialProducts) return;
     let active = true;
     fetch("/api/products/showcase")
       .then((res) => (res.ok ? res.json() : null))
@@ -33,7 +35,7 @@ export function ShowcaseGrid() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialProducts]);
 
   // Yuklanayotganda kartochka skeletlari - bosh sahifa "sakramaydi".
   if (products === null) {

@@ -14,14 +14,35 @@ const SEARCH_WINDOW_SIZE = 60;
 interface ProductGridProps {
   filters: ProductFilterParams;
   searchTerm: string;
+  /**
+   * SERVERDA tayyorlangan birinchi sahifa (`lib/products/storefront.ts`).
+   * Bo'lsa - birinchi so'rov TAKRORLANMAYDI: mahsulotlar HTML bilan
+   * birga keladi, Google va sekin internetdagi mijoz bo'sh katalog
+   * ko'rmaydi.
+   */
+  initialProducts?: Product[];
+  initialCursor?: string | null;
+  initialHasMore?: boolean;
 }
 
-export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
+export function ProductGrid({
+  filters,
+  searchTerm,
+  initialProducts,
+  initialCursor = null,
+  initialHasMore = true,
+}: ProductGridProps) {
   const { dict } = useI18n();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
   // Kursor - oxirgi hujjatning ID si (so'rov server orqali ketadi).
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [cursor, setCursor] = useState<string | null>(initialCursor);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  /**
+   * Serverdan kelgan sahifa bir marta "o'tkazib yuboriladi": filtr
+   * o'zgarmagan bo'lsa uni qayta so'rashning ma'nosi yo'q. Filtr
+   * o'zgarishi bilan effekt odatdagidek ishlaydi.
+   */
+  const skipFirstLoad = useRef((initialProducts?.length ?? 0) > 0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -35,6 +56,10 @@ export function ProductGrid({ filters, searchTerm }: ProductGridProps) {
     let cancelled = false;
 
     async function loadFirstPage() {
+      if (skipFirstLoad.current) {
+        skipFirstLoad.current = false;
+        return;
+      }
       setProducts([]);
       setCursor(null);
       setHasMore(true);
