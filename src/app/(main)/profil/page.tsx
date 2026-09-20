@@ -96,9 +96,19 @@ export default function ProfilePage() {
     return unsubscribe;
   }, [profile]);
 
+  /**
+   * SAHIFA SARLAVHASI (h1) HAMMA HOLATDA bo'lishi kerak - kirmagan
+   * mijozda ham, yuklanish paytida ham. Ilgari u faqat "hammasi
+   * joyida" holatida chizilar edi va qolgan uch holatda sahifa
+   * ekran o'quvchi uchun sarlavhasiz qolardi (`docs/QULAYLIK.md` §4).
+   * Ko'rinishi o'zgarmasin - shuning uchun `sr-only`.
+   */
+  const pageHeading = <h1 className="sr-only">{dict.nav.profile}</h1>;
+
   if (status === "unauthenticated") {
     return (
       <section className="mx-auto max-w-md px-4 py-16 text-center">
+        {pageHeading}
         <p className="mb-4 text-navy-300">{dict.profile.loginPrompt}</p>
         <Button component={Link} href="/kirish" variant="contained">{dict.nav.login}</Button>
       </section>
@@ -110,6 +120,7 @@ export default function ProfilePage() {
   if (isAdmin) {
     return (
       <section className="mx-auto max-w-md px-4 py-16 text-center">
+        {pageHeading}
         <p className="mb-4 text-navy-300">
           {needsRelogin
             ? "Sessiya eskirgan — boshqaruv paneli uchun qaytadan kiring."
@@ -131,7 +142,14 @@ export default function ProfilePage() {
   }
 
   if (!profile) {
-    return <section className="mx-auto max-w-5xl px-4 py-16 text-center text-navy-300">{dict.common.loading}</section>;
+    return (
+      <section className="mx-auto max-w-5xl px-4 py-16 text-center text-navy-300">
+        {pageHeading}
+        {/* Yuklanish holati ham e'lon qilinsin - ekranda faqat matn
+            almashadi, ekran o'quvchi buni o'zi sezmaydi. */}
+        <p role="status">{dict.common.loading}</p>
+      </section>
+    );
   }
 
   const handleSignOut = async () => {
@@ -141,6 +159,7 @@ export default function ProfilePage() {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-8">
+      {pageHeading}
       <div className="mb-8 flex items-center gap-4">
         <Avatar src={profile.photoURL ?? undefined} sx={{ width: 64, height: 64 }}>
           {profile.displayName?.[0] ?? profile.email?.[0] ?? "U"}
@@ -172,6 +191,10 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setExpandedId(isOpen ? null : order.id)}
+                  /* Bu tugma pastdagi blokni ochib-yopadi - ekran
+                     o'quvchi buni faqat `aria-expanded` dan biladi. */
+                  aria-expanded={isOpen}
+                  aria-controls={`buyurtma-${order.id}`}
                   className="flex w-full items-center justify-between gap-2 p-4 text-left"
                 >
                   <div>
@@ -184,7 +207,10 @@ export default function ProfilePage() {
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-navy-100 px-4 py-3 dark:border-navy-500">
+                  <div
+                    id={`buyurtma-${order.id}`}
+                    className="border-t border-navy-100 px-4 py-3 dark:border-navy-500"
+                  >
                     <ul className="flex flex-col gap-1 text-sm text-navy-500 dark:text-navy-100">
                       {order.items.map((item) => (
                         <li key={item.productId} className="flex justify-between gap-2">

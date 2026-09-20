@@ -169,6 +169,12 @@ export default function CheckoutPage() {
   if (status === "unauthenticated") {
     return (
       <section className="mx-auto max-w-md px-4 py-16 text-center">
+        {/* Har sahifada BITTA h1 bo'lishi shart - ekran o'quvchi
+            foydalanuvchisi sahifa nima haqidaligini shundan biladi.
+            Ilgari bu ikki holatda sahifa umuman sarlavhasiz edi. */}
+        <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">
+          {dict.checkout.title}
+        </h1>
         <p className="mb-4 text-navy-300">{dict.checkout.loginRequired}</p>
         <Button component={Link} href="/kirish" variant="contained" size="large">
           {dict.nav.login}
@@ -180,6 +186,9 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <section className="mx-auto max-w-xl px-4 py-16 text-center">
+        <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">
+          {dict.checkout.title}
+        </h1>
         <p className="text-navy-300">{dict.checkout.addFirst}</p>
       </section>
     );
@@ -208,7 +217,12 @@ export default function CheckoutPage() {
           <Button type="button" onClick={handleDetectLocation} startIcon={<MyLocationIcon />} variant="outlined" size="small">
             {location ? dict.checkout.locationDetected : dict.checkout.detectLocation}
           </Button>
-          {locationError && <p className="mt-1 text-xs text-red-500">{locationError}</p>}
+          {/* Geolokatsiya rad etilganini ekran o'quvchi ham eshitsin. */}
+          {locationError && (
+            <p role="alert" className="mt-1 text-xs text-red-600 dark:text-red-300">
+              {locationError}
+            </p>
+          )}
         </div>
 
         {/* Yetkazib berish va'dasi - mijoz manzilni yozishdan oldin
@@ -264,6 +278,11 @@ export default function CheckoutPage() {
               value={promoInput}
               onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
               disabled={!!promo}
+              /* Xato xabari MAYDONGA bog'lanadi: fokus maydonda
+                 turganda ekran o'quvchi sababni ham o'qib beradi,
+                 aks holda qizil matn "yo'q"dek tuyuladi. */
+              error={!!promoError}
+              aria-describedby={promoError ? "promo-xato" : undefined}
             />
             {promo ? (
               <Button
@@ -283,8 +302,16 @@ export default function CheckoutPage() {
               </Button>
             )}
           </div>
-          {promo && <p className="mt-1 text-xs text-green-600">{dict.checkout.promoApplied}: {promo.code}</p>}
-          {promoError && <p className="mt-1 text-xs text-red-500">{promoError}</p>}
+          {promo && (
+            <p role="status" className="mt-1 text-xs text-green-700 dark:text-green-400">
+              {dict.checkout.promoApplied}: {promo.code}
+            </p>
+          )}
+          {promoError && (
+            <p id="promo-xato" role="alert" className="mt-1 text-xs text-red-600 dark:text-red-300">
+              {promoError}
+            </p>
+          )}
         </div>
 
         <div className="glass flex flex-col gap-1 rounded-xl2 p-4 text-sm">
@@ -293,7 +320,7 @@ export default function CheckoutPage() {
             <span>{formatSom(subtotal)}</span>
           </div>
           {discountAmount > 0 && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-green-700 dark:text-green-400">
               <span>{dict.checkout.discount}</span>
               <span>−{formatSom(discountAmount)}</span>
             </div>

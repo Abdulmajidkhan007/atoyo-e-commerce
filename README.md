@@ -103,4 +103,5 @@ docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 | `docs/KIRIM-VA-IMPORT.md` | Kirim, Excel/CSV import, 1C narxnomasi |
 | `docs/TV.md` / `docs/DESKTOP.md` / `docs/STICKERS.md` | Do'kon ekrani, Electron, stikerlar |
 | `docs/UI-3D.md` | Klassik/3D dizayn rejimi, 3D sahna va tezlik qoidalari |
+| `docs/QULAYLIK.md` | Ekran o'quvchi va klaviatura qoidalari (a11y) |
 | `docs/BACKUP.md` / `docs/PLAY-STORE.md` / `docs/TYPESENSE.md` | Zaxira, ilova relizi, qidiruv motori |

@@ -111,13 +111,19 @@ export function ProductReviews({ productId }: { productId: string }) {
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <h3 className="font-semibold text-navy-900 dark:text-white">{dict.reviews.write}</h3>
 
-            <div className="flex items-center gap-1">
-              <span className="mr-2 text-sm text-navy-300">{dict.reviews.yourRating}:</span>
+            {/* Baho tanlagich: guruh sifatida nomlanadi, har bir tugma
+                esa bosilgan/bosilmaganini aytadi - aks holda ekran
+                o'quvchi qaysi baho tanlanganini umuman bilmaydi. */}
+            <div role="group" aria-label={dict.reviews.yourRating} className="flex items-center gap-1">
+              <span className="mr-2 text-sm text-navy-300" aria-hidden="true">
+                {dict.reviews.yourRating}:
+              </span>
               {[1, 2, 3, 4, 5].map((star) => (
                 <IconButton
                   key={star}
                   size="small"
                   aria-label={`${star} yulduz`}
+                  aria-pressed={rating === star}
                   onClick={() => setRating(star)}
                   onMouseEnter={() => setHover(star)}
                   onMouseLeave={() => setHover(0)}
@@ -141,6 +147,8 @@ export function ProductReviews({ productId }: { productId: string }) {
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
 
+            {/* MUI Alert o'zi `role="alert"` beradi - xabar ekran
+                o'quvchida darhol o'qiladi. */}
             {message && <Alert severity={message.type}>{message.text}</Alert>}
 
             <Button type="submit" variant="contained" disabled={saving} className="!w-fit">

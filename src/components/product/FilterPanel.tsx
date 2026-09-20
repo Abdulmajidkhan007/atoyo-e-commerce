@@ -144,11 +144,39 @@ export function FilterPanel({ variant = "sidebar" }: { variant?: "sidebar" | "pl
         </Select>
       </FormControl>
 
-      <div>
-        <p className="mb-1 text-sm text-navy-500 dark:text-navy-100">{dict.filters.priceRange}</p>
+      {/*
+        NARX ORALIG'I.
+
+        Ikkala maydonda ham faqat `placeholder` bor edi ("dan" /
+        "gacha") - placeholder esa NOM O'RNINI BOSMAYDI: matn
+        yozila boshlashi bilan yo'qoladi va ekran o'quvchi maydonni
+        "tahrirlash maydoni, raqam" deb o'qiydi, xolos. Endi har
+        birining o'z nomi bor, ikkalasi esa "Narx oralig'i" guruhi
+        ostida.
+      */}
+      <div role="group" aria-labelledby="narx-oraligi">
+        <p id="narx-oraligi" className="mb-1 text-sm text-navy-500 dark:text-navy-100">
+          {dict.filters.priceRange}
+        </p>
         <div className="flex items-center gap-2">
-          <TextField size="small" type="number" placeholder={dict.filters.from} value={minPrice} onChange={(e) => setMinPrice(e.target.value)} onBlur={applyPriceRange} />
-          <TextField size="small" type="number" placeholder={dict.filters.to} value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} onBlur={applyPriceRange} />
+          <TextField
+            size="small"
+            type="number"
+            placeholder={dict.filters.from}
+            slotProps={{ htmlInput: { "aria-label": `${dict.filters.priceRange}: ${dict.filters.from}` } }}
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            onBlur={applyPriceRange}
+          />
+          <TextField
+            size="small"
+            type="number"
+            placeholder={dict.filters.to}
+            slotProps={{ htmlInput: { "aria-label": `${dict.filters.priceRange}: ${dict.filters.to}` } }}
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            onBlur={applyPriceRange}
+          />
         </div>
       </div>
 

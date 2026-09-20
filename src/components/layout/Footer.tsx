@@ -38,10 +38,12 @@ export async function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-lg font-bold text-white">Atoyo Santexnika</p>
-          <p className="mt-2 max-w-xs text-sm text-navy-300">{dict.footer.tagline}</p>
+          <p className="mt-2 max-w-xs text-sm text-navy-200">{dict.footer.tagline}</p>
           {/* Yetkazib berish va'dasi HAR sahifada ko'rinadi. */}
           <p className="mt-3 max-w-xs text-sm font-medium text-aqua-300">
-            🚚 {freeDeliveryShort(delivery)}
+            {/* Emoji - BEZAK. Usiz ham matn to'liq tushunarli, ekran
+                o'quvchi esa "yuk mashinasi" deb o'qib vaqt yo'qotmasin. */}
+            <span aria-hidden="true">🚚</span> {freeDeliveryShort(delivery)}
           </p>
           {socials.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-4">
@@ -51,7 +53,7 @@ export async function Footer() {
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-navy-300 hover:text-aqua-300"
+                  className="text-sm text-navy-200 hover:text-aqua-300"
                 >
                   {SOCIAL_LABELS[s.platform]}
                 </a>
@@ -60,7 +62,10 @@ export async function Footer() {
           )}
         </div>
 
-        <nav className="flex flex-col gap-2">
+        {/* Sahifada uchta <nav> bor (yuqori, pastki, footer) — ekran
+            o'quvchi ularni ro'yxatlab beradi va nomsiz bo'lsa uchalasi
+            ham "navigatsiya" bo'lib chiqadi. */}
+        <nav aria-label="Qo'shimcha sahifalar" className="flex flex-col gap-2">
           {footerLinks.map((link) => (
             <Link key={link.href} href={localeHref(link.href, locale)} className="text-sm hover:text-aqua-300">
               {link.label}
@@ -68,7 +73,7 @@ export async function Footer() {
           ))}
         </nav>
 
-        <div className="text-sm text-navy-300">
+        <div className="text-sm text-navy-200">
           <p>{dict.footer.phone}: {settings.phone}</p>
           <p>{dict.footer.email}: {settings.email}</p>
           <p>{dict.footer.address}: {settings.address}</p>
@@ -80,7 +85,7 @@ export async function Footer() {
         </div>
       </div>
 
-      <p className="border-t border-navy-500/40 px-4 py-4 text-center text-xs text-navy-300">
+      <p className="border-t border-navy-500/40 px-4 py-4 text-center text-xs text-navy-200">
         © {new Date().getFullYear()} Atoyo Santexnika. {dict.footer.rights}
       </p>
     </footer>

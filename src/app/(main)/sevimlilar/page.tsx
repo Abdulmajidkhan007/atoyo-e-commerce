@@ -57,12 +57,14 @@ export default function FavoritesPage() {
                 <p className="text-sm text-navy-300">{formatSom(item.price)}</p>
               </div>
 
+              {/* Ro'yxatda ko'p qator - nomsiz "O'chirish" qaysi
+                  mahsulotga tegishli ekani bilinmaydi. */}
               <IconButton
                 size="small"
-                aria-label="O'chirish"
+                aria-label={`${item.name} — sevimlilardan olib tashlash`}
                 onClick={() => dispatch(removeFavorite({ productId: item.productId }))}
               >
-                <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+                <DeleteOutlineIcon fontSize="small" className="text-red-500 dark:text-red-400" />
               </IconButton>
             </div>
           ))}

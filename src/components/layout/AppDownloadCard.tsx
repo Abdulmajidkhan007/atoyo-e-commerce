@@ -24,7 +24,7 @@ export function AppDownloadCard() {
 
         <div className="min-w-0">
           <p className="font-semibold text-white">Atoyo ilovasi</p>
-          <p className="mt-1 text-sm text-navy-300">
+          <p className="mt-1 text-sm text-navy-200">
             Android uchun mobil ilova: katalog, savat, buyurtma va sharhlar — telefoningizda,
             saytdagi kabi.
           </p>
@@ -46,13 +46,13 @@ export function AppDownloadCard() {
           href={RELEASE_PAGE}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-navy-300 underline-offset-2 hover:text-aqua-300 hover:underline"
+          className="text-xs text-navy-200 underline-offset-2 hover:text-aqua-300 hover:underline"
         >
           Barcha versiyalar
         </a>
       </div>
 
-      <p className="mt-3 text-xs text-navy-300">
+      <p className="mt-3 text-xs text-navy-200">
         O&apos;rnatishda &quot;Noma&apos;lum manbalar&quot;ga ruxsat berish so&apos;raladi — bu
         normal, ilova Play Market orqali emas, to&apos;g&apos;ridan-to&apos;g&apos;ri tarqatiladi.
         iPhone uchun ilova hozircha yo&apos;q — saytdan foydalanavering.

@@ -44,7 +44,10 @@ export default async function AboutPage() {
               priority
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-6xl">🏪</div>
+            // Rasm qo'yilmagan holat uchun bezak - mazmun tashimaydi.
+            <div aria-hidden="true" className="flex h-full items-center justify-center text-6xl">
+              🏪
+            </div>
           )}
         </div>
       </div>

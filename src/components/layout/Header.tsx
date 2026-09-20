@@ -78,7 +78,7 @@ export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
           <span className="hidden text-lg font-bold whitespace-nowrap sm:inline">Atoyo Santexnika</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav aria-label="Asosiy menyu" className="hidden items-center gap-6 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}

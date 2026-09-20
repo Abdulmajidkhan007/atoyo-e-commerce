@@ -8,7 +8,17 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 export function StarRating({ value, size = "small" }: { value: number; size?: "small" | "medium" }) {
   const fontSize = size === "medium" ? "medium" : "small";
   return (
-    <span className="inline-flex items-center text-amber-400" aria-label={`${value} / 5`}>
+    /*
+      `role="img"` SHART. Nomsiz <span> da `aria-label` e'tiborsiz
+      qoladi (ARIA qoidasi: "generic" rolga nom berib bo'lmaydi) va
+      reyting besh dona nomsiz ikonka bo'lib o'qilardi. Rol bilan u
+      bitta butun: "4.5 / 5 yulduz, rasm".
+    */
+    <span
+      role="img"
+      aria-label={`${value.toFixed(1)} / 5 yulduz`}
+      className="inline-flex items-center text-amber-400"
+    >
       {[1, 2, 3, 4, 5].map((i) => {
         if (value >= i) return <StarIcon key={i} fontSize={fontSize} />;
         if (value >= i - 0.5) return <StarHalfIcon key={i} fontSize={fontSize} />;

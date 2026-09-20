@@ -332,3 +332,59 @@ Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
 Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt.
 ```
+
+## 13) Tungi rejim MUI temasiga yetib bormaydi (kontrast 1.3:1) 🔴
+
+```text
+QULAYLIK auditida (2026-09-20) topildi. SOVUQ ochilishda (brauzer
+keshi bo'sh, sahifa to'g'ridan-to'g'ri yuklanadi) tungi rejim
+TANLAGAN mijozda:
+
+  • <html> ga `.dark` klassi qo'yiladi (layout.tsx dagi
+    THEME_INIT_SCRIPT localStorage ni bo'yashdan OLDIN o'qiydi),
+    shuning uchun Tailwind `dark:` klasslari va sahifa foni TO'Q;
+  • lekin `MuiThemeBridge` (src/app/providers.tsx) temani
+    redux'dagi `ui.themeMode` dan oladi va u hali `light` —
+    redux-persist REHYDRATE'i kech keladi yoki o'sha renderga
+    ulgurmaydi. Natijada MUI komponentlari YORUG' palitrada
+    chiziladi.
+
+O'LCHOV (Playwright, har safar yangi brauzer konteksti, 2.5 s kutish,
+6 tadan urinish — 6/6 da takrorlandi):
+
+  /kontakt  MuiInputLabel  rgba(0,0,0,.6) / rgb(7,45,64)   = 1.32:1
+  /kirish   MuiInputLabel  rgba(0,0,0,.6) / rgb(11,59,84)  = 1.53:1
+
+WCAG AA 4.5:1 talab qiladi — ya'ni tungi rejimda forma maydonlarining
+NOMLARI amalda ko'rinmaydi. Tema haqiqatan qo'llanganda o'sha
+qiymatlar rgba(255,255,255,.7) bo'ladi va muammo yo'qoladi.
+
+MUHIM: bu QULAYLIK ishidan OLDIN ham shunday edi (o'sha commitni
+stash qilib, asl kod bilan qayta yig'ib tekshirildi — natija bir xil).
+Shuning uchun u ATAYLAB tuzatilmadi: yechim redux-persist va
+hydration bilan bog'liq va ishlab turgan kodga tegadi.
+
+Vazifa:
+1. Muammoni takrorlang: tungi rejimni yoqing, brauzer keshini
+   tozalab /kontakt ni to'g'ridan-to'g'ri oching, <label> rangini
+   qarang (yoki `body div.dark` bormi — u MuiThemeBridge niki).
+2. Yechim tanlang. `providers.tsx` dagi izoh PersistGate NEGA
+   olib tashlanganini aytadi (SEO: butun UI o'rniga null) — uni
+   QAYTARMANG. Mumkin yo'llar:
+   a) tema redux'dan EMAS, `<html>` dagi `data-theme`/`.dark`
+      atributidan o'qilsin (THEME_INIT_SCRIPT bilan bitta manba) —
+      `useSyncExternalStore` + MutationObserver;
+   b) yoki MUI `ThemeProvider` ga `colorSchemeSelector` bilan CSS
+      o'zgaruvchili tema (MUI v6 `cssVariables`), shunda palitra
+      JS holatiga emas, `.dark` klassiga bog'lanadi.
+   (b) afzal: server va client bir xil HTML chizadi, hydration
+   mismatch bo'lmaydi.
+3. Tekshirish: yangi brauzer kontekstida /kontakt, /kirish,
+   /savat, /buyurtma — label va Paper ranglari to'q palitrada
+   bo'lsin; `src/lib/a11y/contrast.test.ts` uslubida o'lchov qo'shing.
+4. docs/ARXITEKTURA-TARIXI.md ga sabab bilan bir bo'lim.
+Tugagach: tsc + eslint + test + build.
+Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
+menga ayt.
+```

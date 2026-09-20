@@ -35,8 +35,26 @@
   --glass-radius: 20px;
   /* Shisha ustidagi matn - past kontrastli kulrang EMAS. */
   --glass-fg: #1c1c1e;
-  --glass-fg-muted: rgba(60, 60, 67, 0.6);
+  /* Shisha ustidagi "so'nik" matn. Alfa 0.6 emas, 0.75 — 0.6 da
+     kontrast 3.34:1 edi (WCAG AA 4.5:1 dan past), 0.75 da 4.94:1.
+     `docs/UI-SHISHA.md` §5 aynan shuni talab qiladi. */
+  --glass-fg-muted: rgba(60, 60, 67, 0.75);
   --glass-field: rgba(142, 142, 147, 0.12);
+
+  /*
+   * IKKINCHI DARAJALI MATN (`text-navy-300`, tailwind.config.ts).
+   * Eski #5E8CA6 oq fonda atigi 3.63:1 berardi. #44748F — 5.07:1
+   * (oq), 4.56:1 (navy-50), 4.71:1 (shisha zaxira foni).
+   */
+  --color-navy-300: #44748F;
+
+  /*
+   * KLAVIATURA FOKUSI halqasining rangi. MUI'ning `ButtonBase` i
+   * `outline: 0` qo'yadi — ya'ni brauzerning o'z halqasi HAMMA MUI
+   * tugmasida yo'qolgan edi va klaviatura bilan yurgan odam qayerda
+   * turganini ko'rmasdi. Halqa quyida qaytariladi.
+   */
+  --focus-ring: #0B3B54;
 }
 
 .dark {
@@ -53,12 +71,79 @@
   --glass-fg: #f2f2f7;
   --glass-fg-muted: rgba(235, 235, 245, 0.6);
   --glass-field: rgba(118, 118, 128, 0.24);
+
+  /* Tungi temada ikkinchi darajali matn OCHROQ bo'lishi kerak:
+     #93B8CC — 6.84:1 (navy-900), 5.64:1 (navy-700 kartochka). */
+  --color-navy-300: #93B8CC;
+  --focus-ring: #DCC09A;
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-fg);
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ---------------------------------------------------------------------
+   KLAVIATURA FOKUSI — docs/QULAYLIK.md.
+
+   Sichqonchasiz ishlaydigan odam (va ekran o'quvchi foydalanuvchisi)
+   uchun YAGONA orientir — fokus turgan joy ko'rinib turishi. Brauzer
+   uni o'zi chizadi, LEKIN MUI `ButtonBase` (Button, IconButton,
+   MenuItem, Tab...) o'z uslubida `outline: 0` qo'yadi va halqa
+   yo'qoladi.
+
+   `!important` ATAYLAB: MUI uslublari Emotion orqali runtime'da,
+   bizning CSS'dan KEYIN qo'shiladi — oddiy sinf ustunligi yutib
+   qo'yadi (xuddi `.glass` da bo'lgani kabi).
+
+   `:focus-visible` — `:focus` EMAS: sichqoncha bilan bosilganda halqa
+   chiqmaydi, faqat klaviatura/klaviatura-emulyatsiyasida.
+--------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible,
+.MuiButtonBase-root:focus-visible,
+.MuiInputBase-input:focus-visible {
+  outline: 3px solid var(--focus-ring) !important;
+  outline-offset: 2px;
+}
+
+/* DOIMIY TO'Q bloklar: ularda tema yorug' bo'lsa ham fon to'q qoladi,
+   shuning uchun halqa ochroq rangda bo'lishi kerak (aks holda
+   footer'dagi havolada halqa umuman ko'rinmaydi). */
+footer,
+.tv-root {
+  --focus-ring: #DCC09A;
+}
+
+/* "Kontentga o'tish" havolasi: odatda ko'rinmaydi, Tab bosilganda
+   chap-yuqorida paydo bo'ladi. `sr-only` ni bekor qiladigan
+   qiymatlar ataylab to'liq yozilgan. */
+.skip-link:focus {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 /* ---------------------------------------------------------------------

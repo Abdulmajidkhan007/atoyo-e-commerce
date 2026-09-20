@@ -34,13 +34,16 @@ export function MobileBottomNav() {
   ];
 
   return (
-    <nav className="glass-nav no-print fixed inset-x-3 bottom-3 z-30 flex md:hidden">
+    <nav aria-label="Xarid yo'li" className="glass-nav no-print fixed inset-x-3 bottom-3 z-30 flex md:hidden">
       {tabs.map(({ href, label, icon: Icon, count }) => {
         const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link
             key={href}
             href={href}
+            // Ekran o'quvchi "joriy sahifa" deb aytib bersin - ko'z bilan
+            // ko'riladigan rangli urg'uning matnli muqobili.
+            aria-current={isActive ? "page" : undefined}
             // Oltita bo'lim tor telefon ekraniga ham sig'ishi kerak:
             // yon bo'shliqlar minimal, matn kichik va bir qatorda.
             className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl px-0.5 py-2 transition ${

@@ -10,6 +10,7 @@ import { organizationJsonLd } from "@/lib/seo/json-ld";
 import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { WorldCanvas } from "@/components/world/WorldCanvas";
 import { Ui3dGate } from "@/lib/ui-mode/Ui3dGate";
+import { CartAnnouncer } from "@/components/a11y/CartAnnouncer";
 
 // Footer admin tomonidan tahrirlanadigan sayt sozlamalarini (kontakt,
 // ijtimoiy tarmoqlar) jonli o'qiydi, shuning uchun bu layout ostidagi
@@ -46,14 +47,27 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       <Ui3dGate enabled={show3dMode} />
 
       <div className="flex min-h-screen flex-col">
+        {/*
+          "KONTENTGA O'TISH" — klaviatura bilan yuradigan odam har
+          sahifada menyu, qidiruv va ikonkalarni qayta-qayta Tab bilan
+          bosib o'tmasin. Odatda ko'rinmaydi (`sr-only`), birinchi Tab
+          bosilganda chap-yuqorida chiqadi (`globals.css`, `.skip-link`).
+        */}
+        <a href="#asosiy-kontent" className="skip-link sr-only">
+          Asosiy kontentga o&apos;tish
+        </a>
         <Header show3dMode={show3dMode} />
         {/* Suzuvchi pastki panel kontentni yopmasin: uning balandligi +
             chekka bo'shlig'i qadar joy qoldiriladi (faqat telefonda). */}
-        <main className="flex-1 pb-24 md:pb-0">{children}</main>
+        <main id="asosiy-kontent" tabIndex={-1} className="flex-1 pb-24 md:pb-0">
+          {children}
+        </main>
         <Footer />
         <MobileBottomNav />
         {/* AI yordamchi - kalit sozlangan bo'lsagina ko'rinadi. */}
         <AssistantWidget />
+        {/* Savatdagi o'zgarish ekran o'quvchiga e'lon qilinadi. */}
+        <CartAnnouncer />
       </div>
       </SiteInfoProvider>
     </LocaleProvider>

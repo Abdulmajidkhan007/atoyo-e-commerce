@@ -53,5 +53,38 @@ export const getMuiTheme = (mode: PaletteMode) =>
           root: { color: "var(--color-fg)" },
         },
       },
+      /**
+       * MATNLI VA RAMKALI TUGMALARNING RANGI (yorug' temada).
+       *
+       * MUI bu ikki ko'rinishda matnni `palette.primary.main` dan
+       * oladi — bizda u brend oltini `#C49A6C`. Oq fonda u atigi
+       * **2.57:1** beradi, WCAG AA esa 4.5:1 talab qiladi: "Google",
+       * "Telegram", "Qo'llash", "Tozalash" kabi tugmalar yozuvi
+       * amalda o'qilmasdi.
+       *
+       * TO'LDIRILGAN (contained) tugmaga TEGILMAYDI — u yerda oltin
+       * FON, ustidagi to'q ko'k matn 5.61:1 beradi va brend ko'rinishi
+       * aynan shu tugmalarda saqlanadi. Shuning uchun bu yerda faqat
+       * MATN rangi bir pog'ona to'qlashadi (`aqua-600`, 5.18:1) —
+       * ohang o'sha oltin oilasida qoladi.
+       *
+       * TUNGI temada o'zgartirilmaydi: to'q fonda `#C49A6C` allaqachon
+       * 5.61:1 (navy-900) va 4.63:1 (navy-700) beradi.
+       */
+      ...(mode === "light"
+        ? {
+            MuiButton: {
+              styleOverrides: {
+                textPrimary: { color: "#8A6640" },
+                outlinedPrimary: {
+                  color: "#8A6640",
+                  // Ramka ham shu rangda: 50% shaffoflikda u oq fonda
+                  // 3:1 (matn bo'lmagan element talabi) dan past edi.
+                  borderColor: "#8A6640",
+                },
+              },
+            },
+          }
+        : {}),
     },
   });

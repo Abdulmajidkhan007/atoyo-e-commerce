@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
+import { A11y, Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -56,13 +56,13 @@ export function ProductGallery({ images, videos = [], alt }: ProductGalleryProps
     <>
       {slides.length === 1 ? (
         slides[0]!.kind === "video" ? (
-          <VideoSlide url={slides[0]!.url} rounded />
+          <VideoSlide url={slides[0]!.url} label={`${alt} — video`} rounded />
         ) : (
           <button
             type="button"
             onClick={() => setLightboxIndex(0)}
             className="relative block aspect-square w-full cursor-zoom-in overflow-hidden rounded-xl2 bg-navy-50 dark:bg-navy-900"
-            aria-label="Rasmni kattalashtirish"
+            aria-label={`${alt} — rasmni kattalashtirish`}
           >
             <Image
               src={slides[0]!.url}
@@ -77,8 +77,26 @@ export function ProductGallery({ images, videos = [], alt }: ProductGalleryProps
       ) : (
         <div className="overflow-hidden rounded-xl2">
           <Swiper
-            modules={[Navigation, Pagination]}
+            /*
+              `A11y` MODULI SHART. Usiz Swiper'ning "oldingi/keyingi"
+              strelkalari va nuqtalari oddiy <div> bo'lib qoladi:
+              klaviatura bilan ularga tushib bo'lmaydi va ekran
+              o'quvchi ularni umuman ko'rmaydi. Modul ularga
+              `role="button"`, `tabindex` va quyidagi NOMLARNI qo'yadi
+              (standart matni inglizcha, shuning uchun o'zimiz beramiz).
+            */
+            modules={[A11y, Navigation, Pagination]}
             navigation
+            a11y={{
+              enabled: true,
+              containerMessage: `${alt} — rasmlar galereyasi`,
+              prevSlideMessage: "Oldingi rasm",
+              nextSlideMessage: "Keyingi rasm",
+              firstSlideMessage: "Bu birinchi rasm",
+              lastSlideMessage: "Bu oxirgi rasm",
+              paginationBulletMessage: "{{index}}-rasmga o'tish",
+              slideRole: "group",
+            }}
             pagination={{ clickable: true }}
             spaceBetween={0}
             slidesPerView={1}
@@ -87,7 +105,7 @@ export function ProductGallery({ images, videos = [], alt }: ProductGalleryProps
             {slides.map((slide, index) =>
               slide.kind === "video" ? (
                 <SwiperSlide key={slide.url}>
-                  <VideoSlide url={slide.url} />
+                  <VideoSlide url={slide.url} label={`${alt} — video`} />
                 </SwiperSlide>
               ) : (
                 <SwiperSlide key={slide.url}>
@@ -95,7 +113,7 @@ export function ProductGallery({ images, videos = [], alt }: ProductGalleryProps
                     type="button"
                     onClick={() => setLightboxIndex(slide.imageIndex)}
                     className="relative block aspect-square w-full cursor-zoom-in"
-                    aria-label="Rasmni kattalashtirish"
+                    aria-label={`${alt} — ${slide.imageIndex + 1}-rasmni kattalashtirish`}
                   >
                     <Image
                       src={slide.url}
@@ -132,7 +150,16 @@ export function ProductGallery({ images, videos = [], alt }: ProductGalleryProps
  * davomiyligi yuklanadi (mobil internetni tejaydi). Avtomatik
  * o'ynatilmaydi: mijoz o'zi bosadi.
  */
-function VideoSlide({ url, rounded = false }: { url: string; rounded?: boolean }) {
+function VideoSlide({
+  url,
+  label,
+  rounded = false,
+}: {
+  url: string;
+  /** Ekran o'quvchi uchun nom - usiz shunchaki "video" deb o'qiladi. */
+  label: string;
+  rounded?: boolean;
+}) {
   return (
     <div
       className={`flex aspect-square w-full items-center justify-center bg-black ${
@@ -144,6 +171,7 @@ function VideoSlide({ url, rounded = false }: { url: string; rounded?: boolean }
         controls
         playsInline
         preload="metadata"
+        aria-label={label}
         className="max-h-full max-w-full"
       />
     </div>
@@ -168,6 +196,9 @@ function Lightbox({
 }) {
   const [index, setIndex] = useState(startIndex);
   const [zoomed, setZoomed] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  /** Oyna ochilishidan oldin fokus turgan element - yopilgach qaytariladi. */
+  const returnFocusTo = useRef<HTMLElement | null>(null);
 
   const go = useCallback(
     (step: number) => {
@@ -177,13 +208,57 @@ function Lightbox({
     [images.length]
   );
 
-  // Klaviatura: Esc - yopish, o'q tugmalari - keyingi/oldingi rasm.
+  /**
+   * KLAVIATURA VA FOKUS.
+   *
+   * Esc - yopish, o'q tugmalari - keyingi/oldingi rasm.
+   *
+   * FOKUS QOPQONI (focus trap): oyna ochilgach fokus uning ICHIGA
+   * ko'chadi va Tab bilan undan chiqib ketib bo'lmaydi. Busiz ekran
+   * o'quvchi foydalanuvchisi "ochiq" oynaning orqasidagi sahifani
+   * o'qib ketardi va qayerdaligini yo'qotardi. Yopilganda fokus
+   * qaytib o'zi bosgan tugmaga boradi.
+   */
   useEffect(() => {
+    returnFocusTo.current = document.activeElement as HTMLElement | null;
+
+    const focusable = () =>
+      Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((node) => !node.hasAttribute("disabled"));
+
+    // Birinchi fokus - oynaning o'zida (yopish tugmasida).
+    focusable()[0]?.focus();
+
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
       if (event.key === "ArrowRight") go(1);
       if (event.key === "ArrowLeft") go(-1);
+      if (event.key !== "Tab") return;
+
+      const nodes = focusable();
+      if (nodes.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = nodes[0]!;
+      const last = nodes[nodes.length - 1]!;
+      const active = document.activeElement;
+      // Chekkaga yetganda aylanib, boshiga/oxiriga qaytadi.
+      if (event.shiftKey && (active === first || !panelRef.current?.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
+
     window.addEventListener("keydown", onKey);
     // Orqadagi sahifa aylanmasin.
     const previousOverflow = document.body.style.overflow;
@@ -191,14 +266,17 @@ function Lightbox({
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
+      returnFocusTo.current?.focus?.();
     };
   }, [go, onClose]);
 
   return (
     <div
+      ref={panelRef}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95"
       role="dialog"
       aria-modal="true"
+      aria-label={`${alt} — kattalashtirilgan rasm`}
     >
       <button
         type="button"
@@ -227,7 +305,12 @@ function Lightbox({
           >
             ›
           </button>
-          <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs text-white backdrop-blur">
+          <span
+            /* Rasm almashganda ekran o'quvchi "3 / 8" deb aytib bersin. */
+            role="status"
+            aria-live="polite"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs text-white backdrop-blur"
+          >
             {index + 1} / {images.length}
           </span>
         </>

@@ -102,6 +102,10 @@ export function AssistantWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([{ role: "assistant", content: GREETING }]);
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  /** Savol maydoni - oyna ochilganda fokus shu yerga ko'chadi. */
+  const inputRef = useRef<HTMLInputElement>(null);
+  /** Suzuvchi tugma - oyna yopilgach fokus unga qaytadi. */
+  const openerRef = useRef<HTMLButtonElement>(null);
   /** Oyna o'lchami: sudrab o'zgartiriladi, brauzerda saqlanadi. */
   const [panel, setPanel] = useState<PanelState>(loadPanel);
   const panelRef = useRef(panel);
@@ -123,6 +127,25 @@ export function AssistantWidget() {
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, open, panel.full]);
+
+  /**
+   * OYNA OCHILGANDA FOKUS ICHKARIGA ko'chadi, yopilganda esa o'zini
+   * ochgan tugmaga qaytadi. Busiz klaviatura bilan yuradigan odam
+   * oyna ochilganini sezmaydi ham: fokus sahifaning eski joyida
+   * qolib ketadi va yordamchiga yetib borish uchun butun sahifani
+   * Tab bilan bosib o'tish kerak bo'ladi.
+   */
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    // BIRINCHI RENDER o'tkazib yuboriladi: sahifa endi ochilganda
+    // oyna yopiq bo'ladi va bu yerda fokusni suzuvchi tugmaga olib
+    // qo'yish MIJOZNI SAHIFA BOSHIDAN URIB YUBORARDI (sahifa pastga
+    // sakraydi). Faqat HAQIQIY ochilish/yopilishda ishlaydi.
+    if (open === wasOpen.current) return;
+    wasOpen.current = open;
+    if (open) inputRef.current?.focus();
+    else openerRef.current?.focus();
+  }, [open]);
 
   /** Esc: avval to'liq ekrandan chiqadi, keyin oynani yopadi. */
   useEffect(() => {
@@ -323,9 +346,10 @@ export function AssistantWidget() {
       {/* Suzuvchi tugma - mobil pastki menyudan yuqorida turadi. */}
       {!open && (
         <button
+          ref={openerRef}
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Yordamchi"
+          aria-label="Atoyo yordamchisini ochish"
           className="glass-strong fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full text-aqua-600 transition hover:-translate-y-0.5 md:bottom-6 dark:text-aqua-300"
         >
           <SmartToyOutlinedIcon />
@@ -334,6 +358,14 @@ export function AssistantWidget() {
 
       {open && (
         <div
+          /*
+            `role="dialog"` + nom: ekran o'quvchi "Atoyo yordamchisi,
+            muloqot oynasi" deb e'lon qiladi. `aria-modal` ATAYLAB
+            qo'yilmagan - bu oyna sahifani bloklamaydi, mijoz uni
+            ochiq qoldirib katalogni ko'raverishi mumkin.
+          */
+          role="dialog"
+          aria-label="Atoyo yordamchisi"
           className={
             panel.full
               ? "fixed inset-0 z-50 flex flex-col overflow-hidden border-0 bg-white shadow-2xl dark:bg-navy-700"
@@ -355,8 +387,14 @@ export function AssistantWidget() {
           {!panel.full && (
             <div
               onPointerDown={startResize}
-              role="separator"
-              aria-label="Oyna o'lchamini o'zgartirish"
+              /*
+                FAQAT SICHQONCHA uchun (telefonda umuman chizilmaydi).
+                Klaviatura bilan bir xil natijaga "To'liq ekran"
+                tugmasi orqali erishiladi, shuning uchun bu tutqich
+                ekran o'quvchiga KO'RSATILMAYDI - aks holda u
+                bajarib bo'lmaydigan "ajratgich" bo'lib o'qilardi.
+              */
+              aria-hidden="true"
               title="Sudrab kattalashtiring"
               className="absolute left-0 top-0 z-10 hidden h-6 w-6 cursor-nwse-resize items-center justify-center md:flex"
             >
@@ -395,6 +433,15 @@ export function AssistantWidget() {
           {/* To'liq ekranda matn butun kenglikka cho'zilib ketmasin. */}
           <div
             ref={listRef}
+            /*
+              Yordamchining javobi EKRANDA paydo bo'ladi, lekin ekran
+              o'quvchi buni o'zi sezmaydi. `role="log"` +
+              `aria-live="polite"` yangi xabarni o'qib beradi (joriy
+              o'qishni bo'lmaydi).
+            */
+            role="log"
+            aria-live="polite"
+            aria-label="Suhbat"
             className={`flex-1 space-y-3 overflow-y-auto p-3 ${panel.full ? "mx-auto w-full max-w-3xl" : ""}`}
           >
             {messages.map((message, index) => (
@@ -433,7 +480,9 @@ export function AssistantWidget() {
             {busy && (
               <div className="flex justify-start">
                 <div className="rounded-xl2 bg-navy-50 px-3 py-2 dark:bg-navy-600">
-                  <CircularProgress size={16} />
+                  <CircularProgress size={16} aria-hidden="true" />
+                  {/* Aylanuvchi nishonning matnli muqobili. */}
+                  <span className="sr-only">Javob tayyorlanmoqda…</span>
                 </div>
               </div>
             )}
@@ -471,6 +520,7 @@ export function AssistantWidget() {
               ref={fileRef}
               type="file"
               accept="image/*"
+              aria-label="Qidirish uchun mahsulot surati"
               hidden
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -494,6 +544,11 @@ export function AssistantWidget() {
               value={input}
               onChange={(event) => setInput(event.target.value.slice(0, 600))}
               disabled={busy}
+              inputRef={inputRef}
+              /* Placeholder NOM O'RNINI BOSMAYDI: matn yozila
+                 boshlashi bilan u yo'qoladi va maydon ekran
+                 o'quvchida "tahrirlash maydoni" bo'lib qoladi. */
+              slotProps={{ htmlInput: { "aria-label": "Yordamchiga savol" } }}
             />
             <IconButton type="submit" color="primary" disabled={busy || input.trim().length < 2} aria-label="Yuborish">
               <SendRoundedIcon />

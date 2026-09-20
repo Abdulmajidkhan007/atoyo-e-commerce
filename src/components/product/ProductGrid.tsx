@@ -143,11 +143,20 @@ export function ProductGrid({
   }, [loadMore]);
 
   if (error) {
-    return <p className="py-12 text-center text-sm text-red-500">{error}</p>;
+    // `role="alert"` - xato ekranda paydo bo'lishi bilan o'qiladi.
+    return (
+      <p role="alert" className="py-12 text-center text-sm text-red-600 dark:text-red-300">
+        {error}
+      </p>
+    );
   }
 
   if (!isLoading && products.length === 0) {
-    return <p className="py-12 text-center text-sm text-navy-300">{dict.product.empty}</p>;
+    return (
+      <p role="status" className="py-12 text-center text-sm text-navy-300">
+        {dict.product.empty}
+      </p>
+    );
   }
 
   // Birinchi yuklanish - spinner emas, kartochka SKELETLARI. Ekran
@@ -157,6 +166,20 @@ export function ProductGrid({
 
   return (
     <div>
+      {/*
+        QIDIRUV/FILTR NATIJASI OVOZ BILAN.
+
+        Filtr yoki qidiruv o'zgarganda panjara jimgina qayta
+        chiziladi - ko'rmaydigan mijoz nechta mahsulot topilganini
+        bilmaydi. Jonli mintaqa buni aytib beradi; `polite` - joriy
+        o'qishni bo'lmaydi.
+      */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {firstLoad
+          ? "Mahsulotlar yuklanmoqda…"
+          : `${products.length} ta mahsulot ko'rsatilmoqda${hasMore ? ", pastga surilsa yana yuklanadi" : ""}.`}
+      </p>
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {firstLoad ? (
           <ProductCardSkeletons count={8} />

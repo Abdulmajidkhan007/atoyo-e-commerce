@@ -50,14 +50,17 @@ export function CartItemRow({ item }: { item: CartItem }) {
         <p className="text-xs text-navy-300 sm:text-sm">{formatSom(item.price)}</p>
       </div>
 
-      {/* O'chirish - katta ekranda eng oxirida turadi. */}
+      {/* O'chirish - katta ekranda eng oxirida turadi. Nomida MAHSULOT
+          NOMI ham bor: savatda o'nlab qator bo'ladi va takrorlangan
+          "Savatdan o'chirish" ekran o'quvchida qaysi qatorga
+          tegishli ekanini ayta olmaydi. */}
       <IconButton
         size="small"
-        aria-label="Savatdan o'chirish"
+        aria-label={`${item.name} — savatdan o'chirish`}
         className="shrink-0 sm:!order-last"
         onClick={() => dispatch(removeItem({ productId: item.productId, variantId: item.variantId }))}
       >
-        <DeleteOutlineIcon fontSize="small" className="text-red-400" />
+        <DeleteOutlineIcon fontSize="small" className="text-red-500 dark:text-red-400" />
       </IconButton>
 
       {/* Tor ekranda butun kenglikni egallab, ostki qatorga tushadi. */}
@@ -65,7 +68,7 @@ export function CartItemRow({ item }: { item: CartItem }) {
         <div className="flex items-center gap-1 rounded-full border border-navy-100 dark:border-navy-500">
           <IconButton
             size="small"
-            aria-label="Sonini kamaytirish"
+            aria-label={`${item.name} — sonini kamaytirish`}
             onClick={() =>
               dispatch(
                 updateQuantity({
@@ -79,10 +82,14 @@ export function CartItemRow({ item }: { item: CartItem }) {
           >
             <RemoveIcon fontSize="small" />
           </IconButton>
-          <span className="w-6 text-center text-sm">{item.quantity}</span>
+          <span className="w-6 text-center text-sm" aria-hidden="true">
+            {item.quantity}
+          </span>
+          {/* Sonni ekran o'quvchi "3" emas, "3 dona" deb aytsin. */}
+          <span className="sr-only">{item.quantity} dona</span>
           <IconButton
             size="small"
-            aria-label="Sonini oshirish"
+            aria-label={`${item.name} — sonini oshirish`}
             onClick={() =>
               dispatch(
                 updateQuantity({

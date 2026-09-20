@@ -161,7 +161,7 @@ export function TvScreen() {
                 className="tv-kenburns object-contain p-[1.5vw]"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-[3vw] text-navy-300">
+              <div className="flex h-full items-center justify-center text-[3vw] text-navy-200">
                 Atoyo
               </div>
             )}

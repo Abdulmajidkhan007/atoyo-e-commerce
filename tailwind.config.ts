@@ -21,7 +21,19 @@ const config: Config = {
           50: "#EDF4F8",
           100: "#C9DCE6",
           200: "#A8C6D6",
-          300: "#5E8CA6",
+          /*
+           * `navy-300` — IKKINCHI DARAJALI MATN rangi (sayt bo'ylab
+           * 260+ joyda `text-navy-300`). Fon sifatida HECH QAYERDA
+           * ishlatilmaydi, shuning uchun qiymati TEMAGA qarab
+           * almashadigan CSS o'zgaruvchisi bo'lishi mumkin.
+           *
+           * Nega o'zgaruvchi: eski qattiq qiymat (#5E8CA6) oq fonda
+           * 3.63:1, to'q kartochkada 3.27:1 edi — WCAG AA (4.5:1) dan
+           * past. Bitta qattiq rang ikkala temani ham qoplay olmaydi:
+           * yorug'da to'qroq, tungida ochroq kerak. Qiymatlari
+           * `globals.css` dagi `--color-navy-300` da.
+           */
+          300: "var(--color-navy-300)",
           400: "#33698A",
           500: "#175071",
           600: "#104462",

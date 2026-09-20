@@ -826,7 +826,14 @@ Admin (`requirePermission` bilan):
 5. Dinamik kontentli sahifalar `export const dynamic = "force-dynamic"`.
 6. Rasm yuklash serverda: Admin SDK Storage + download token metadata.
 7. Kod izohlari o'zbekcha, "nima uchun" tushuntirilsin.
-8. Tekshiruv: `tsc --noEmit`, `eslint`, `vitest`, `next build`; ilova
+8. **Qulaylik (a11y)**: har ikonkali tugmada `aria-label`, har
+   maydonda nom (`placeholder` yetarli emas), har sahifada bitta
+   `h1`, modal'da fokus qopqoni va Escape, dinamik xabarlar
+   `aria-live` bilan, matn kontrasti WCAG AA (4.5:1). MUI
+   `ButtonBase` `outline: 0` qo'yadi — fokus halqasi `globals.css`
+   da qaytariladi. Qoidalar: `docs/QULAYLIK.md`, kontrast testi:
+   `src/lib/a11y/contrast.test.ts`.
+9. Tekshiruv: `tsc --noEmit`, `eslint`, `vitest`, `next build`; ilova
    uchun alohida typecheck/lint va RN codegen tekshiruvi.
 
 ## 6a. IXTIYORIY TASHQI XIZMATLAR
