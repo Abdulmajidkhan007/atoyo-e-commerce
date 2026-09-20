@@ -35,6 +35,9 @@ export function NewsletterForm() {
           type="email"
           required
           placeholder={dict.newsletter.placeholder}
+          // Skrin-rider uchun NOM: placeholder nom o'rnini bosmaydi,
+          // usiz maydon "tahrirlash maydoni" deb o'qiladi.
+          slotProps={{ htmlInput: { "aria-label": dict.newsletter.title } }}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="[&_.MuiInputBase-root]:bg-white [&_.MuiInputBase-root]:rounded-md"

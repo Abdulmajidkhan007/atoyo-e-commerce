@@ -2,6 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { LocaleProvider } from "@/lib/i18n/LocaleContext";
+import { SiteInfoProvider } from "@/lib/site/SiteInfoContext";
 import { getLocale } from "@/lib/i18n/server";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { AssistantWidget } from "@/components/ai/AssistantWidget";
@@ -26,6 +27,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   return (
     <LocaleProvider initialLocale={locale}>
+      <SiteInfoProvider value={{ catalogSizeLabel: settings?.catalogSizeLabel ?? "" }}>
       {/* Do'kon va sayt haqidagi sxema - hamma sahifada. */}
       <JsonLd
         data={organizationJsonLd({
@@ -53,6 +55,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
         {/* AI yordamchi - kalit sozlangan bo'lsagina ko'rinadi. */}
         <AssistantWidget />
       </div>
+      </SiteInfoProvider>
     </LocaleProvider>
   );
 }

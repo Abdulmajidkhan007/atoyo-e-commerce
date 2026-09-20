@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/firebase/session";
-import { createChallenge } from "@/lib/security/challenge";
+import { createChallenge, hasActiveGrant } from "@/lib/security/challenge";
 
 export const runtime = "nodejs";
 
@@ -12,6 +12,12 @@ export const runtime = "nodejs";
 export async function POST() {
   const admin = await requireAdminUser();
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
+
+  // Yaqinda jumboq yechilgan bo'lsa qayta so'ramaymiz - client
+  // `skip: true` ni ko'rib oynani umuman ochmaydi.
+  if (await hasActiveGrant(admin.uid)) {
+    return NextResponse.json({ skip: true });
+  }
 
   const challenge = await createChallenge(admin.uid);
   return NextResponse.json(challenge);

@@ -10,6 +10,8 @@ const settingsSchema = z.object({
   phone: z.string().max(50).optional(),
   email: z.string().max(120).optional(),
   address: z.string().max(300).optional(),
+  /** Bosh sahifadagi "N+ mahsulot" yozuvi; bo'sh - ko'rsatilmaydi. */
+  catalogSizeLabel: z.string().max(40).optional(),
   socials: z
     .array(
       z.object({

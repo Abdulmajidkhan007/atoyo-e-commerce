@@ -111,6 +111,15 @@ export interface SiteSettings {
    * (og'ir kutubxonalar umuman yuklanmaydi).
    */
   show3dMode?: boolean;
+  /**
+   * BOSH SAHIFADAGI "N+ mahsulot" YOZUVI.
+   *
+   * Ilgari matn kodda qotib turgan edi ("10,000+") va katalogdagi
+   * haqiqiy songa mos kelmasdi - mijozga noto'g'ri va'da berilardi.
+   * Endi admin o'zi yozadi; bo'sh qoldirilsa yozuv umuman
+   * ko'rsatilmaydi.
+   */
+  catalogSizeLabel?: string;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -132,6 +141,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     imageUrl: "",
   },
   show3dMode: false,
+  // Katalog to'lgani sayin admin bu yerni oshirib boradi.
+  catalogSizeLabel: "3000+",
   channelFooter: {
     phones: [],
     slogan: "",

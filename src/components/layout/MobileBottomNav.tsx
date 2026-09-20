@@ -4,30 +4,37 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
-import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import { Badge } from "@mui/material";
+import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { dict } = useI18n();
+  const cartCount = useAppSelector((s) => s.cart.items.reduce((sum, item) => sum + item.quantity, 0));
+  const favoritesCount = useAppSelector((s) => s.favorites.items.length);
 
-  // Savat yuqori panelda (Header) turadi - pastki menyuda uning o'rniga
-  // Kontakt bo'limi, aks holda kontaktga faqat footer orqali o'tilardi.
+  /**
+   * FAQAT XARID YO'LI.
+   *
+   * Ilgari bu yerda 6 ta band bor edi (Blog, Haqida, Kontakt, Profil
+   * ham) va SAVAT umuman yo'q edi — do'kon uchun tartib xatosi:
+   * mijoz savatga faqat yuqoridagi kichik ikonka orqali tusha olardi.
+   * Endi pastda xariddagi to'rtta qadam, qolgan sahifalar esa
+   * yuqoridagi burger menyusida (`MobileMenu`).
+   */
   const tabs = [
-    { href: "/", label: dict.nav.homeShort, icon: HomeOutlinedIcon },
-    { href: "/katalog", label: dict.nav.catalog, icon: CategoryOutlinedIcon },
-    { href: "/blog", label: dict.nav.blog, icon: ArticleOutlinedIcon },
-    { href: "/about", label: dict.nav.aboutShort, icon: InfoOutlinedIcon },
-    { href: "/kontakt", label: dict.nav.contact, icon: SupportAgentOutlinedIcon },
-    { href: "/profil", label: dict.nav.profile, icon: PersonOutlineIcon },
+    { href: "/", label: dict.nav.homeShort, icon: HomeOutlinedIcon, count: 0 },
+    { href: "/katalog", label: dict.nav.catalog, icon: CategoryOutlinedIcon, count: 0 },
+    { href: "/sevimlilar", label: dict.favorites.title, icon: FavoriteBorderIcon, count: favoritesCount },
+    { href: "/savat", label: dict.nav.cart, icon: ShoppingCartOutlinedIcon, count: cartCount },
   ];
 
   return (
     <nav className="glass-nav no-print fixed inset-x-3 bottom-3 z-30 flex md:hidden">
-      {tabs.map(({ href, label, icon: Icon }) => {
+      {tabs.map(({ href, label, icon: Icon, count }) => {
         const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
           <Link
@@ -44,7 +51,15 @@ export function MobileBottomNav() {
             // fon emas, yengil "highlight".
             style={isActive ? { backgroundColor: "var(--glass-field)" } : undefined}
           >
-            <Icon sx={{ fontSize: 20 }} />
+            {/* Savat/sevimlilardagi son shu yerda ko'rinadi - ilgari
+                u faqat yuqoridagi ikonkada edi va telefonda bilinmasdi. */}
+            {count > 0 ? (
+              <Badge badgeContent={count} color="error" max={99} overlap="circular">
+                <Icon sx={{ fontSize: 20 }} />
+              </Badge>
+            ) : (
+              <Icon sx={{ fontSize: 20 }} />
+            )}
             <span className="w-full truncate text-center text-[10px] leading-tight">{label}</span>
           </Link>
         );

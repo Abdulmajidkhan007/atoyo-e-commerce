@@ -38,7 +38,17 @@ export function useChallenge() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/security-challenge", { method: "POST" });
-      const data = (await res.json()) as { id?: string; question?: string; error?: string };
+      const data = (await res.json()) as {
+        id?: string;
+        question?: string;
+        skip?: boolean;
+        error?: string;
+      };
+      // Yaqinda yechilgan - 10 daqiqalik oyna ochiq, oyna chiqmaydi.
+      if (res.ok && data.skip) {
+        setLoading(false);
+        return { challengeId: "", challengeAnswer: 0 };
+      }
       if (!res.ok || !data.id || !data.question) throw new Error(data.error ?? "Jumboq olinmadi.");
       setChallengeId(data.id);
       setQuestion(data.question);

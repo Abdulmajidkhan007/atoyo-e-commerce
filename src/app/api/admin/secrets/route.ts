@@ -23,7 +23,9 @@ export const runtime = "nodejs";
  */
 
 const patchSchema = z.object({
-  challengeId: z.string().min(8).max(64),
+  // Bo'sh bo'lishi MUMKIN: 10 daqiqalik ishonch oynasi ochiq bo'lsa
+  // client jumboq so'ramaydi. Haqiqiy qaror `consumeChallenge()` da.
+  challengeId: z.string().max(64),
   challengeAnswer: z.number().int(),
   /** Bo'sh qoldirilgan maydon o'zgarmaydi; "-" yozilsa env qiymatiga qaytadi. */
   botToken: z.string().max(200).default(""),

@@ -19,6 +19,20 @@ import { getAdminDb } from "@/lib/firebase/admin";
 
 const TTL_MS = 5 * 60 * 1000;
 
+/**
+ * JUMBOQ YECHILGANDAN KEYINGI "ISHONCH OYNASI".
+ *
+ * Ilgari HAR BIR saqlashda jumboq chiqardi: admin bitta sozlamani
+ * bir necha marta tuzatsa oyna o'nlab marta ochilardi va ish
+ * to'xtab qolardi. Endi bir marta to'g'ri javob berilsa - shu uid
+ * uchun 10 daqiqa davomida qayta so'ralmaydi.
+ *
+ * Himoya saqlanib qoladi: oyna VAQT bilan cheklangan, foydalanuvchiga
+ * bog'langan va SERVER tomonda tekshiriladi - clientni aldab bo'lmaydi.
+ */
+const GRANT_MS = 10 * 60 * 1000;
+const GRANT_COLLECTION = "adminChallengeGrants";
+
 export interface Challenge {
   id: string;
   question: string;
@@ -42,15 +56,32 @@ export async function createChallenge(uid: string): Promise<Challenge> {
   return { id, question };
 }
 
+/** Shu uid uchun ishonch oynasi ochiqmi (jumboq so'ralmasin). */
+export async function hasActiveGrant(uid: string): Promise<boolean> {
+  try {
+    const snap = await getAdminDb().collection(GRANT_COLLECTION).doc(uid).get();
+    const until = (snap.data()?.until as number | undefined) ?? 0;
+    return until > Date.now();
+  } catch {
+    // O'qib bo'lmasa - jumboq so'raladi (xavfsiz tomonga og'amiz).
+    return false;
+  }
+}
+
 /**
  * Javobni tekshiradi va jumboqni "ishlatilgan" qiladi (o'chiradi).
- * Bir jumboq faqat bitta saqlashga yetadi.
+ *
+ * To'g'ri javobdan keyin ishonch oynasi ochiladi; ochiq oyna bo'lsa
+ * `id`/`answer` umuman tekshirilmaydi (client jumboq so'ramagan
+ * bo'ladi).
  */
 export async function consumeChallenge(params: {
   id: string;
   answer: number;
   uid: string;
 }): Promise<boolean> {
+  if (await hasActiveGrant(params.uid)) return true;
+
   const ref = getAdminDb().collection("adminChallenges").doc(params.id);
   const snap = await ref.get();
   const data = snap.data() as { answer?: number; uid?: string; expiresAt?: number } | undefined;
@@ -62,5 +93,13 @@ export async function consumeChallenge(params: {
   if (!snap.exists || !data) return false;
   if ((data.expiresAt ?? 0) < Date.now()) return false;
   if (data.uid !== params.uid) return false;
-  return data.answer === params.answer;
+  if (data.answer !== params.answer) return false;
+
+  // To'g'ri javob - 10 daqiqalik oyna ochamiz.
+  await getAdminDb()
+    .collection(GRANT_COLLECTION)
+    .doc(params.uid)
+    .set({ until: Date.now() + GRANT_MS, updatedAt: Date.now() })
+    .catch(() => {});
+  return true;
 }

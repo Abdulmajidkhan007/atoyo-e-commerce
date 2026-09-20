@@ -120,6 +120,13 @@ ustama `settings/pricing`, standart 5%).
   `"use client"` komponent.
 - OG rasmlar `next/og` bilan, `runtime="nodejs"`, tashqi API'siz.
   **Emoji renderlanmaydi** — matn/harf ishlating.
+- **Jumboq (`lib/security/challenge.ts`)**: to'g'ri javobdan keyin
+  shu uid uchun **10 daqiqalik ishonch oynasi** ochiladi
+  (`adminChallengeGrants/{uid}`) — ilgari har saqlashda oyna chiqib,
+  admin bitta sozlamani tuzatishda o'nlab marta javob berardi.
+  `consumeChallenge()` avval oynani tekshiradi; shuning uchun
+  route'larda `challengeId` BO'SH bo'lishi mumkin. Testi:
+  `challenge.test.ts`.
 - Admin API xatosi **qaysi maydon va nima uchun** rad etilganini
   aytadi: `lib/http/validation.ts` → `validationMessage`. Yangi admin
   route shundan foydalanadi.

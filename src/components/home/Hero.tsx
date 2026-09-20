@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@mui/material";
 import { useI18n } from "@/lib/i18n/LocaleContext";
+import { useSiteInfo } from "@/lib/site/SiteInfoContext";
 import { useImmersive } from "@/lib/ui-mode/useImmersive";
 import { useHeroScroll } from "@/lib/motion/useHeroScroll";
 import { HeroCanvas } from "@/components/three/HeroCanvas";
@@ -30,6 +31,7 @@ import { DEFAULT_FINISH, type FinishId } from "@/lib/three/finishes";
  */
 export function Hero() {
   const { dict } = useI18n();
+  const { catalogSizeLabel } = useSiteInfo();
   const { immersive, tier } = useImmersive();
   // Hero'dagi mahsulot qoplamasi (xrom / tillarang / mat qora).
   const [finishId, setFinishId] = useState<FinishId>(DEFAULT_FINISH);
@@ -50,15 +52,20 @@ export function Hero() {
       }`}
     >
       <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 pt-16 pb-8 md:pt-32 md:pb-24">
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            immersive
-              ? "border border-aqua-500/40 bg-aqua-500/10 text-aqua-300 backdrop-blur-xl"
-              : "bg-aqua-500/20 text-aqua-300"
-          }`}
-        >
-          {dict.home.badge}
-        </span>
+        {/* "N+ mahsulot" — son SOZLAMADAN (Sozlamalar → Sayt
+            ma'lumotlari). Bo'sh bo'lsa yozuv umuman chiqmaydi:
+            mijozga tekshirib bo'lmaydigan va'da berilmasin. */}
+        {catalogSizeLabel && (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              immersive
+                ? "border border-aqua-500/40 bg-aqua-500/10 text-aqua-300 backdrop-blur-xl"
+                : "bg-aqua-500/20 text-aqua-300"
+            }`}
+          >
+            {dict.home.badge.replace("{count}", catalogSizeLabel)}
+          </span>
+        )}
 
         {/* Sarlavha 3D rejimda so'zma-so'z, xiralikdan ochilib chiqadi. */}
         <SplitReveal

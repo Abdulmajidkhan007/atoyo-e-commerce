@@ -26,6 +26,7 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
   const [email, setEmail] = useState(initialSettings.email);
   const [show3dMode, setShow3dMode] = useState(initialSettings.show3dMode === true);
   const [address, setAddress] = useState(initialSettings.address);
+  const [catalogSizeLabel, setCatalogSizeLabel] = useState(initialSettings.catalogSizeLabel ?? "");
   const [aboutTitle, setAboutTitle] = useState(initialSettings.about.title);
   const [aboutBody, setAboutBody] = useState(initialSettings.about.body);
   const [aboutImageUrl, setAboutImageUrl] = useState(initialSettings.about.imageUrl);
@@ -66,6 +67,7 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
           phone: phone.trim(),
           email: email.trim(),
           address: address.trim(),
+          catalogSizeLabel: catalogSizeLabel.trim(),
           socials: socialsArray,
           about: { title: aboutTitle.trim(), body: aboutBody.trim(), imageUrl },
           show3dMode,
@@ -91,6 +93,21 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
           <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth size="small" />
         </div>
         <TextField label="Do'kon manzili" value={address} onChange={(e) => setAddress(e.target.value)} fullWidth size="small" />
+        <p className="-mt-2 text-xs text-navy-300">
+          Shahar nomi bilan yozing: <b>Qo&apos;qon, Navbahor ko&apos;chasi 45p</b>. Shahar
+          qidiruv natijasidagi tavsifga ham chiqadi (&laquo;Do&apos;kon Qo&apos;qon
+          shahrida&raquo;).
+        </p>
+
+        <TextField
+          label="Bosh sahifadagi mahsulot soni"
+          value={catalogSizeLabel}
+          onChange={(e) => setCatalogSizeLabel(e.target.value)}
+          fullWidth
+          size="small"
+          placeholder="3000+"
+          helperText="Bosh sahifada «… santexnika mahsuloti» deb chiqadi. Katalog to'lgani sayin oshirib boring. Bo'sh qoldirsangiz yozuv umuman ko'rinmaydi."
+        />
       </div>
 
       <div className="flex flex-col gap-3 rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">

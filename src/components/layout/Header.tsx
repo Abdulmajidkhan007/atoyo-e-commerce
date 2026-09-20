@@ -13,6 +13,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { UiModeSwitch } from "./UiModeSwitch";
 import { SearchBar } from "@/components/product/SearchBar";
+import { MobileMenu } from "./MobileMenu";
 
 export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
   const router = useRouter();
@@ -98,29 +99,35 @@ export function Header({ show3dMode = false }: { show3dMode?: boolean }) {
           <LanguageSwitcher />
           <ThemeToggle />
 
-          <IconButton component={Link} href="/sevimlilar" aria-label={dict.favorites.title} className="!p-1.5 sm:!p-2">
+          {/* TELEFONDA bu uchtasi YASHIRIN: sevimlilar va savat pastki
+              tabga, profil esa burger menyusiga ko'chdi. Kompyuterda
+              pastki tab yo'q, shuning uchun ular shu yerda qoladi. */}
+          <IconButton component={Link} href="/sevimlilar" aria-label={dict.favorites.title} className="!hidden !p-1.5 sm:!p-2 md:!inline-flex">
             <Badge badgeContent={favoritesCount} color="error" max={99}>
               <FavoriteBorderIcon />
             </Badge>
           </IconButton>
 
-          <IconButton component={Link} href="/savat" aria-label={dict.nav.cart} className="!p-1.5 sm:!p-2">
+          <IconButton component={Link} href="/savat" aria-label={dict.nav.cart} className="!hidden !p-1.5 sm:!p-2 md:!inline-flex">
             <Badge badgeContent={cartCount} color="primary" max={99}>
               <ShoppingCartOutlinedIcon />
             </Badge>
           </IconButton>
 
           {userProfile ? (
-            <IconButton component={Link} href="/profil" aria-label={dict.nav.profile} className="!p-1.5 sm:!p-2">
+            <IconButton component={Link} href="/profil" aria-label={dict.nav.profile} className="!hidden !p-1.5 sm:!p-2 md:!inline-flex">
               <Avatar src={userProfile.photoURL ?? undefined} sx={{ width: 32, height: 32 }}>
                 {userProfile.displayName?.[0] ?? userProfile.email?.[0] ?? "U"}
               </Avatar>
             </IconButton>
           ) : (
-            <Button component={Link} href="/kirish" variant="contained" size="small" className="!ml-1 whitespace-nowrap !px-2.5 !text-xs sm:!px-4 sm:!text-sm">
+            <Button component={Link} href="/kirish" variant="contained" size="small" className="!ml-1 !hidden whitespace-nowrap !px-2.5 !text-xs sm:!px-4 sm:!text-sm md:!inline-flex">
               {dict.nav.login}
             </Button>
           )}
+
+          {/* Telefon uchun: Blog / Haqida / Kontakt / Profil shu yerda. */}
+          <MobileMenu />
         </div>
       </div>
 

@@ -20,6 +20,8 @@ export interface Dictionary {
     login: string;
     cart: string;
     profile: string;
+    /** Telefondagi burger menyusi. */
+    menu: string;
   };
   footer: {
     tagline: string;
@@ -68,6 +70,7 @@ export interface Dictionary {
     edit: string;
     logout: string;
     errorRetry: string;
+    close: string;
   };
   cart: {
     title: string;
@@ -269,6 +272,7 @@ const uz: Dictionary = {
     login: "Kirish",
     cart: "Savat",
     profile: "Profil",
+    menu: "Menyu",
   },
   footer: {
     tagline:
@@ -279,7 +283,7 @@ const uz: Dictionary = {
     rights: "Barcha huquqlar himoyalangan.",
   },
   home: {
-    badge: "10,000+ santexnika mahsuloti",
+    badge: "{count} santexnika mahsuloti",
     heroTitle: "Santexnika va Otopleniye uchun ishonchli manzil",
     heroText:
       "Quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari - barchasi bir joyda, tezkor yetkazib berish bilan.",
@@ -313,6 +317,7 @@ const uz: Dictionary = {
     edit: "Tahrirlash",
     logout: "Chiqish",
     errorRetry: "Xatolik yuz berdi. Qayta urinib ko'ring.",
+    close: "Yopish",
   },
   cart: {
     title: "Savat",
@@ -514,6 +519,7 @@ const en: Dictionary = {
     login: "Sign in",
     cart: "Cart",
     profile: "Profile",
+    menu: "Menu",
   },
   footer: {
     tagline:
@@ -524,7 +530,7 @@ const en: Dictionary = {
     rights: "All rights reserved.",
   },
   home: {
-    badge: "10,000+ plumbing products",
+    badge: "{count} plumbing products",
     heroTitle: "Your trusted source for plumbing and heating",
     heroText:
       "Pipes, fittings, faucets, shower systems and heating boilers - everything in one place, with fast delivery.",
@@ -558,6 +564,7 @@ const en: Dictionary = {
     edit: "Edit",
     logout: "Sign out",
     errorRetry: "Something went wrong. Please try again.",
+    close: "Close",
   },
   cart: {
     title: "Cart",
@@ -757,6 +764,7 @@ const ru: Dictionary = {
     login: "Войти",
     cart: "Корзина",
     profile: "Профиль",
+    menu: "Меню",
   },
   footer: {
     tagline:
@@ -767,7 +775,7 @@ const ru: Dictionary = {
     rights: "Все права защищены.",
   },
   home: {
-    badge: "10,000+ сантехнических товаров",
+    badge: "{count} сантехнических товаров",
     heroTitle: "Надёжный адрес для сантехники и отопления",
     heroText:
       "Трубы, фитинги, краны, душевые системы и отопительные котлы - всё в одном месте, с быстрой доставкой.",
@@ -801,6 +809,7 @@ const ru: Dictionary = {
     edit: "Редактировать",
     logout: "Выйти",
     errorRetry: "Произошла ошибка. Попробуйте ещё раз.",
+    close: "Закрыть",
   },
   cart: {
     title: "Корзина",

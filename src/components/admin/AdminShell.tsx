@@ -148,7 +148,10 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen bg-navy-50 dark:bg-navy-950">
       {/* Doimiy yon panel - faqat katta ekranlarda (lg+) */}
-      <aside className="hidden w-64 shrink-0 flex-col gap-1 border-r border-navy-500/40 bg-navy-900 p-4 text-white lg:flex">
+      {/* Menyu bandlari ko'p va ekranga sig'masdi - pastdagilar
+          ("Do'kon ekrani", "Sozlamalar") ko'rinmay qolardi. Panel
+          ekran balandligida YOPISHIB turadi va ICHIDA skrollanadi. */}
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-1 overflow-y-auto overscroll-contain border-r border-navy-500/40 bg-navy-900 p-4 text-white lg:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 text-lg font-bold">
           <Image src="/logo.jpg" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover" />
           Atoyo Admin
@@ -164,7 +167,7 @@ export function AdminShell({
             onClick={() => setDrawerOpen(false)}
             aria-hidden
           />
-          <aside className="absolute left-0 top-0 flex h-full w-64 flex-col gap-1 bg-navy-900 p-4 text-white shadow-xl">
+          <aside className="absolute left-0 top-0 flex h-full w-64 flex-col gap-1 overflow-y-auto overscroll-contain bg-navy-900 p-4 text-white shadow-xl">
             <div className="mb-6 flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2 text-lg font-bold" onClick={() => setDrawerOpen(false)}>
                 <Image src="/logo.jpg" alt="" width={28} height={28} className="h-7 w-7 rounded-lg object-cover" />

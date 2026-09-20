@@ -15,7 +15,9 @@ const schema = z.object({
   /** "Kirim" topic'i - rasm + izoh tashlansa mahsulot yaratiladi. */
   intake: z.number().int().min(0).default(0),
   /** Jumboq (server tomonda tekshiriladi - UI'ni chetlab o'tib bo'lmaydi). */
-  challengeId: z.string().min(8).max(64),
+  // Bo'sh bo'lishi MUMKIN: 10 daqiqalik ishonch oynasi ochiq bo'lsa
+  // client jumboq so'ramaydi. Haqiqiy qaror `consumeChallenge()` da.
+  challengeId: z.string().max(64),
   challengeAnswer: z.number().int(),
   /** E'lon kanali: @username yoki -100... ID. Bo'sh - env'dagi qiymat ishlatiladi. */
   channelId: z.string().max(100).default(""),
