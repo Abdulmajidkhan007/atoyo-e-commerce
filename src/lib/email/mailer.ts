@@ -1,6 +1,7 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import { getEmailSecrets } from "./secrets";
+import { reportError } from "@/lib/ops/report-error";
 import type { Order, OrderStatus } from "@/types/order";
 import { formatSom } from "@/lib/format";
 
@@ -41,6 +42,32 @@ function resolveFrom(secrets: { host: string; user: string; from: string }): str
     return displayName ? `"${displayName}" <${secrets.user}>` : secrets.user;
   }
   return configured;
+}
+
+/**
+ * SMTP XATOSI JIM QOLMAYDI.
+ *
+ * MUAMMO (haqiqiy voqea): Gmail hisobining paroli almashtirildi —
+ * Google shu zahoti BARCHA "App password" larni bekor qiladi, SMTP
+ * esa `535 Username and Password not accepted` bilan rad eta
+ * boshlaydi. Kodda faqat `console.error` bor edi, Cloud Run loglarini
+ * esa hech kim ochib o'tirmaydi: buyurtma xatlari bir necha kun
+ * ketmay turdi va buni hech kim bilmadi.
+ *
+ * Endi har muvaffaqiyatsiz yuborish xodimlar guruhining "Actions"
+ * topic'iga tushadi (`reportError` o'zi takrorlanishni bosadi —
+ * 10 daqiqada bir marta), auth xatosida esa NIMA QILISH kerakligi
+ * ham yoziladi.
+ */
+function emailHint(error: unknown): string | undefined {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/\b535\b|Username and Password not accepted|Invalid login|BadCredentials/i.test(message)) {
+    return "SMTP paroli qabul qilinmadi. Gmail'da hisob paroli almashtirilsa App password BEKOR bo'ladi — Sozlamalar → Email (SMTP) da yangi App password kiriting.";
+  }
+  if (/ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN/i.test(message)) {
+    return "SMTP serveriga ulanib bo'lmadi — host/port to'g'riligini tekshiring.";
+  }
+  return undefined;
 }
 
 async function getTransport() {
@@ -84,7 +111,7 @@ export async function sendGenericEmail(to: string, subject: string, bodyHtml: st
     });
     return true;
   } catch (error) {
-    console.error("Email yuborishda xato:", error);
+    await reportError("email yuborish", error, { kimga: to, mavzu: subject, yechim: emailHint(error) });
     return false;
   }
 }
@@ -117,7 +144,11 @@ export async function sendOrderStatusEmail(to: string, order: Order, status: Ord
       `,
     });
   } catch (error) {
-    // Email yuborilmasa ham buyurtma oqimi to'xtamasligi kerak.
-    console.error("Email yuborishda xato:", error);
+    // Email yuborilmasa ham buyurtma oqimi to'xtamasligi kerak -
+    // lekin xato endi guruhga yoziladi, jim qolmaydi.
+    await reportError("buyurtma emaili", error, {
+      buyurtma: order.id,
+      yechim: emailHint(error),
+    });
   }
 }

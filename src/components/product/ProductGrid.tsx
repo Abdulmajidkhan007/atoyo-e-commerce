@@ -115,7 +115,19 @@ export function ProductGrid({
     setIsLoading(true);
     try {
       const page = await getProductsPage(filters, PAGE_SIZE, cursor);
-      setProducts((prev) => [...prev, ...page.products]);
+      /**
+       * TAKRORLANISHNI TASHLAB YUBORAMIZ.
+       *
+       * Aralash birinchi ekranda (`SiteSettings.catalogMix`) kursor
+       * bo'lmaydi va keyingi sahifa odatdagi "yangilari"dan boshlanadi
+       * - ba'zi mahsulot ikki marta kelishi mumkin. Filtr o'zgarganda
+       * ro'yxat baribir noldan yig'iladi, shuning uchun bu yerda
+       * shunchaki ID bo'yicha tekshirish yetarli.
+       */
+      setProducts((prev) => {
+        const seen = new Set(prev.map((item) => item.id));
+        return [...prev, ...page.products.filter((item) => !seen.has(item.id))];
+      });
       setCursor(page.lastCursor);
       setHasMore(page.hasMore);
     } catch {

@@ -25,6 +25,8 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
   const [phone, setPhone] = useState(initialSettings.phone);
   const [email, setEmail] = useState(initialSettings.email);
   const [show3dMode, setShow3dMode] = useState(initialSettings.show3dMode === true);
+  const [catalogMix, setCatalogMix] = useState(initialSettings.catalogMix !== false);
+  const [catalogMixCount, setCatalogMixCount] = useState(String(initialSettings.catalogMixCount ?? 24));
   const [address, setAddress] = useState(initialSettings.address);
   const [catalogSizeLabel, setCatalogSizeLabel] = useState(initialSettings.catalogSizeLabel ?? "");
   const [aboutTitle, setAboutTitle] = useState(initialSettings.about.title);
@@ -71,6 +73,8 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
           socials: socialsArray,
           about: { title: aboutTitle.trim(), body: aboutBody.trim(), imageUrl },
           show3dMode,
+          catalogMix,
+          catalogMixCount: Math.min(Math.max(Number(catalogMixCount) || 24, 12), 48),
         }),
       });
       if (!res.ok) throw new Error("save");
@@ -152,6 +156,31 @@ export function SiteSettingsForm({ initialSettings }: { initialSettings: SiteSet
 
         <TextField label="Sarlavha" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} fullWidth size="small" />
         <TextField label="Matn" value={aboutBody} onChange={(e) => setAboutBody(e.target.value)} multiline minRows={6} fullWidth />
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">
+        <h3 className="font-semibold text-navy-900 dark:text-white">Katalogning birinchi ekrani</h3>
+        <FormControlLabel
+          control={<Switch checked={catalogMix} onChange={(e) => setCatalogMix(e.target.checked)} />}
+          label="Aralash ko'rsatilsin (har kategoriyadan navbatma-navbat)"
+        />
+        <p className="text-xs text-navy-300">
+          Yoqilgan bo&apos;lsa katalogni ochgan mijoz birinchi ekranda har kategoriyadan
+          ko&apos;radi. O&apos;chirilgan bo&apos;lsa oddiy tartib: eng yangi kirim birinchi —
+          bir kuni 20 ta bir xil mahsulot kirim qilinsa, ekranni o&apos;sha egallaydi.
+          Filtr yoki qidiruv qo&apos;llanganda aralashtirish baribir ishlamaydi.
+        </p>
+        <TextField
+          label="Aralash ekranda nechta mahsulot"
+          type="number"
+          size="small"
+          value={catalogMixCount}
+          onChange={(e) => setCatalogMixCount(e.target.value)}
+          disabled={!catalogMix}
+          slotProps={{ htmlInput: { min: 12, max: 48 } }}
+          helperText="12 dan 48 gacha. Keyingi sahifalar odatdagidek yangilaridan davom etadi."
+          className="max-w-xs"
+        />
       </div>
 
       <div className="flex flex-col gap-2 rounded-xl2 border border-navy-100 bg-white p-5 dark:border-navy-500 dark:bg-navy-700">

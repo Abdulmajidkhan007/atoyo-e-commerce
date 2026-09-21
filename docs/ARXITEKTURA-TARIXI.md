@@ -685,3 +685,46 @@ xilma-xillik ishlamaydi.
 sababi baribir operatsion: 10 000 rejadagi mahsulotdan hozir ~125
 tasi kirim qilingan va ularning katta qismi bir kategoriyadan.
 Tartib faqat bazada xilma-xillik BOR bo'lganda yordam beradi.
+
+## 29. Katalogning birinchi ekrani va jim qolgan pochta
+
+Bitta mijoz shikoyatidan uchta ish chiqdi.
+
+**Katalog ham cho'tkaga to'lgan edi.** 28-bandda kanal navbati
+tuzatildi, lekin mijoz saytni ochganda ham xuddi shu manzara
+turardi: katalog `createdAt desc` tartibida va oxirgi partiya
+kirim butun birinchi ekranni egallaydi. Endi `SiteSettings.catalogMix`
+(standart yoqilgan) yoqilgan bo'lsa birinchi sahifa
+`loadMixedCatalogRaw()` bilan yig'iladi — har kategoriyadan
+navbatma-navbat (`roundRobin`).
+
+Sahifalash bilan kelishuv ataylab sodda qilingan: aralash sahifa
+kursor QAYTARMAYDI (`nextCursor: null`), keyingi sahifa esa odatdagi
+"yangilaridan" boshlanadi. Shu sababli ba'zi mahsulot ikki marta
+kelishi mumkin — `ProductGrid` uni ID bo'yicha tashlab yuboradi.
+Muqobil yo'l (har kategoriya uchun alohida kursor saqlaydigan
+aralash sahifalash) ko'rib chiqildi va rad etildi: kursor formati
+murakkablashardi, foyda esa faqat birinchi ekranda.
+
+Aralashtirish **filtr/qidiruv/boshqa saralash bo'lsa ishlamaydi** —
+mijoz aniq narsa so'raganda tartibni buzish xizmat emas, xalaqit.
+
+**Burger menyusi saytdan ajralib turardi.** Yangi `MobileMenu` oddiy
+oq MUI `Drawer` edi: saytning qolgan qismi shisha (`docs/UI-SHISHA.md`),
+bu esa qattiq oq panel. Endi `glass-strong`, header'dagi kabi brend
+qatori, aqua ikonka "chip" lari va pastda ajratilgan Profil/Kirish
+tugmasi.
+
+**Pochta bir necha kun jim to'xtab turgan edi.** Gmail hisobining
+paroli almashtirilgan; Google bunda BARCHA App password larni bekor
+qiladi va SMTP `535 Username and Password not accepted` bera
+boshlaydi. Kodda faqat `console.error` bor edi — buyurtma xatlari
+ketmayotganini hech kim bilmadi. Endi `sendGenericEmail` va
+`sendOrderStatusEmail` xatosi `reportError()` orqali "Actions"
+topic'iga tushadi, `emailHint()` esa sababni va yechimni o'zbekcha
+yozadi.
+
+Kod bu muammoni TO'LIQ yecha olmaydi: App password har doim hisob
+paroliga bog'liq. Barqaror yechim — yuborishni parolga bog'liq
+bo'lmagan xizmatga (Brevo/Resend) o'tkazish; qadamlari
+`docs/QADAMLAR.md` 10-bandida.

@@ -82,6 +82,14 @@ ustama `settings/pricing`, standart 5%).
   ko'rardi. Server yo'li ham `toViewerProducts()` dan O'TADI; testi
   `storefront.test.ts` (tannarx/supplier chiqmasligi qulflangan).
   Showcase mantiqi BITTA joyda — route ham shu funksiyani chaqiradi.
+- **Katalogning BIRINCHI ekrani ARALASH** (`SiteSettings.catalogMix`,
+  standart yoqilgan): filtrsiz va "yangilari" tartibida ochilganda
+  `loadMixedCatalogRaw()` har kategoriyadan navbatma-navbat oladi
+  (`roundRobin`, 5 daqiqa kesh). Kursor `null` qaytadi — keyingi
+  sahifa odatdagi yangilaridan davom etadi, takrorlangani esa
+  `ProductGrid` da ID bo'yicha tashlanadi. Filtr/qidiruv/boshqa
+  saralash bo'lsa aralashtirish ISHLAMAYDI. Testi:
+  `storefront.test.ts`.
 - Mahsulot qaytaradigan YANGI route: `toViewerProducts()` +
   `no-store` (`lib/http/cache.ts`). Rolga bog'liq javob keshlanmaydi.
 - Mijoz tomonidagi hook'lar (`usePricing.ts`, `mobile/src/pricing.ts`)
@@ -454,7 +462,12 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   takrorlanmaydi. `docs/DESKTOP.md`.
 - Pochta: `secrets/email` (env `SMTP_*` zaxira),
   `isEmailConfigured()` — ASINXRON, sozlanmagan bo'lsa email jim
-  o'tkaziladi.
+  o'tkaziladi. **Lekin YUBORISHDAGI XATO jim qolmaydi**: har
+  muvaffaqiyatsiz `sendMail` `reportError()` orqali "Actions"
+  topic'iga tushadi va `emailHint()` sababni o'zbekcha aytadi
+  (535 — Gmail paroli almashtirilgan, App password bekor bo'lgan).
+  Gmail App password hisob paroliga BOG'LIQ — barqaror yechim
+  Brevo/Resend (`docs/QADAMLAR.md` 10-band).
 
 ## Hujjatlar
 
@@ -468,6 +481,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/HISOBOT.md` | Bajarilgan / kutilayotgan ish va kod sifati bahosi |
 | `docs/AUDIT.md` + `docs/AUDIT-ISHLARI.md` | Mustaqil audit va undan chiqqan ishlar navbati (tayyor topshiriqlar) |
 | `docs/KIRIM-VA-IMPORT.md` | Kirim va Excel import tartibi |
+| `docs/KIRIM-REJASI.md` | Har kuni QAYSI kategoriyadan kiritish (kanal va katalog bir xil tovarga to'lib qolmasin) |
 | `docs/UI-SHISHA.md` | Shisha (glass) ko'rinish qoidalari — sayt va ilova |
 | `docs/QULAYLIK.md` | Ekran o'quvchi va klaviatura qoidalari (a11y) — yangi komponent yozganda |
 | `docs/UI-3D.md`, `docs/TV.md`, `docs/DESKTOP.md`, `docs/STICKERS.md` | Bo'limga xos |

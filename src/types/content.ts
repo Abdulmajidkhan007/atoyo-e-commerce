@@ -120,6 +120,22 @@ export interface SiteSettings {
    * ko'rsatilmaydi.
    */
   catalogSizeLabel?: string;
+  /**
+   * KATALOGNING BIRINCHI EKRANI ARALASH BO'LSINMI.
+   *
+   * Muammo: katalog "yangisidan eskisiga" tartibda chiqadi, kirim esa
+   * partiya-partiya qilinadi. Bir kuni 20 ta hojatxona cho'tkasi kirim
+   * qilinsa, katalogni ochgan mijoz FAQAT cho'tka ko'radi va do'konni
+   * bitta mahsulotli deb o'ylaydi (haqiqiy mijoz shikoyati).
+   *
+   * Yoqilgan bo'lsa birinchi sahifa bosh sahifadagi kabi yig'iladi:
+   * har kategoriyadan navbatma-navbat, keyin odatdagi "yangilari"
+   * davom etadi. Filtr yoki qidiruv qo'llanganda aralashtirish
+   * ISHLAMAYDI - mijoz aniq narsa so'ragan.
+   */
+  catalogMix?: boolean;
+  /** Aralash ekranda nechta mahsulot (12-48). */
+  catalogMixCount?: number;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -143,6 +159,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   show3dMode: false,
   // Katalog to'lgani sayin admin bu yerni oshirib boradi.
   catalogSizeLabel: "3000+",
+  catalogMix: true,
+  catalogMixCount: 24,
   channelFooter: {
     phones: [],
     slogan: "",

@@ -238,6 +238,133 @@ chiqishi kerak.
 
 ---
 
+## 10. `info@atoyo.uz` pochtasi va SMTP 🔴
+
+### Avval: nega xat kelmay qoldi
+
+Gmail hisobining **paroli almashtirilganda Google o'sha hisobning
+BARCHA "App password" larini bekor qiladi**. Saytdagi SMTP ham
+o'shanday parol bilan ishlaydi, shuning uchun u kun kelib
+`535 Username and Password not accepted` bilan to'xtagan.
+
+**Bu Gmail'ning xatti-harakati — kod bilan aylanib o'tib
+bo'lmaydi.** App password har doim hisob paroliga bog'liq.
+
+Ikki narsa qilindi:
+
+1. Endi xato **jim qolmaydi**: har muvaffaqiyatsiz yuborish
+   xodimlar guruhining "Actions" topic'iga tushadi va nima
+   qilish kerakligi ham yoziladi (`lib/email/mailer.ts`).
+2. Yechim — **parolga bog'liq bo'lmagan SMTP ga o'tish** (pastda).
+
+### Tezkor tuzatish (5 daqiqa, hozirgi holatni tiklash)
+
+1. Google akkaunt → **Xavfsizlik** → *2 bosqichli tasdiqlash* →
+   **Ilova parollari** → yangi parol yarating (16 belgi).
+2. Admin → Sozlamalar → **Email (SMTP)** → *Parol* maydoniga o'sha
+   16 belgini qo'ying (probelsiz) → **Saqlash**.
+3. **"Sinov xati yuborish"** tugmasini bosing.
+
+Bu ishlaydi, lekin parol yana almashtirilsa yana to'xtaydi.
+
+### To'g'ri yechim: yuborish uchun alohida xizmat 🔴
+
+Transaksion pochta xizmatining kaliti **Google parolidan mustaqil** —
+parolni o'zgartirsangiz ham xat ketaveradi. Ikkalasi ham bepul
+boshlanadi:
+
+| Xizmat | Bepul chegara | SMTP host |
+|---|---|---|
+| **Brevo** (tavsiya) | kuniga 300 xat | `smtp-relay.brevo.com`, port 587 |
+| **Resend** | oyiga 3 000 xat | `smtp.resend.com`, port 587 |
+
+Qadamlar (Brevo misolida):
+
+1. brevo.com da ro'yxatdan o'ting.
+2. **Senders, Domains & Dedicated IPs → Domains → Add domain** →
+   `atoyo.uz`.
+3. Brevo bergan **DKIM va SPF** yozuvlarini **ahost DNS** ga
+   qo'shing (TXT). Tasdiqlashni kuting (odatda 10-30 daqiqa).
+4. **SMTP & API → SMTP** bo'limidan login va **SMTP key** ni oling.
+5. Admin → Sozlamalar → **Email (SMTP)**:
+   - host `smtp-relay.brevo.com`, port `587`
+   - foydalanuvchi — Brevo bergan login
+   - parol — **SMTP key**
+   - Kimdan: `Atoyo Santexnika <info@atoyo.uz>`
+6. **Sinov xati yuborish**.
+
+> **DIQQAT:** kalitni menga yubormang va chatga tashlamang — faqat
+> admin panelga kiriting. U `secrets/email` da saqlanadi.
+
+### `info@atoyo.uz` — qabul qilish (kiruvchi xat)
+
+Yuqoridagi xizmat faqat **yuboradi**. Mijoz `info@atoyo.uz` ga xat
+yozsa, uni birov o'qishi kerak. Uch yo'l bor:
+
+**A) Eng arzoni — yo'naltirish (bepul).** ahost panelida
+*Email forwarding* / *Pochta yo'naltirish* bo'limidan
+`info@atoyo.uz → santexnika.atoyo@gmail.com` qilib qo'ying. Kiruvchi
+xatlar Gmail'ga tushadi. Javob yozishda Gmail → *Sozlamalar →
+Hisoblar → Send mail as* ga `info@atoyo.uz` ni Brevo SMTP kaliti
+bilan qo'shsangiz, javob ham `info@atoyo.uz` nomidan ketadi.
+**Narxi: 0.**
+
+**B) ahost pochtasi.** Ko'pchilik o'zbek hostinglari domen bilan
+birga pochta quticha beradi (ko'pincha bepul yoki yiliga bir necha
+o'n ming so'm). ahost qo'llab-quvvatlash xizmatidan
+*"domen uchun pochta xizmati bormi"* deb so'rang — bo'lsa eng
+qulayi shu.
+
+**C) Google Workspace.** To'liq quticha, Drive, Meet — lekin pullik.
+
+### Google Workspace haqida — muhim aniqlik
+
+**Google One Pro (yoki AI Premium) obunasi Workspace'ni bepul
+qilmaydi.** Bu ikki BOSHQA mahsulot:
+
+| | Google One / AI Premium | Google Workspace |
+|---|---|---|
+| Kimga | shaxsiy `@gmail.com` hisobi | biznes, o'z domeni bilan |
+| Nima beradi | Drive joyi, Gemini imkoniyatlari | `info@atoyo.uz` quticha, admin panel, Drive, Meet |
+| To'lov | obunangiz | **har foydalanuvchi uchun alohida**, oyiga ~$7 (Business Starter) |
+
+Ya'ni siz to'lab turgan Pro plan Workspace narxiga **chegirma
+bermaydi**. Workspace'da **14 kunlik bepul sinov** bor, shundan
+keyin har oy to'lanadi.
+
+Agar baribir Workspace olmoqchi bo'lsangiz:
+
+1. `workspace.google.com` → **Get started** → biznes nomi, xodimlar
+   soni (1), davlat — O'zbekiston.
+2. *"Do you have a domain?"* → **Yes** → `atoyo.uz`.
+3. Foydalanuvchi yarating: `info@atoyo.uz`.
+4. Google beradigan **MX yozuvlarini ahost DNS** ga qo'ying.
+   **DIQQAT:** hozir DNS'da `MX @ → atoyo.uz` va `mail` CNAME
+   yozuvlari bor — ularni **o'chirib**, Google'nikini qo'ying,
+   aks holda xatlar yo'qoladi.
+5. Google panelida domen tasdiqlanishini kuting.
+6. Admin → Sozlamalar → **Email (SMTP)**: host `smtp.gmail.com`,
+   port 587, foydalanuvchi `info@atoyo.uz`, parol — o'sha hisob
+   uchun **App password**.
+
+> Workspace'da ham App password parol almashtirilganda bekor
+> bo'ladi. Shuning uchun **yuborishni baribir Brevo/Resend ga
+> qoldirish tavsiya etiladi**, Workspace esa faqat quticha bo'lib
+> qolsin.
+
+### Tavsiya (eng arzon va eng barqaror)
+
+```
+Yuborish   → Brevo (bepul, DKIM+SPF bilan, kaliti mustaqil)
+Qabul qilish → ahost forwarding: info@atoyo.uz → santexnika.atoyo@gmail.com
+Javob yozish → Gmail "Send mail as" (Brevo SMTP bilan)
+Narxi       → 0 so'm
+```
+
+Keyinroq xodimlar ko'paysa Workspace'ga o'tish har doim mumkin.
+
+---
+
 # Sessiya promptlari qayerda
 
 | Nima | Fayl |

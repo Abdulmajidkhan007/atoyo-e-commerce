@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { clearMixCache } from "@/lib/products/storefront";
 import { clearSiteSettingsCache } from "@/lib/firebase/admin-content";
 import { requirePermission } from "@/lib/firebase/session";
 
@@ -41,6 +42,9 @@ const settingsSchema = z.object({
     .optional(),
   /** 3D rejim tugmasi saytda ko'rinsinmi (standart - yo'q). */
   show3dMode: z.boolean().optional(),
+  /** Katalogning birinchi ekrani aralash bo'lsinmi. */
+  catalogMix: z.boolean().optional(),
+  catalogMixCount: z.number().int().min(12).max(48).optional(),
 });
 
 /** Sayt sozlamalari (kontakt, ijtimoiy tarmoqlar, about) - faqat admin. */
@@ -54,5 +58,7 @@ export async function PATCH(request: Request) {
   await getAdminDb().doc("settings/site").set(parsed.data, { merge: true });
   // Footer bu sozlamani keshdan o'qiydi - saqlangach kesh bekor qilinadi.
   clearSiteSettingsCache();
+  // Aralash katalog 5 daqiqa keshlanadi - sozlama o'zgarsa darhol yangilansin.
+  clearMixCache();
   return NextResponse.json({ ok: true });
 }
