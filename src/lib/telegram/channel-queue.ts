@@ -41,6 +41,11 @@ export interface QueuedPost {
   id: string;
   productId: string;
   productName: string;
+  /**
+   * Mahsulot kategoriyasi - navbatni XILMA-XIL qilish uchun
+   * (`orderByVariety`). Eski yozuvlarda bo'lmasligi mumkin.
+   */
+  category?: string;
   /** Shu vaqtdan keyin chiqariladi (epoch millis). */
   dueAt: number;
   createdAt: number;
@@ -157,7 +162,8 @@ export async function reserveChannelSlot(): Promise<SlotDecision> {
 export async function enqueueChannelPost(
   productId: string,
   productName: string,
-  dueAt: number
+  dueAt: number,
+  category?: string
 ): Promise<void> {
   const db = getAdminDb();
   const existing = await db.collection(QUEUE).where("productId", "==", productId).limit(1).get();
@@ -171,19 +177,93 @@ export async function enqueueChannelPost(
     dueAt,
     createdAt: Date.now(),
     attempts: 0,
+    ...(category ? { category } : {}),
   };
   await ref.set(job);
 }
 
-/** Vaqti kelgan navbat yozuvlari (eng eskisidan). */
+/**
+ * NAVBATNI XILMA-XIL TARTIBLASH.
+ *
+ * MUAMMO: xodim bir o'tirishda 20 ta bir xil turdagi mahsulot
+ * (masalan unitaz cho'tkasi) kirim qilsa, navbat FIFO bo'lgani uchun
+ * kanalga ketma-ket 20 ta cho'tka posti chiqadi. Obunachi kanalni
+ * "faqat cho'tka keladi" deb his qiladi va obunani tashlaydi -
+ * haqiqiy mijoz shikoyati shundan chiqqan.
+ *
+ * YECHIM: navbatdan post tanlanayotganda KETMA-KET bir xil
+ * kategoriya bo'lmasin - iloji bo'lsa oldingisidan BOSHQA
+ * kategoriyadagi eng eski yozuv olinadi.
+ *
+ * Bu KECHIKTIRMAYDI va yozuvni TASHLAMAYDI: faqat tartib
+ * o'zgaradi, shuning uchun hech bir mahsulot navbatda qolib
+ * ketmaydi. Navbatda bitta kategoriya bo'lsa - tartib avvalgidek
+ * (eng eskisidan) qoladi.
+ *
+ * Sof funksiya, testi `channel-queue.test.ts`.
+ */
+export function orderByVariety(jobs: QueuedPost[], lastCategory: string | null): QueuedPost[] {
+  const pool = [...jobs];
+  const ordered: QueuedPost[] = [];
+  let previous = lastCategory ?? "";
+
+  while (pool.length > 0) {
+    // Oldingisidan boshqa kategoriyadagi ENG ESKI yozuv; topilmasa -
+    // ro'yxatning boshi (ya'ni oddiy FIFO).
+    let index = pool.findIndex((job) => (job.category ?? "") !== previous);
+    if (index < 0) index = 0;
+
+    const [job] = pool.splice(index, 1);
+    if (!job) break;
+    ordered.push(job);
+    previous = job.category ?? "";
+  }
+
+  return ordered;
+}
+
+/** Kanalga oxirgi chiqqan post qaysi kategoriyada edi. */
+async function lastPostedCategory(): Promise<string | null> {
+  try {
+    const snapshot = await getAdminDb().doc(SETTINGS_DOC).get();
+    const value = snapshot.data()?.channelLastCategory;
+    return typeof value === "string" && value ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Kanalga post ketganda kategoriyani eslab qo'yish.
+ * Xatosi ish oqimini TO'XTATMAYDI - bu faqat tartib uchun yordamchi.
+ */
+export async function rememberPostedCategory(category?: string | null): Promise<void> {
+  if (!category) return;
+  await getAdminDb()
+    .doc(SETTINGS_DOC)
+    .set({ channelLastCategory: category }, { merge: true })
+    .catch(() => {});
+}
+
+/**
+ * Vaqti kelgan navbat yozuvlari - xilma-xil tartibda.
+ *
+ * Bazadan `limit` dan KO'PROQ o'qiladi (4 barobar, ko'pi bilan 40):
+ * tanlash uchun tanlov bo'lishi kerak, aks holda xilma-xillik
+ * ishlamaydi. Tanlanmagani navbatda qoladi va keyingi safar chiqadi.
+ */
 export async function dueChannelPosts(limit = 5): Promise<QueuedPost[]> {
   const snapshot = await getAdminDb()
     .collection(QUEUE)
     .where("dueAt", "<=", Date.now())
     .orderBy("dueAt")
-    .limit(limit)
+    .limit(Math.min(Math.max(limit, 1) * 4, 40))
     .get();
-  return snapshot.docs.map((doc) => doc.data() as QueuedPost);
+
+  const jobs = snapshot.docs.map((doc) => doc.data() as QueuedPost);
+  if (jobs.length <= 1) return jobs;
+
+  return orderByVariety(jobs, await lastPostedCategory()).slice(0, limit);
 }
 
 /** Navbat holati (admin panel uchun). */

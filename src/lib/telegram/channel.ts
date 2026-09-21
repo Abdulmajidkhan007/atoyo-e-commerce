@@ -32,6 +32,7 @@ import {
   enqueueChannelPost,
   markQueueAttempt,
   removeFromQueue,
+  rememberPostedCategory,
   reserveChannelSlot,
 } from "./channel-queue";
 import { freeDeliveryShort, installServiceText } from "@/lib/delivery/text";
@@ -602,7 +603,7 @@ export async function announceProduct(
 
     const slot = await reserveChannelSlot();
     if (!slot.allowed) {
-      await enqueueChannelPost(product.id, product.name, slot.nextAt).catch((error) =>
+      await enqueueChannelPost(product.id, product.name, slot.nextAt, product.category).catch((error) =>
         console.error("Kanal navbatiga qo'shishda xato:", error)
       );
       return "queued";
@@ -786,6 +787,10 @@ export async function announceProduct(
       console.error("Ijtimoiy tarmoq navbatiga qo'shishda xato:", error)
     );
   }
+
+  // Kategoriyani eslab qo'yamiz: keyingi navbat posti iloji bo'lsa
+  // BOSHQA kategoriyadan olinadi (`orderByVariety`).
+  await rememberPostedCategory(product.category);
 
   return "posted";
 }

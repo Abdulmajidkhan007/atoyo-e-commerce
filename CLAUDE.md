@@ -189,6 +189,13 @@ ustama `settings/pricing`, standart 5%).
   avtomatik chiqadi (`lib/telegram/channel-queue.ts`,
   `/api/cron/channel` + har e'lon oldidan 2 tadan). Tahrir
   (`refresh`) chegaraga tushmaydi.
+- **Navbat XILMA-XIL tartibda bo'shatiladi** (`orderByVariety`):
+  ketma-ket bir xil kategoriyadagi post chiqmaydi — iloji bo'lsa
+  oldingisidan BOSHQA kategoriyadagi eng eski yozuv olinadi (oxirgi
+  post kategoriyasi `settings/telegram.channelLastCategory` da).
+  Hech narsa kechiktirilmaydi va tashlanmaydi, faqat TARTIB
+  o'zgaradi; navbatda bitta kategoriya bo'lsa tartib avvalgidek
+  (FIFO). Testi: `channel-queue.test.ts`.
 - Telegram bitta kanalga daqiqasiga ~20 ta tahrirga ruxsat beradi:
   `refresh-channel` 15 tadan oladi, orasida 3 s kutadi;
   `callTelegramApi` 429 dagi `retry_after` ni o'qib qayta uriniladi.

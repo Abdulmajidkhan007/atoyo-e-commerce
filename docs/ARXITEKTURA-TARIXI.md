@@ -650,3 +650,38 @@ ishlaydi, o'zgartirish shart emas) `/en` avtomatik yoqiladi:
 `LanguageSwitcher`, `sitemap.ts`, `localeAlternates()` — hammasi
 `ROUTED_LOCALES` dan o'qiydi.
 
+## 28. Kanal navbati: "faqat cho'tka keladi"
+
+Mijoz kanalga shikoyat yozdi: *"Каналларингда фақат унитаз шоткаси
+келади, 20та расм шотка… бошқа махсулотларинг хам кўпку"*.
+
+Sabab kodda edi. Xodim bir o'tirishda ketma-ket 20 ta bir xil
+turdagi mahsulot kirim qildi; `channelQueue` esa sof FIFO edi
+(`dueChannelPosts` — `orderBy("dueAt")`), shuning uchun kanalga
+ham ketma-ket 20 ta cho'tka posti chiqdi. Obunachi uchun kanal
+"bitta mahsulotli do'kon" bo'lib ko'rindi, garchi bazada boshqa
+kategoriyalar ham navbatda turgan bo'lsa ham.
+
+**Yechim — tartib, chegara emas.** `orderByVariety()` navbatdan
+post tanlaganda oldingisidan BOSHQA kategoriyadagi eng eski
+yozuvni oladi; topilmasa oddiy FIFO. Oxirgi post kategoriyasi
+`settings/telegram.channelLastCategory` da saqlanadi, shuning
+uchun tartib cron chaqiruvlari orasida ham buzilmaydi.
+
+Ataylab QILINMAGAN narsalar:
+- **Kechiktirish yo'q.** "Bir kategoriyadan 2 tadan ko'p bo'lmasin,
+  qolgani keyinroq" degan variant ko'rib chiqildi va rad etildi:
+  navbat bitta kategoriyadan iborat bo'lsa kanal jim qolib ketardi
+  va mahsulot bir necha kun e'lon qilinmasdi.
+- **Yozuv tashlanmaydi.** Funksiya faqat tartiblaydi — kirish va
+  chiqish to'plami bir xil (testda qulflangan), shuning uchun
+  hech bir mahsulot navbatda qolib ketmaydi.
+
+`dueChannelPosts` bazadan `limit` ning 4 barobarini o'qiydi (ko'pi
+bilan 40): tanlash uchun tanlov bo'lishi kerak, aks holda
+xilma-xillik ishlamaydi.
+
+**Kod tuzatmaydigan qismi.** Kanal mazmuni tor bo'lishining asosiy
+sababi baribir operatsion: 10 000 rejadagi mahsulotdan hozir ~125
+tasi kirim qilingan va ularning katta qismi bir kategoriyadan.
+Tartib faqat bazada xilma-xillik BOR bo'lganda yordam beradi.
