@@ -467,7 +467,19 @@ export async function startOptionalFieldsFlow(params: {
       OPTIONAL_FIELDS.slice(i, i + 2).map((f) => ({ text: f.label, callback_data: `ap|ef|${f.field}` }))
     );
   }
-  rows.push([{ text: "✅ Yetarli, tayyor", callback_data: "ap|done" }]);
+  /**
+   * "DONE" TUGMASI MAHSULOT ID SINI OLIB YURADI.
+   *
+   * Sabab (haqiqiy voqea): xodim kirim qildi, keyin boshqa ish bilan
+   * band bo'ldi va oradan vaqt o'tib eski xabardagi "✅ Yetarli,
+   * tayyor" tugmasini bosdi. Sessiya esa shu orada boshqa amal bilan
+   * tozalangan edi — bot "Sessiya tugagan" dedi va MAHSULOT
+   * CHERNOVIK BO'LIB QOLIB KETDI: saytda ham, kanalda ham yo'q.
+   *
+   * Endi ID tugmaning o'zida, shuning uchun sessiya bo'lmasa ham
+   * nashr ishlaydi (`ap|done|<id>`).
+   */
+  rows.push([{ text: "✅ Yetarli, tayyor", callback_data: `ap|done|${product.id}` }]);
 
   await sendChatMessage(
     chatId,
@@ -553,7 +565,7 @@ async function sendEditMenu(session: AdminSession, product: Product): Promise<vo
       callback_data: "ap|vr|list",
     },
   ]);
-  rows.push([{ text: "✅ Tugatish", callback_data: "ap|done" }]);
+  rows.push([{ text: "✅ Tugatish", callback_data: `ap|done|${product.id}` }]);
 
   await sendChatMessage(
     session.chatId,
@@ -1184,16 +1196,45 @@ export async function handleAdminSessionCallback(params: {
     return;
   }
 
-  const session = await getSession(userId);
+  const parts0 = data.split("|"); // ["ap", action, value?]
+
+  let session = await getSession(userId);
   if (!session) {
-    await answerCallbackQuery(callbackQueryId, "Sessiya tugagan. Qaytadan boshlang.");
-    return;
+    /**
+     * SESSIYASIZ YAKUNLASH (zaxira yo'l).
+     *
+     * `ap|done|<productId>` bosilgan bo'lsa mahsulotni sessiyasiz ham
+     * nashr qilamiz — aks holda chernovik abadiy osilib qolardi.
+     * Boshqa amallar uchun sessiya haqiqatan kerak (ular qadamma-qadam
+     * holatga tayanadi), shuning uchun ular avvalgidek rad etiladi.
+     */
+    const rescueId = parts0[1] === "done" ? (parts0[2] ?? "") : "";
+    if (!rescueId) {
+      await answerCallbackQuery(callbackQueryId, "Sessiya tugagan. Qaytadan boshlang.");
+      return;
+    }
+
+    const snap = await getAdminDb().collection("products").doc(rescueId).get();
+    if (!snap.exists) {
+      await answerCallbackQuery(callbackQueryId, "Mahsulot topilmadi.");
+      return;
+    }
+
+    session = {
+      flow: "edit_product",
+      step: "menu",
+      chatId: params.chatId,
+      threadId: params.threadId,
+      draft: {},
+      productId: rescueId,
+      updatedAt: Date.now(),
+    };
   }
   session.threadId = session.threadId ?? params.threadId;
 
-  const parts = data.split("|"); // ["ap", action, value?]
-  const action = parts[1];
-  const value = parts[2] ?? "";
+  // parts0: ["ap", action, value?]
+  const action = parts0[1];
+  const value = parts0[2] ?? "";
 
   // Bekor qilish
   if (action === "cancel") {
@@ -1232,8 +1273,18 @@ export async function handleAdminSessionCallback(params: {
     let publishedCode: number | undefined;
     /** Kanal natijasi - xodimga ochiq aytiladi (jimgina yo'qolmasin). */
     let announceResult: AnnounceResult | null = null;
-    if (session.productId) {
-      const ref = getAdminDb().collection("products").doc(session.productId);
+
+    /**
+     * QAYSI MAHSULOT — TUGMADAGISI BIRINCHI.
+     *
+     * Eski xabardagi tugma bosilishi mumkin, sessiya esa allaqachon
+     * BOSHQA mahsulotniki bo'lishi mumkin. Tugma o'z ID sini olib
+     * yuradi, shuning uchun aynan o'sha mahsulot nashr qilinadi —
+     * aks holda noto'g'ri mahsulot kanalga chiqib ketardi.
+     */
+    const targetId = value || session.productId;
+    if (targetId) {
+      const ref = getAdminDb().collection("products").doc(targetId);
       const snap = await ref.get();
       if (snap.exists) {
         let product = { id: snap.id, ...snap.data() } as Product;

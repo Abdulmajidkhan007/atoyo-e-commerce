@@ -39,6 +39,12 @@ const schema = z.union([
       supplier: z.string().max(120).optional(),
       material: z.string().max(60).optional(),
       isActive: z.boolean().optional(),
+      /**
+       * Chernovikni NASHR qilish uchun (`isDraft: false`). Telegram
+       * kirimida sessiya yo'qolsa mahsulot chernovik bo'lib osilib
+       * qolardi va uni paneldan ochishning yo'li yo'q edi.
+       */
+      isDraft: z.boolean().optional(),
     }),
   }),
   /**
@@ -179,8 +185,20 @@ export async function POST(request: Request) {
       skipped.push(`${product.name} (rasmi yo'q)`);
       continue;
     }
-    if (product.isActive === false || product.isDraft) {
-      skipped.push(`${product.name} (sotuvda emas)`);
+    /**
+     * SABAB ANIQ AYTILADI.
+     *
+     * Ilgari ikkala holat ham "(sotuvda emas)" deb chiqardi va admin
+     * mahsulot zaxirasi tugagan deb o'ylardi. Aslida ko'p hollarda u
+     * Telegram kirimidan qolgan CHERNOVIK edi — "✅ Yetarli, tayyor"
+     * bosilmagani (yoki sessiya yo'qolgani) uchun nashr qilinmagan.
+     */
+    if (product.isDraft) {
+      skipped.push(`${product.name} (chernovik — hali nashr qilinmagan)`);
+      continue;
+    }
+    if (product.isActive === false) {
+      skipped.push(`${product.name} (saytda yopiq)`);
       continue;
     }
 

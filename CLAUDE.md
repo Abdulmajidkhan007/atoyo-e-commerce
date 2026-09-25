@@ -29,6 +29,15 @@ UI tili — o'zbekcha. Dizayn: Deep Navy/Slate + Aqua `#00D2C4`.
   `node_modules` o'chadi; `.claude/hooks/session-start.sh` tiklaydi.
   Untracked fayllar yo'qoladi — tez-tez commit + push qiling.
 
+### Topshiriqni marshrutlash
+
+Ish qaysi yo'l bilan bajarilishi (o'zim / reja + rozilik / alohida
+sessiya) — **`docs/ISH-ARXITEKTURASI.md`**: 8 ta holat, R1-R11
+qoidalari, tekshiruvchining 5 ta oynasi. Rollar
+`.claude/agents/` da (`planner`, `developer`, `reviewer`,
+`investigator`), spetsifikatsiyalar `ai/specs/` da.
+**Ziddiyat bo'lsa shu fayl (CLAUDE.md) ustun.**
+
 ### Tekshiruv (commit oldidan MAJBURIY)
 
 ```bash
@@ -265,6 +274,12 @@ ustama `settings/pricing`, standart 5%).
   ko'chadi va 30 kun turadi (`lib/products/trash.ts`), muddati
   o'tgani ro'yxat ochilganda tozalanadi. Tiklangan mahsulot
   **`isActive: false`** bilan qaytadi.
+- **Chernovik (`isDraft`) — nashr qilinmagan mahsulot.** U saytda
+  ham, kanalda ham yo'q. Ommaviy e'lon uni ANIQ sabab bilan
+  o'tkazib yuboradi ("chernovik — hali nashr qilinmagan"; ilgari
+  "sotuvda emas" deb chalg'itardi). Paneldan topish: Katalog →
+  **"Chernoviklar"** filtri; nashr qilish: **"Saytda ochish"**
+  (u `isActive: true` bilan birga `isDraft: false` ham yuboradi).
 - **Import qilingan mahsulot saytda darhol ko'rinmaydi** —
   `isActive: false`; ochish `/admin/katalog/tartib` dan. `isActive`
   — yagona ko'rinish filtri, yangi "yashirin" maydon qo'shilmaydi.
@@ -442,6 +457,11 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   kalit so'zlar, o'rnatish, chegirma, tarjimalar); namunani bot
   `/namuna` bilan ko'rsatadi (`INTAKE_SAMPLE` `FIELD_ALIASES` bilan
   MOS bo'lishi shart). Albom holati `intakeAlbums/{mediaGroupId}`.
+  **"✅ Yetarli, tayyor" tugmasi mahsulot ID sini O'ZIDA olib
+  yuradi** (`ap|done|<id>`): sessiya yo'qolgan bo'lsa ham nashr
+  ishlaydi va eski xabardagi tugma NOTO'G'RI mahsulotni chiqarib
+  yubormaydi. Ilgari bunday holatda bot "Sessiya tugagan" derdi va
+  mahsulot chernovik bo'lib abadiy osilib qolardi.
 - `channel.ts`, `channel-queue.ts`, `channel-stats.ts`,
   `channel-report.ts` — kanal posti, navbat va statistika.
 - Sirlar: `secrets/telegram` (`lib/telegram/secrets.ts`) env'dan
@@ -482,6 +502,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/AUDIT.md` + `docs/AUDIT-ISHLARI.md` | Mustaqil audit va undan chiqqan ishlar navbati (tayyor topshiriqlar) |
 | `docs/KIRIM-VA-IMPORT.md` | Kirim va Excel import tartibi |
 | `docs/KIRIM-REJASI.md` | Har kuni QAYSI kategoriyadan kiritish (kanal va katalog bir xil tovarga to'lib qolmasin) |
+| `docs/ISH-ARXITEKTURASI.md` | Topshiriqni marshrutlash: 8 holat, rollar, tekshiruv oynalari |
 | `docs/UI-SHISHA.md` | Shisha (glass) ko'rinish qoidalari — sayt va ilova |
 | `docs/QULAYLIK.md` | Ekran o'quvchi va klaviatura qoidalari (a11y) — yangi komponent yozganda |
 | `docs/UI-3D.md`, `docs/TV.md`, `docs/DESKTOP.md`, `docs/STICKERS.md` | Bo'limga xos |

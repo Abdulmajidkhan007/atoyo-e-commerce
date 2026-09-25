@@ -97,6 +97,12 @@ export function CatalogCleanup({ taxonomy, brands, initial }: Props) {
   const [onlyNotPosted, setOnlyNotPosted] = useState(false);
   /** Saytda hali ochilmaganlar (import qilinganlar shunday keladi). */
   const [onlyHidden, setOnlyHidden] = useState(false);
+  /**
+   * CHERNOVIKLAR — Telegram kirimidan qolgan "yarim" mahsulotlar.
+   * Ular saytda ham, kanalda ham yo'q; ilgari ularni paneldan
+   * topishning YO'LI yo'q edi va ular jimgina yo'qolib ketardi.
+   */
+  const [onlyDrafts, setOnlyDrafts] = useState(false);
   const [page, setPage] = useState(0);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -225,6 +231,7 @@ export function CatalogCleanup({ taxonomy, brands, initial }: Props) {
       if (onlyNoImage && product.imageCount > 0) return false;
       if (onlyNotPosted && product.posted) return false;
       if (onlyHidden && product.isActive) return false;
+      if (onlyDrafts && !product.isDraft) return false;
       // Kategoriya serverda filtrlangan bo'lsa ham, brend qo'shimcha
       // filtr sifatida shu yerda qo'llanadi (ikkovi birga - indekssiz).
       if (category && brand && product.brand !== brand) return false;
@@ -240,7 +247,7 @@ export function CatalogCleanup({ taxonomy, brands, initial }: Props) {
         String(product.code ?? "").includes(term)
       );
     });
-  }, [products, search, onlyNoImage, onlyNotPosted, onlyHidden, category, brand, appliedQuery]);
+  }, [products, search, onlyNoImage, onlyNotPosted, onlyHidden, onlyDrafts, category, brand, appliedQuery]);
 
   const pageItems = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -702,6 +709,10 @@ export function CatalogCleanup({ taxonomy, brands, initial }: Props) {
               <Checkbox size="small" checked={onlyHidden} onChange={(e) => setOnlyHidden(e.target.checked)} />
               Saytda yopiqlari
             </label>
+            <label className="flex items-center gap-1 text-sm text-navy-300">
+              <Checkbox size="small" checked={onlyDrafts} onChange={(e) => setOnlyDrafts(e.target.checked)} />
+              Chernoviklar
+            </label>
             <span className="text-sm text-navy-300">
               Topildi: {filtered.length}
               {loadedAll || appliedQuery ? "" : "+"} • Belgilangan: {selectedIds.length}
@@ -795,14 +806,18 @@ export function CatalogCleanup({ taxonomy, brands, initial }: Props) {
               Instagram/Facebook
             </Button>
             {/* "Saytda ochish" - import qilingan mahsulotlar shu
-                tugma bosilgunicha katalogda ko'rinmaydi. */}
+                tugma bosilgunicha katalogda ko'rinmaydi.
+                `isDraft: false` ham yuboriladi: Telegram kirimida
+                sessiya yo'qolsa mahsulot chernovik bo'lib qolardi va
+                faqat `isActive` ni yoqish uni kanalga chiqara olmasdi
+                (e'lon chernovikni o'tkazib yuboradi). */}
             <Button
               size="small"
               variant="contained"
               color="success"
               startIcon={<VisibilityOutlinedIcon />}
               disabled={busy !== null}
-              onClick={() => void runUpdate({ isActive: true }, "saytda ochildi")}
+              onClick={() => void runUpdate({ isActive: true, isDraft: false }, "saytda ochildi")}
             >
               Saytda ochish
             </Button>

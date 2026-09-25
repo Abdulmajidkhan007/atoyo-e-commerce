@@ -728,3 +728,53 @@ Kod bu muammoni TO'LIQ yecha olmaydi: App password har doim hisob
 paroliga bog'liq. Barqaror yechim — yuborishni parolga bog'liq
 bo'lmagan xizmatga (Brevo/Resend) o'tkazish; qadamlari
 `docs/QADAMLAR.md` 10-bandida.
+
+## 30. Chernovik bo'lib yo'qolgan mahsulot
+
+Xodim "Kirim" topigiga rasm + izoh tashladi, bot mahsulotni yaratdi
+va "Qolgan ma'lumotlarni ham to'ldirasizmi?" deb tugmalar chiqardi.
+Xodim biroz vaqtdan keyin **eski xabardagi "✅ Yetarli, tayyor"**
+tugmasini bosdi — bot esa *"Sessiya tugagan. Qaytadan boshlang"*
+dedi.
+
+Natija: mahsulot (`Vantus prujinali kulrang`) bazada bor, lekin
+`isDraft: true` — saytda ham, kanalda ham YO'Q. Katalogda qidirilsa
+topilmaydi. Admin paneldagi ommaviy e'lon esa uni
+**"(sotuvda emas)"** deb o'tkazib yubordi, ya'ni admin zaxirasi
+tugagan deb o'yladi. Mahsulot jimgina yo'qoldi.
+
+Uchta sabab bir joyda:
+
+1. **Tugma holatni olib yurmasdi.** `callback_data` shunchaki
+   `ap|done` edi, mahsulot ID si esa faqat sessiyada. Sessiya
+   `adminSessions/{userId}` da va foydalanuvchi uchun BITTA —
+   boshqa amal uni tozalab yuborsa, eski xabardagi tugma ishlamay
+   qoladi. Endi `ap|done|<productId>`: sessiya bo'lmasa zaxira yo'l
+   bilan nashr qilinadi, sessiya BOSHQA mahsulotniki bo'lsa ham
+   tugmadagi ID ustun turadi (aks holda noto'g'ri mahsulot kanalga
+   chiqib ketardi).
+2. **Xato xabari chalg'itardi.** `isDraft` va `isActive === false`
+   bitta matn bilan ("sotuvda emas") chiqardi. Endi ikkalasi
+   ajratilgan: "chernovik — hali nashr qilinmagan" va
+   "saytda yopiq".
+3. **Paneldan tuzatib bo'lmasdi.** Filtrlarda chernovik yo'q edi,
+   "Saytda ochish" esa faqat `isActive` ni yoqardi — chernovik
+   baribir kanalga chiqmasdi. Endi **"Chernoviklar"** filtri bor va
+   "Saytda ochish" `isDraft: false` ni ham yuboradi.
+
+Umumiy saboq: **Telegram tugmasi uzoq yashaydi, sessiya esa qisqa.**
+Shuning uchun tugma o'zi bilan yetarli holatni olib yurishi kerak.
+
+## 31. Ish arxitekturasi (marshrutlash)
+
+`docs/ISH-ARXITEKTURASI.md` qo'shildi: kelgan topshiriqni qaysi yo'l
+bilan bajarish (8 holat), qachon reja va rozilik so'rash, qachon
+to'xtab savol berish, tekshiruvchining 5 ta oynasi. Rollar
+`.claude/agents/` da.
+
+Asl sxema (frontend jamoalarida ishlatiladigan `planner → developer
+→ reviewer`) bir joyda ATAYLAB o'zgartirildi: unda `R11` —
+*"commit/push faqat aniq so'ralganda"*. Bizda buning aksi kerak,
+chunki sandbox konteyneri qayta ishga tushganda commit qilinmagan
+ish YO'QOLADI va deploy'ning o'zi git push orqali bo'ladi. Shuning
+uchun bizda R11 — "tekshiruv zanjiri o'tgach darhol commit + push".
