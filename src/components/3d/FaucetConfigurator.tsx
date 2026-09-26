@@ -171,6 +171,14 @@ export function FaucetConfigurator({
 
             {/* Muhit - HDR FAYLSIZ (yuqoridagi izohga qarang). */}
             <Environment resolution={160}>
+              {/* ASOSIY FON (muhit uchun). Xrom = 100% metall: u rangini
+                  faqat atrofdan AKS ETTIRADI. Kran egri - biror joyi
+                  albatta yorug' Lightformer'ni ko'radi. Radiator esa
+                  tekis qutilar: yuzasi faqat bitta tomonga qaraydi va
+                  u tomon qora bo'lsa butun model QOP-QORA chiqardi
+                  (egasining skrinshoti). Kulrang fon har tomondan
+                  yumshoq aks beradi. */}
+              <color attach="background" args={["#7d8f9c"]} />
               <Lightformer intensity={2.6} position={[0, 4, 2]} scale={[8, 2, 1]} color="#ffffff" />
               <Lightformer intensity={1.6} position={[-5, 1, 2]} scale={[5, 5, 1]} color="#C49A6C" />
               <Lightformer intensity={1.2} position={[5, -1, 1]} scale={[5, 5, 1]} color="#5E8CA6" />
