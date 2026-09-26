@@ -27,6 +27,7 @@ import { freeDeliveryGap } from "@/lib/delivery/text";
 import { deliveryFeeFor } from "@/lib/orders/promo";
 import { isValidName, normalizePhone } from "@/lib/validation";
 import { formatSom } from "@/lib/format";
+import { usePricingSettings } from "@/lib/products/usePricing";
 
 export interface QuickBuyItem {
   productId: string;
@@ -70,8 +71,14 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
   const [transferEnabled, setTransferEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** Eng kam buyurtma summasi (`/api/pricing`) — 0 bo'lsa cheklov yo'q. */
-  const [minOrder, setMinOrder] = useState(0);
+  /**
+   * Eng kam buyurtma summasi (0 — cheklov yo'q). OLDINDAN ko'rinsin:
+   * mijoz formani to'ldirib bo'lib "summa kam" xatosini ko'rmasin.
+   * Mavjud hook ishlatiladi — u `/api/pricing` javobini (`{ pricing }`)
+   * to'g'ri o'qiydi va keshlaydi (birinchi urinishda javob shakli
+   * noto'g'ri o'qilgan edi va ogohlantirish hech qachon chiqmasdi).
+   */
+  const { minOrderAmount: minOrder } = usePricingSettings();
   /** Server buyurtma raqamisiz "qabul qilindi" desa (bot tuzog'i). */
   const [received, setReceived] = useState(false);
 
@@ -85,14 +92,7 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
         if (active) setTransferEnabled(Boolean(data?.transfer));
       })
       .catch(() => {});
-    // Eng kam summa OLDINDAN ko'rinsin - mijoz formani to'ldirib bo'lib,
-    // keyin "summa kam" degan xatoni ko'rmasin (tekshiruvchi D5).
-    fetch("/api/pricing")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { minOrderAmount?: number } | null) => {
-        if (active) setMinOrder(Math.max(0, Number(data?.minOrderAmount) || 0));
-      })
-      .catch(() => {});
+
     return () => {
       active = false;
     };

@@ -411,4 +411,14 @@ keyin QOLGAN nitlar. Hech biri hozir xavf emas.
    keyin yozadi; `attachReceipt` tranzaksiyada va "to'langan"ni
    qayta tekshiradi, shuning uchun amalda poyga yo'q. Baribir
    tranzaksiyaga o'tkazish toza bo'lardi.
+4. **Umumiy 1-klik chegarasi — ataylab qilingan kelishuv.** Soatiga
+   30 ta muvaffaqiyatli mehmon buyurtmasi: 2-3 ta IP bilan hujum
+   qilgan odam uni to'ldirib, 1-klikni bir soatga HAMMA uchun o'chirib
+   qo'yishi mumkin (tizimga kirib buyurtma berish ishlayveradi).
+   Evaziga zaxira va guruh spamdan himoyalangan. To'lsa "Actions" ga
+   ogohlantirish keladi. Haqiqiy trafik 30 dan oshsa — `GLOBAL_LIMIT`
+   ni oshiring (`src/app/api/orders/quick/route.ts`).
+5. **Limitlar atomik emas.** `peekRateLimit` → buyurtma →
+   `checkRateLimit`: parallel so'rovlar limitdan bir nechtaga oshib
+   ketishi mumkin; IP limiti buni chegaralaydi.
 

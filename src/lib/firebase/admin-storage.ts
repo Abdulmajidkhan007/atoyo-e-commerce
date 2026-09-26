@@ -107,3 +107,8 @@ export async function readPrivateFile(filePath: string): Promise<Buffer> {
   const [buffer] = await getAdminStorage().bucket(BUCKET_NAME).file(filePath).download();
   return buffer;
 }
+
+/** Yopiq faylni o'chirish (topilmasa jim). */
+export async function deletePrivateFile(filePath: string): Promise<void> {
+  await getAdminStorage().bucket(BUCKET_NAME).file(filePath).delete({ ignoreNotFound: true });
+}

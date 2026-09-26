@@ -1,6 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { savePrivateFile } from "@/lib/firebase/admin-storage";
+import { deletePrivateFile, savePrivateFile } from "@/lib/firebase/admin-storage";
 import { sendTopicFile } from "@/lib/telegram/bot";
 import { buildPaymentReviewKeyboard } from "@/lib/telegram/keyboard";
 import { reportError } from "@/lib/ops/report-error";
@@ -110,6 +110,9 @@ export async function attachReceipt(orderId: string, bytes: Buffer): Promise<Ord
    * yakuniy yozuv shartsiz `paymentStatus: "pending"` qilardi va
    * tasdiq jimgina yo'qolardi. Endi tranzaksiyada qayta o'qiladi.
    */
+  // Parallel yuklashlar oldingi tekshiruvdan birga o'tib, fayllarini
+  // saqlab qo'yishi mumkin; tranzaksiya ortiqchasini rad etadi — shunda
+  // uning fayli ham o'chiriladi (chegaradan tashqari yetim fayl qolmasin).
   const updated = await getAdminDb().runTransaction(async (tx) => {
     const fresh = await tx.get(ref);
     if (!fresh.exists) throw new ReceiptError("Buyurtma topilmadi.", 404);
@@ -119,6 +122,9 @@ export async function attachReceipt(orderId: string, bytes: Buffer): Promise<Ord
     // Admin avval "pul tushmadi" degan bo'lsa - yangi chek bilan qayta tekshiruvga.
     tx.update(ref, { receipt, receiptCount, paymentStatus: "pending", updatedAt: uploadedAt });
     return { ...current, receipt, receiptCount, paymentStatus: "pending", updatedAt: uploadedAt } as Order;
+  }).catch(async (error: unknown) => {
+    await deletePrivateFile(path).catch(() => {});
+    throw error;
   });
 
   await refreshOrderTelegramMessage(updated);

@@ -59,6 +59,11 @@ describe("ipLimitKey", () => {
     expect(ipLimitKey("::1")).toBe("0:0:0:0::/64");
   });
 
+  it("IPv6 ichidagi IPv4 (::ffff:...) — oddiy IPv4, hammasi bitta kalitga tushmaydi", () => {
+    expect(ipLimitKey("::ffff:203.0.113.7")).toBe("203.0.113.7");
+    expect(ipLimitKey("::ffff:198.51.100.1")).not.toBe(ipLimitKey("::ffff:203.0.113.7"));
+  });
+
   it("boshqa /64 — boshqa kalit", () => {
     expect(ipLimitKey("2001:db8:1:3::1")).not.toBe(ipLimitKey("2001:db8:1:2::1"));
   });

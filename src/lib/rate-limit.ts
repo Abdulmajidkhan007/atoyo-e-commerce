@@ -96,6 +96,10 @@ export async function peekRateLimit(params: {
  */
 export function ipLimitKey(ip: string): string {
   if (!ip.includes(":")) return ip;
+  // IPv4 IPv6 ichida ("::ffff:203.0.113.7") — oddiy IPv4 sifatida.
+  // Aks holda HAMMA IPv4 mijoz bitta "0:0:0:0::/64" kalitiga tushardi.
+  const mapped = ip.match(/(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (mapped) return mapped[1]!;
   const [head = "", tail = ""] = ip.toLowerCase().split("::");
   const headParts = head ? head.split(":") : [];
   const tailParts = tail ? tail.split(":") : [];
