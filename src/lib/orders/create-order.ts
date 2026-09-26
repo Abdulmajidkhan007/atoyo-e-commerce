@@ -21,6 +21,8 @@ import type { UserRole } from "@/types/user";
 import type { PromoCode } from "@/types/promo";
 import { recordStockMoves } from "@/lib/inventory/stock-moves";
 import { formatSom } from "@/lib/format";
+import { getTransferSettings } from "@/lib/payments/transfer";
+import { isTransferUsable } from "@/types/payment-transfer";
 
 /** Buyurtmani qabul qilib bo'lmasa (zaxira yetmasa, mahsulot yo'q) - mijozga
  *  tushunarli sabab qaytarish uchun alohida xato turi. */
@@ -37,8 +39,15 @@ export interface NewOrderInput {
   items: OrderItem[];
   location?: OrderLocation | null;
   deliveryAddress?: string | null;
-  paymentMethod?: "cash" | "online";
+  paymentMethod?: "cash" | "online" | "transfer";
   userId?: string | null;
+  /** Tizimga kirmasdan ("1 klikda") berilgan buyurtma. */
+  guest?: boolean;
+  /**
+   * Buyurtma sahifasiga kirish kalitining xeshi (`access-token.ts`).
+   * Kalitning o'zi chaqiruvchida qoladi va mijozga havolada beriladi.
+   */
+  accessTokenHash?: string | null;
   customerEmail?: string | null;
   /** Mijoz kiritgan promokod (ixtiyoriy) - serverda qayta tekshiriladi. */
   promoCode?: string | null;
@@ -68,6 +77,14 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
   const now = Date.now();
   const paymentMethod = input.paymentMethod ?? "cash";
   const orderRef = db.collection("orders").doc();
+
+  // O'tkazma faqat sozlamada yoqilgan va karta to'liq bo'lsa - aks
+  // holda mijoz karta raqamisiz "o'tkazma" buyurtmasi bilan qolardi.
+  if (paymentMethod === "transfer" && !isTransferUsable(await getTransferSettings())) {
+    throw new OrderValidationError(
+      "Kartaga o'tkazma hozir qabul qilinmayapti — naqd to'lovni tanlang."
+    );
+  }
 
   // ---- Narx va zaxira SERVERDA tekshiriladi ----
   // Client yuborgan narxga ishonilmaydi: har bir mahsulot bazadan qayta
@@ -280,7 +297,11 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     location: input.location ?? null,
     deliveryAddress: input.deliveryAddress ?? null,
     paymentMethod,
-    paymentStatus: paymentMethod === "online" ? "pending" : "not_required",
+    // Onlayn va o'tkazma - pul hali kelmagan; naqd - to'lov yetkazganda.
+    paymentStatus: paymentMethod === "cash" ? "not_required" : "pending",
+    receipt: null,
+    guest: input.guest === true,
+    accessTokenHash: input.accessTokenHash ?? null,
     status: "pending",
     stockReturned: false,
     telegramMessageId: null,

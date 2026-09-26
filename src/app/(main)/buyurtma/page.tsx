@@ -90,7 +90,15 @@ export default function CheckoutPage() {
     }
     prefillFromProfile();
   }, [profile]);
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "online" | "transfer">("cash");
+  /** Kartaga o'tkazma yoqilganmi (`/api/payment-info`). */
+  const [transferEnabled, setTransferEnabled] = useState(false);
+  useEffect(() => {
+    fetch("/api/payment-info")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { transfer?: unknown } | null) => setTransferEnabled(Boolean(data?.transfer)))
+      .catch(() => {});
+  }, []);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,15 +159,26 @@ export default function CheckoutPage() {
         }),
       });
 
-      if (!response.ok) throw new Error("Buyurtma yuborilmadi.");
-      const { orderId } = await response.json();
+      const data = (await response.json().catch(() => ({}))) as {
+        orderId?: string;
+        accessToken?: string;
+        error?: string;
+      };
+      // Server sababini aytadi (zaxira yetmaydi, eng kam summa, o'tkazma
+      // o'chiq...) - ilgari hammasi bitta umumiy matn bilan yashirilardi.
+      if (!response.ok || !data.orderId) throw new Error(data.error ?? dict.checkout.submitError);
+      const { orderId, accessToken } = data;
 
       dispatch(clearCart());
-      // Onlayn to'lovda mijoz Payme/Click tanlash sahifasiga yo'naltiriladi.
-      const nextPath = paymentMethod === "online" && orderId ? `/tolov/${orderId}` : "/profil";
+      // Onlayn to'lov - Payme/Click sahifasi; qolganlari - buyurtma
+      // sahifasi (o'tkazmada u yerda karta va chek yuklash bor).
+      const nextPath =
+        paymentMethod === "online"
+          ? `/tolov/${orderId}`
+          : `/buyurtma/${orderId}${accessToken ? `?t=${encodeURIComponent(accessToken)}` : ""}`;
       router.push(localeHref(nextPath, locale));
-    } catch {
-      setSubmitError(dict.checkout.submitError);
+    } catch (error) {
+      setSubmitError(error instanceof Error && error.message ? error.message : dict.checkout.submitError);
     } finally {
       setIsSubmitting(false);
     }
@@ -259,12 +278,21 @@ export default function CheckoutPage() {
 
         <div className="rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
           <p className="mb-2 text-sm font-medium text-navy-900 dark:text-white">{dict.checkout.paymentTitle}</p>
-          <RadioGroup value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as "cash" | "online")}>
+          <RadioGroup
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value as "cash" | "online" | "transfer")}
+          >
             <FormControlLabel value="cash" control={<Radio />} label={dict.checkout.payCash} />
+            {transferEnabled && (
+              <FormControlLabel value="transfer" control={<Radio />} label={dict.payment.payTransfer} />
+            )}
             <FormControlLabel value="online" control={<Radio />} label={dict.checkout.payOnline} />
           </RadioGroup>
           {paymentMethod === "online" && (
             <p className="mt-1 text-xs text-navy-300">{dict.checkout.onlineNote}</p>
+          )}
+          {paymentMethod === "transfer" && (
+            <p className="mt-1 text-xs text-navy-300">{dict.payment.transferHint}</p>
           )}
         </div>
 

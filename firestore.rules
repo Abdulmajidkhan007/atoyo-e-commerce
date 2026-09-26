@@ -112,7 +112,13 @@ service cloud.firestore {
     // ko'rishi mumkin; statusni faqat admin/bot (server, Admin SDK orqali,
     // bu qoidalarni chetlab o'tadi) o'zgartira oladi.
     match /orders/{orderId} {
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // YARATISH FAQAT SERVER ORQALI (/api/orders, /api/orders/quick,
+      // bot - Admin SDK). Ilgari kirgan mijoz client SDK bilan o'zi
+      // hujjat yarata olardi, ya'ni `paymentStatus: "paid"` deb yozib
+      // qo'yishi mumkin edi. Kartaga o'tkazmada "to'langan" belgisi
+      // yetkazishga ruxsat bo'lgani uchun bu yopildi (sayt ham, ilova
+      // ham buyurtmani faqat API orqali beradi).
+      allow create: if false;
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow update, delete: if isAdmin();
     }

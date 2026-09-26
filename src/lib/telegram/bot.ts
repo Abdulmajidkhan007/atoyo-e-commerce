@@ -521,6 +521,40 @@ async function callTelegramApiForm<T>(
   return data.result as T;
 }
 
+/**
+ * Topic'ga FAYL yuboradi (multipart) — masalan to'lov cheki.
+ *
+ * Chek Storage'da OCHIQ HAVOLASIZ turadi, shuning uchun Telegram'ga
+ * havola emas, faylning O'ZI yuboriladi. Rasm bo'lsa `sendPhoto`,
+ * PDF bo'lsa `sendDocument`. `replyTo` — buyurtma xabariga javob
+ * sifatida (guruhda chek o'z buyurtmasi ostida turadi).
+ */
+export async function sendTopicFile(params: {
+  topicKey: TelegramTopicKey;
+  file: { buffer: Buffer; fileName: string; contentType: string };
+  caption: string;
+  replyMarkup?: InlineKeyboardMarkup;
+  replyTo?: number | null;
+}): Promise<SentMessage> {
+  const isImage = params.file.contentType.startsWith("image/");
+  const form = new FormData();
+  form.append("chat_id", await getChatId());
+  const threadId = resolveThreadId(await resolveTopicConfig(), params.topicKey);
+  if (threadId) form.append("message_thread_id", String(threadId));
+  form.append("caption", params.caption);
+  form.append("parse_mode", "HTML");
+  if (params.replyMarkup) form.append("reply_markup", JSON.stringify(params.replyMarkup));
+  if (params.replyTo) {
+    form.append("reply_parameters", JSON.stringify({ message_id: params.replyTo, allow_sending_without_reply: true }));
+  }
+  form.append(
+    isImage ? "photo" : "document",
+    new Blob([new Uint8Array(params.file.buffer)], { type: params.file.contentType }),
+    params.file.fileName
+  );
+  return callTelegramApiForm<SentMessage>(isImage ? "sendPhoto" : "sendDocument", form);
+}
+
 /** Stiker faylini yuklaydi va Telegram'dagi `file_id` sini qaytaradi. */
 export async function uploadStickerFile(
   userId: number,

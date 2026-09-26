@@ -130,6 +130,34 @@ export function AdminOrdersTable() {
     }
   };
 
+  /**
+   * O'TKAZMA TO'LOVI: admin bankda pul tushganini ko'rib tasdiqlaydi.
+   * Xuddi shu ishni Telegram'dagi chek ostidagi tugma ham qiladi.
+   */
+  const handlePaymentReview = async (order: Order, paid: boolean) => {
+    const question = paid
+      ? `#${order.id.slice(0, 8)} — ${formatSom(order.totalAmount)} bankda tushganini tekshirdingizmi?`
+      : `#${order.id.slice(0, 8)} — pul tushmagan deb belgilansinmi? Mijoz yangi chek yuklay oladi.`;
+    if (!window.confirm(question)) return;
+
+    setUpdatingOrderId(order.id);
+    setActionError(null);
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paid }),
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string; paymentStatus?: Order["paymentStatus"] };
+      if (!response.ok || !data.paymentStatus) throw new Error(data.error ?? "Saqlanmadi.");
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, paymentStatus: data.paymentStatus! } : o)));
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Saqlanmadi.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
     setUpdatingOrderId(orderId);
     try {
@@ -209,7 +237,61 @@ export function AdminOrdersTable() {
               {order.refundAmount ? (
                 <span className="text-red-500"> • qaytarilgan: {formatSom(order.refundAmount)}</span>
               ) : null}
+              {order.guest ? <span> • 1 klikda (ro&apos;yxatdan o&apos;tmagan)</span> : null}
             </p>
+
+            {/* KARTAGA O'TKAZMA: chek va tasdiq. Chek fayli ochiq havolasiz -
+                faqat shu (admin) route orqali ko'rinadi. */}
+            {order.paymentMethod === "transfer" && (
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg bg-aqua-50/70 px-3 py-2 text-sm dark:bg-navy-800">
+                <span className="font-medium text-navy-900 dark:text-white">
+                  🏦 O&apos;tkazma:{" "}
+                  {order.paymentStatus === "paid"
+                    ? "✅ to'langan"
+                    : order.paymentStatus === "failed"
+                      ? "❌ pul tushmagan"
+                      : order.receipt
+                        ? "🧾 chek yuklangan — tekshiring"
+                        : "⏳ chek kutilmoqda"}
+                </span>
+                {order.receipt && (
+                  <Button
+                    size="small"
+                    variant="text"
+                    component="a"
+                    href={`/api/admin/orders/${order.id}/receipt`}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    To&apos;lov chekini ko&apos;rish
+                  </Button>
+                )}
+                {order.paymentStatus !== "paid" && (
+                  <>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="success"
+                      disabled={updatingOrderId === order.id}
+                      onClick={() => void handlePaymentReview(order, true)}
+                    >
+                      To&apos;lov keldi
+                    </Button>
+                    {order.paymentStatus !== "failed" && (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        disabled={updatingOrderId === order.id}
+                        onClick={() => void handlePaymentReview(order, false)}
+                      >
+                        Pul tushmadi
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((opt) => (

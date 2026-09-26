@@ -5,6 +5,7 @@ import { Button } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import { useAppDispatch } from "@/redux/hooks";
 import { addItem } from "@/redux/slices/cartSlice";
+import { QuickBuyButton } from "@/components/checkout/QuickBuyButton";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { defaultVariant, findVariant, variantLabel, variantPrice } from "@/lib/products/variants";
 import { useDisplayPrice, useIsWholesale } from "@/lib/products/usePricing";
@@ -139,6 +140,20 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
       >
         {outOfStock ? dict.product.outOfStock : dict.product.addToCart}
       </Button>
+
+      {/* 1 klikda — TANLANGAN tur bilan (tur tanlanmaguncha o'chiq). */}
+      <QuickBuyButton
+        disabled={outOfStock || !variant}
+        item={{
+          productId: product.id,
+          variantId: variant?.id ?? null,
+          variantLabel: variant ? variantLabel(product, variant) : null,
+          name: product.name,
+          price,
+          thumbnailUrl: product.thumbnailUrl,
+          stock: variant?.stock ?? 0,
+        }}
+      />
     </div>
   );
 }

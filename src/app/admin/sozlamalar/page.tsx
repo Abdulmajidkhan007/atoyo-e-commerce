@@ -8,6 +8,7 @@ import { getSiteSettings } from "@/lib/firebase/admin-content";
 import { BotSettingsForm } from "@/components/admin/BotSettingsForm";
 import { SiteSettingsForm } from "@/components/admin/SiteSettingsForm";
 import { PricingSettingsForm } from "@/components/admin/PricingSettingsForm";
+import { TransferSettingsForm } from "@/components/admin/TransferSettingsForm";
 import { ChannelFooterForm } from "@/components/admin/ChannelFooterForm";
 import { SecretsForm } from "@/components/admin/SecretsForm";
 import { SocialSettingsForm } from "@/components/admin/SocialSettingsForm";
@@ -54,6 +55,15 @@ export default async function AdminSettingsPage() {
           Optom narxdan dona narx qanday hisoblanishi va buyurtmaning eng kam summasi.
         </p>
         <PricingSettingsForm />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">Kartaga o&apos;tkazma</h2>
+        <p className="mb-6 text-sm text-navy-300">
+          Onlayn to&apos;lov (Payme/Click) ulanguncha: mijoz shu kartaga pul o&apos;tkazadi va chek
+          yuklaydi, siz pul tushganini tekshirib tasdiqlaysiz.
+        </p>
+        <TransferSettingsForm />
       </section>
 
       <section>

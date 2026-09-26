@@ -14,6 +14,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 const PAYMENT_LABELS: Record<Order["paymentMethod"], string> = {
   cash: "💵 Naqd (yetkazilganda)",
   online: "💳 Onlayn (karta)",
+  transfer: "🏦 Kartaga o'tkazma",
 };
 
 const PAYMENT_STATUS_LABELS: Record<Order["paymentStatus"], string> = {
@@ -69,10 +70,17 @@ export function formatOrderMessage(order: Order): string {
 
   lines.push(
     `💰 <b>Jami:</b> ${formatSom(order.totalAmount)}`,
-    `💳 <b>To'lov:</b> ${PAYMENT_LABELS[order.paymentMethod]}${PAYMENT_STATUS_LABELS[order.paymentStatus]}`,
-    ``,
-    `Holat: ${STATUS_LABELS[order.status]}`
+    `💳 <b>To'lov:</b> ${PAYMENT_LABELS[order.paymentMethod]}${PAYMENT_STATUS_LABELS[order.paymentStatus]}`
   );
+  // O'tkazmada chek bor-yo'qligi alohida qator: admin "pul keldimi"
+  // deb qarashdan oldin chek yuklanganini ko'rsin.
+  if (order.paymentMethod === "transfer" && order.paymentStatus === "pending") {
+    lines.push(order.receipt ? `🧾 Chek yuklangan — tekshiring` : `🧾 Chek hali yuklanmagan`);
+  }
+  if (order.guest) {
+    lines.push(`👤 Ro'yxatdan o'tmagan (1 klikda) — tasdiqlash uchun qo'ng'iroq qiling`);
+  }
+  lines.push(``, `Holat: ${STATUS_LABELS[order.status]}`);
 
   return lines.join("\n");
 }

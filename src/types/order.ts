@@ -49,10 +49,29 @@ export interface Order {
   location: OrderLocation | null;
   /** Lokatsiya yuborish qiyin bo'lsa - qo'lda yozilgan manzil. */
   deliveryAddress: string | null;
-  /** To'lov usuli: naqd (yetkazilganda) yoki onlayn (karta). */
-  paymentMethod: "cash" | "online";
-  /** Onlayn to'lov holati (naqd uchun doim "not_required"). */
+  /**
+   * To'lov usuli: naqd (yetkazilganda), onlayn (Payme/Click) yoki
+   * KARTAGA O'TKAZMA — mijoz do'kon kartasiga o'zi o'tkazadi va chek
+   * yuklaydi, admin pul tushganini ko'rib tasdiqlaydi.
+   */
+  paymentMethod: "cash" | "online" | "transfer";
+  /**
+   * To'lov holati (naqd uchun doim "not_required"). O'tkazmada:
+   * "pending" (chek kutilmoqda yoki tekshirilmoqda) → "paid" / "failed".
+   */
   paymentStatus: "not_required" | "pending" | "paid" | "failed";
+  /**
+   * O'tkazma cheki. Fayl Storage'da OCHIQ HAVOLASIZ turadi (unda
+   * mijozning bank ma'lumoti bor) — faqat admin server orqali ko'radi.
+   */
+  receipt?: { path: string; contentType: string; size: number; uploadedAt: number } | null;
+  /** Tizimga kirmasdan ("1 klikda") berilgan buyurtma. */
+  guest?: boolean;
+  /**
+   * Buyurtma sahifasiga kirish kalitining SHA-256 xeshi. Kalitning
+   * o'zi faqat mijozga (havolada) beriladi, bazada saqlanmaydi.
+   */
+  accessTokenHash?: string | null;
   status: OrderStatus;
   /** Bekor qilinganda zaxira bir marta qaytariladi - ikki marta qaytmasligi uchun bayroq. */
   stockReturned: boolean;

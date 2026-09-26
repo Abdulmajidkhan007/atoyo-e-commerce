@@ -18,6 +18,7 @@ import { labelOf } from "@/lib/products/taxonomy";
 import { productSpecs } from "@/lib/products/specs";
 import { hasVariants } from "@/lib/products/variants";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
+import { QuickBuyButton } from "@/components/checkout/QuickBuyButton";
 import { ProductVariantPicker } from "@/components/product/ProductVariantPicker";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { FavoriteButton } from "@/components/product/FavoriteButton";
@@ -240,7 +241,19 @@ export default async function ProductPage({ params }: ProductPageParams) {
                 {dict.product.inStock}: <span className="font-medium text-navy-900 dark:text-white">{product.stock} {unitLabel}</span>
               </p>
 
-              <AddToCartButton product={product} />
+              {/* Savat + 1 klikda (ro'yxatdan o'tmasdan) — yonma-yon. */}
+              <div className="flex flex-wrap gap-2">
+                <AddToCartButton product={product} />
+                <QuickBuyButton
+                  item={{
+                    productId: product.id,
+                    name,
+                    price: show(effectivePrice(product)),
+                    thumbnailUrl: product.thumbnailUrl,
+                    stock: product.stock,
+                  }}
+                />
+              </div>
             </>
           )}
 

@@ -82,3 +82,28 @@ export async function uploadProductImageAdmin(
 ): Promise<string> {
   return uploadImageAdmin(`products/${productId}`, file);
 }
+
+/**
+ * YOPIQ FAYL (masalan to'lov cheki) — OCHIQ HAVOLASIZ.
+ *
+ * `saveToStorage` dan farqi: `firebaseStorageDownloadTokens` QO'YILMAYDI,
+ * ya'ni fayl hech qanday URL orqali ochilmaydi (`storage.rules` hammasini
+ * yopgan). O'qish faqat Admin SDK orqali — `readPrivateFile`.
+ * Chekda mijozning bank ma'lumoti bor, u ochiq turmasligi kerak.
+ */
+export async function savePrivateFile(filePath: string, buffer: Buffer, contentType: string): Promise<void> {
+  const safePath = filePath.replace(/[^a-zA-Z0-9/._-]/g, "_");
+  await getAdminStorage()
+    .bucket(BUCKET_NAME)
+    .file(safePath)
+    .save(buffer, {
+      contentType,
+      resumable: false,
+      metadata: { contentType, cacheControl: "private, no-store" },
+    });
+}
+
+export async function readPrivateFile(filePath: string): Promise<Buffer> {
+  const [buffer] = await getAdminStorage().bucket(BUCKET_NAME).file(filePath).download();
+  return buffer;
+}

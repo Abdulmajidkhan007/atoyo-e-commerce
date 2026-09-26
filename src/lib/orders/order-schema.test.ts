@@ -1,0 +1,36 @@
+import { describe, expect, it } from "vitest";
+import { orderErrorMessage, quickOrderSchema } from "./order-schema";
+
+const valid = {
+  customerName: "Abdulloh Sharipov",
+  phoneNumber: "+998 99 999 02 22",
+  items: [{ productId: "p1", name: "Lipuchka", price: 4000, quantity: 1, thumbnailUrl: "" }],
+  deliveryAddress: "Qo'qon, Navbahor 45",
+  paymentMethod: "transfer",
+};
+
+describe("1 klikda buyurtma sxemasi", () => {
+  it("to'liq ma'lumot qabul qilinadi", () => {
+    expect(quickOrderSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("manzilsiz buyurtma rad etiladi va sabab mijozga tushunarli", () => {
+    const result = quickOrderSchema.safeParse({ ...valid, deliveryAddress: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(orderErrorMessage(result.error)).toBe("Manzil: Manzilni to'liqroq yozing.");
+  });
+
+  it("mehmon onlayn to'lovni tanlay olmaydi (faqat naqd yoki o'tkazma)", () => {
+    expect(quickOrderSchema.safeParse({ ...valid, paymentMethod: "online" }).success).toBe(false);
+  });
+
+  it("noto'g'ri telefon — o'zbekcha xabar, ichki maydon nomi chiqmaydi", () => {
+    const result = quickOrderSchema.safeParse({ ...valid, phoneNumber: "123" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const message = orderErrorMessage(result.error);
+      expect(message).toContain("Telefon raqam");
+      expect(message).not.toContain("phoneNumber");
+    }
+  });
+});

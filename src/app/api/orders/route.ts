@@ -1,52 +1,15 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
 import { createOrder, OrderValidationError } from "@/lib/orders/create-order";
-import { normalizePhone, isValidName } from "@/lib/validation";
+import { orderErrorMessage, orderSchema } from "@/lib/orders/order-schema";
+import { newOrderAccessToken } from "@/lib/orders/access-token";
 import { reportError } from "@/lib/ops/report-error";
-
-const orderSchema = z.object({
-  customerName: z
-    .string()
-    .min(2)
-    .max(120)
-    .refine(isValidName, { message: "Ism noto'g'ri" }),
-  phoneNumber: z
-    .string()
-    .transform((v) => normalizePhone(v))
-    .refine((v): v is string => v !== null, { message: "Telefon raqam noto'g'ri" }),
-  items: z
-    .array(
-      z.object({
-        productId: z.string().min(1),
-        variantId: z.string().max(200).nullable().optional(),
-        name: z.string().min(1),
-        price: z.number().nonnegative(),
-        quantity: z.number().int().positive(),
-        thumbnailUrl: z.string(),
-      })
-    )
-    .min(1),
-  location: z
-    .object({
-      latitude: z.number(),
-      longitude: z.number(),
-      address: z.string().optional(),
-    })
-    .nullable()
-    .optional(),
-  deliveryAddress: z.string().max(500).nullable().optional(),
-  paymentMethod: z.enum(["cash", "online"]).default("cash"),
-  promoCode: z.string().max(40).nullable().optional(),
-  /** Yetkazish hududi (sozlamalardagi ro'yxatdan). */
-  deliveryZoneId: z.string().max(60).nullable().optional(),
-});
 
 export async function POST(request: Request) {
   const parsed = orderSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Buyurtma ma'lumotlari noto'g'ri." }, { status: 400 });
+    return NextResponse.json({ error: orderErrorMessage(parsed.error) }, { status: 400 });
   }
 
   try {
@@ -56,6 +19,9 @@ export async function POST(request: Request) {
     if (!currentUser) {
       return NextResponse.json({ error: "Buyurtma berish uchun tizimga kiring." }, { status: 401 });
     }
+    // Buyurtma sahifasi (o'tkazma kartasi, chek yuklash) shu kalit bilan
+    // ochiladi - `/buyurtma/<id>?t=<kalit>`.
+    const access = newOrderAccessToken();
     const order = await createOrder({
       customerName: parsed.data.customerName,
       phoneNumber: parsed.data.phoneNumber,
@@ -69,9 +35,10 @@ export async function POST(request: Request) {
       customerEmail: currentUser.email ?? null,
       // Narx rolga qarab: optom mijozga optom, qolganlarga dona.
       role: currentUser.role,
+      accessTokenHash: access.hash,
     });
 
-    return NextResponse.json({ orderId: order.id }, { status: 201 });
+    return NextResponse.json({ orderId: order.id, accessToken: access.token }, { status: 201 });
   } catch (error) {
     // Zaxira yetmasligi / mahsulot yo'qligi - mijozga aniq sabab aytiladi.
     if (error instanceof OrderValidationError) {

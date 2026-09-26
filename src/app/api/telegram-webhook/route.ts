@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { answerCallbackQuery } from "@/lib/telegram/bot";
-import { decodeOrderStatusCallback } from "@/lib/telegram/keyboard";
+import { decodeOrderStatusCallback, decodePaymentReviewCallback } from "@/lib/telegram/keyboard";
+import { reviewTransferPayment } from "@/lib/orders/payment-transfer";
 import { applyOrderStatusUpdate } from "@/lib/orders/update-status";
 import { handleAdminCommand } from "@/lib/telegram/admin-commands";
 import { handleAdminSessionMessage, handleAdminSessionCallback } from "@/lib/telegram/admin-session";
@@ -66,7 +67,7 @@ interface TelegramMessage {
 interface TelegramCallbackQuery {
   id: string;
   data?: string;
-  from?: { id: number };
+  from?: { id: number; first_name?: string; username?: string };
   message?: TelegramMessage;
 }
 
@@ -132,6 +133,29 @@ export async function POST(request: Request) {
         }
         const updatedOrder = await applyOrderStatusUpdate(statusCallback.orderId, statusCallback.status);
         await answerCallbackQuery(callbackQuery.id, updatedOrder ? "Status yangilandi ✅" : "Buyurtma topilmadi.");
+        return NextResponse.json({ ok: true });
+      }
+
+      // O'tkazma cheki ostidagi "To'lov keldi / Pul tushmadi" (pay|...) -
+      // faqat xodimlar guruhida.
+      const paymentCallback = decodePaymentReviewCallback(callbackQuery.data);
+      if (paymentCallback) {
+        if (!isAdminGroupChat(chat, staffChatId)) {
+          await answerCallbackQuery(callbackQuery.id, "Ruxsat yo'q.");
+          return NextResponse.json({ ok: true });
+        }
+        const who = callbackQuery.from?.username
+          ? `@${callbackQuery.from.username}`
+          : (callbackQuery.from?.first_name ?? "xodim");
+        const reviewed = await reviewTransferPayment(paymentCallback.orderId, paymentCallback.paid, who);
+        await answerCallbackQuery(
+          callbackQuery.id,
+          !reviewed
+            ? "Buyurtma topilmadi."
+            : reviewed.paymentStatus === "paid"
+              ? "To'lov tasdiqlandi ✅"
+              : "Belgilandi: pul tushmagan ❌"
+        );
         return NextResponse.json({ ok: true });
       }
 

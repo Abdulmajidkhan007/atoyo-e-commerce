@@ -29,3 +29,26 @@ export function buildOrderActionKeyboard(orderId: string) {
 
   return { inline_keyboard: [buttons] };
 }
+
+/**
+ * O'TKAZMA CHEKI ostidagi tugmalar: admin pul tushganini bankda
+ * ko'rib, bir bosishda tasdiqlaydi yoki rad etadi.
+ * Format: `pay|<orderId>|ok` / `pay|<orderId>|no` (64 baytga sig'adi).
+ */
+export function buildPaymentReviewKeyboard(orderId: string) {
+  return {
+    inline_keyboard: [
+      [
+        { text: "✅ To'lov keldi", callback_data: `pay|${orderId}|ok` },
+        { text: "❌ Pul tushmadi", callback_data: `pay|${orderId}|no` },
+      ],
+    ],
+  };
+}
+
+export function decodePaymentReviewCallback(raw: string): { orderId: string; paid: boolean } | null {
+  const [tag, orderId, verdict] = raw.split("|");
+  if (tag !== "pay" || !orderId || (verdict !== "ok" && verdict !== "no")) return null;
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(orderId)) return null;
+  return { orderId, paid: verdict === "ok" };
+}

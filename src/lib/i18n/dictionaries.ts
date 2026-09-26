@@ -250,6 +250,40 @@ export interface Dictionary {
     priceAsc: string;
     priceDesc: string;
   };
+  payment: {
+    orderReceived: string;
+    orderNumber: string;
+    amountToPay: string;
+    transferTitle: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    cardNumber: string;
+    cardHolder: string;
+    copy: string;
+    copied: string;
+    uploadReceipt: string;
+    reupload: string;
+    uploading: string;
+    receiptUploaded: string;
+    paid: string;
+    failed: string;
+    cashNote: string;
+    keepLink: string;
+    payTransfer: string;
+    transferHint: string;
+    quickBuy: string;
+    quickBuyTitle: string;
+    quickBuySubtitle: string;
+    submitQuick: string;
+    delivery: string;
+    free: string;
+    total: string;
+    quantity: string;
+    honeypot: string;
+    uploadError: string;
+    sending: string;
+  };
   favorites: {
     title: string;
     empty: string;
@@ -506,6 +540,40 @@ const uz: Dictionary = {
     priceAsc: "Narx: arzondan qimmatga",
     priceDesc: "Narx: qimmatdan arzonga",
   },
+  payment: {
+    orderReceived: "Buyurtmangiz qabul qilindi",
+    orderNumber: "Buyurtma #{id}",
+    amountToPay: "To'lanadigan summa",
+    transferTitle: "Kartaga o'tkazma",
+    step1: "Bank ilovangizda (Click, Payme, Uzum yoki bank ilovasi) shu kartaga aynan shu summani o'tkazing.",
+    step2: "O'tkazma chekining skrinshotini oling.",
+    step3: "Chekni shu yerga yuklang — admin pul tushganini tekshirib, buyurtmani yetkazadi.",
+    cardNumber: "Karta raqami",
+    cardHolder: "Karta egasi",
+    copy: "Nusxa olish",
+    copied: "Nusxa olindi",
+    uploadReceipt: "Chekni yuklash",
+    reupload: "Boshqa chek yuklash",
+    uploading: "Yuklanmoqda...",
+    receiptUploaded: "Chek yuklandi — admin tekshirmoqda. Pul tushgani tasdiqlangach buyurtma yetkaziladi.",
+    paid: "To'lov tasdiqlandi. Buyurtmangiz tayyorlanmoqda.",
+    failed: "To'lov topilmadi. Chekni qayta yuklang yoki bizga qo'ng'iroq qiling.",
+    cashNote: "To'lov — yetkazib berilganda naqd. Operator tez orada qo'ng'iroq qiladi.",
+    keepLink: "Bu sahifani saqlab qo'ying — buyurtma holatini shu yerdan ko'rasiz.",
+    payTransfer: "Kartaga o'tkazma (chek bilan)",
+    transferHint: "Buyurtmadan keyin karta raqami ko'rsatiladi: pulni o'tkazib, chekni yuklaysiz.",
+    quickBuy: "1 klikda sotib olish",
+    quickBuyTitle: "Tez buyurtma",
+    quickBuySubtitle: "Ro'yxatdan o'tish shart emas",
+    submitQuick: "Buyurtma berish",
+    delivery: "Yetkazish",
+    free: "bepul",
+    total: "Jami",
+    quantity: "Soni",
+    honeypot: "Bu maydonni to'ldirmang",
+    uploadError: "Chekni yuklab bo'lmadi. Qayta urinib ko'ring.",
+    sending: "Yuborilmoqda...",
+  },
   favorites: {
     title: "Sevimlilar",
     empty: "Sevimlilar ro'yxati bo'sh. Mahsulot yonidagi ❤️ tugmasini bosing.",
@@ -760,6 +828,40 @@ const en: Dictionary = {
     priceAsc: "Price: low to high",
     priceDesc: "Price: high to low",
   },
+  payment: {
+    orderReceived: "Your order has been received",
+    orderNumber: "Order #{id}",
+    amountToPay: "Amount to pay",
+    transferTitle: "Card transfer",
+    step1: "In your banking app (Click, Payme, Uzum or your bank) transfer exactly this amount to this card.",
+    step2: "Take a screenshot of the transfer receipt.",
+    step3: "Upload the receipt here — we check the payment and deliver your order.",
+    cardNumber: "Card number",
+    cardHolder: "Card holder",
+    copy: "Copy",
+    copied: "Copied",
+    uploadReceipt: "Upload receipt",
+    reupload: "Upload another receipt",
+    uploading: "Uploading...",
+    receiptUploaded: "Receipt uploaded — we are checking it. Your order ships once the payment is confirmed.",
+    paid: "Payment confirmed. Your order is being prepared.",
+    failed: "Payment not found. Upload the receipt again or call us.",
+    cashNote: "Pay in cash on delivery. Our operator will call you shortly.",
+    keepLink: "Save this page — you can check your order status here.",
+    payTransfer: "Card transfer (with receipt)",
+    transferHint: "After ordering you will see the card number: transfer the money and upload the receipt.",
+    quickBuy: "Buy in one click",
+    quickBuyTitle: "Quick order",
+    quickBuySubtitle: "No registration needed",
+    submitQuick: "Place order",
+    delivery: "Delivery",
+    free: "free",
+    total: "Total",
+    quantity: "Quantity",
+    honeypot: "Leave this field empty",
+    uploadError: "Could not upload the receipt. Please try again.",
+    sending: "Sending...",
+  },
   favorites: {
     title: "Favorites",
     empty: "Your favorites list is empty. Tap the ❤️ on any product.",
@@ -1013,6 +1115,40 @@ const ru: Dictionary = {
     newest: "Сначала новые",
     priceAsc: "Цена: по возрастанию",
     priceDesc: "Цена: по убыванию",
+  },
+  payment: {
+    orderReceived: "Ваш заказ принят",
+    orderNumber: "Заказ #{id}",
+    amountToPay: "Сумма к оплате",
+    transferTitle: "Перевод на карту",
+    step1: "В приложении банка (Click, Payme, Uzum или вашего банка) переведите на эту карту ровно эту сумму.",
+    step2: "Сделайте скриншот чека перевода.",
+    step3: "Загрузите чек сюда — мы проверим оплату и доставим заказ.",
+    cardNumber: "Номер карты",
+    cardHolder: "Владелец карты",
+    copy: "Копировать",
+    copied: "Скопировано",
+    uploadReceipt: "Загрузить чек",
+    reupload: "Загрузить другой чек",
+    uploading: "Загрузка...",
+    receiptUploaded: "Чек загружен — мы проверяем. Заказ будет доставлен после подтверждения оплаты.",
+    paid: "Оплата подтверждена. Заказ готовится.",
+    failed: "Оплата не найдена. Загрузите чек ещё раз или позвоните нам.",
+    cashNote: "Оплата наличными при доставке. Оператор скоро позвонит.",
+    keepLink: "Сохраните эту страницу — здесь виден статус заказа.",
+    payTransfer: "Перевод на карту (с чеком)",
+    transferHint: "После заказа появится номер карты: переведите деньги и загрузите чек.",
+    quickBuy: "Купить в 1 клик",
+    quickBuyTitle: "Быстрый заказ",
+    quickBuySubtitle: "Регистрация не нужна",
+    submitQuick: "Оформить заказ",
+    delivery: "Доставка",
+    free: "бесплатно",
+    total: "Итого",
+    quantity: "Количество",
+    honeypot: "Не заполняйте это поле",
+    uploadError: "Не удалось загрузить чек. Попробуйте ещё раз.",
+    sending: "Отправка...",
   },
   favorites: {
     title: "Избранное",
