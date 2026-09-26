@@ -468,6 +468,36 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   proxy, sitemap, `LanguageSwitcher`, `localeAlternates()` hammasi
   shu ro'yxatdan o'qiydi.
 
+## 15. To'lov: kartaga o'tkazma va 1 klikda buyurtma
+
+- **Mijoz kartasi SAQLANMAYDI va undan to'g'ridan-to'g'ri yechilmaydi.**
+  Uzcard/Humo/Visa'dan pul faqat litsenziyali processing orqali
+  (Payme Subscribe API, `lib/payments/cards.ts` — faqat token). "Payme/
+  Click'siz karta ulash" so'ralsa — bu imkonsiz va noqonuniy, sababi
+  `docs/ARXITEKTURA-TARIXI.md` 33-band.
+- **Kartaga o'tkazma** (`paymentMethod: "transfer"`): do'kon kartasi
+  `settings/payment` da, saqlash JUMBOQ bilan, karta almashsa "Actions"
+  ga ogohlantirish. O'chiq bo'lsa `createOrder` o'tkazmani rad etadi.
+- **Chek** Storage'da `receipts/<orderId>/` — `firebaseStorageDownloadTokens`
+  QO'YILMAYDI (ochiq URL yo'q, unda mijozning bank ma'lumoti). Turi
+  BAYTLARIDAN (`detectReceiptType`), ≤ 8 MB. Admin faqat
+  `/api/admin/orders/<id>/receipt` orqali ko'radi.
+- **Buyurtma sahifasi** `/buyurtma/<id>?t=<kalit>`: kalit yoki o'z
+  buyurtmasi, aks holda 404. Bazada faqat kalit XESHI
+  (`accessTokenHash`). Sahifa `noindex`.
+- **1 klikda** — `/api/orders/quick` (mehmon): manzil majburiy,
+  IP soatiga 5 / telefon sutkasiga 5, `website` bot tuzog'i. IP
+  `unknown` bo'lsa IP cheklovi QO'LLANMAYDI (hamma bir-birini
+  bloklardi). Narx `createOrder` da qayta hisoblanadi.
+- Buyurtma sxemasi BITTA joyda (`lib/orders/order-schema.ts`),
+  mijozga xato `orderErrorMessage` bilan (admin `validationMessage`
+  ichki yorliqlarni aytadi — mijozga EMAS).
+- **`orders` ni client SDK bilan YARATISH qoidalarda yopiq** — faqat
+  server. Ilgari kirgan mijoz o'zi `paymentStatus: "paid"` yozib
+  qo'yishi mumkin edi.
+- `/api/orders/[id]/...` ostida segment nomi HAR DOIM `[id]` — Next.js
+  bir darajada ikki xil nomni (`[id]` va `[orderId]`) qabul qilmaydi.
+
 ---
 
 # XARITA (qayerda nima turadi)
@@ -531,6 +561,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/KIRIM-VA-IMPORT.md` | Kirim va Excel import tartibi |
 | `docs/KIRIM-REJASI.md` | Har kuni QAYSI kategoriyadan kiritish (kanal va katalog bir xil tovarga to'lib qolmasin) |
 | `docs/ISH-ARXITEKTURASI.md` | Topshiriqni marshrutlash: 8 holat, rollar, tekshiruv oynalari |
+| `ai/specs/` | Katta ishlar spetsifikatsiyalari (R10) |
 | `docs/UI-SHISHA.md` | Shisha (glass) ko'rinish qoidalari — sayt va ilova |
 | `docs/QULAYLIK.md` | Ekran o'quvchi va klaviatura qoidalari (a11y) — yangi komponent yozganda |
 | `docs/UI-3D.md`, `docs/TV.md`, `docs/DESKTOP.md`, `docs/STICKERS.md` | Bo'limga xos |

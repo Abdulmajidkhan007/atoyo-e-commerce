@@ -220,7 +220,14 @@ export default function ProfilePage() {
                       ))}
                     </ul>
                     <div className="mt-3 flex flex-col gap-1 border-t border-navy-100 pt-2 text-xs text-navy-300 dark:border-navy-500">
-                      <span>{dict.profile.payment}: {order.paymentMethod === "cash" ? dict.profile.cash : dict.profile.online}</span>
+                      <span>
+                        {dict.profile.payment}:{" "}
+                        {order.paymentMethod === "cash"
+                          ? dict.profile.cash
+                          : order.paymentMethod === "transfer"
+                            ? dict.payment.payTransfer
+                            : dict.profile.online}
+                      </span>
                       {order.deliveryAddress && <span>{dict.profile.addressLabel}: {order.deliveryAddress}</span>}
                       {order.location && (
                         <a
@@ -238,6 +245,16 @@ export default function ProfilePage() {
                       <Button size="small" variant="outlined" component={Link} href={`/chek/${order.id}`}>
                         {dict.profile.receipt}
                       </Button>
+
+                      {/* O'tkazma to'lanmagan bo'lsa - karta va chek yuklash sahifasi
+                          (o'z buyurtmasi, shuning uchun kalitsiz ochiladi). */}
+                      {order.paymentMethod === "transfer" &&
+                        order.paymentStatus !== "paid" &&
+                        order.status !== "cancelled" && (
+                          <Button size="small" variant="contained" component={Link} href={`/buyurtma/${order.id}`}>
+                            {dict.payment.uploadReceipt}
+                          </Button>
+                        )}
 
                       {(order.status === "pending" || order.status === "approved") && (
                         <Button

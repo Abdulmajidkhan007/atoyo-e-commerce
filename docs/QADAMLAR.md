@@ -384,6 +384,33 @@ Matn o'zi yangilanadi: "Qo'qon ichida va atrofdagi 15 km gacha:
 
 ---
 
+## 12. Kartaga o'tkazma — karta raqamini qo'yish 🟠
+
+Kod tayyor, lekin **standart holda O'CHIQ** — karta kiritilmaguncha
+mijoz bu variantni ko'rmaydi.
+
+1. Admin → Sozlamalar → **Kartaga o'tkazma**.
+2. *Karta raqami* (16 raqam), *Karta egasi* (mijoz o'tkazishda bank
+   ilovasida shu ismni ko'radi — to'g'ri yozing), ixtiyoriy *Bank* va
+   *Izoh* (masalan "Izohga buyurtma raqamini yozing").
+3. *Kartaga o'tkazma yoqilgan* ✅ → **Saqlash** → jumboqni yeching.
+4. "Actions" topigiga "Kartaga o'tkazma sozlamasi yangilandi" keladi.
+   ⚠️ Agar kelajakda **siz qilmagan** holda "O'TKAZMA KARTASI
+   ALMASHTIRILDI" xabari kelsa — darhol parolni almashtiring va
+   kartani qaytaring.
+
+**Sinov:** boshqa brauzerda (tizimga kirmasdan) mahsulot sahifasida
+**1 klikda sotib olish** → "Kartaga o'tkazma" → buyurtma sahifasida
+karta va summa chiqadi → istalgan rasmni chek sifatida yuklang →
+"Buyurtmalar" topigiga rasm + "✅ To'lov keldi / ❌ Pul tushmadi"
+keladi. Sinov buyurtmasini keyin bekor qiling.
+
+**Kundalik ish:** chek kelganda bank ilovangizda pul tushganini
+ko'ring → Telegram'da (yoki Admin → Buyurtmalar) "✅ To'lov keldi".
+SMS sozlangan bo'lsa mijozga xabar ketadi.
+
+---
+
 # Sessiya promptlari qayerda
 
 | Nima | Fayl |

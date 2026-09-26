@@ -128,6 +128,17 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   "Turini tanlash" tugmasi `flex-wrap` bilan - sig'masa tugma pastga
   tushadi, ustma-ust tushmaydi.
 
+**Katalog navigatsiyasi va yetkazish (2026-09):**
+- Kategoriya chiplari (bosh sahifa va katalog boshida, faqat mahsuloti
+  borlari), katalog birinchi ekrani aralash (`catalogMix`), mahsulot
+  sahifasida "Xususiyatlari" ro'yxati.
+- Kategoriyaga o'tish `?category=` bilan; server birinchi sahifasi
+  faqat `catalogFiltersKey` mos kelsa ishlatiladi.
+- Yetkazish matni shartni aytadi ("50 000 so'mdan boshlab bepul, undan
+  kamiga — 15 000"), savatda "Bepul yetkazishga X so'm qoldi" chizig'i
+  va farqni BITTA qo'shish bilan yopadigan mahsulotlar
+  (`/api/products/gap-fillers`).
+
 ## 1a. HISOBOT, OMBOR VA QAYTARISH
 
 - **Tannarx (`costPrice`)** — mahsulotda va har bir turda; kirimda
@@ -281,6 +292,29 @@ xarajatlari: Firebase, AI kalitlari, domen, SMS, Play Store.
 Firestore'da faqat token va niqoblangan raqam (`users/{uid}/cards`,
 qoidalarda mijozga ham yopiq). Kalitlar yo'q bo'lsa profildagi
 "Kartalarim" bo'limi umuman ko'rinmaydi.
+
+**Kartaga o'tkazma + chek** (Payme/Click kalitlari kelguncha):
+admin Sozlamalar → "Kartaga o'tkazma" da do'kon kartasini kiritadi
+(`settings/payment`, saqlash JUMBOQ bilan, karta almashsa "Actions"
+ga ogohlantirish). Mijoz checkout yoki "1 klikda" oynasida
+"Kartaga o'tkazma"ni tanlaydi → `/buyurtma/<id>?t=<kalit>` sahifasida
+karta va summani ko'radi (nusxa tugmalari), bank ilovasida o'tkazadi,
+chek skrinshotini yuklaydi. Chek (jpeg/png/webp/pdf, ≤ 8 MB, turi
+baytlaridan) Storage'da OCHIQ HAVOLASIZ (`receipts/<id>/...`), guruhga
+faylning o'zi + "✅ To'lov keldi / ❌ Pul tushmadi" tugmalari keladi;
+admin panelda ham shu. Buyurtma sahifasiga kalit bilan kiriladi
+(bazada faqat SHA-256 xeshi).
+
+**1 klikda sotib olish** — ro'yxatdan o'tmasdan: mahsulot sahifasida
+oyna (ism, telefon, MANZIL, naqd/o'tkazma, yetkazish narxi oldindan),
+`/api/orders/quick` (IP soatiga 5, telefon sutkasiga 5, bot tuzog'i,
+narx serverda). `orders` ni client SDK bilan yaratish qoidalarda YOPIQ.
+
+**Mijoz kartasidan avtomatik yechish Payme/Click'siz BO'LMAYDI**:
+Uzcard/Humo/Visa kartasidan pul faqat litsenziyali to'lov tashkiloti
+(processing/acquirer) orqali yechiladi, karta raqamini o'zimiz saqlash
+esa taqiqlangan (PCI DSS). "Bir marta qo'shadi, keyin avtomatik
+yechiladi" oqimi — yuqoridagi Payme Subscribe API (kod tayyor).
 
 ## 1f. OPTOM (ULGURJI) MIJOZLAR VA IKKI XIL NARX
 

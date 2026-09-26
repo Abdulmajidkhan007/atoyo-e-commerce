@@ -803,3 +803,58 @@ belgisi Redux'ning o'zida (`urlSyncedFor`), chunki React 19 lint
 qoidalari render paytida `ref` o'qishni va effekt ichida `setState`
 ni taqiqlaydi. "Tozalash" bu belgini saqlab qoladi — aks holda
 manzildagi kategoriya qaytib yoqilib qolardi.
+
+## 33. Kartaga o'tkazma, chek va "1 klikda" — nega aynan shunday
+
+**Savol (egasidan):** "Payme/Click o'rniga Uzcard, Humo, Visa kartani
+to'g'ridan-to'g'ri ulasak — mijoz kartasini bir marta kiritadi, keyin
+har xaridda avtomatik yechilsin."
+
+**Javob — bunday qilib bo'lmaydi**, va bu kod masalasi emas:
+- Uzcard va Humo — processing markazlari. Ularga savdogar to'g'ridan-
+  to'g'ri ulanmaydi: ulanish faqat litsenziyali to'lov tashkiloti
+  (Payme, Click, Uzum, Paynet, ATMOS, Multicard...) yoki bank-ekvayer
+  orqali. Visa — faqat ekvayer bank va 3-D Secure orqali.
+- Karta raqamini o'zimiz saqlash — PCI DSS talablari (va O'zbekiston
+  to'lov qonunchiligi). Loyihada bu ataylab taqiqlangan.
+- Egasi xohlagan tajriba ("bir marta qo'shadi, keyin avtomatik")
+  aynan **token** orqali qilinadi va u kodda allaqachon bor:
+  `lib/payments/cards.ts` (Payme Subscribe API). Birinchi qo'shishda
+  karta egasiga SMS kod keladi (O'zbekistonda majburiy), keyingi
+  xaridlar token bilan — kodsiz. Faqat merchant kalitlari kerak.
+
+**Shu orada — kartaga o'tkazma + chek.** Mijoz do'kon kartasiga o'zi
+o'tkazadi va chek yuklaydi, admin pul tushganini ko'rib tasdiqlaydi.
+Muhim qarorlar:
+- **Chek ochiq URL'siz.** Loyihadagi boshqa hamma fayl
+  `firebaseStorageDownloadTokens` bilan ochiq, chunki ular mahsulot
+  rasmlari. Chekda esa mijozning ismi, karta raqamining bir qismi,
+  bank nomi bor — u faqat Admin SDK orqali o'qiladi.
+- **Tur baytlaridan.** Brauzer `Content-Type` ini istalgancha yozish
+  mumkin; `.jpg` nomli HTML fayl admin ochganda skript bo'lib ishlab
+  ketmasin. Admin route `X-Content-Type-Options: nosniff` qo'yadi.
+- **Karta raqamini almashtirish — jumboq bilan va "Actions" ga
+  ogohlantirish.** Bu mijozlar puli boradigan joy: admin sessiyasini
+  o'g'irlagan odam birinchi shu yerni o'zgartiradi.
+- **Buyurtma sahifasi kalit bilan.** Buyurtma ID si Telegram
+  xabarida, admin panelda va loglarda ko'rinadi — u yolg'iz kirish
+  uchun yetarli emas. Bazada kalitning faqat xeshi.
+
+**"1 klikda" — evde.uz'dan farqi.** U yerda faqat ism + telefon
+olinadi va operator qo'ng'iroq qiladi. Egasining qarori: bizda to'liq
+ma'lumot (manzil va to'lov usuli bilan) — operator mijozdan hech
+narsani qayta so'ramaydi. Bu OCHIQ yozuv yo'li bo'lgani uchun IP va
+telefon bo'yicha cheklov va bot tuzog'i qo'yildi.
+
+**Yo'lda topilgan teshik:** `firestore.rules` da kirgan mijoz `orders`
+hujjatini client SDK bilan O'ZI yarata olardi (faqat `userId` o'ziniki
+bo'lishi sharti bilan) — ya'ni `paymentStatus: "paid"` deb yozib
+qo'yishi mumkin edi. Ilgari "to'langan" belgisi hech narsani hal
+qilmasdi; o'tkazma bilan esa u yetkazishga ruxsat bo'lib qoldi.
+Hech qaysi client (sayt ham, ilova ham) bu yo'ldan foydalanmaydi —
+`allow create: if false`.
+
+**Segment nomi.** Chek route'i avval `/api/orders/[orderId]/receipt`
+edi, qo'shnisi esa `/api/orders/[id]/cancel`. Build o'tdi, lekin
+Next.js router bir darajada ikki xil dinamik nomni qabul qilmaydi
+(ishga tushishda yiqilishi mumkin) — `[id]` ga o'tkazildi.
