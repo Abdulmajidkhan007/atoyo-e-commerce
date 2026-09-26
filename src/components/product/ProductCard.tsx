@@ -160,6 +160,7 @@ export function ProductCard({ product }: { product: Product }) {
                     name,
                     price: hasDiscount ? product.discountPrice! : product.price,
                     thumbnailUrl: product.thumbnailUrl,
+                    category: product.category,
                     stock: product.stock,
                   })
                 )

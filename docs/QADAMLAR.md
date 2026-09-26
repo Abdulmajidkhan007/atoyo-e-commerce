@@ -365,6 +365,25 @@ Keyinroq xodimlar ko'paysa Workspace'ga o'tish har doim mumkin.
 
 ---
 
+## 11. Yetkazish: 50 000 dan bepul, undan kamiga 15 000 🟠
+
+Kod tayyor — faqat uchta sozlamani qo'yish kerak (Admin →
+Sozlamalar):
+
+1. **Promokod va yetkazib berish** → *Yoqilgan* ✅ →
+   *Narx (so'm)*: `15000` → *Shu summadan bepul*: `50000` → Saqlash.
+2. **Narx va buyurtma** → *Eng kam buyurtma (so'm)*: `0` → Saqlash.
+   ⚠️ Buni unutmang: 50 000 turgan bo'lsa undan kam buyurtma
+   UMUMAN qabul qilinmaydi (bu bepul yetkazish chegarasi emas).
+3. Saytda savatga 4 000 so'mlik narsa soling — "Bepul yetkazishga
+   46 000 so'm qoldi" chizig'i va tavsiya mahsulotlar chiqishi kerak.
+
+Matn o'zi yangilanadi: "Qo'qon ichida va atrofdagi 15 km gacha:
+50 000 so'mdan boshlab yetkazib berish bepul, undan kam buyurtmaga —
+15 000 so'm." (sayt, ilova, bot, kanal).
+
+---
+
 # Sessiya promptlari qayerda
 
 | Nima | Fayl |

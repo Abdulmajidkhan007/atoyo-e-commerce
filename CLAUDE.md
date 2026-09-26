@@ -344,9 +344,24 @@ matnni `lib/delivery/text.ts` yasaydi (`freeDeliveryText`,
 `freeDeliveryShort`, `installServiceText`; testi `text.test.ts`).
 Boshqaruvi: Sozlamalar → Promokod va yetkazib berish.
 Chiqadigan joylar: bosh sahifa/about "Bizning ustunligimiz", savat,
-checkout, kontakt, footer, mahsulot sahifasi, ilova
-(`mobile/src/api.ts` da TAKRORLANGAN — ikkalasi birga o'zgaradi),
-bot va kanal posti. `O'rnatib berish` mahsulotga bog'liq
+checkout, kontakt, footer, mahsulot sahifasi, ilova, bot va kanal
+posti. **Ilova nusxasi `mobile/src/delivery-text.ts` da (sof, hech
+narsa import qilmaydi) va sayt bilan bir xilligi TEST bilan
+qulflangan** (`src/lib/delivery/mobile-parity.test.ts`) — bittasini
+o'zgartirsangiz ikkinchisini ham o'zgartiring, aks holda test yiqiladi.
+
+- **Matn yetkazish NARXINI aytadi**: `enabled && fee > 0` bo'lsa
+  "…15 km gacha: 50 000 so'mdan boshlab yetkazib berish bepul, undan
+  kam buyurtmaga — 15 000 so'm." (`paidDeliveryTerms`). Ilgari hisob
+  bor edi, matn esa shartsiz "bepul" derdi.
+- **"Bepul yetkazishga X so'm qoldi"** (`FreeDeliveryProgress`,
+  savatda): chiziq + BITTA qo'shish bilan farqni yopadigan mahsulotlar
+  (`/api/products/gap-fillers`, tartibi `rankGapFillers` —
+  savatdagi kategoriya, farqdan ko'p oshmagani, arzoni). Javob
+  `toViewerProducts()` + `no-store`.
+- "Eng kam buyurtma" (`settings/pricing.minOrderAmount`) — undan kam
+  buyurtmani UMUMAN qabul qilmaydi; bu bepul yetkazish chegarasi
+  EMAS. Chegara — `settings/delivery.freeFrom`. `O'rnatib berish` mahsulotga bog'liq
 (`Product.installService`) VA sozlamada yoqilgan bo'lishi kerak.
 
 ## 10. Dizayn rejimi: klassik / 3D

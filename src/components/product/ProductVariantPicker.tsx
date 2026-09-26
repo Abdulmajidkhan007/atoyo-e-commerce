@@ -131,6 +131,7 @@ export function ProductVariantPicker({ product, unitLabel }: { product: Product;
               name: product.name,
               price,
               thumbnailUrl: product.thumbnailUrl,
+              category: product.category,
               stock: variant.stock,
             })
           );

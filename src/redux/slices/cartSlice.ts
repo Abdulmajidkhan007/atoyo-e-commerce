@@ -15,6 +15,12 @@ export interface CartItem {
   thumbnailUrl: string;
   quantity: number;
   stock: number;
+  /**
+   * Kategoriya — "bepul yetkazishga X so'm qoldi" tavsiyasi savatdagi
+   * kategoriyaga mos mahsulotni yuqoriga chiqarishi uchun. Eski
+   * (saqlangan) savat qatorlarida bo'lmaydi — ixtiyoriy.
+   */
+  category?: string;
 }
 
 interface CartState {

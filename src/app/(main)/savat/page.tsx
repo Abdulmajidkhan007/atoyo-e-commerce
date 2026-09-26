@@ -8,6 +8,7 @@ import { CartItemRow } from "@/components/cart/CartItemRow";
 import { CartSummary } from "@/components/cart/CartSummary";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { DeliveryNote } from "@/components/layout/DeliveryNote";
+import { FreeDeliveryProgress } from "@/components/cart/FreeDeliveryProgress";
 
 export default function CartPage() {
   const { dict, locale } = useI18n();
@@ -33,7 +34,10 @@ export default function CartPage() {
             ))}
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex min-w-0 flex-col gap-4">
+            {/* "Bepul yetkazishga X so'm qoldi" + farqni yopadigan
+                mahsulotlar. Yetkazish bepul bo'lsa chizilmaydi. */}
+            <FreeDeliveryProgress />
             <CartSummary />
             {/* Savatda ham ko'rinsin: mijoz "yetkazish qancha turadi"
                 deb o'ylab qolmasin. */}

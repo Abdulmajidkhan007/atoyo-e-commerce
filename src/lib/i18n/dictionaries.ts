@@ -76,6 +76,12 @@ export interface Dictionary {
     title: string;
     empty: string;
     goToCatalog: string;
+    /** "{amount}" o'rniga summa qo'yiladi. */
+    freeDeliveryLeft: string;
+    /** "{fee}" o'rniga yetkazish narxi. */
+    deliveryNow: string;
+    freeDeliveryReached: string;
+    fillGapTitle: string;
   };
   checkout: {
     title: string;
@@ -330,6 +336,10 @@ const uz: Dictionary = {
     title: "Savat",
     empty: "Savatingiz hozircha bo'sh.",
     goToCatalog: "Katalogga o'tish",
+    freeDeliveryLeft: "Bepul yetkazishga {amount} qoldi",
+    deliveryNow: "Hozir yetkazish: {fee}",
+    freeDeliveryReached: "Yetkazish bepul!",
+    fillGapTitle: "Bittasini qo'shsangiz — yetkazish bepul",
   },
   checkout: {
     title: "Buyurtmani rasmiylashtirish",
@@ -582,6 +592,10 @@ const en: Dictionary = {
     title: "Cart",
     empty: "Your cart is empty.",
     goToCatalog: "Go to catalog",
+    freeDeliveryLeft: "{amount} more for free delivery",
+    deliveryNow: "Delivery now: {fee}",
+    freeDeliveryReached: "Free delivery!",
+    fillGapTitle: "Add one of these — delivery becomes free",
   },
   checkout: {
     title: "Checkout",
@@ -832,6 +846,10 @@ const ru: Dictionary = {
     title: "Корзина",
     empty: "Ваша корзина пуста.",
     goToCatalog: "Перейти в каталог",
+    freeDeliveryLeft: "До бесплатной доставки осталось {amount}",
+    deliveryNow: "Сейчас доставка: {fee}",
+    freeDeliveryReached: "Доставка бесплатная!",
+    fillGapTitle: "Добавьте один из них — доставка станет бесплатной",
   },
   checkout: {
     title: "Оформление заказа",

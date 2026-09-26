@@ -29,6 +29,7 @@ export function AddToCartButton({ product }: { product: Product }) {
             name: product.name,
             price: show(effectivePrice(product)),
             thumbnailUrl: product.thumbnailUrl,
+            category: product.category,
             stock: product.stock,
           })
         )
