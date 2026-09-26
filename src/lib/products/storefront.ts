@@ -257,8 +257,55 @@ export async function loadMixedCatalogRaw(size: number): Promise<Product[]> {
   return products;
 }
 
+/* ------------------------------------------------------------------ */
+/*  KATEGORIYA CHIPLARI                                                */
+/* ------------------------------------------------------------------ */
+
+let chipCache: { at: number; categories: { slug: string; label: string }[] } | null = null;
+
+/**
+ * MAHSULOTI BOR kategoriyalar (chiplar uchun), taksonomiya tartibida.
+ *
+ * Bo'sh kategoriya chipda turmasligi kerak: uni bosgan mijoz "hech
+ * narsa topilmadi" ko'rib ketib qoladi. Har kategoriyaga bitta
+ * `limit(1)` so'rov ketadi, natija 5 daqiqa keshlanadi.
+ * Xato bo'lsa (baza o'qilmasa) bo'sh ro'yxat — chiplar shunchaki
+ * ko'rinmaydi, sahifa yiqilmaydi.
+ */
+export async function loadChipCategories(): Promise<{ slug: string; label: string }[]> {
+  if (chipCache && Date.now() - chipCache.at < MIX_TTL) return chipCache.categories;
+
+  try {
+    const taxonomy = await getTaxonomy();
+    const db = getAdminDb();
+    const checks = await Promise.all(
+      taxonomy.categories.slice(0, MIX_MAX_CATEGORIES).map(async (category) => {
+        try {
+          const snapshot = await db
+            .collection("products")
+            .where("isActive", "==", true)
+            .where("category", "==", category.slug)
+            .limit(1)
+            .select()
+            .get();
+          return snapshot.empty ? null : { slug: category.slug, label: category.label };
+        } catch {
+          return null;
+        }
+      })
+    );
+    const categories = checks.filter((item): item is { slug: string; label: string } => item !== null);
+    chipCache = { at: Date.now(), categories };
+    return categories;
+  } catch (error) {
+    console.error("Kategoriya chiplarini o'qib bo'lmadi:", error);
+    return [];
+  }
+}
+
 /** Sozlama saqlanganda aralash ro'yxat darhol yangilansin. */
 export function clearMixCache(): void {
   mixCache = null;
   showcaseCache = null;
+  chipCache = null;
 }

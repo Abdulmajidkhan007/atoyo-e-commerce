@@ -778,3 +778,28 @@ Asl sxema (frontend jamoalarida ishlatiladigan `planner → developer
 chunki sandbox konteyneri qayta ishga tushganda commit qilinmagan
 ish YO'QOLADI va deploy'ning o'zi git push orqali bo'ladi. Shuning
 uchun bizda R11 — "tekshiruv zanjiri o'tgach darhol commit + push".
+
+## 32. "Kranlar" bosildi — har xil mahsulot chiqdi
+
+Kategoriya chiplarini yozayotganda topildi. Bosh sahifadagi
+kategoriya kartochkasi (`CategoryTile`) filtrni faqat Redux'ga
+yozib `/katalog` ga o'tardi. SSR'dan keyin (a6a0705) katalogning
+birinchi sahifasi SERVERDA chiziladi — server esa manzilda filtr
+ko'rmagani uchun filtrsiz (keyinchalik aralash) ro'yxatni chizardi.
+`ProductGrid` esa "birinchi sahifa serverdan keldi" deb uni QAYTA
+SO'RAMASDI (`skipFirstLoad`). Natija: sarlavhada "Kranlar", ro'yxatda
+cho'tka va moyka.
+
+Tuzatish ikki tomonlama:
+- Kategoriyaga o'tish endi har doim `?category=` bilan — server
+  to'g'ri ro'yxatni chizadi, havola ulashilsa ham to'g'ri ochiladi.
+- `ProductGrid` server sahifasini faqat `catalogFiltersKey` MOS
+  KELSA ishlatadi. Mos kelmasa odatdagidek so'raydi — ya'ni kelajakda
+  yana qaysidir yo'l filtrni faqat Redux'ga yozsa ham, mijoz noto'g'ri
+  ro'yxat ko'rmaydi (eng yomon holatda bitta ortiqcha so'rov).
+
+`CatalogContent` manzildagi filtrni Redux'ga bir marta ko'chiradi;
+belgisi Redux'ning o'zida (`urlSyncedFor`), chunki React 19 lint
+qoidalari render paytida `ref` o'qishni va effekt ichida `setState`
+ni taqiqlaydi. "Tozalash" bu belgini saqlab qoladi — aks holda
+manzildagi kategoriya qaytib yoqilib qolardi.

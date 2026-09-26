@@ -5,7 +5,8 @@ import { HomeCategories } from "@/components/home/HomeCategories";
 import { ShowcaseGrid } from "@/components/home/ShowcaseGrid";
 import { Reveal } from "@/components/motion/Reveal";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
-import { loadShowcaseForViewer } from "@/lib/products/storefront";
+import { loadChipCategories, loadShowcaseForViewer } from "@/lib/products/storefront";
+import { CategoryChips } from "@/components/product/CategoryChips";
 import { localeAlternates } from "@/lib/seo/locale-alternates";
 
 // Root layout'dagi umumiy `canonical` yo'q endi (`src/app/layout.tsx`) -
@@ -27,10 +28,20 @@ export async function generateMetadata(): Promise<Metadata> {
  * kategoriyalar to'ri (`/api/taxonomy` dan jonli o'qiydi).
  */
 export default async function HomePage() {
-  const [dict, showcase] = await Promise.all([getDictionary(), loadShowcaseForViewer()]);
+  const [dict, showcase, chipCategories] = await Promise.all([
+    getDictionary(),
+    loadShowcaseForViewer(),
+    loadChipCategories(),
+  ]);
 
   return (
     <>
+      {/* Kategoriya chiplari — header'dagi qidiruv ostida, bitta
+          bosishda kategoriyaga (evde.uz kabi). Katalogda ham bor. */}
+      <div className="mx-auto max-w-7xl px-4 pt-3">
+        <CategoryChips categories={chipCategories} active={null} />
+      </div>
+
       {/* Hero: 3D rejimda orqa fonda interaktiv sahna, klassikda -
           hozirgi tekis fon. Matn ikkalasida bir xil. */}
       <Hero />

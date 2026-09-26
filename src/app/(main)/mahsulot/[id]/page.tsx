@@ -15,6 +15,7 @@ import { freeDeliveryText, installServiceText } from "@/lib/delivery/text";
 import { storefrontRole, toViewerProduct, toViewerProducts } from "@/lib/products/viewer";
 import { localizedDescription, localizedName } from "@/lib/products/i18n";
 import { labelOf } from "@/lib/products/taxonomy";
+import { productSpecs } from "@/lib/products/specs";
 import { hasVariants } from "@/lib/products/variants";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
 import { ProductVariantPicker } from "@/components/product/ProductVariantPicker";
@@ -114,6 +115,25 @@ export default async function ProductPage({ params }: ProductPageParams) {
   // bunday holda `metadata/taxonomy` dagi nom ishlatiladi.
   const categoryLabel = labelOf(taxonomy.categories, product.category);
   const unitLabel = labelOf(taxonomy.units, product.unit) || "dona";
+  const specs = productSpecs(
+    product,
+    {
+      categoryLabel: (dict.categories as Record<string, string>)[product.category] ?? categoryLabel,
+      materialLabel: product.material ? labelOf(taxonomy.materials, product.material) : "",
+      unitLabel,
+    },
+    {
+      category: dict.product.category,
+      brand: dict.filters.brand,
+      country: dict.filters.country,
+      material: dict.filters.material,
+      saleUnit: dict.product.saleUnit,
+      diameter: dict.product.diameter,
+      length: dict.product.length,
+      weight: dict.product.weight,
+      code: dict.product.code,
+    }
+  );
 
   // Chegirma muddati o'tgan bo'lsa - oddiy narx ko'rsatiladi.
   const hasDiscount = isDiscountActive(product);
@@ -170,7 +190,6 @@ export default async function ProductPage({ params }: ProductPageParams) {
           </div>
           <p className="text-sm text-navy-300">
             {[product.brand, product.manufacturerCountry].filter(Boolean).join(" • ")}
-            {product.sku ? ` • Kod: ${product.sku}` : ""}
           </p>
 
           {(product.ratingCount ?? 0) > 0 && (
@@ -194,26 +213,24 @@ export default async function ProductPage({ params }: ProductPageParams) {
 
           <p className="text-sm text-navy-500 dark:text-navy-100">{description}</p>
 
-          <dl className="grid grid-cols-2 gap-2 text-sm text-navy-500 dark:text-navy-100">
-            {product.dimensions.diameterMm !== undefined && (
-              <>
-                <dt className="text-navy-300">{dict.product.diameter}</dt>
-                <dd>{product.dimensions.diameterMm} mm</dd>
-              </>
-            )}
-            {product.dimensions.lengthMm !== undefined && (
-              <>
-                <dt className="text-navy-300">{dict.product.length}</dt>
-                <dd>{product.dimensions.lengthMm} mm</dd>
-              </>
-            )}
-            {product.dimensions.weightKg !== undefined && (
-              <>
-                <dt className="text-navy-300">{dict.product.weight}</dt>
-                <dd>{product.dimensions.weightKg} kg</dd>
-              </>
-            )}
-          </dl>
+{/* XUSUSIYATLARI — brend, davlat, material, sotish turi,
+              o'lchamlar va kod bitta ro'yxatda (`lib/products/specs.ts`).
+              Faqat BOR qiymatlar chiqadi. */}
+          {specs.length > 0 && (
+            <div className="mt-1">
+              <h2 className="mb-1.5 text-sm font-semibold text-navy-900 dark:text-white">
+                {dict.product.specs}
+              </h2>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+                {specs.map((row) => (
+                  <div key={row.label} className="contents">
+                    <dt className="text-navy-300">{row.label}</dt>
+                    <dd className="font-medium text-navy-700 dark:text-navy-50">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
 
           {hasVariants(product) ? (
             <ProductVariantPicker product={product} unitLabel={unitLabel} />

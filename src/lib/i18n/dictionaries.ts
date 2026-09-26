@@ -220,6 +220,13 @@ export interface Dictionary {
     loadError: string;
     empty: string;
     searchPlaceholder: string;
+    /** Mahsulot sahifasidagi "Xususiyatlari" bloki. */
+    specs: string;
+    category: string;
+    saleUnit: string;
+    code: string;
+    /** Kategoriya chiplari qatori (ekran o'quvchi uchun). */
+    categoriesNav: string;
   };
   filters: {
     title: string;
@@ -467,6 +474,11 @@ const uz: Dictionary = {
     loadError: "Mahsulotlarni yuklashda xatolik yuz berdi.",
     empty: "Hech qanday mahsulot topilmadi.",
     searchPlaceholder: "Mahsulot qidirish...",
+    specs: "Xususiyatlari",
+    category: "Kategoriya",
+    saleUnit: "Sotish turi",
+    code: "Kod",
+    categoriesNav: "Kategoriyalar",
   },
   filters: {
     title: "Filtrlar",
@@ -712,6 +724,11 @@ const en: Dictionary = {
     loadError: "Failed to load products.",
     empty: "No products found.",
     searchPlaceholder: "Search products...",
+    specs: "Specifications",
+    category: "Category",
+    saleUnit: "Sold by",
+    code: "Code",
+    categoriesNav: "Categories",
   },
   filters: {
     title: "Filters",
@@ -957,6 +974,11 @@ const ru: Dictionary = {
     loadError: "Не удалось загрузить товары.",
     empty: "Товары не найдены.",
     searchPlaceholder: "Поиск товаров...",
+    specs: "Характеристики",
+    category: "Категория",
+    saleUnit: "Единица продажи",
+    code: "Код",
+    categoriesNav: "Категории",
   },
   filters: {
     title: "Фильтры",

@@ -3,6 +3,13 @@ import type { ProductFilterParams } from "@/types/product";
 
 interface FilterState extends ProductFilterParams {
   searchTerm: string;
+  /**
+   * Qaysi katalog manzili (`?category=...`) filtrga allaqachon
+   * ko'chirilgan (`CatalogContent`). Manzil bir marta ko'chiriladi —
+   * keyin mijoz filtr oynasida boshqasini tanlasa, manzil uni
+   * qaytarib bosib qo'ymaydi.
+   */
+  urlSyncedFor?: string;
 }
 
 const initialState: FilterState = {
@@ -17,8 +24,9 @@ const filterSlice = createSlice({
     setFilters(state, action: PayloadAction<Partial<FilterState>>) {
       return { ...state, ...action.payload };
     },
-    resetFilters() {
-      return initialState;
+    resetFilters(state) {
+      // "Tozalash" manzildagi filtrni QAYTA yoqib yubormasin.
+      return { ...initialState, urlSyncedFor: state.urlSyncedFor };
     },
   },
 });

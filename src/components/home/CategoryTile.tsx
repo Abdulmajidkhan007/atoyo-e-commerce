@@ -36,7 +36,11 @@ export function CategoryTile({ category, label, Icon }: CategoryTileProps) {
     <button
       onClick={() => {
         dispatch(setFilters({ category }));
-        router.push(localeHref("/katalog", locale));
+        // Manzilda ham kategoriya bo'lsin: server birinchi sahifani
+        // SHU kategoriya bilan chizadi. Ilgari faqat `/katalog` ga
+        // o'tilardi va mijoz filtrsiz ro'yxatni ko'rardi
+        // (`lib/products/filters-key.ts`).
+        router.push(localeHref(`/katalog?category=${encodeURIComponent(category)}`, locale));
       }}
       className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition duration-300 ${
         immersive ? GLASS_TILE : CLASSIC_TILE

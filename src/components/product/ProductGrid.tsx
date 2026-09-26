@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getProductsPage, searchProductsByPrefix } from "@/lib/firebase/firestore";
 import { createFuzzySearcher } from "@/lib/search/fuzzy";
+import { catalogFiltersKey } from "@/lib/products/filters-key";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { ProductCard } from "./ProductCard";
 import { ProductCardSkeletons } from "./ProductCardSkeleton";
@@ -23,6 +24,13 @@ interface ProductGridProps {
   initialProducts?: Product[];
   initialCursor?: string | null;
   initialHasMore?: boolean;
+  /**
+   * Server birinchi sahifani QAYSI filtr bilan chizgan
+   * (`catalogFiltersKey`). Mijozdagi filtr boshqacha bo'lsa server
+   * sahifasi ishlatilmaydi — aks holda "Kranlar" deb bosgan mijoz
+   * filtrsiz ro'yxatni ko'rardi.
+   */
+  initialFiltersKey?: string;
 }
 
 export function ProductGrid({
@@ -31,6 +39,7 @@ export function ProductGrid({
   initialProducts,
   initialCursor = null,
   initialHasMore = true,
+  initialFiltersKey,
 }: ProductGridProps) {
   const { dict } = useI18n();
   const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
@@ -42,7 +51,11 @@ export function ProductGrid({
    * o'zgarmagan bo'lsa uni qayta so'rashning ma'nosi yo'q. Filtr
    * o'zgarishi bilan effekt odatdagidek ishlaydi.
    */
-  const skipFirstLoad = useRef((initialProducts?.length ?? 0) > 0);
+  const skipFirstLoad = useRef(
+    (initialProducts?.length ?? 0) > 0 &&
+      !searchTerm.trim() &&
+      (initialFiltersKey === undefined || initialFiltersKey === catalogFiltersKey(filters))
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);

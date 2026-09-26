@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { CatalogContent } from "@/components/product/CatalogContent";
-import { loadStorefrontPage } from "@/lib/products/storefront";
+import { loadChipCategories, loadStorefrontPage } from "@/lib/products/storefront";
+import { catalogFiltersKey } from "@/lib/products/filters-key";
 import type { ProductFilterParams } from "@/types/product";
 
 /**
@@ -36,7 +37,7 @@ export default async function CatalogPage({
     sortBy: "newest",
   };
 
-  const page = await loadStorefrontPage(filters);
+  const [page, categories] = await Promise.all([loadStorefrontPage(filters), loadChipCategories()]);
 
   return (
     <Suspense fallback={null}>
@@ -44,6 +45,8 @@ export default async function CatalogPage({
         initialProducts={page.products}
         initialCursor={page.nextCursor}
         initialHasMore={page.hasMore}
+        initialFiltersKey={catalogFiltersKey(filters)}
+        categories={categories}
       />
     </Suspense>
   );

@@ -99,6 +99,19 @@ ustama `settings/pricing`, standart 5%).
   `ProductGrid` da ID bo'yicha tashlanadi. Filtr/qidiruv/boshqa
   saralash bo'lsa aralashtirish ISHLAMAYDI. Testi:
   `storefront.test.ts`.
+- **Server birinchi sahifasi faqat FILTR MOS KELSA ishlatiladi**
+  (`catalogFiltersKey`, `lib/products/filters-key.ts`): ilgari bosh
+  sahifadagi kategoriya kartochkasi filtrni faqat Redux'ga yozardi,
+  server esa filtrsiz ro'yxat chizardi va `ProductGrid` uni qayta
+  so'ramasdi — mijoz "Kranlar" bosib har xil mahsulot ko'rardi.
+  Kategoriyaga o'tish HAR DOIM `?category=` bilan; `CatalogContent`
+  manzildagi filtrni Redux'ga BIR MARTA ko'chiradi
+  (`filters.urlSyncedFor`).
+- **Kategoriya chiplari** (`CategoryChips`) — bosh sahifa va katalog
+  boshida, header ICHIDA EMAS (yopishqoq header telefonda 3 qator
+  bo'lib qolardi). Faqat mahsuloti bor kategoriyalar
+  (`loadChipCategories`, 5 daqiqa kesh). Katalog ichida
+  `history.pushState` bilan — server so'rovisiz.
 - Mahsulot qaytaradigan YANGI route: `toViewerProducts()` +
   `no-store` (`lib/http/cache.ts`). Rolga bog'liq javob keshlanmaydi.
 - Mijoz tomonidagi hook'lar (`usePricing.ts`, `mobile/src/pricing.ts`)
