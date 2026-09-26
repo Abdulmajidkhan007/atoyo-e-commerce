@@ -26,12 +26,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   try {
     const buffer = await readPrivateFile(receipt.path);
+    const ext = receipt.path.split(".").pop() ?? "bin";
+    const isPdf = receipt.contentType === "application/pdf";
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": receipt.contentType,
-        "Content-Disposition": `inline; filename="chek-${id.slice(0, 8)}"`,
+        // Rasm - brauzerda ko'rinadi; PDF - yuklab olinadi (brauzerning
+        // PDF ko'ruvchisi saytimiz manzilida ochilmasin).
+        "Content-Disposition": `${isPdf ? "attachment" : "inline"}; filename="chek-${id.slice(0, 8)}.${ext}"`,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
+        // Fayl mijozdan keladi: sahifa sifatida ochilsa ham hech narsa
+        // bajarilmasin va hech qayerga so'rov ketmasin.
+        "Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'",
       },
     });
   } catch (error) {

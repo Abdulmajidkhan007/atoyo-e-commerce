@@ -858,3 +858,45 @@ Hech qaysi client (sayt ham, ilova ham) bu yo'ldan foydalanmaydi —
 edi, qo'shnisi esa `/api/orders/[id]/cancel`. Build o'tdi, lekin
 Next.js router bir darajada ikki xil dinamik nomni qabul qilmaydi
 (ishga tushishda yiqilishi mumkin) — `[id]` ga o'tkazildi.
+
+## 34. Tekshiruvchining birinchi ishi: 8 ta nuqson
+
+`docs/ISH-ARXITEKTURASI.md` dagi tekshiruvchi (reviewer, toza
+kontekst) birinchi marta o'tkazma + 1-klik commitiga qo'yildi.
+Blocker topilmadi, lekin 8 ta nuqson — ularning hech birini
+yozgan odam (men) ko'rmagan edi, bu R5 ning ma'nosini ko'rsatdi:
+
+- **D1 — zaxirani bir so'rovda o'ldirish.** Mehmon sxemasi 5 ta
+  mahsulot × 10 000 donaga ruxsat berardi: ro'yxatdan o'tmagan odam
+  bitta so'rov bilan 5 ta mahsulotni "tugagan" qilib qo'yardi, admin
+  har birini qo'lda bekor qilguncha. Endi 1 mahsulot, ≤ 99 dona.
+- **D2 — limitlar noto'g'ri narsani sanardi.** Xato so'rovlar ham
+  sanalardi: begona odam birovning telefoni bilan 5 ta xato so'rov
+  yuborib, uni sutkaga bloklardi; IP bo'yicha soatiga 5 — O'zbekiston
+  mobil operatorlarida (CGNAT) yuzlab mijoz bitta IPv4 da. IPv6 da
+  esa bitta /64 ichida manzil almashtirib limitdan qochish mumkin edi.
+- **D3 — tana tekshiruvdan oldin o'qilardi.** `Content-Length`
+  bo'lmasa `formData()` 32 MB gacha xotiraga olardi — buyurtma va
+  kalit tekshirilmasdan. Instansiya 1 GB / 40 parallel so'rov.
+- **D4 — chek guruhga yetmasa jim.** Mijozga "yuklandi", admin esa
+  hech narsa ko'rmasdi.
+- **D5 — egasining qarori kodda yo'q edi.** Standart "eng kam
+  buyurtma" 100 000 edi — 4 000 so'mlik 1-klik formani to'ldirgandan
+  keyin rad etilardi. Endi standart 0 va oynada summa oldindan.
+- **D6 — nusxa.** Guruh xabarini yangilash ikki joyda edi.
+- **D7 — jumboqni chetlab o'tish.** `firestore.rules` da
+  `settings/{id}` ga har qanday admin client SDK bilan yoza olardi —
+  ya'ni kartani jumboqsiz va ogohlantirishsiz almashtirish mumkin
+  edi. Butun himoya (o'g'irlangan sessiya kartani almashtirmasin)
+  shu qoida tufayli ishlamasdi.
+- **D8 — holat ko'rinmasdi.** Bekor qilingan buyurtma sahifasida
+  "operator qo'ng'iroq qiladi" deb turardi.
+
+Qo'shimcha: to'langan buyurtmani mijoz o'zi bekor qila olardi
+(zaxira qaytardi, pul esa kartada qolardi) — yopildi.
+
+Saboq: ochiq (mehmon) yozuv yo'li va pul oqimi — tekshiruvchisiz
+push qilinmaydi. Bu safar push tekshiruv tugashidan oldin ketdi
+(o'tkazma standart holda o'chiq bo'lgani uchun xavf kichik edi),
+lekin tartib — avval hukm, keyin push.
+

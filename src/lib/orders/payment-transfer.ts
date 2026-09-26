@@ -1,14 +1,15 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { savePrivateFile } from "@/lib/firebase/admin-storage";
-import { editTopicMessageText, sendTopicFile } from "@/lib/telegram/bot";
-import { buildOrderActionKeyboard, buildPaymentReviewKeyboard } from "@/lib/telegram/keyboard";
-import { formatOrderMessage } from "@/lib/telegram/templates";
+import { sendTopicFile } from "@/lib/telegram/bot";
+import { buildPaymentReviewKeyboard } from "@/lib/telegram/keyboard";
+import { reportError } from "@/lib/ops/report-error";
+import { refreshOrderTelegramMessage } from "./telegram-message";
 import { escapeHtml } from "@/lib/telegram/html";
 import { logAction } from "@/lib/telegram/action-log";
 import { isSmsConfigured, sendSms } from "@/lib/sms/sender";
 import { formatSom } from "@/lib/format";
-import { detectReceiptType, MAX_RECEIPT_BYTES } from "./receipt";
+import { detectReceiptType, MAX_RECEIPT_BYTES, MAX_RECEIPTS_PER_ORDER } from "./receipt";
 import type { Order } from "@/types/order";
 
 /**
@@ -33,17 +34,44 @@ export class ReceiptError extends Error {
   }
 }
 
-async function refreshOrderMessage(order: Order): Promise<void> {
-  if (!order.telegramMessageId) return;
+/**
+ * Chekni guruhga yuborish. `sendPhoto` ba'zi rasmlarni rad etadi
+ * (masalan juda uzun skroll-skrinshot) — shunda HUJJAT sifatida qayta
+ * yuboriladi. Ikkalasi ham o'tmasa — `reportError` (tekshiruvchi D4):
+ * aks holda mijozga "yuklandi" deyilardi, admin esa chekni ham,
+ * tugmalarni ham ko'rmasdi.
+ */
+async function sendReceiptToGroup(order: Order, bytes: Buffer, type: { contentType: string; ext: string }) {
+  const file = { buffer: bytes, fileName: `chek-${order.id.slice(0, 8)}.${type.ext}`, contentType: type.contentType };
+  const message = {
+    topicKey: "orders" as const,
+    file,
+    caption: [
+      `🧾 <b>Chek yuklandi — #${order.id.slice(0, 8)}</b>`,
+      `💰 Kutilgan summa: <b>${formatSom(order.totalAmount)}</b>`,
+      `👤 ${escapeHtml(order.customerName)} · ${escapeHtml(order.phoneNumber)}`,
+      ``,
+      `Bankda pul tushganini tekshirib, tugmani bosing.`,
+    ].join("\n"),
+    replyMarkup: buildPaymentReviewKeyboard(order.id),
+    replyTo: order.telegramMessageId,
+  };
   try {
-    await editTopicMessageText(
-      order.telegramMessageId,
-      formatOrderMessage(order),
-      order.status === "completed" ? undefined : buildOrderActionKeyboard(order.id)
-    );
-  } catch (error) {
-    // "message is not modified" va shunga o'xshash - holat bazada bor.
-    console.error("Buyurtma xabarini yangilab bo'lmadi:", error);
+    await sendTopicFile(message);
+    return;
+  } catch (firstError) {
+    if (type.contentType.startsWith("image/")) {
+      try {
+        await sendTopicFile({ ...message, asDocument: true });
+        return;
+      } catch {
+        // Pastda umumiy xabar.
+      }
+    }
+    await reportError("chek guruhga yuborilmadi", firstError, {
+      buyurtma: order.id,
+      yechim: "Admin → Buyurtmalar → \"To'lov chekini ko'rish\"",
+    });
   }
 }
 
@@ -58,9 +86,16 @@ export async function attachReceipt(orderId: string, bytes: Buffer): Promise<Ord
   if (!snap.exists) throw new ReceiptError("Buyurtma topilmadi.", 404);
   const order = { id: snap.id, ...snap.data() } as Order;
 
-  if (order.paymentMethod !== "transfer") throw new ReceiptError("Bu buyurtma o'tkazma bilan to'lanmaydi.", 409);
-  if (order.status === "cancelled") throw new ReceiptError("Buyurtma bekor qilingan.", 409);
-  if (order.paymentStatus === "paid") throw new ReceiptError("To'lov allaqachon tasdiqlangan.", 409);
+  const assertUploadable = (current: Order) => {
+    if (current.paymentMethod !== "transfer") throw new ReceiptError("Bu buyurtma o'tkazma bilan to'lanmaydi.", 409);
+    if (current.status === "cancelled") throw new ReceiptError("Buyurtma bekor qilingan.", 409);
+    if (current.paymentStatus === "paid") throw new ReceiptError("To'lov allaqachon tasdiqlangan.", 409);
+    if ((current.receiptCount ?? 0) >= MAX_RECEIPTS_PER_ORDER) {
+      throw new ReceiptError("Bu buyurtmaga cheklar soni tugadi. Iltimos, bizga qo'ng'iroq qiling.", 429);
+    }
+  };
+  // Arzon tekshiruv FAYLNI saqlashdan OLDIN (keraksiz yozuv bo'lmasin).
+  assertUploadable(order);
 
   const uploadedAt = Date.now();
   // Eski chek O'CHIRILMAYDI - qayta yuklansa ham iz qoladi (nizo bo'lsa kerak).
@@ -68,28 +103,26 @@ export async function attachReceipt(orderId: string, bytes: Buffer): Promise<Ord
   await savePrivateFile(path, bytes, type.contentType);
 
   const receipt = { path, contentType: type.contentType, size: bytes.length, uploadedAt };
-  // Admin avval "pul tushmadi" degan bo'lsa - yangi chek bilan qayta tekshiruvga.
-  await ref.update({ receipt, paymentStatus: "pending", updatedAt: uploadedAt });
-  const updated: Order = { ...order, receipt, paymentStatus: "pending", updatedAt: uploadedAt };
 
-  await refreshOrderMessage(updated);
-  try {
-    await sendTopicFile({
-      topicKey: "orders",
-      file: { buffer: bytes, fileName: `chek-${orderId.slice(0, 8)}.${type.ext}`, contentType: type.contentType },
-      caption: [
-        `🧾 <b>Chek yuklandi — #${orderId.slice(0, 8)}</b>`,
-        `💰 Kutilgan summa: <b>${formatSom(order.totalAmount)}</b>`,
-        `👤 ${escapeHtml(order.customerName)} · ${escapeHtml(order.phoneNumber)}`,
-        ``,
-        `Bankda pul tushganini tekshirib, tugmani bosing.`,
-      ].join("\n"),
-      replyMarkup: buildPaymentReviewKeyboard(orderId),
-      replyTo: order.telegramMessageId,
-    });
-  } catch (error) {
-    console.error("Chekni guruhga yuborib bo'lmadi:", error);
-  }
+  /**
+   * POYGA HOLATI (tekshiruvchi topgan): fayl yuklanayotgan bir necha
+   * soniya ichida admin "To'lov keldi" ni bosishi mumkin. Ilgari
+   * yakuniy yozuv shartsiz `paymentStatus: "pending"` qilardi va
+   * tasdiq jimgina yo'qolardi. Endi tranzaksiyada qayta o'qiladi.
+   */
+  const updated = await getAdminDb().runTransaction(async (tx) => {
+    const fresh = await tx.get(ref);
+    if (!fresh.exists) throw new ReceiptError("Buyurtma topilmadi.", 404);
+    const current = { id: fresh.id, ...fresh.data() } as Order;
+    assertUploadable(current);
+    const receiptCount = (current.receiptCount ?? 0) + 1;
+    // Admin avval "pul tushmadi" degan bo'lsa - yangi chek bilan qayta tekshiruvga.
+    tx.update(ref, { receipt, receiptCount, paymentStatus: "pending", updatedAt: uploadedAt });
+    return { ...current, receipt, receiptCount, paymentStatus: "pending", updatedAt: uploadedAt } as Order;
+  });
+
+  await refreshOrderTelegramMessage(updated);
+  await sendReceiptToGroup(updated, bytes, type);
   return updated;
 }
 
@@ -110,7 +143,7 @@ export async function reviewTransferPayment(orderId: string, paid: boolean, who:
   await ref.update({ paymentStatus, updatedAt: now });
   const updated: Order = { ...order, paymentStatus, updatedAt: now };
 
-  await refreshOrderMessage(updated);
+  await refreshOrderTelegramMessage(updated);
   await logAction(
     `${paid ? "✅ To'lov tasdiqlandi" : "❌ To'lov topilmadi"} — #${orderId.slice(0, 8)}, ${formatSom(order.totalAmount)} (${escapeHtml(who)})`
   ).catch(() => {});

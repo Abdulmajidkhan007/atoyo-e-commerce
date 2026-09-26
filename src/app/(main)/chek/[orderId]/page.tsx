@@ -155,7 +155,12 @@ export default async function ReceiptPage({ params }: { params: Promise<{ orderI
             </div>
 
             <p className="mt-1 text-xs" style={{ color: BRAND.muted }}>
-              To&apos;lov: {order.paymentMethod === "cash" ? "Naqd (yetkazilganda)" : "Onlayn"}
+              To&apos;lov:{" "}
+              {order.paymentMethod === "cash"
+                ? "Naqd (yetkazilganda)"
+                : order.paymentMethod === "transfer"
+                  ? `Kartaga o'tkazma${order.paymentStatus === "paid" ? " (to'langan)" : ""}`
+                  : "Onlayn"}
             </p>
           </div>
 

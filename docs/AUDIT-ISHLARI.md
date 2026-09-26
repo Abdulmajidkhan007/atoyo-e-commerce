@@ -388,3 +388,27 @@ Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
 Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt.
 ```
+
+---
+
+## 14) 1-klik va o'tkazma: qolgan kichik ishlar 🟢
+
+Tekshiruvchi (reviewer, 2026-09-26) topgan, asosiy tuzatishlardan
+keyin QOLGAN nitlar. Hech biri hozir xavf emas.
+
+1. **Google Analytics va buyurtma kaliti.** `NEXT_PUBLIC_GA_ID`
+   qo'yilsa, GA4 sahifa manzilini `?t=<kalit>` bilan yozib oladi
+   (`page_location`). Hozir GA productionda YO'Q (`apphosting.yaml`).
+   GA yoqilishidan OLDIN: `Analytics.tsx` da `gtag('config', …,
+   { page_location: <t olib tashlangan URL> })` va SPA o'tishlari
+   uchun ham shu. Manzildan `t` ni o'chirish yo'li EMAS — mijoz
+   sahifani saqlab/yangilab qaytib kira olmay qoladi.
+2. **Testlar.** `/api/orders/quick` (bot tuzog'i, limitlar, mehmon
+   dona narx oladi) va admin chek route sarlavhalari uchun route
+   darajasidagi test yo'q — sof qismlari (`order-schema`,
+   `order-access`, `receipt`, `ipLimitKey`) qoplangan.
+3. **Chek tasdig'i tranzaksiyasiz.** `reviewTransferPayment` o'qib,
+   keyin yozadi; `attachReceipt` tranzaksiyada va "to'langan"ni
+   qayta tekshiradi, shuning uchun amalda poyga yo'q. Baribir
+   tranzaksiyaga o'tkazish toza bo'lardi.
+

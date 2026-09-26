@@ -1,10 +1,9 @@
 import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase/admin";
-import { editTopicMessageText, sendChatMessage } from "@/lib/telegram/bot";
+import { sendChatMessage } from "@/lib/telegram/bot";
+import { refreshOrderTelegramMessage } from "./telegram-message";
 import { sendSlotSticker, slotForOrderStatus } from "@/lib/telegram/stickers";
-import { buildOrderActionKeyboard } from "@/lib/telegram/keyboard";
-import { formatOrderMessage } from "@/lib/telegram/templates";
 import { sendOrderStatusEmail } from "@/lib/email/mailer";
 import { sendPushToUser } from "@/lib/notifications/push";
 import type { Order, OrderStatus } from "@/types/order";
@@ -93,21 +92,7 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
     await orderRef.update({ status: updatedOrder.status, updatedAt: updatedOrder.updatedAt });
   }
 
-  if (updatedOrder.telegramMessageId) {
-    try {
-      // Buyurtma "Yakunlandi" holatiga o'tganda tugmalar olib tashlanadi,
-      // aks holda admin keyingi bosqichga o'tishi uchun tugmalar qoladi.
-      await editTopicMessageText(
-        updatedOrder.telegramMessageId,
-        formatOrderMessage(updatedOrder),
-        updatedOrder.status === "completed" ? undefined : buildOrderActionKeyboard(updatedOrder.id)
-      );
-    } catch (error) {
-      // Firestore statusi allaqachon yangilandi - Telegram xabari
-      // tahrirlanmasa ham buyurtma holati to'g'ri qoladi, faqat log qilinadi.
-      console.error("Telegram xabarini tahrirlashda xato:", error);
-    }
-  }
+  await refreshOrderTelegramMessage(updatedOrder);
 
   // Mijozga Telegram DM.
   //

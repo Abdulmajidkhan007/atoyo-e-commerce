@@ -486,9 +486,24 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   buyurtmasi, aks holda 404. Bazada faqat kalit XESHI
   (`accessTokenHash`). Sahifa `noindex`.
 - **1 klikda** — `/api/orders/quick` (mehmon): manzil majburiy,
-  IP soatiga 5 / telefon sutkasiga 5, `website` bot tuzog'i. IP
-  `unknown` bo'lsa IP cheklovi QO'LLANMAYDI (hamma bir-birini
-  bloklardi). Narx `createOrder` da qayta hisoblanadi.
+  BITTA mahsulot ≤ 99 dona; IP (IPv6 — /64, `ipLimitKey`) soatiga 20
+  so'rov; telefon sutkasiga 5 va butun sayt soatiga 30 — faqat
+  MUVAFFAQIYATLI buyurtma sanaladi (`peekRateLimit` → buyurtma →
+  `checkRateLimit`), aks holda begona odam birovning raqamini
+  bloklab qo'yardi. Umumiy chegara to'lsa — "Actions" ga ogohlantirish.
+  `website` bot tuzog'i → `{ received: true }` (saqlanmaydi). Narx
+  `createOrder` da qayta hisoblanadi.
+- **Chek yuklash tartibi**: `Content-Length` SHART (411) → IP limit →
+  kalit (`?t=`, MANZILDA) + buyurtma → faqat shundan keyin tana
+  o'qiladi. Buyurtmaga umrbod 5 ta chek (`MAX_RECEIPTS_PER_ORDER`).
+  Yakuniy yozuv tranzaksiyada ("to'langan" qayta tekshiriladi).
+  Guruhga rasm o'tmasa — hujjat sifatida, u ham o'tmasa `reportError`.
+- **`settings/payment` ga client SDK bilan yozish qoidalarda yopiq**
+  (`settingId != 'payment'`) — faqat jumboqli server route.
+- To'langan (o'tkazma/onlayn) buyurtmani mijoz o'zi bekor qila
+  olmaydi — operator orqali (pul qaytariladi).
+- Guruhdagi buyurtma xabarini yangilash BITTA joyda —
+  `refreshOrderTelegramMessage` (`lib/orders/telegram-message.ts`).
 - Buyurtma sxemasi BITTA joyda (`lib/orders/order-schema.ts`),
   mijozga xato `orderErrorMessage` bilan (admin `validationMessage`
   ichki yorliqlarni aytadi — mijozga EMAS).

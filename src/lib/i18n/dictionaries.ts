@@ -283,6 +283,14 @@ export interface Dictionary {
     honeypot: string;
     uploadError: string;
     sending: string;
+    operatorWillCall: string;
+    statusLabel: string;
+    goToOnlinePayment: string;
+    decrease: string;
+    increase: string;
+    orderReceivedShort: string;
+    /** "{amount}" o'rniga eng kam summa. */
+    minOrder: string;
   };
   favorites: {
     title: string;
@@ -573,6 +581,13 @@ const uz: Dictionary = {
     honeypot: "Bu maydonni to'ldirmang",
     uploadError: "Chekni yuklab bo'lmadi. Qayta urinib ko'ring.",
     sending: "Yuborilmoqda...",
+    operatorWillCall: "Operator tez orada qo'ng'iroq qiladi.",
+    statusLabel: "Holati",
+    goToOnlinePayment: "To'lov sahifasiga o'tish",
+    decrease: "Kamaytirish",
+    increase: "Oshirish",
+    orderReceivedShort: "Buyurtmangiz qabul qilindi. Operator tez orada qo'ng'iroq qiladi.",
+    minOrder: "Eng kam buyurtma summasi — {amount}. Sonini oshiring yoki savatga boshqa mahsulot qo'shing.",
   },
   favorites: {
     title: "Sevimlilar",
@@ -861,6 +876,13 @@ const en: Dictionary = {
     honeypot: "Leave this field empty",
     uploadError: "Could not upload the receipt. Please try again.",
     sending: "Sending...",
+    operatorWillCall: "Our operator will call you shortly.",
+    statusLabel: "Status",
+    goToOnlinePayment: "Go to payment",
+    decrease: "Decrease",
+    increase: "Increase",
+    orderReceivedShort: "Your order has been received. Our operator will call you shortly.",
+    minOrder: "The minimum order is {amount}. Increase the quantity or add other items to the cart.",
   },
   favorites: {
     title: "Favorites",
@@ -1149,6 +1171,13 @@ const ru: Dictionary = {
     honeypot: "Не заполняйте это поле",
     uploadError: "Не удалось загрузить чек. Попробуйте ещё раз.",
     sending: "Отправка...",
+    operatorWillCall: "Оператор скоро позвонит.",
+    statusLabel: "Статус",
+    goToOnlinePayment: "Перейти к оплате",
+    decrease: "Уменьшить",
+    increase: "Увеличить",
+    orderReceivedShort: "Заказ принят. Оператор скоро позвонит.",
+    minOrder: "Минимальная сумма заказа — {amount}. Увеличьте количество или добавьте другие товары в корзину.",
   },
   favorites: {
     title: "Избранное",

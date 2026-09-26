@@ -63,8 +63,9 @@ export function TransferPanel({
     try {
       const form = new FormData();
       form.append("file", file);
-      form.append("t", token);
-      const res = await fetch(`/api/orders/${orderId}/receipt`, { method: "POST", body: form });
+      // Kalit MANZILDA: server uni fayl tanasini o'qishdan OLDIN tekshiradi.
+      const query = token ? `?t=${encodeURIComponent(token)}` : "";
+      const res = await fetch(`/api/orders/${orderId}/receipt${query}`, { method: "POST", body: form });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? t.uploadError);
       router.refresh();

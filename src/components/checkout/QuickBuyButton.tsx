@@ -70,6 +70,10 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
   const [transferEnabled, setTransferEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Eng kam buyurtma summasi (`/api/pricing`) — 0 bo'lsa cheklov yo'q. */
+  const [minOrder, setMinOrder] = useState(0);
+  /** Server buyurtma raqamisiz "qabul qilindi" desa (bot tuzog'i). */
+  const [received, setReceived] = useState(false);
 
   // Oyna ochilganda: o'tkazma bormi + kirgan mijoz ma'lumotlari.
   useEffect(() => {
@@ -81,6 +85,14 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
         if (active) setTransferEnabled(Boolean(data?.transfer));
       })
       .catch(() => {});
+    // Eng kam summa OLDINDAN ko'rinsin - mijoz formani to'ldirib bo'lib,
+    // keyin "summa kam" degan xatoni ko'rmasin (tekshiruvchi D5).
+    fetch("/api/pricing")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { minOrderAmount?: number } | null) => {
+        if (active) setMinOrder(Math.max(0, Number(data?.minOrderAmount) || 0));
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -88,6 +100,7 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
 
   const openDialog = () => {
     setError(null);
+    setReceived(false);
     setQuantity(1);
     if (profile) {
       setName((current) => current || profile.displayName || "");
@@ -100,6 +113,7 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
   const subtotal = item.price * quantity;
   const fee = deliveryFeeFor(delivery, subtotal);
   const gap = freeDeliveryGap(delivery, subtotal);
+  const belowMinimum = minOrder > 0 && subtotal < minOrder;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -136,7 +150,19 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
           ],
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { orderId?: string; accessToken?: string; error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        orderId?: string;
+        accessToken?: string;
+        received?: boolean;
+        error?: string;
+      };
+      if (res.ok && data.received && !data.orderId) {
+        // Bot tuzog'i ishladi (brauzer yashirin maydonni avto-to'ldirgan
+        // bo'lishi mumkin) - mijoz xato emas, umumiy javob ko'radi.
+        setReceived(true);
+        setSubmitting(false);
+        return;
+      }
       if (!res.ok || !data.orderId) throw new Error(data.error ?? dict.checkout.submitError);
       router.push(
         localeHref(`/buyurtma/${data.orderId}?t=${encodeURIComponent(data.accessToken ?? "")}`, locale)
@@ -168,20 +194,27 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
         aria-labelledby={titleId}
         slotProps={{ paper: { className: "!rounded-2xl" } }}
       >
+        {/* Yopish tugmasi SARLAVHADAN TASHQARIDA: aks holda oynaning
+            ekran o'quvchidagi nomi "... Yopish" bo'lib qolardi. */}
+        <IconButton
+          aria-label={dict.common.close}
+          onClick={() => setOpen(false)}
+          disabled={submitting}
+          className="!absolute !right-2 !top-2"
+        >
+          <CloseIcon />
+        </IconButton>
         <DialogTitle id={titleId} className="!pr-12">
           {t.quickBuyTitle}
           <span className="block text-sm font-normal text-navy-300">{t.quickBuySubtitle}</span>
-          <IconButton
-            aria-label={dict.common.close}
-            onClick={() => setOpen(false)}
-            disabled={submitting}
-            className="!absolute !right-2 !top-2"
-          >
-            <CloseIcon />
-          </IconButton>
         </DialogTitle>
 
         <DialogContent>
+          {received ? (
+            <Alert severity="success" role="status">
+              {t.orderReceivedShort}
+            </Alert>
+          ) : (
           <form onSubmit={submit} className="flex flex-col gap-3 pt-1">
             <div className="flex items-center justify-between gap-2 rounded-xl bg-navy-50 p-3 dark:bg-navy-800">
               <span className="min-w-0 text-sm text-navy-900 dark:text-white">
@@ -192,7 +225,7 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
               <span className="flex shrink-0 items-center" role="group" aria-label={t.quantity}>
                 <IconButton
                   size="small"
-                  aria-label="−1"
+                  aria-label={`${t.decrease} — ${item.name}`}
                   onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                   disabled={quantity <= 1}
                 >
@@ -203,7 +236,7 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
                 </span>
                 <IconButton
                   size="small"
-                  aria-label="+1"
+                  aria-label={`${t.increase} — ${item.name}`}
                   onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
                   disabled={quantity >= maxQuantity}
                 >
@@ -287,16 +320,23 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
               </Alert>
             )}
 
+            {belowMinimum && (
+              <Alert severity="warning">
+                {t.minOrder.replace("{amount}", formatSom(minOrder))}
+              </Alert>
+            )}
+
             <Button
               type="submit"
               variant="contained"
               size="large"
-              disabled={submitting}
+              disabled={submitting || belowMinimum}
               startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
             >
               {submitting ? t.sending : t.submitQuick}
             </Button>
           </form>
+          )}
         </DialogContent>
       </Dialog>
     </>

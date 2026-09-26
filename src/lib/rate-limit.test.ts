@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getClientIp } from "./rate-limit";
+import { getClientIp, ipLimitKey } from "./rate-limit";
 
 function requestWithXff(value: string | null): Request {
   const headers = new Headers();
@@ -39,5 +39,27 @@ describe("getClientIp", () => {
 
   it("bo'sh bo'g'inlarni (ortiqcha vergul) e'tiborsiz qoldiradi", () => {
     expect(getClientIp(requestWithXff("203.0.113.7,, 130.211.1.1"))).toBe("203.0.113.7");
+  });
+});
+
+describe("ipLimitKey", () => {
+  it("IPv4 o'zgarmaydi", () => {
+    expect(ipLimitKey("203.0.113.7")).toBe("203.0.113.7");
+  });
+
+  it("IPv6 — bitta /64 dagi har xil manzillar BITTA kalitga tushadi", () => {
+    const a = ipLimitKey("2001:db8:1:2:aaaa:bbbb:cccc:1");
+    const b = ipLimitKey("2001:0db8:0001:0002:ffff::9");
+    expect(a).toBe("2001:db8:1:2::/64");
+    expect(b).toBe(a);
+  });
+
+  it("qisqartirilgan IPv6 (::) to'g'ri yoyiladi", () => {
+    expect(ipLimitKey("2001:db8::1")).toBe("2001:db8:0:0::/64");
+    expect(ipLimitKey("::1")).toBe("0:0:0:0::/64");
+  });
+
+  it("boshqa /64 — boshqa kalit", () => {
+    expect(ipLimitKey("2001:db8:1:3::1")).not.toBe(ipLimitKey("2001:db8:1:2::1"));
   });
 });

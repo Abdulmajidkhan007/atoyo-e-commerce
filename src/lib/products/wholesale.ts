@@ -33,7 +33,9 @@ export interface PricingSettings {
 
 export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
   retailMarkupPercent: DEFAULT_RETAIL_MARKUP,
-  minOrderAmount: 100_000,
+  // 0 - cheklov yo'q (egasining qarori, 2026-09-26): kichik buyurtma
+  // ham qabul qilinadi, faqat yetkazish pullik (`settings/delivery`).
+  minOrderAmount: 0,
 };
 
 /** Optom mijozmi (optom narxni ko'radi). */

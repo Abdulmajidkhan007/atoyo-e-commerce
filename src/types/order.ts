@@ -65,6 +65,8 @@ export interface Order {
    * mijozning bank ma'lumoti bor) — faqat admin server orqali ko'radi.
    */
   receipt?: { path: string; contentType: string; size: number; uploadedAt: number } | null;
+  /** Shu buyurtmaga yuklangan cheklar soni (umrbod chegara - `MAX_RECEIPTS_PER_ORDER`). */
+  receiptCount?: number;
   /** Tizimga kirmasdan ("1 klikda") berilgan buyurtma. */
   guest?: boolean;
   /**

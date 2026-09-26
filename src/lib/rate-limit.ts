@@ -57,6 +57,56 @@ export async function checkRateLimit(params: {
   }
 }
 
+/**
+ * SANAMASDAN TEKSHIRISH — limit to'lganmi, lekin hisoblagich OSHMAYDI.
+ *
+ * Nega kerak: ba'zi limitlar faqat MUVAFFAQIYATLI amalni sanashi
+ * kerak (masalan telefon bo'yicha buyurtma soni). Aks holda begona
+ * odam birovning raqami bilan 5 ta xato so'rov yuborib, o'sha
+ * mijozni sutkaga bloklab qo'yardi. Tartib: `peekRateLimit` →
+ * amal → muvaffaqiyatli bo'lsa `checkRateLimit` (sanaydi).
+ * Xato bo'lsa — ruxsat (fail-open, `checkRateLimit` kabi).
+ */
+export async function peekRateLimit(params: {
+  key: string;
+  limit: number;
+  windowMs: number;
+}): Promise<{ allowed: boolean }> {
+  try {
+    const snap = await getAdminDb()
+      .collection("rateLimits")
+      .doc(params.key.replace(/[^a-zA-Z0-9:._-]/g, "_"))
+      .get();
+    const data = snap.data() as { count?: number; windowStart?: number } | undefined;
+    if (!data?.windowStart || Date.now() - data.windowStart > params.windowMs) return { allowed: true };
+    return { allowed: (data.count ?? 0) < params.limit };
+  } catch (error) {
+    console.error("Rate limit (peek) tekshiruvida xato:", error);
+    return { allowed: true };
+  }
+}
+
+/**
+ * IP ni limit KALITIGA aylantirish.
+ *
+ * IPv6 da bitta mijoz (uy routeri, telefon) odatda butun /64 tarmoqni
+ * oladi va manzilini istalgancha almashtira oladi — to'liq manzil
+ * bo'yicha limit shuning uchun aylanib o'tiladi. Kalit /64 prefiks
+ * (birinchi 4 guruh). IPv4 o'zgarishsiz. Sof funksiya, testi bor.
+ */
+export function ipLimitKey(ip: string): string {
+  if (!ip.includes(":")) return ip;
+  const [head = "", tail = ""] = ip.toLowerCase().split("::");
+  const headParts = head ? head.split(":") : [];
+  const tailParts = tail ? tail.split(":") : [];
+  const missing = Math.max(0, 8 - headParts.length - tailParts.length);
+  const full = ip.includes("::") ? [...headParts, ...new Array(missing).fill("0"), ...tailParts] : headParts;
+  return `${full
+    .slice(0, 4)
+    .map((part) => part.replace(/^0+(?=.)/, "") || "0")
+    .join(":")}::/64`;
+}
+
 const IP_PATTERN = /^[0-9a-f:.]+$/i;
 
 /**

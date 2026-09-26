@@ -28,6 +28,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (order.userId !== user.uid) {
     return NextResponse.json({ error: "Bu sizning buyurtmangiz emas." }, { status: 403 });
   }
+  // TO'LANGAN o'tkazmani mijoz o'zi bekor qila olmaydi: zaxira qaytardi,
+  // pul esa do'kon kartasida qolardi va buni hech kim bilmasdi.
+  // Qaytarish - operator orqali (tekshiruvchi topgan).
+  if ((order.paymentMethod === "transfer" || order.paymentMethod === "online") && order.paymentStatus === "paid") {
+    return NextResponse.json(
+      { error: "To'langan buyurtmani bekor qilish uchun bizga qo'ng'iroq qiling — pulni qaytarib beramiz." },
+      { status: 409 }
+    );
+  }
   if (!CANCELLABLE.includes(order.status)) {
     return NextResponse.json(
       { error: "Bu buyurtmani endi bekor qilib bo'lmaydi. Operator bilan bog'laning." },

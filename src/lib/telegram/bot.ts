@@ -535,8 +535,10 @@ export async function sendTopicFile(params: {
   caption: string;
   replyMarkup?: InlineKeyboardMarkup;
   replyTo?: number | null;
+  /** Rasmni ham HUJJAT sifatida yuborish (sendPhoto rad etganda zaxira yo'l). */
+  asDocument?: boolean;
 }): Promise<SentMessage> {
-  const isImage = params.file.contentType.startsWith("image/");
+  const isImage = params.file.contentType.startsWith("image/") && !params.asDocument;
   const form = new FormData();
   form.append("chat_id", await getChatId());
   const threadId = resolveThreadId(await resolveTopicConfig(), params.topicKey);

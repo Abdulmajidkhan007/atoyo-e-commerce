@@ -9,6 +9,12 @@
  * Sof funksiya — `server-only` emas, testi `receipt.test.ts`.
  */
 export const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
+/**
+ * Bitta buyurtmaga UMRBOD shuncha chek. Eski cheklar ataylab
+ * o'chirilmaydi (nizo bo'lsa kerak) — chegarasiz bo'lsa bitta buyurtma
+ * Storage'ni cheksiz to'ldira olardi.
+ */
+export const MAX_RECEIPTS_PER_ORDER = 5;
 
 export function detectReceiptType(bytes: Uint8Array): { contentType: string; ext: string } | null {
   const starts = (...signature: number[]) => signature.every((byte, index) => bytes[index] === byte);

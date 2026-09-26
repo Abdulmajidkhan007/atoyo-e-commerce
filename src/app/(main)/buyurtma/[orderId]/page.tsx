@@ -5,7 +5,9 @@ import { getCurrentAppUser } from "@/lib/firebase/session";
 import { verifyOrderAccessToken } from "@/lib/orders/access-token";
 import { getTransferSettings } from "@/lib/payments/transfer";
 import { isTransferUsable } from "@/types/payment-transfer";
-import { getDictionary } from "@/lib/i18n/server";
+import Link from "next/link";
+import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { localeHref } from "@/lib/i18n/href";
 import { formatSom } from "@/lib/format";
 import { TransferPanel } from "@/components/checkout/TransferPanel";
 import type { Order } from "@/types/order";
@@ -33,7 +35,7 @@ export default async function OrderPage({
   params: Promise<{ orderId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [{ orderId }, query, dict] = await Promise.all([params, searchParams, getDictionary()]);
+  const [{ orderId }, query, dict, locale] = await Promise.all([params, searchParams, getDictionary(), getLocale()]);
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(orderId)) notFound();
   const token = Array.isArray(query.t) ? query.t[0] : query.t;
 
@@ -56,6 +58,11 @@ export default async function OrderPage({
         <h1 className="mt-1 text-xl font-bold text-navy-900 dark:text-white">
           {t.orderNumber.replace("{id}", order.id.slice(0, 8))}
         </h1>
+        {/* HOLAT — mehmonda boshqa kanal yo'q, bekor qilingani shu yerda
+            ko'rinishi shart (tekshiruvchi D8). */}
+        <p className="mt-1 text-sm text-navy-500 dark:text-navy-100">
+          {t.statusLabel}: <b>{dict.profile.status[order.status]}</b>
+        </p>
 
         <ul className="mt-4 flex flex-col gap-1.5 text-sm text-navy-600 dark:text-navy-100">
           {order.items.map((item, index) => (
@@ -78,7 +85,11 @@ export default async function OrderPage({
         </p>
       </div>
 
-      {order.paymentMethod === "transfer" && transfer && isTransferUsable(transfer) ? (
+      {order.status === "cancelled" ? (
+        <p role="status" className="mt-4 rounded-xl2 border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-500/40 dark:bg-red-900/20 dark:text-red-200">
+          {dict.profile.cancelled}
+        </p>
+      ) : order.paymentMethod === "transfer" && transfer && isTransferUsable(transfer) ? (
         <TransferPanel
           orderId={order.id}
           token={byToken ? (token ?? "") : ""}
@@ -91,14 +102,17 @@ export default async function OrderPage({
           }}
           paymentStatus={order.paymentStatus}
           hasReceipt={Boolean(order.receipt)}
-          cancelled={order.status === "cancelled"}
+          cancelled={false}
         />
+      ) : order.paymentMethod === "online" && order.paymentStatus !== "paid" ? (
+        <p className="mt-4 text-center">
+          <Link href={localeHref(`/tolov/${order.id}`, locale)} className="font-semibold text-aqua-700 underline dark:text-aqua-300">
+            {t.goToOnlinePayment}
+          </Link>
+        </p>
       ) : (
         <p className="mt-4 rounded-xl2 border border-aqua-500/30 bg-aqua-50/60 p-4 text-sm text-navy-600 dark:bg-navy-800 dark:text-navy-100">
-          {order.paymentMethod === "transfer"
-            ? // O'tkazma keyinroq o'chirilgan bo'lsa - karta ko'rsatilmaydi.
-              t.cashNote.replace(/^[^.]*\.\s*/, "")
-            : t.cashNote}
+          {order.paymentMethod === "cash" ? t.cashNote : t.operatorWillCall}
         </p>
       )}
 

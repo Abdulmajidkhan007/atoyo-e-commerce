@@ -172,7 +172,14 @@ service cloud.firestore {
     // Bot sozlamalari (topic thread ID lar) - faqat admin.
     match /settings/{settingId} {
       allow read: if isAdmin();
-      allow write: if isAdmin();
+      // `settings/payment` (mijozlar pul o'tkazadigan KARTA) - faqat
+      // server orqali (/api/admin/transfer-settings): u yerda jumboq va
+      // "karta almashtirildi" ogohlantirishi bor. Client SDK orqali
+      // to'g'ridan-to'g'ri yozish ikkalasini ham chetlab o'tardi -
+      // sessiyasi o'g'irlangan admin kartani jimgina almashtira olardi.
+      // (Alohida `match /settings/payment` yordam bermaydi: Firestore
+      // biror qoida ruxsat bersa, ruxsat beradi.)
+      allow write: if isAdmin() && settingId != 'payment';
     }
 
     // Mahsulot sharhlari - hamma o'qiy oladi; yozish faqat server orqali

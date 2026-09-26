@@ -56,7 +56,14 @@ export const orderSchema = z.object({
 export const quickOrderSchema = orderSchema.extend({
   deliveryAddress: z.string().trim().min(5, "Manzilni to'liqroq yozing").max(500),
   paymentMethod: z.enum(["cash", "transfer"]).default("cash"),
-  items: z.array(orderItemSchema).min(1).max(5),
+  /**
+   * BITTA mahsulot, ko'pi bilan 99 dona (oyna ham shuncha beradi).
+   * Ochiq (mehmon) yo'l: ilgari 5 ta mahsulot × 10 000 dona mumkin edi
+   * — bitta so'rov bilan 5 ta mahsulotning zaxirasini nolga tushirib,
+   * admin har birini qo'lda bekor qilguncha sotuvdan chiqarib qo'yish
+   * mumkin edi (tekshiruvchi topgan, D1).
+   */
+  items: z.array(orderItemSchema.extend({ quantity: z.number().int().positive().max(99) })).length(1),
   website: z.string().max(200).optional(),
 });
 
@@ -79,10 +86,13 @@ const CUSTOMER_FIELDS: Record<string, string> = {
 export function orderErrorMessage(error: ZodError): string {
   const issue = error.issues.find((item) => CUSTOMER_FIELDS[String(item.path[0])]);
   if (!issue) return "Buyurtma ma'lumotlari noto'g'ri.";
-  const label = CUSTOMER_FIELDS[String(issue.path[0])];
+  const label = CUSTOMER_FIELDS[String(issue.path[0])] ?? "";
   // Zod'ning inglizcha standart xabarlari mijozga chiqmaydi.
   const own = /^(Invalid|Expected|Required|String must|Number must|Array must)/.test(issue.message)
     ? "noto'g'ri"
     : issue.message;
-  return `${label}: ${own}.`;
+  // Xabar allaqachon maydon nomi bilan boshlansa ("Telefon raqam noto'g'ri")
+  // yorliq takrorlanmaydi ("Telefon raqam: Telefon raqam noto'g'ri" bo'lmasin).
+  const text = own.toLowerCase().startsWith(label.toLowerCase().slice(0, 4)) ? own : `${label}: ${own}`;
+  return `${text.replace(/\.$/, "")}.`;
 }

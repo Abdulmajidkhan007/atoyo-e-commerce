@@ -399,6 +399,12 @@ mijoz bu variantni ko'rmaydi.
    ALMASHTIRILDI" xabari kelsa — darhol parolni almashtiring va
    kartani qaytaring.
 
+> **Firestore qoidalari** (karta faqat server orqali, `orders` ni
+> client yarata olmaydi) push'dan keyin CI orqali qo'llanadi
+> (`firestore-rules` job, `FIREBASE_SERVICE_ACCOUNT` kerak). GitHub →
+> Actions da job yashil bo'lganini ko'ring — shundan keyin karta
+> qo'ying.
+
 **Sinov:** boshqa brauzerda (tizimga kirmasdan) mahsulot sahifasida
 **1 klikda sotib olish** → "Kartaga o'tkazma" → buyurtma sahifasida
 karta va summa chiqadi → istalgan rasmni chek sifatida yuklang →
