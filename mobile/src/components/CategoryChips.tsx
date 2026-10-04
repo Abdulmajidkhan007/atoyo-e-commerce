@@ -66,7 +66,9 @@ function Chip({label, on, onPress}: {label: string; on: boolean; onPress: () => 
 }
 
 const useStyles = makeStyles(c => ({
-  row: {flexGrow: 0},
+  // flexShrink 0: katalogda FlatList bilan bir ustunda qator siqilib,
+  // chip matni pastdan kesilib qolardi.
+  row: {flexGrow: 0, flexShrink: 0},
   content: {paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: spacing.sm},
   chip: {
     borderWidth: 1,

@@ -83,8 +83,8 @@ android {
         applicationId "com.atoyo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.5"
+        versionCode 7
+        versionName "1.5.1"
     }
     // Bosh ekran widgetlari (androidx.glance) Compose Compiler talab qiladi.
     // Kotlin 1.9.24 bilan mos versiya - Compose 2.0/K2 kompilyator plagini EMAS.

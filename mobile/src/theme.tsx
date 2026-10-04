@@ -123,14 +123,21 @@ export const colors = {
 export const spacing = {xs: 4, sm: 8, md: 12, lg: 16, xl: 24} as const;
 export const radius = {sm: 8, md: 12, lg: 20} as const;
 
-/** Shisha kartochka soyasi - yengil, Android'da `elevation`. */
+/**
+ * Shisha kartochka soyasi - faqat iOS'da.
+ *
+ * Android'da `elevation` YARIM SHAFFOF fon (`palette.glass`) bilan
+ * birga ishlatilmaydi: soya kartaning ICHIDAN ko'rinib, matn ortida
+ * oq to'rtburchaklar va kulrang dog'lar paydo bo'lardi (ilova 1.5).
+ * Android'da kartani chegara (`glassBorder`) ajratadi.
+ */
 export function glassShadow(color: string) {
   return {
     shadowColor: color,
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 3},
-    elevation: 2,
+    elevation: 0,
   } as const;
 }
 

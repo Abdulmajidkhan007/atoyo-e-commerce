@@ -453,7 +453,9 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   So'rov qatori: `mobile/src/query.ts` → `buildQuery()`.
 - **Shisha**: haqiqiy blur faqat header, pastki nav va modal'da
   (`components/Glass.tsx`, `@react-native-community/blur`); boshqa
-  joyda `palette.glass` (rgba) + `glassBorder`. Yangi karta/maydon
+  joyda `palette.glass` (rgba) + `glassBorder`. **Yarim shaffof fonga
+  Android `elevation` QO'YILMAYDI** — soya karta ichidan ko'rinadi
+  (`glassShadow()` Android'da 0; `ARXITEKTURA-TARIXI.md` 46). Yangi karta/maydon
   `ui.tsx` komponentlaridan olinadi (`docs/UI-SHISHA.md` 6).
 - **Xarid oqimi API'si `mobile/src/checkout-api.ts` da** (`api.ts` da
   EMAS), matnlari `mobile/src/checkout-i18n.ts` da. Ilova narx/summa

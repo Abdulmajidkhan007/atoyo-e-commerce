@@ -1093,3 +1093,15 @@ A/B/C oqimlari parallel sessiyalarda bajarildi (spetsifikatsiya
   `/api/payment-info.online === true` bo'lsa (`fetchPaymentMethods`).
 - To'lov ekrani onlayn buyurtmaga "naqd" deb yozardi — alohida matn.
 - Versiya 1.5 (versionCode 6).
+
+## 46. Ilova 1.5.1: kartalarda oq to'rtburchaklar va kesilgan chiplar
+
+- 1.5 da shisha kartalar (`palette.glass`, 65% shaffof) `elevation: 2`
+  bilan chizilardi. Android soyani yarim shaffof fon ORQALI ko'rsatadi:
+  mahsulot kartasi va bosh sahifa tugmalarida matn ortida oq
+  to'rtburchak, chetlarida kulrang dog' paydo bo'ldi. Endi
+  `glassShadow()` Android'da `elevation: 0` — kartani chegara ajratadi
+  (CLAUDE.md 13).
+- Katalogda `CategoryChips` qatori FlatList bilan bir ustunda siqilib
+  (ScrollView standart `flexShrink: 1`), chip matni pastdan kesilardi.
+  Endi `flexShrink: 0`.
