@@ -466,3 +466,22 @@ Ilova sayt bilan BIR XIL bo'lishi kerak — ko'rinish (shisha UI,
 sahifalari, mijozlar fikri. Avval spetsifikatsiya (`ai/specs/`), keyin
 ishlab chiqish. Katalog bo'sh chiqishi allaqachon tuzatilgan (1.4,
 `ARXITEKTURA-TARIXI.md` 36).
+
+## 16) Haqiqiy mahsulotning 3D modeli (15-banddan keyin) 🟢
+
+Egasining qarori (2026-10-04). Hozirgi 3D sahna (`/admin/3d`,
+`show3dMode`) — koddan chizilgan UMUMIY shakllar, haqiqiy mahsulot
+emas; mijozga ko'rsatilsa ishonch tushadi, shuning uchun mijozlarga
+YOQILMAYDI. O'rniga:
+
+1. Admin mahsulotga 5-6 ta rasm (har tomondan) yuklaydi.
+2. Rasmlar pullik image→3D xizmatiga (Meshy / Tripo kabi, ~0.2-0.5 $
+   bitta modelga) yuboriladi; egasi xizmatda hisob ochib API kalit
+   beradi (`secrets/**`, jumboq bilan).
+3. Natija (`.glb`) bizning Storage'da; admin KO'RIB TASDIQLAGACH
+   mahsulot sahifasida "3D ko'rish" (aylantirish + Android'da AR).
+4. Faqat tanlangan 10-20 ta asosiy mahsulot.
+
+CLAUDE.md 10-banddagi "3D uchun tashqi fayl yo'q" qoidasi shu ish
+uchun o'zgaradi (fayl bizning Storage'da, CSP'ga faqat o'sha manba).
+Avval spetsifikatsiya (`ai/specs/`, planner), keyin ishlab chiqish.
