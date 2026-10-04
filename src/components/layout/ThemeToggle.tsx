@@ -13,7 +13,11 @@ export function ThemeToggle({ className }: { className?: string } = {}) {
   return (
     <Tooltip title={themeMode === "dark" ? "Yorug' rejim" : "Tungi rejim"}>
       <IconButton onClick={() => dispatch(toggleTheme())} aria-label="Temani almashtirish" className={`!p-1.5 sm:!p-2 ${className ?? ""}`}>
-        {themeMode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+        {/* Ikona `.dark` klassidan (CSS) tanlanadi, redux'dan EMAS: sovuq
+            ochilishda REHYDRATE hydration'dan oldin keladi va server
+            chizgan ikona almashmay qolardi (ARXITEKTURA-TARIXI 40). */}
+        <LightModeOutlinedIcon className="!hidden dark:!inline-block" />
+        <DarkModeOutlinedIcon className="dark:!hidden" />
       </IconButton>
     </Tooltip>
   );

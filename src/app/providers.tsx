@@ -1,17 +1,50 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, type ComponentProps } from "react";
 import { Provider } from "react-redux";
-import { ThemeProvider, CssBaseline } from "@mui/material";
-import { store } from "@/redux/store";
+import { CssBaseline } from "@mui/material";
+import { ThemeProvider, useColorScheme } from "@mui/material/styles";
+import { store, type RootState } from "@/redux/store";
 import { useAppSelector } from "@/redux/hooks";
-import { getMuiTheme } from "@/theme/muiTheme";
+import { muiTheme } from "@/theme/muiTheme";
 import { useAuthListener } from "@/hooks/useAuthListener";
 import { UiModeProvider, useUiMode } from "@/lib/ui-mode/UiModeContext";
 
-function MuiThemeBridge({ children }: { children: React.ReactNode }) {
+type PersistedState = RootState & { _persist?: { rehydrated?: boolean } };
+type StorageManager = NonNullable<ComponentProps<typeof ThemeProvider>["storageManager"]>;
+
+const MODE_STORAGE_KEY = "atoyo-mui-mode";
+
+/**
+ * MUI rejimining BOSHLANG'ICH qiymati `<html>` dagi `.dark` klassidan
+ * olinadi (uni bo'yashdan oldin `THEME_INIT_SCRIPT` qo'yadi) — redux
+ * bilan BITTA manba. MUI o'zining `mui-mode` localStorage kalitini
+ * yuritmaydi (`set` bo'sh): tanlov redux-persist'da saqlanadi.
+ * Rang/sxema kalitlari uchun standart qiymat qaytariladi.
+ */
+const htmlClassStorage: StorageManager = ({ key }) => ({
+  get(defaultValue) {
+    if (key !== MODE_STORAGE_KEY || typeof document === "undefined") return defaultValue;
+    return document.documentElement.classList.contains("dark") ? "dark" : "light";
+  },
+  set() {},
+  subscribe() {
+    return () => {};
+  },
+});
+
+/**
+ * Redux'dagi tanlovni MUI'ga (va u orqali `<html>` klassiga) uzatadi.
+ * REHYDRATE'dan OLDIN tegilmaydi: aks holda boshlang'ich `light`
+ * init skript qo'ygan `.dark` ni bir lahzaga olib tashlardi.
+ */
+function ColorSchemeSync() {
   const themeMode = useAppSelector((s) => s.ui.themeMode);
+  const rehydrated = useAppSelector(
+    (s) => (s as PersistedState)._persist?.rehydrated === true
+  );
   const { isModern } = useUiMode();
+  const { setMode } = useColorScheme();
   /**
    * 3D REJIM HAR DOIM TO'Q ko'rinishda.
    *
@@ -21,23 +54,35 @@ function MuiThemeBridge({ children }: { children: React.ReactNode }) {
    * rejimda esa foydalanuvchining tema tanlovi avvalgidek ishlaydi.
    */
   const effectiveMode = isModern ? "dark" : themeMode;
-  const theme = useMemo(() => getMuiTheme(effectiveMode), [effectiveMode]);
+
+  useEffect(() => {
+    if (rehydrated) setMode(effectiveMode);
+  }, [rehydrated, effectiveMode, setMode]);
+
+  return null;
+}
+
+/**
+ * MUI TEMASI REDUX HOLATIGA BOG'LANMAGAN (`docs/ARXITEKTURA-TARIXI.md`
+ * 40-band). Ilgari tema `getMuiTheme(themeMode)` edi: SOVUQ ochilishda
+ * REHYDRATE hydration'dan OLDIN yetib kelib, client to'q, server esa
+ * yorug' emotion klasslarini chizardi; React production'da klass
+ * farqini TUZATMAYDI — tungi rejimda forma yorliqlari 1.3:1 kontrast
+ * bilan qolardi. Endi bitta CSS-o'zgaruvchili tema, palitrani `.dark`
+ * klassi tanlaydi, `<html>` klassini esa MUI o'zi yuritadi.
+ */
+function MuiThemeBridge({ children }: { children: React.ReactNode }) {
   useAuthListener();
 
-  // Root layout'dagi blocking script <html> ga .dark klassni erta qo'yadi
-  // (flash bo'lmasligi uchun); bu yerda esa tema har o'zgarganda o'sha
-  // klass sinxron ushlab turiladi (masalan, foydalanuvchi light'ga qaytsa).
-  useEffect(() => {
-    function syncHtmlClass() {
-      document.documentElement.classList.toggle("dark", effectiveMode === "dark");
-    }
-    syncHtmlClass();
-  }, [effectiveMode]);
-
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider
+      theme={muiTheme}
+      storageManager={htmlClassStorage}
+      modeStorageKey={MODE_STORAGE_KEY}
+    >
       <CssBaseline />
-      <div className={effectiveMode === "dark" ? "dark" : ""}>{children}</div>
+      <ColorSchemeSync />
+      <div>{children}</div>
     </ThemeProvider>
   );
 }

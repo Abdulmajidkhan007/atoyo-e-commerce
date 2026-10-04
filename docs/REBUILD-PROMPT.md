@@ -883,7 +883,11 @@ Admin (`requirePermission` bilan):
    `aria-live` bilan, matn kontrasti WCAG AA (4.5:1). MUI
    `ButtonBase` `outline: 0` qo'yadi — fokus halqasi `globals.css`
    da qaytariladi. Qoidalar: `docs/QULAYLIK.md`, kontrast testi:
-   `src/lib/a11y/contrast.test.ts`.
+   `src/lib/a11y/contrast.test.ts`. MUI temasi BITTA, CSS
+   o'zgaruvchili (`cssVariables`, `colorSchemeSelector: "class"`) —
+   tungi palitrani `<html>` dagi `.dark` tanlaydi (redux holati
+   EMAS; hydration klass farqi, `ARXITEKTURA-TARIXI` 40), testi
+   `src/theme/muiTheme.test.ts`.
 9. Tekshiruv: `tsc --noEmit`, `eslint`, `vitest`, `next build`; ilova
    uchun alohida typecheck/lint va RN codegen tekshiruvi.
 

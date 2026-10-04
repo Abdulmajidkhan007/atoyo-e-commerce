@@ -198,11 +198,10 @@ ro'yxatida uchta bir xil "navigatsiya" chiqadi.
 
 ## Ma'lum, hali tuzatilmagan joylar
 
-1. **Tungi rejimda MUI temasi** sovuq ochilishda yorug' palitrada
-   qolib ketadi (`<html>` da `.dark` bor, MUI esa hali `light`) —
-   forma nomlari 1.3:1. Sabab va vazifa:
-   `docs/AUDIT-ISHLARI.md` 13-ish. Bu qulaylik ishidan OLDIN ham
-   shunday edi.
+1. ~~**Tungi rejimda MUI temasi** sovuq ochilishda yorug' palitrada
+   qolib ketardi~~ — ✅ tuzatildi (2026-10-04): palitra `.dark`
+   klassiga bog'langan, `docs/ARXITEKTURA-TARIXI.md` 40-band, testi
+   `src/theme/muiTheme.test.ts`.
 2. **Blog maqolasidagi `[rasm:URL]`** bloklari `alt=""` bilan
    chiziladi (`components/blog/BlogContent.tsx`) — matn kiritish
    formatida alt uchun joy yo'q. To'g'ri yechim: formatga

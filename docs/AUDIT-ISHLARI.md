@@ -215,7 +215,7 @@ sessiya CLAUDE.md ni o'zi o'qiydi).
 |---|---|---|---|
 | 1-to'lqin (bir vaqtda) | 8) CSV eksport | Sonnet | Aniq, bitta fayl |
 | 1-to'lqin | 11) `/k` himoyasi | Sonnet | Kichik, aniq |
-| 1-to'lqin | 13) Tungi rejim | **Opus** | Hydration/MUI — noaniq, ishlab turgan kodga tegadi |
+| 1-to'lqin | ~~13) Tungi rejim~~ ✅ | **Opus** | Hydration/MUI — noaniq, ishlab turgan kodga tegadi |
 | 2-to'lqin (1-dan keyin) | 9) Foydalanuvchilar N+1 | **Opus** | Buyurtma tranzaksiyasi + migratsiya |
 | 2-to'lqin | 10) Jim xatolar | Sonnet | Aniq; `lib/orders/pricing.ts` ga tegadi |
 | 2-to'lqin | 14) Mehmon yo'li testlari | Sonnet | Test + kichik tranzaksiya |
@@ -350,7 +350,11 @@ Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt.
 ```
 
-## 13) Tungi rejim MUI temasiga yetib bormaydi (kontrast 1.3:1) 🔴
+## 13) Tungi rejim MUI temasiga yetib bormaydi (kontrast 1.3:1) 🔴 ✅ BAJARILDI
+
+> 2026-10-04: MUI temasi CSS o'zgaruvchilariga o'tdi, palitrani
+> `.dark` klassi tanlaydi. Asl sabab "kech REHYDRATE" emas, hydration
+> klass farqi edi — `docs/ARXITEKTURA-TARIXI.md` 40-band.
 
 ```text
 QULAYLIK auditida (2026-09-20) topildi. SOVUQ ochilishda (brauzer

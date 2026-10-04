@@ -970,3 +970,44 @@ sanash `after()` ichida (mijoz kutmaydi): avval IP bo'yicha
 mavjudligini tekshiradi — notanish ID ga yozilmaydi. Yo'naltirish
 har holda ishlaydi. Testlari: `app/k/[id]/route.test.ts`,
 `channel-stats.test.ts`.
+
+## 40. Tungi rejimda MUI yorug' palitrada qolardi (yorliq 1.3:1)
+
+QULAYLIK auditi (2026-09-20) topdi: SOVUQ ochilishda tungi rejim
+tanlagan mijozda `<html class="dark">` va sahifa foni to'q, MUI
+komponentlari esa YORUG' palitrada — forma yorlig'i `rgba(0,0,0,.6)`
+to'q fonda /kontakt'da 1.32:1, /kirish'da 1.53:1 (AA — 4.5:1).
+
+Taxmin "REHYDRATE kech keladi" edi — o'lchov boshqasini ko'rsatdi:
+`persistStore` modul yuklanganda chaqiriladi va localStorage'dan
+REHYDRATE React hydration'idan OLDIN yetib keladi. Client birinchi
+renderdayoq `getMuiTheme("dark")` bilan TO'Q emotion klasslarini
+yasardi, server HTML'ida esa YORUG' klasslar turardi. React production
+rejimida atribut (klass) farqini TUZATMAYDI — DOM'da serverning yorug'
+klassi qolardi, to'q uslublar esa hech bir elementga ulanmasdi.
+`body div.dark` ham shu sabab bilan yo'q edi; tema tugmasining
+ikonkasi ham almashmay qolardi.
+
+Yechim — tema redux holatiga bog'lanmaydi:
+
+- `src/theme/muiTheme.ts` — BITTA tema, `cssVariables:
+  { colorSchemeSelector: "class" }` + `colorSchemes.light/dark`. MUI
+  `:root` ga yorug', `.dark` ga tungi CSS o'zgaruvchilarini yozadi;
+  komponent klasslari rejimga bog'liq emas, server va client bir xil
+  HTML chizadi. `.dark` ni bo'yashdan oldin `THEME_INIT_SCRIPT` qo'yadi
+  — palitra JS yuklanmasdan ham to'g'ri (Playwright: chunk'lar
+  bloklanganda ham yorliq `rgba(255,255,255,.7)`).
+- `providers.tsx` — MUI rejimining boshlang'ich qiymati `<html>`
+  klassidan (`htmlClassStorage`); MUI o'z `mui-mode` kalitini
+  yuritmaydi. `ColorSchemeSync` redux tanlovini (3D'da — har doim
+  to'q) `setMode` bilan uzatadi, faqat `_persist.rehydrated` dan
+  keyin — aks holda boshlang'ich `light` `.dark` ni bir lahza olib
+  tashlardi. `<html>` klassini endi MUI o'zi yuritadi.
+- Yorug' temaga xos tugma rangi (`#8A6640`) ASOSIY qiymat,
+  tungisi `applyStyles("dark")` — `.light` klassi faqat
+  hydration'dan keyin qo'yiladi.
+- `ThemeToggle` ikonkasi `dark:` Tailwind klassi bilan tanlanadi.
+- PersistGate QAYTARILMADI (SEO, providers.tsx dagi izoh).
+
+Testi: `src/theme/muiTheme.test.ts` (selektor `.dark &`, har sxemada
+yorliq/matn o'z fonida AA).

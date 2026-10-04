@@ -170,6 +170,13 @@ ustama `settings/pricing`, standart 5%).
   aytadi: `lib/http/validation.ts` → `validationMessage`. Yangi admin
   route shundan foydalanadi.
 
+- **MUI temasi redux holatidan TANLANMAYDI** (`src/theme/muiTheme.ts`
+  — bitta CSS o'zgaruvchili tema, palitrani `<html>` dagi `.dark`
+  tanlaydi). Render natijasi localStorage'ga bog'liq bo'lsa (tema,
+  ikonka) — server HTML bilan farq qiladi va React production'da
+  klassni TUZATMAYDI; bunday joyda `dark:` CSS yoki `rehydrated`
+  dan keyingi effekt ishlating (`ARXITEKTURA-TARIXI.md` 40-band).
+
 ## 3. CSP va cookie
 
 - Sayt CSP yuboradi (`lib/http/csp.ts`, testi `csp.test.ts`).
