@@ -97,3 +97,27 @@ export function validationMessage(error: ZodError): string {
   if (parts.length === 0) return "Ma'lumotlar noto'g'ri.";
   return `Ma'lumotlar noto'g'ri: ${parts.join("; ")}.`;
 }
+
+/**
+ * MIJOZGA ko'rinadigan tekshiruv xatosi (admin yorliqlari chiqmaydi).
+ *
+ * `labels` — faqat shu route mijozga ko'rsatadigan maydonlar va ularning
+ * o'zbekcha nomi. Ro'yxatda yo'q maydon (ichki nom) HECH QACHON
+ * ko'rsatilmaydi — umumiy `fallback` chiqadi. Zod'ning inglizcha
+ * standart xabarlari ham o'zbekcha sababga almashtiriladi.
+ */
+export function customerValidationMessage(
+  error: ZodError,
+  labels: Record<string, string>,
+  fallback = "Ma'lumotlar noto'g'ri.",
+): string {
+  const issue = error.issues.find((item) => typeof item.path[0] === "string" && labels[item.path[0]]);
+  if (!issue) return fallback;
+  const label = labels[String(issue.path[0])] ?? "";
+  const reason = /^(Invalid|Expected|Required|String must|Number must|Array must)/.test(issue.message)
+    ? reasonFor(issue)
+    : issue.message;
+  const text = reason.replace(/\.$/, "");
+  // Xabar maydon nomi bilan boshlansa ("Ism noto'g'ri") yorliq takrorlanmaydi.
+  return text.toLowerCase().startsWith(label.toLowerCase().slice(0, 4)) ? `${text}.` : `${label} — ${text}.`;
+}

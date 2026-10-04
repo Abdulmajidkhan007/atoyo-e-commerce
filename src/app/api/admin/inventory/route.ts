@@ -1,3 +1,4 @@
+import { validationMessage } from "@/lib/http/validation";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
@@ -61,7 +62,7 @@ export async function PUT(request: Request) {
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = bulkSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
 
   const { type, note, items } = parsed.data;
   const db = getAdminDb();
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = adjustSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
 
   const { productId, type, qty, note } = parsed.data;
   const ref = getAdminDb().collection("products").doc(productId);

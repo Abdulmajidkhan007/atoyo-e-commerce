@@ -62,13 +62,13 @@ export function ProductReviews({ productId }: { productId: string }) {
         body: JSON.stringify({ rating, comment: comment.trim() }),
       });
       const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "error");
+      if (!res.ok) throw new Error(data.error ?? dict.common.errorRetry);
 
       setComment("");
       setMessage({ type: "success", text: dict.reviews.thanks });
       setReviews(await fetchReviews());
     } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "Xatolik" });
+      setMessage({ type: "error", text: error instanceof Error ? error.message : dict.common.errorRetry });
     } finally {
       setSaving(false);
     }

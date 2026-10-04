@@ -1,3 +1,4 @@
+import { customerValidationMessage } from "@/lib/http/validation";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
@@ -35,7 +36,7 @@ export async function PATCH(request: Request) {
 
   const parsed = profileSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+    return NextResponse.json({ error: customerValidationMessage(parsed.error, { displayName: "Ism", phoneNumber: "Telefon raqam", homeAddress: "Manzil" }) }, { status: 400 });
   }
 
   const updates: Record<string, unknown> = {};

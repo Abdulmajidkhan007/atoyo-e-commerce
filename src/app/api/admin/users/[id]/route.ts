@@ -1,3 +1,4 @@
+import { validationMessage } from "@/lib/http/validation";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
@@ -38,7 +39,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
 
   const { id } = await params;
   const ref = getAdminDb().collection("users").doc(id);

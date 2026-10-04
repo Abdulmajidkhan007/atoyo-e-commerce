@@ -7,18 +7,25 @@ import { useI18n } from "@/lib/i18n/LocaleContext";
 export function NewsletterForm() {
   const { dict } = useI18n();
   const [email, setEmail] = useState("");
+  const [errorText, setErrorText] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
+    setErrorText(null);
     try {
       const response = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      if (!response.ok) throw new Error("failed");
+      if (!response.ok) {
+        // Serverdan kelgan sabab bo'lsa shuni ko'rsatamiz.
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        setErrorText(data.error ?? null);
+        throw new Error("failed");
+      }
       setStatus("success");
       setEmail("");
     } catch {
@@ -47,7 +54,7 @@ export function NewsletterForm() {
         </Button>
       </div>
       {status === "success" && <p className="text-xs text-aqua-300">{dict.newsletter.success}</p>}
-      {status === "error" && <p className="text-xs text-red-300">{dict.newsletter.error}</p>}
+      {status === "error" && <p className="text-xs text-red-300">{errorText ?? dict.newsletter.error}</p>}
     </form>
   );
 }

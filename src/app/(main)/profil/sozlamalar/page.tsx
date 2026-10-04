@@ -41,6 +41,7 @@ export default function ProfileSettingsPage() {
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
   const [result, setResult] = useState<"success" | "error" | null>(null);
   const [validationMsg, setValidationMsg] = useState<string | null>(null);
 
@@ -118,6 +119,7 @@ export default function ProfileSettingsPage() {
     if (!file) return;
     setIsUploading(true);
     setResult(null);
+    setErrorText(null);
     try {
       // Session cookie eskirgan bo'lsa yangilaymiz - aks holda server 401 qaytaradi.
       await ensureSessionCookie();
@@ -138,6 +140,7 @@ export default function ProfileSettingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResult(null);
+    setErrorText(null);
 
     // Client validatsiya: ism va (kiritilgan bo'lsa) telefon.
     if (!isValidName(displayName)) {
@@ -167,7 +170,12 @@ export default function ProfileSettingsPage() {
           homeAddress: homeAddress.trim() || null,
         }),
       });
-      if (!res.ok) throw new Error("failed");
+      if (!res.ok) {
+        // Serverdan kelgan sabab bo'lsa shuni ko'rsatamiz.
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setErrorText(data.error ?? null);
+        throw new Error("failed");
+      }
       setResult("success");
       setTimeout(() => router.push(localeHref("/profil", locale)), 800);
     } catch {
@@ -265,7 +273,7 @@ export default function ProfileSettingsPage() {
 
         {validationMsg && <Alert severity="warning">{validationMsg}</Alert>}
         {result === "success" && <Alert severity="success">{dict.profile.saved}</Alert>}
-        {result === "error" && <Alert severity="error">{dict.common.errorRetry}</Alert>}
+        {result === "error" && <Alert severity="error">{errorText ?? dict.common.errorRetry}</Alert>}
 
         <div className="flex gap-2">
           <Button type="submit" variant="contained" disabled={isSaving}>

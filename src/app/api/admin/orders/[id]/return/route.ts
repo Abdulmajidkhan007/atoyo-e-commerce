@@ -1,3 +1,4 @@
+import { validationMessage } from "@/lib/http/validation";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
@@ -41,7 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!admin) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = schema.safeParse(await request.json().catch(() => ({})));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
 
   const { id } = await params;
   const db = getAdminDb();

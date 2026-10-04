@@ -1,3 +1,4 @@
+import { customerValidationMessage } from "@/lib/http/validation";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
   }
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: customerValidationMessage(parsed.error, { number: "Karta raqami", expire: "Amal qilish muddati", code: "Tasdiqlash kodi" }) }, { status: 400 });
 
   const cardsRef = getAdminDb().collection("users").doc(user.uid).collection("cards");
 

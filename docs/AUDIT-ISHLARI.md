@@ -327,7 +327,12 @@ Tugagach: tsc + eslint + test + build.
 Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
-## 12) Xato xabarlari: qolgan route va formalar
+## 12) Xato xabarlari: qolgan route va formalar ✅ BAJARILDI
+
+> 2026-10-04: 15 ta admin route `validationMessage()` ga o'tdi; mijoz
+> route'lari `customerValidationMessage()` (lib/http/validation.ts) —
+> faqat ro'yxatdagi maydonlar, ichki nom chiqmaydi. Kontakt, obuna va
+> profil sozlamalari formalari serverdan kelgan matnni ko'rsatadi.
 
 ```text
 docs/AUDIT.md dagi "Admin API xatolari" qoidasi hamma joyda

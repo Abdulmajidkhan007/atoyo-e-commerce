@@ -1,3 +1,4 @@
+import { validationMessage } from "@/lib/http/validation";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
@@ -49,7 +50,7 @@ export async function PATCH(request: Request) {
   if (!owner) return NextResponse.json({ error: "Ruxsat etilmagan." }, { status: 403 });
 
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: validationMessage(parsed.error) }, { status: 400 });
 
   const passed = await consumeChallenge({
     id: parsed.data.challengeId,

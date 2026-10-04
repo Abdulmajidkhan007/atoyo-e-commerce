@@ -13,12 +13,14 @@ export default function ContactPage() {
   const [phone, setPhone] = useState("");
   const [question, setQuestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
   const [result, setResult] = useState<"success" | "error" | null>(null);
   const [validationMsg, setValidationMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResult(null);
+    setErrorText(null);
     setValidationMsg(null);
 
     if (!isValidName(name)) {
@@ -38,7 +40,12 @@ export default function ContactPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), phone: normalizedPhone, question }),
       });
-      if (!response.ok) throw new Error("failed");
+      if (!response.ok) {
+        // Serverdan kelgan sabab bo'lsa shuni ko'rsatamiz.
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        setErrorText(data.error ?? null);
+        throw new Error("failed");
+      }
 
       setResult("success");
       setName("");
@@ -79,7 +86,7 @@ export default function ContactPage() {
 
         {validationMsg && <Alert severity="warning">{validationMsg}</Alert>}
         {result === "success" && <Alert severity="success">{dict.contact.success}</Alert>}
-        {result === "error" && <Alert severity="error">{dict.common.errorRetry}</Alert>}
+        {result === "error" && <Alert severity="error">{errorText ?? dict.common.errorRetry}</Alert>}
 
         <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
           {isSubmitting ? <CircularProgress size={22} color="inherit" /> : dict.contact.send}

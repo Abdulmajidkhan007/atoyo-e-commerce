@@ -1,3 +1,4 @@
+import { customerValidationMessage } from "@/lib/http/validation";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAppUserFromRequest } from "@/lib/firebase/session";
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Ma'lumotlar noto'g'ri." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: customerValidationMessage(parsed.error, { phone: "Telefon raqam", accessKey: "Kirish kaliti" }) }, { status: 400 });
 
   const accessKey = normalizeAccessKey(parsed.data.accessKey);
   if (!ACCESS_KEY_PATTERN.test(accessKey)) {

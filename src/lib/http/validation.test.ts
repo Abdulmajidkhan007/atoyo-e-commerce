@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { validationMessage } from "./validation";
+import { customerValidationMessage, validationMessage } from "./validation";
 
 /**
  * Sabab: mahsulotni saqlashda admin faqat "Ma'lumotlar noto'g'ri."
@@ -55,5 +55,26 @@ describe("validationMessage", () => {
   it("eng ko'pi bilan uchta sabab yoziladi", () => {
     const message = messageFor({ name: "", keywords: [123], price: "x", images: [1] });
     expect(message.split(";").length).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("customerValidationMessage", () => {
+  const review = z.object({ rating: z.number().int().min(1).max(5), comment: z.string().min(3).max(1000) });
+  const labels = { rating: "Baho", comment: "Sharh matni" };
+
+  it("noto'g'ri maydon nomini mijozga tushunarli aytadi", () => {
+    const parsed = review.safeParse({ rating: 5, comment: "a" });
+    if (parsed.success) throw new Error("xato kutilgandi");
+    const message = customerValidationMessage(parsed.error, labels);
+    expect(message).toContain("Sharh matni");
+    expect(message).not.toContain("comment");
+  });
+
+  it("ichki maydon nomi chiqmaydi, umumiy matn qaytadi", () => {
+    const parsed = z.object({ costPrice: z.number() }).safeParse({ costPrice: "x" });
+    if (parsed.success) throw new Error("xato kutilgandi");
+    const message = customerValidationMessage(parsed.error, labels);
+    expect(message).toBe("Ma'lumotlar noto'g'ri.");
+    expect(message).not.toContain("costPrice");
   });
 });
