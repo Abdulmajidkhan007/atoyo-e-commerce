@@ -214,6 +214,17 @@ export function PromoManager({
             </Button>
           </div>
 
+          <TextField
+            size="small"
+            label="«Yetkazib berish» sahifasi uchun qo'shimcha matn (ixtiyoriy)"
+            value={delivery.pageText ?? ""}
+            onChange={(e) => setDelivery({ ...delivery, pageText: e.target.value })}
+            helperText="Muddat, olib ketish manzili, qavatga olib chiqish va h.k. Narx va shartlar sahifada avtomatik yoziladi. Saqlash — yuqoridagi tugma."
+            multiline
+            minRows={3}
+            inputProps={{ maxLength: 3000 }}
+          />
+
           <p className="rounded-lg bg-navy-50 p-3 text-xs text-navy-500 dark:bg-navy-900 dark:text-navy-100">
             Mijoz ko&apos;radi: <b>{freeDeliveryText(delivery)}</b>
             {installServiceText(delivery) ? ` ${installServiceText(delivery)}` : ""}

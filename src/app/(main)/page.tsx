@@ -8,6 +8,9 @@ import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { loadChipCategories, loadShowcaseForViewer } from "@/lib/products/storefront";
 import { CategoryChips } from "@/components/product/CategoryChips";
 import { localeAlternates } from "@/lib/seo/locale-alternates";
+import { Testimonials } from "@/components/home/Testimonials";
+import { loadTestimonials } from "@/lib/reviews/testimonials";
+import { getSiteSettings } from "@/lib/firebase/admin-content";
 
 // Root layout'dagi umumiy `canonical` yo'q endi (`src/app/layout.tsx`) -
 // bosh sahifa O'ZINING tilga mos canonical/hreflang'ini shu yerdan beradi.
@@ -28,11 +31,15 @@ export async function generateMetadata(): Promise<Metadata> {
  * kategoriyalar to'ri (`/api/taxonomy` dan jonli o'qiydi).
  */
 export default async function HomePage() {
-  const [dict, showcase, chipCategories] = await Promise.all([
+  const [dict, showcase, chipCategories, locale, settings] = await Promise.all([
     getDictionary(),
     loadShowcaseForViewer(),
     loadChipCategories(),
+    getLocale(),
+    getSiteSettings(),
   ]);
+  // Mijozlar fikri — faqat admin tanlagan haqiqiy sharhlar.
+  const testimonials = settings.showTestimonials === false ? [] : await loadTestimonials();
 
   return (
     <>
@@ -60,6 +67,13 @@ export default async function HomePage() {
         </h2>
         <ShowcaseGrid initialProducts={showcase} />
       </Reveal>
+
+      <Testimonials
+        items={testimonials}
+        title={dict.testimonials.title}
+        subtitle={dict.testimonials.subtitle}
+        locale={locale}
+      />
     </>
   );
 }

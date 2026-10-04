@@ -39,6 +39,7 @@ const FIELD_LABELS: Record<string, string> = {
   videos: "Videolar",
   variants: "Turlari",
   variantAxes: "Turlar o'qi",
+  faq: "Savol-javob",
 };
 
 function labelFor(path: (string | number)[]): string {

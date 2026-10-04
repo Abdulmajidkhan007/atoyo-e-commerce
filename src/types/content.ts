@@ -136,6 +136,11 @@ export interface SiteSettings {
   catalogMix?: boolean;
   /** Aralash ekranda nechta mahsulot (12-48). */
   catalogMixCount?: number;
+  /**
+   * Bosh sahifadagi "Mijozlar fikri" bo'limi (standart — yoqilgan).
+   * Admin hech bir sharhni tanlamagan bo'lsa bo'lim baribir chiqmaydi.
+   */
+  showTestimonials?: boolean;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {

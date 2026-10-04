@@ -45,6 +45,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
         address: data.channelFooter?.address ?? "",
         links: Array.isArray(data.channelFooter?.links) ? data.channelFooter.links : [],
       },
+      showTestimonials: data.showTestimonials !== false,
     };
     siteCache = { value, at: Date.now() };
     return value;

@@ -65,6 +65,12 @@ export interface DeliverySettings {
   installEnabled?: boolean;
   /** O'rnatish xizmati izohi (bo'sh - avtomatik matn). */
   installNote?: string;
+  /**
+   * "Yetkazib berish" sahifasidagi QO'SHIMCHA matn (muddat, qavatga
+   * olib chiqish, olib ketish manzili...). Narx va shartlar baribir
+   * yuqoridagi maydonlardan yoziladi; bu faqat qo'shimcha.
+   */
+  pageText?: string;
 }
 
 export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {

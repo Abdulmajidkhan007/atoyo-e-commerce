@@ -29,6 +29,8 @@ export async function Footer() {
     { href: "/blog", label: dict.nav.blog },
     { href: "/about", label: dict.nav.about },
     { href: "/kontakt", label: dict.nav.contact },
+    { href: "/yetkazib-berish", label: dict.pages.deliveryTitle },
+    { href: "/savol-javob", label: dict.pages.faqTitle },
     // Play Store va Google talab qiladigan ochiq havola.
     { href: "/maxfiylik", label: "Maxfiylik siyosati" },
   ];

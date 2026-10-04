@@ -4,6 +4,7 @@ import { getAdminDb } from "@/lib/firebase/admin";
 import { clearMixCache } from "@/lib/products/storefront";
 import { clearSiteSettingsCache } from "@/lib/firebase/admin-content";
 import { requirePermission } from "@/lib/firebase/session";
+import { clearTestimonialsCache } from "@/lib/reviews/testimonials";
 
 export const runtime = "nodejs";
 
@@ -45,6 +46,8 @@ const settingsSchema = z.object({
   /** Katalogning birinchi ekrani aralash bo'lsinmi. */
   catalogMix: z.boolean().optional(),
   catalogMixCount: z.number().int().min(12).max(48).optional(),
+  /** Bosh sahifadagi "Mijozlar fikri" bo'limi. */
+  showTestimonials: z.boolean().optional(),
 });
 
 /** Sayt sozlamalari (kontakt, ijtimoiy tarmoqlar, about) - faqat admin. */
@@ -60,5 +63,6 @@ export async function PATCH(request: Request) {
   clearSiteSettingsCache();
   // Aralash katalog 5 daqiqa keshlanadi - sozlama o'zgarsa darhol yangilansin.
   clearMixCache();
+  clearTestimonialsCache();
   return NextResponse.json({ ok: true });
 }

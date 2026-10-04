@@ -292,6 +292,29 @@ export interface Dictionary {
     /** "{amount}" o'rniga eng kam summa. */
     minOrder: string;
   };
+  /** "Savol-javob" va "Yetkazib berish" sahifalari (matnning o'zi sozlamadan). */
+  pages: {
+    faqTitle: string;
+    faqIntro: string;
+    deliveryTitle: string;
+    deliveryIntro: string;
+    deliveryTerms: string;
+    zonesTitle: string;
+    zoneFreeFrom: string;
+    installTitle: string;
+    paymentTitle: string;
+    payCash: string;
+    payTransfer: string;
+    payOnline: string;
+    minOrder: string;
+    moreQuestions: string;
+    contactUs: string;
+  };
+  /** Bosh sahifadagi "Mijozlar fikri" (faqat haqiqiy sharhlar). */
+  testimonials: {
+    title: string;
+    subtitle: string;
+  };
   favorites: {
     title: string;
     empty: string;
@@ -589,6 +612,27 @@ const uz: Dictionary = {
     orderReceivedShort: "Buyurtmangiz qabul qilindi. Operator tez orada qo'ng'iroq qiladi.",
     minOrder: "Eng kam buyurtma summasi — {amount}. Sonini oshiring yoki savatga boshqa mahsulot qo'shing.",
   },
+  pages: {
+    faqTitle: "Savol-javob",
+    faqIntro: "Mijozlarimiz eng ko'p beradigan savollar va ularga javoblar.",
+    deliveryTitle: "Yetkazib berish va to'lov",
+    deliveryIntro: "Buyurtma qanday yetkaziladi, qancha turadi va qanday to'lanadi.",
+    deliveryTerms: "Yetkazib berish shartlari",
+    zonesTitle: "Hududlar bo'yicha narx",
+    zoneFreeFrom: "{sum}dan bepul",
+    installTitle: "O'rnatib berish",
+    paymentTitle: "To'lov usullari",
+    payCash: "Naqd pul — mahsulotni olganingizda",
+    payTransfer: "Kartaga o'tkazma — buyurtmadan keyin karta raqami ko'rsatiladi, chek rasmini yuklaysiz",
+    payOnline: "Payme yoki Click orqali onlayn",
+    minOrder: "Eng kam buyurtma summasi: {sum}",
+    moreQuestions: "Savolingiz qoldimi?",
+    contactUs: "Biz bilan bog'laning",
+  },
+  testimonials: {
+    title: "Mijozlar fikri",
+    subtitle: "Xaridorlarimiz mahsulot sahifasida qoldirgan haqiqiy sharhlar",
+  },
   favorites: {
     title: "Sevimlilar",
     empty: "Sevimlilar ro'yxati bo'sh. Mahsulot yonidagi ❤️ tugmasini bosing.",
@@ -884,6 +928,27 @@ const en: Dictionary = {
     orderReceivedShort: "Your order has been received. Our operator will call you shortly.",
     minOrder: "The minimum order is {amount}. Increase the quantity or add other items to the cart.",
   },
+  pages: {
+    faqTitle: "FAQ",
+    faqIntro: "The questions our customers ask most often, with answers.",
+    deliveryTitle: "Delivery and payment",
+    deliveryIntro: "How your order is delivered, what it costs and how to pay.",
+    deliveryTerms: "Delivery terms",
+    zonesTitle: "Prices by area",
+    zoneFreeFrom: "free from {sum}",
+    installTitle: "Installation",
+    paymentTitle: "Payment methods",
+    payCash: "Cash — when you receive the goods",
+    payTransfer: "Card transfer — the card number is shown after ordering, you upload a photo of the receipt",
+    payOnline: "Online via Payme or Click",
+    minOrder: "Minimum order: {sum}",
+    moreQuestions: "Still have a question?",
+    contactUs: "Contact us",
+  },
+  testimonials: {
+    title: "Customer reviews",
+    subtitle: "Real reviews our customers left on product pages",
+  },
   favorites: {
     title: "Favorites",
     empty: "Your favorites list is empty. Tap the ❤️ on any product.",
@@ -1178,6 +1243,27 @@ const ru: Dictionary = {
     increase: "Увеличить",
     orderReceivedShort: "Заказ принят. Оператор скоро позвонит.",
     minOrder: "Минимальная сумма заказа — {amount}. Увеличьте количество или добавьте другие товары в корзину.",
+  },
+  pages: {
+    faqTitle: "Вопросы и ответы",
+    faqIntro: "Самые частые вопросы наших покупателей и ответы на них.",
+    deliveryTitle: "Доставка и оплата",
+    deliveryIntro: "Как доставляется заказ, сколько это стоит и как оплатить.",
+    deliveryTerms: "Условия доставки",
+    zonesTitle: "Цены по районам",
+    zoneFreeFrom: "бесплатно от {sum}",
+    installTitle: "Установка",
+    paymentTitle: "Способы оплаты",
+    payCash: "Наличными — при получении товара",
+    payTransfer: "Перевод на карту — после заказа показывается номер карты, вы загружаете фото чека",
+    payOnline: "Онлайн через Payme или Click",
+    minOrder: "Минимальная сумма заказа: {sum}",
+    moreQuestions: "Остались вопросы?",
+    contactUs: "Свяжитесь с нами",
+  },
+  testimonials: {
+    title: "Отзывы покупателей",
+    subtitle: "Настоящие отзывы, оставленные покупателями на страницах товаров",
   },
   favorites: {
     title: "Избранное",

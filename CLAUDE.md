@@ -513,6 +513,17 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 - `/api/orders/[id]/...` ostida segment nomi HAR DOIM `[id]` — Next.js
   bir darajada ikki xil nomni (`[id]` va `[orderId]`) qabul qilmaydi.
 
+## 16. Ma'lumot sahifalari va mijozlar fikri
+
+- **`/savol-javob` va `/yetkazib-berish` da qattiq yozilgan va'da
+  YO'Q.** FAQ — `settings/faq` (admin `/admin/sahifalar`), saqlanmagan
+  bo'lsa `defaultFaqItems()` sozlamadan yasaydi; yetkazish sahifasi —
+  `settings/delivery` + faqat YOQILGAN to'lov usullari. Kafolat
+  sahifasi ataylab yo'q (`docs/ARXITEKTURA-TARIXI.md` 35-band).
+- **"Mijozlar fikri" faqat HAQIQIY sharhdan** (`reviews.featured`,
+  admin tanlaydi, yozmaydi). Mijozga `pickTestimonials()` ko'rinishi
+  chiqadi — `userId` va familiya yo'q. Soxta sharh qo'shilmaydi.
+
 ---
 
 # XARITA (qayerda nima turadi)
@@ -578,6 +589,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 | `docs/ISH-ARXITEKTURASI.md` | Topshiriqni marshrutlash: 8 holat, rollar, tekshiruv oynalari |
 | `ai/specs/` | Katta ishlar spetsifikatsiyalari (R10) |
 | `docs/UI-SHISHA.md` | Shisha (glass) ko'rinish qoidalari — sayt va ilova |
+| `/admin/sahifalar` | FAQ matni va bosh sahifaga chiqadigan sharhlar (kod emas, admin bo'limi) |
 | `docs/QULAYLIK.md` | Ekran o'quvchi va klaviatura qoidalari (a11y) — yangi komponent yozganda |
 | `docs/UI-3D.md`, `docs/TV.md`, `docs/DESKTOP.md`, `docs/STICKERS.md` | Bo'limga xos |
 | `docs/TYPESENSE.md` | Tezkor qidiruvni yoqish |

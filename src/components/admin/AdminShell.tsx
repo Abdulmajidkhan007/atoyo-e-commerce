@@ -15,6 +15,7 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
@@ -52,6 +53,7 @@ const NAV_ITEMS: { href: string; label: string; Icon: typeof DashboardOutlinedIc
   { href: "/admin/xabar", label: "Xabar yuborish", Icon: CampaignOutlinedIcon, perm: "broadcast" },
   { href: "/admin/tolovlar", label: "To'lovlar", Icon: PaymentsOutlinedIcon, perm: "settings" },
   { href: "/admin/promokod", label: "Promokod", Icon: LocalOfferOutlinedIcon, perm: "settings" },
+  { href: "/admin/sahifalar", label: "Sahifalar va sharhlar", Icon: QuizOutlinedIcon, perm: "settings" },
   { href: "/admin/tv", label: "Do'kon ekrani", Icon: TvOutlinedIcon, perm: "settings" },
   { href: "/admin/stikerlar", label: "Stikerlar", Icon: EmojiEmotionsOutlinedIcon, perm: "settings" },
   { href: "/admin/3d", label: "3D ko'rinish", Icon: ViewInArOutlinedIcon, perm: "settings" },

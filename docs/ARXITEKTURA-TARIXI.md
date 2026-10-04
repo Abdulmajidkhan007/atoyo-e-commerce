@@ -900,3 +900,27 @@ push qilinmaydi. Bu safar push tekshiruv tugashidan oldin ketdi
 (o'tkazma standart holda o'chiq bo'lgani uchun xavf kichik edi),
 lekin tartib — avval hukm, keyin push.
 
+## 35. Eski saytdan sahifalar: nega matn sozlamadan, sharh faqat haqiqiy
+
+Eski `atoyo` (Vite) loyihasida FAQ, Kafolat va Yetkazib berish
+sahifalari bor edi, lekin matni kodda qotgan va do'konga mos emas edi:
+"Toshkentdagi omborimizdan", "2 yillik rasmiy kafolat", "14 kun ichida
+qaytarish". Do'kon Qo'qonda va bunday shart tasdiqlanmagan — Google bu
+matnni FAQ natijasi qilib ko'rsatsa, mijozga yolg'on va'da bo'lardi.
+
+- **Kafolat sahifasi ko'chirilmadi** (egasining qarori).
+- **FAQ standart javoblari sozlamadan yasaladi** (`defaultFaqItems`):
+  yetkazish narxi `freeDeliveryText`, to'lov usullari faqat YOQILGANI
+  (o'tkazma — `isTransferUsable`, onlayn — Payme/Click kaliti),
+  o'rnatish o'chiq bo'lsa savol yo'q. Testda "kafolat/qaytarish" so'zi
+  standart ro'yxatda yo'qligi qulflangan. Admin saqlagach — faqat
+  uning matni.
+- **Mijozlar fikri — faqat haqiqiy sharhdan.** Eski saytdagi
+  "testimonials" qo'lda yozilgan edi. Endi admin `reviews` dan
+  TANLAYDI, yozmaydi. Sharh qayta yozilsa `saveReview` hujjatni to'liq
+  almashtiradi va `featured` tushib qoladi — tasdiqlanmagan yangi matn
+  bosh sahifaga o'z-o'zidan chiqmaydi. Mijozga `userId` va familiya
+  chiqmaydi (`pickTestimonials`, testi bor). `AggregateRating` sxemasi
+  qo'yilmadi — Google do'konning o'zi haqidagi o'z sharhlarini rad
+  etadi.
+

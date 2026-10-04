@@ -139,6 +139,20 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   va farqni BITTA qo'shish bilan yopadigan mahsulotlar
   (`/api/products/gap-fillers`).
 
+**Ma'lumot sahifalari va mijozlar fikri (2026-10):**
+- `/savol-javob` — FAQ, matni `settings/faq` (admin: `/admin/sahifalar`),
+  saqlanmagan bo'lsa sozlamadan yasalgan standart savollar
+  (`defaultFaqItems`). Google uchun `FAQPage` JSON-LD. Ixtiyoriy
+  ruscha savol/javob.
+- `/yetkazib-berish` — shartlar `settings/delivery` dan (matn, hududlar,
+  o'rnatish, `pageText` qo'shimcha matn), to'lov usullari faqat
+  yoqilganlari. Qattiq yozilgan va'da yo'q.
+- Bosh sahifada "Mijozlar fikri" — FAQAT admin tanlagan haqiqiy
+  sharhlar (`reviews.featured`), ism qisqartiriladi ("Abdulla K."),
+  mahsuloti yashirin bo'lsa chiqmaydi. Sharh qayta yozilsa belgi
+  tushadi. Bo'limni o'chirish: `SiteSettings.showTestimonials`.
+- Kafolat sahifasi ATAYLAB yo'q (do'kon shartlari tasdiqlanmagan).
+
 ## 1a. HISOBOT, OMBOR VA QAYTARISH
 
 - **Tannarx (`costPrice`)** — mahsulotda va har bir turda; kirimda

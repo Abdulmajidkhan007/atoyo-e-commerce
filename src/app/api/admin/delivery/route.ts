@@ -36,6 +36,8 @@ const schema = z.object({
   note: z.string().max(300).optional(),
   installEnabled: z.boolean().optional(),
   installNote: z.string().max(300).optional(),
+  /** "Yetkazib berish" sahifasidagi qo'shimcha matn. */
+  pageText: z.string().max(3000).optional(),
 });
 
 /** Yetkazib berish narxi sozlamalari (admin). */
