@@ -37,7 +37,7 @@ byudjet ogohlantirishini qo'yib qo'ying.
 Firebase konsoli → **Build → App Hosting → Get started**:
 
 - GitHub akkauntini ulang, `Abdulmajidkhan007/atoyo-e-commerce`
-  repozitoriysini va **`claude/plumbing-ecommerce-nextjs-jxpmh5`**
+  repozitoriysini va **`main`**
   branchini tanlang;
 - region: **Firestore qaysi qit'ada bo'lsa — o'sha yerga** (4b ga
   qarang). Bu loyihada Firestore `nam5` (AQSh), shuning uchun
@@ -323,7 +323,7 @@ firebase deploy --only firestore:rules,firestore:indexes,storage --project <PROJ
 > `console.cloud.google.com` → `>_`):
 >
 > ```bash
-> git clone -b claude/plumbing-ecommerce-nextjs-jxpmh5 \
+> git clone -b main \
 >   https://github.com/Abdulmajidkhan007/atoyo-e-commerce.git
 > cd atoyo-e-commerce
 > npx -y firebase-tools deploy --only firestore:rules --project atoyo-uz

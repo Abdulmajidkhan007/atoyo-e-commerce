@@ -186,7 +186,7 @@ Qoidalar:
 - CLAUDE.md dagi qoidani "kamchilik" deb yozishdan oldin
   docs/ARXITEKTURA-TARIXI.md dan sababini o'qi.
 - Hisobot o'zbekcha. Oxirida `docs/AUDIT.md` ni commit qilib push
-  qil (branch: claude/plumbing-ecommerce-nextjs-jxpmh5).
+  qil (branch: main).
 ````
 
 ---
@@ -220,7 +220,7 @@ Natija: menga qisqa ro'yxat — (a) darhol tuzatilgan mayda xatolar,
 (b) tuzatilishi kerak, lekin alohida ish bo'ladiganlari (har biriga
 1-2 qatorlik topshiriq matni). Kod o'zgarsa:
 tsc + eslint + test + build, keyin
-claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push (yangi branch OCHMA).
+main branchiga push (yangi branch OCHMA).
 ````
 
 ---
@@ -273,7 +273,7 @@ Tekshiruv: cd mobile && npx tsc --noEmit && npx eslint 'src/**/*.tsx'
 --no-ignore && npm run check-codegen; keyin saytning to'liq zanjiri
 (tsc + eslint + test + build). APK ni CI yig'adi — Gradle xatosi
 bo'lsa CI ko'rsatadi.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+Ishni main branchiga push qil (yangi branch OCHMA).
 ````
 
 ---
@@ -315,7 +315,7 @@ qo'yilmaydi va zaxira yo'llar shu yerda. Undan chetga chiqma.
    ro'yxatini commit xabarida yoz.
 
 Tugagach: tsc + eslint + test + build.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Ishni main branchiga push qil.
 Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt.
 ```
@@ -348,7 +348,7 @@ Avval O'QI: docs/UI-SHISHA.md, ayniqsa 6-bo'lim (RN tomoni).
 Tekshiruv: cd mobile && npx tsc --noEmit && npx eslint 'src/**/*.tsx'
 --no-ignore && npm run check-codegen; keyin saytning to'liq zanjiri.
 APK ni CI yig'adi - Gradle xatosi bo'lsa CI log oxirida ko'rsatadi.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Ishni main branchiga push qil.
 Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt.
 ```

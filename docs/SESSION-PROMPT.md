@@ -53,7 +53,7 @@ O'QI — taxmin qilma.
   ayt.
 
 ## Branch va deploy
-- Faqat `claude/plumbing-ecommerce-nextjs-jxpmh5` branchiga push.
+- Faqat `main` branchiga push.
   Boshqa branchga — ruxsatsiz YO'Q.
 - **Deploy = git push** (Firebase App Hosting o'zi rollout qiladi).
   Sandbox'dan hech qaysi hostingga to'g'ridan-to'g'ri deploy qilinmaydi.

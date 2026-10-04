@@ -13,8 +13,10 @@ UI tili — o'zbekcha. Dizayn: Deep Navy/Slate + Aqua `#00D2C4`.
 
 ## Ish tartibi
 
-- Ish branch'i: **`claude/plumbing-ecommerce-nextjs-jxpmh5`**. Boshqa
-  branch'ga push QILINMAYDI. PR faqat foydalanuvchi so'raganda.
+- Ish branch'i: **`main`** (2026-10 dan default branch; App Hosting
+  ham `main` dan deploy qiladi). Eski `claude/plumbing-ecommerce-nextjs-jxpmh5`
+  — arxiv, unga endi push qilinmaydi. Boshqa branch'ga push
+  QILINMAYDI. PR faqat foydalanuvchi so'raganda.
 - **Deploy = git push.** Sayt **Firebase App Hosting** da (backend
   `atoyo-e-commerce`, loyiha `atoyo-uz`, region `us-east4`), har
   push'da avtomatik rollout. Domen: **https://atoyo.uz**

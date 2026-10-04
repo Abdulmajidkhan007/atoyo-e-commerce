@@ -50,7 +50,7 @@ konsolida yoki `gcloud` CLI orqali bajariladi — sayt kodiga tegmaydi.
 | **Firebase Storage** | mahsulot/blog/sayt rasmlari | Rasmlar yo'qoladi, mahsulotlar rasmsiz qoladi |
 | **Firebase Auth** | foydalanuvchi hisoblari (email/parol) | Mijozlar tizimga kira olmaydi |
 | **Netlify env** | API kalitlar (`FIREBASE_ADMIN_*`, `TELEGRAM_*`, SMTP) | Sayt ishlamay qoladi |
-| **GitHub** | kodning o'zi | Kod allaqachon `claude/plumbing-ecommerce-nextjs-jxpmh5` branch'ida |
+| **GitHub** | kodning o'zi | Kod allaqachon `main` branch'ida |
 
 ## 1. Firestore — avtomatik kunlik eksport (tavsiya etiladi)
 

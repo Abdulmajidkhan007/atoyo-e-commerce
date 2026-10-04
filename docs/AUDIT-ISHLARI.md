@@ -212,7 +212,7 @@ qarorlari va chigal nosozliklar uchun kerak.
 **Har bir topshiriqning oxirida shu qator turishi SHART:**
 
 ```
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Ishni main branchiga push qil.
 Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt (men birlashtiraman).
 ```
@@ -238,7 +238,7 @@ Vazifa:
 4. Mavjud CSV ustunlari va tartibi O'ZGARMASIN (import shu shaklni
    kutadi) - csv.test.ts yashil qolsin.
 Tugagach: tsc + eslint + test + build.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
 ## 9) Foydalanuvchilar ro'yxati N+1 (AUDIT 3.4)
@@ -259,7 +259,7 @@ Vazifa:
    Sozlamalarga tugma - OrderCostsMigrationPanel.tsx naqshi bilan.
 4. create-order testiga: yangi maydonlar yangilanishi.
 Tugagach: tsc + eslint + test + build.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
 ## 10) Jimgina yutilgan xatolar (AUDIT 2.7 + 2.8)
@@ -282,7 +282,7 @@ Vazifa:
    ga o'tkaz; api/contact ham shunday.
 4. Test: sozlama o'qishi yiqilganda eski qiymat qaytishi.
 Tugagach: tsc + eslint + test + build.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
 ## 11) Upload huquqi va `/k/<id>` himoyasi (AUDIT 2.9 + 2.10)
@@ -307,7 +307,7 @@ Vazifa:
    redirect'dan keyin/parallel qil.
 3. Test: notanish ID ga yozilmasligi.
 Tugagach: tsc + eslint + test + build.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil (yangi branch OCHMA).
+Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
 ## 12) Xato xabarlari: qolgan route va formalar
@@ -328,7 +328,7 @@ Vazifa:
    bo'lmasa hozirgi zaxira matn qolsin.
 3. Bittasiga test: noto'g'ri maydon nomi javobda ko'rinishi.
 Tugagach: tsc + eslint + test + build.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Ishni main branchiga push qil.
 Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt.
 ```
@@ -384,7 +384,7 @@ Vazifa:
    bo'lsin; `src/lib/a11y/contrast.test.ts` uslubida o'lchov qo'shing.
 4. docs/ARXITEKTURA-TARIXI.md ga sabab bilan bir bo'lim.
 Tugagach: tsc + eslint + test + build.
-Ishni claude/plumbing-ecommerce-nextjs-jxpmh5 branchiga push qil.
+Ishni main branchiga push qil.
 Agar push BLOKLANSA - o'z branchingga push qilib, branch nomini
 menga ayt.
 ```
