@@ -4,7 +4,9 @@ import { formatSom } from "@/lib/format";
 import { escapeHtml } from "./html";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "🕓 Kutilmoqda",
+  // "Kutilmoqda" ilgari to'lov qatoridagi "to'lov kutilmoqda" bilan
+  // aralashib ketardi - admin nimani kutayotganini tushunmasdi.
+  pending: "🆕 Yangi — hali qabul qilinmagan",
   approved: "✅ Qabul qilindi",
   delivering: "🚚 Yetkazilmoqda",
   completed: "🎉 Yakunlandi",
@@ -68,14 +70,26 @@ export function formatOrderMessage(order: Order): string {
     }
   }
 
-  lines.push(
-    `💰 <b>Jami:</b> ${formatSom(order.totalAmount)}`,
-    `💳 <b>To'lov:</b> ${PAYMENT_LABELS[order.paymentMethod]}${PAYMENT_STATUS_LABELS[order.paymentStatus]}`
-  );
-  // O'tkazmada chek bor-yo'qligi alohida qator: admin "pul keldimi"
-  // deb qarashdan oldin chek yuklanganini ko'rsin.
+  lines.push(`💰 <b>Jami:</b> ${formatSom(order.totalAmount)}`);
+
+  // KARTAGA O'TKAZMA, hali tasdiqlanmagan: admin NIMA QILISHI kerakligi
+  // ochiq yoziladi. Ilgari "⏳ to'lov kutilmoqda" + "Chek yuklangan —
+  // tekshiring" + "Holat: Kutilmoqda" birga turardi va egasi xabarni
+  // "tushunarsiz" dedi: chek keldimi, pul keldimi, nimani bosish kerak?
   if (order.paymentMethod === "transfer" && order.paymentStatus === "pending") {
-    lines.push(order.receipt ? `🧾 Chek yuklangan — tekshiring` : `🧾 Chek hali yuklanmagan`);
+    lines.push(`💳 <b>To'lov:</b> ${PAYMENT_LABELS.transfer}`);
+    if (order.receipt) {
+      lines.push(
+        `🧾 Mijoz chek yubordi (pastdagi alohida xabarda).`,
+        `👉 Kartangizga <b>${formatSom(order.totalAmount)}</b> tushganini bank ilovasida tekshiring, so'ng chek ostidagi «✅ To'lov keldi» ni bosing.`
+      );
+    } else {
+      lines.push(`⏳ Mijoz hali chek yubormagan — pul o'tkazilmagan bo'lishi mumkin.`);
+    }
+  } else {
+    lines.push(
+      `💳 <b>To'lov:</b> ${PAYMENT_LABELS[order.paymentMethod]}${PAYMENT_STATUS_LABELS[order.paymentStatus]}`
+    );
   }
   if (order.guest) {
     lines.push(`👤 Ro'yxatdan o'tmagan (1 klikda) — tasdiqlash uchun qo'ng'iroq qiling`);
