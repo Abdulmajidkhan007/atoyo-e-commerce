@@ -662,6 +662,18 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
   1.3 dan oshmaydi; pastki menyu balandligi ham shunga qarab o'sadi.
 - Dizayn saytdagidek (Deep Navy + oltin urg'u), ikonkalar Material
   (SVG), uch til, yorug'/qorong'i tema.
+- **Shisha ko'rinish (15-band, A oqimi)**: `theme.tsx` da `glass` /
+  `glassChrome` / `glassBorder` / `shadow` tokenlari; haqiqiy blur
+  FAQAT header, pastki nav va modal'da (`components/Glass.tsx`,
+  `@react-native-community/blur`; Android < 31 da shaffof rang),
+  qolgan joyda rgba + chegara. `ui.tsx` (Card/Field/Chip) va
+  `ProductCard` shu tokenlarda.
+- **Kategoriya chiplari** (`components/CategoryChips.tsx`) — bosh
+  sahifada qidiruv ostida va katalog tepasida; manba
+  `GET /api/products/chip-categories` (faqat `{slug,label}`, 5 daq.
+  kesh). **"Mijozlar fikri"** (`components/Testimonials.tsx`) —
+  `GET /api/content/testimonials` (ism "Abdulla K.", uid/narx yo'q);
+  bo'sh bo'lsa chizilmaydi. API chaqiruvlari `mobile/src/home-api.ts`.
 - **Push bildirishnomalar:** buyurtma holati — shaxsan mijozga (qurilma
   tokeni `users/{uid}.pushTokens` da), yangi mahsulot/chegirma — hammaga
   `products` mavzusi orqali. Ilova ochiq turganda toast bo'lib chiqadi,

@@ -451,6 +451,10 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 - **Ilovada `URLSearchParams` ISHLATILMAYDI** — Hermes'da `set()` yo'q
   va katalog butunlay bo'sh qolgan edi (`ARXITEKTURA-TARIXI.md` 36).
   So'rov qatori: `mobile/src/query.ts` → `buildQuery()`.
+- **Shisha**: haqiqiy blur faqat header, pastki nav va modal'da
+  (`components/Glass.tsx`, `@react-native-community/blur`); boshqa
+  joyda `palette.glass` (rgba) + `glassBorder`. Yangi karta/maydon
+  `ui.tsx` komponentlaridan olinadi (`docs/UI-SHISHA.md` 6).
 - Video pleyer: `mobile/src/components/VideoPlayer.tsx`
   (`react-native-video`) — mahsulot galereyasida va blog maqolasida.
   Yangi nativ paket qo'shilsa `scripts/check-codegen.mjs` ro'yxatiga

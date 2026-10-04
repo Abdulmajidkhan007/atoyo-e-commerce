@@ -6,6 +6,7 @@ import {useI18n} from '../i18n';
 import {useAppSelector} from '../store';
 import {BrandHeader} from '../components/BrandHeader';
 import {Icon, type IconName} from '../components/Icon';
+import {GlassBackground} from '../components/Glass';
 import {HomeScreen} from '../screens/HomeScreen';
 import {CatalogScreen} from '../screens/CatalogScreen';
 import {ProductScreen} from '../screens/ProductScreen';
@@ -61,9 +62,10 @@ function Tabs() {
           height: tabHeight,
           paddingBottom: 6,
           paddingTop: 4,
-          backgroundColor: palette.chrome,
-          borderTopColor: palette.border,
+          borderTopColor: palette.glassBorder,
         },
+        // Shisha (docs/UI-SHISHA.md 6): haqiqiy blur pastki menyuda.
+        tabBarBackground: () => <GlassBackground />,
         // Yozuv bir qatorga sig'masa kichrayadi, lekin qirqilmaydi.
         tabBarLabelStyle: {fontSize: labelSize},
         tabBarBadgeStyle: {

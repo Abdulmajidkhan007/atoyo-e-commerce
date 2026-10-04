@@ -7,7 +7,7 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
-import {makeStyles, radius, spacing} from '../theme';
+import {glassShadow, makeStyles, radius, spacing} from '../theme';
 import {Icon, type IconName} from './Icon';
 
 /** Ilova bo'ylab takrorlanadigan kichik UI bo'laklari - bir joyda. */
@@ -163,21 +163,22 @@ const useStyles = makeStyles(c => ({
   label: {color: c.muted, fontSize: 13},
   input: {
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: c.glassBorder,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     minHeight: 48,
     color: c.text,
-    backgroundColor: c.surface,
+    backgroundColor: c.glass,
   },
   inputMultiline: {height: 90, textAlignVertical: 'top', paddingTop: spacing.sm},
   card: {
     borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
+    borderColor: c.glassBorder,
+    borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.sm,
-    backgroundColor: c.surface,
+    backgroundColor: c.glass,
+    ...glassShadow(c.shadow),
   },
   section: {
     color: c.text,
@@ -189,7 +190,8 @@ const useStyles = makeStyles(c => ({
   },
   chip: {
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: c.glassBorder,
+    backgroundColor: c.glass,
     borderRadius: 16,
     paddingHorizontal: spacing.md,
     paddingVertical: 6,

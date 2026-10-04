@@ -1,6 +1,6 @@
 import React from 'react';
 import {Image, Pressable, Text, View} from 'react-native';
-import {makeStyles, radius, spacing} from '../theme';
+import {glassShadow, makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {effectivePrice, localizedName, type Product} from '../types';
 import {useDisplayPrice} from '../pricing';
@@ -78,10 +78,11 @@ const useStyles = makeStyles(c => ({
     flex: 1,
     margin: spacing.xs,
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: c.glassBorder,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: c.surface,
+    backgroundColor: c.glass,
+    ...glassShadow(c.shadow),
   },
   imageBox: {height: 130, backgroundColor: c.surfaceAlt},
   image: {width: '100%', height: '100%'},
@@ -89,7 +90,7 @@ const useStyles = makeStyles(c => ({
     position: 'absolute',
     right: 6,
     top: 6,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: c.glassChrome,
     borderRadius: 14,
     padding: 4,
   },

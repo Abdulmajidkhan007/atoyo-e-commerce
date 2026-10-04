@@ -96,6 +96,8 @@ export interface Dict {
   heroText: string;
   categories: string;
   newProducts: string;
+  testimonialsTitle: string;
+  testimonialsSubtitle: string;
   // Katalog
   searchPlaceholder: string;
   filter: string;
@@ -281,6 +283,8 @@ const uz: Dict = {
     'Quvurlar, muftalar, kranlar, dush tizimlari va isitish qozonlari — barchasi bir joyda.',
   categories: 'Kategoriyalar',
   newProducts: 'Yangi mahsulotlar',
+  testimonialsTitle: 'Mijozlar fikri',
+  testimonialsSubtitle: 'Xaridorlarimiz mahsulot sahifasida qoldirgan haqiqiy sharhlar',
   searchPlaceholder: 'Mahsulot qidirish...',
   filter: 'Filtr',
   category: 'Kategoriya',
@@ -470,6 +474,8 @@ const en: Dict = {
   heroText: 'Pipes, fittings, faucets, shower systems and boilers — all in one place.',
   categories: 'Categories',
   newProducts: 'New products',
+  testimonialsTitle: 'Customer reviews',
+  testimonialsSubtitle: 'Real reviews our customers left on product pages',
   searchPlaceholder: 'Search products...',
   filter: 'Filter',
   category: 'Category',
@@ -657,6 +663,8 @@ const ru: Dict = {
   heroText: 'Трубы, фитинги, смесители, душевые системы и котлы — всё в одном месте.',
   categories: 'Категории',
   newProducts: 'Новые товары',
+  testimonialsTitle: 'Отзывы покупателей',
+  testimonialsSubtitle: 'Настоящие отзывы, оставленные покупателями на страницах товаров',
   searchPlaceholder: 'Поиск товаров...',
   filter: 'Фильтр',
   category: 'Категория',

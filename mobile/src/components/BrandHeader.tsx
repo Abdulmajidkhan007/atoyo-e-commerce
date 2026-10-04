@@ -21,6 +21,7 @@ import {
 import {useI18n, type Locale} from '../i18n';
 import {useAppSelector} from '../store';
 import {Icon, type IconName} from './Icon';
+import {GlassBackground} from './Glass';
 
 /**
  * ILOVA HEADER'i.
@@ -96,6 +97,7 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
 
   return (
     <View style={[styles.wrap, {paddingTop: insets.top + spacing.xs}]}>
+      <GlassBackground />
       {back && (
         <Pressable hitSlop={8} onPress={() => navigation.goBack()} style={styles.iconBtn}>
           <Icon name="chevronRight" size={22} color={styles.c.text} style={styles.backIcon} />
@@ -137,6 +139,7 @@ export function BrandHeader({title, back}: {title?: string; back?: boolean}) {
           <Pressable
             style={[styles.sheet, {width: panelWidth, paddingTop: insets.top + spacing.sm}]}
             onPress={() => {}}>
+            <GlassBackground />
             {/* Panel sarlavhasi: brend + yopish (admin sidebar kabi). */}
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle} numberOfLines={1}>
@@ -309,9 +312,9 @@ const useStyles = makeStyles(c => ({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
-    backgroundColor: c.chrome,
+    overflow: 'hidden',
     borderBottomWidth: 1,
-    borderBottomColor: c.border,
+    borderBottomColor: c.glassBorder,
   },
   brand: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1, minWidth: 0},
   logo: {width: 32, height: 32, borderRadius: radius.sm},
@@ -351,9 +354,9 @@ const useStyles = makeStyles(c => ({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: c.chrome,
+    overflow: 'hidden',
     borderLeftWidth: 1,
-    borderLeftColor: c.border,
+    borderLeftColor: c.glassBorder,
     elevation: 12,
     shadowColor: '#000',
     shadowOpacity: 0.25,

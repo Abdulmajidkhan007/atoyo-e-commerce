@@ -41,6 +41,14 @@ export interface Palette {
   danger: string;
   success: string;
   white: string;
+  /** SHISHA (docs/UI-SHISHA.md 6): kartochka yuzasi, ~0.65 shaffof. */
+  glass: string;
+  /** Header / pastki nav / modal yuzasi, ~0.9 shaffof (blur ostida). */
+  glassChrome: string;
+  /** Shisha chegarasi (yorug'da quyuq, to'qda och chiziq). */
+  glassBorder: string;
+  /** Kartochka soyasi rangi. */
+  shadow: string;
 }
 
 const NAVY = '#072D40';
@@ -72,6 +80,10 @@ export const lightPalette: Palette = {
   danger: '#D64545',
   success: '#2E7D5B',
   white: '#FFFFFF',
+  glass: 'rgba(255,255,255,0.65)',
+  glassChrome: 'rgba(255,255,255,0.9)',
+  glassBorder: 'rgba(7,45,64,0.10)',
+  shadow: '#072D40',
 };
 
 export const darkPalette: Palette = {
@@ -91,6 +103,10 @@ export const darkPalette: Palette = {
   danger: '#FF8A80',
   success: '#7BD1A8',
   white: '#FFFFFF',
+  glass: 'rgba(11,59,84,0.65)',
+  glassChrome: 'rgba(7,45,64,0.9)',
+  glassBorder: 'rgba(255,255,255,0.12)',
+  shadow: '#000000',
 };
 
 /** Eski nomlar bilan mos ranglar - tema tanlamaydigan joylar uchun. */
@@ -106,6 +122,17 @@ export const colors = {
 
 export const spacing = {xs: 4, sm: 8, md: 12, lg: 16, xl: 24} as const;
 export const radius = {sm: 8, md: 12, lg: 20} as const;
+
+/** Shisha kartochka soyasi - yengil, Android'da `elevation`. */
+export function glassShadow(color: string) {
+  return {
+    shadowColor: color,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 3},
+    elevation: 2,
+  } as const;
+}
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 

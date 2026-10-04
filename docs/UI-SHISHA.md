@@ -78,6 +78,15 @@ RN'da `backdrop-filter` YO'Q. Shuning uchun:
 Yangi nativ paket qo'shilgani uchun `mobile/scripts/check-codegen.mjs`
 ro'yxatiga ham qo'shiladi va APK ni CI yig'ib tekshiradi.
 
+**Amalda (15-band):** tokenlar `theme.tsx` da (`glass` 0.65,
+`glassChrome` 0.9, `glassBorder`, `shadow`); blur'li yuza —
+`components/Glass.tsx` (`GlassBackground`, `GlassPanel`), u header,
+header yon paneli, pastki nav (`tabBarBackground`) va katalog filtr
+oynasida ishlatiladi. Pastki nav hozircha kontent USTIGA chiqmaydi
+(absolyut emas), shuning uchun u o'z foni ustida xiralashadi — to'liq
+"orqasidagini xiralash" kerak bo'lsa nav absolyut qilinib, ekranlarga
+`useBottomTabBarHeight` bilan pastki padding beriladi.
+
 ## 7. Nima o'zgarmaydi
 
 - Brend ranglari (Deep Navy + qumli-oltin) va tipografiya;

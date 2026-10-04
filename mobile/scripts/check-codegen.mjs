@@ -25,6 +25,7 @@ const LIBS = [
   '@react-native-firebase/messaging',
   'react-native-image-picker',
   'react-native-video',
+  '@react-native-community/blur',
 ];
 
 const cli = 'node_modules/@react-native/codegen/lib/cli/combine/combine-js-to-schema-cli.js';

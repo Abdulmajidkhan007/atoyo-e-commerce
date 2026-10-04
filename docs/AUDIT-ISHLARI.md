@@ -480,6 +480,9 @@ allaqachon tuzatilgan (1.4, `ARXITEKTURA-TARIXI.md` 36).
 
 > **C oqimi bajarildi (2026-10-04):** `/api/content/faq`, `FaqScreen`,
 > `DeliveryInfoScreen`, profil/sozlamalar havolalari.
+> **A oqimi bajarildi (2026-10-04):** shisha UI, kategoriya chiplari,
+> mijozlar fikri, `/api/products/chip-categories` va
+> `/api/content/testimonials`.
 
 ## 16) Haqiqiy mahsulotning 3D modeli (15-banddan keyin) 🟢
 

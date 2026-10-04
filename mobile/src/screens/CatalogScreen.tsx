@@ -9,6 +9,8 @@ import {ProductCard} from '../components/ProductCard';
 import {Button, Chip, EmptyState, Loading} from '../components/ui';
 import type {TabScreenProps} from '../navigation/types';
 import {Icon} from '../components/Icon';
+import {CategoryChips} from '../components/CategoryChips';
+import {GlassPanel} from '../components/Glass';
 
 type Sort = 'newest' | 'price-asc' | 'price-desc';
 
@@ -112,6 +114,9 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
         </Pressable>
       </View>
 
+      {/* Chiplar: bosilganda filtr darhol qo'llanadi (server so'rovi). */}
+      <CategoryChips active={category} onSelect={setCategory} />
+
       {!products ? (
         <Loading />
       ) : products.length === 0 ? (
@@ -137,7 +142,7 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
         transparent
         onRequestClose={() => setFilterOpen(false)}>
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
+          <GlassPanel style={styles.modalCard}>
             <Text style={styles.modalTitle}>{t.filter}</Text>
             <ScrollView style={{maxHeight: 380}}>
               <Text style={styles.groupLabel}>{t.category}</Text>
@@ -261,7 +266,7 @@ export function CatalogScreen({navigation, route}: TabScreenProps<'Katalog'>) {
                 }}
               />
             </View>
-          </View>
+          </GlassPanel>
         </View>
       </Modal>
     </View>
@@ -285,22 +290,22 @@ const useStyles = makeStyles(c => ({
   search: {
     flex: 1,
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: c.glassBorder,
     borderRadius: 24,
     paddingHorizontal: spacing.lg,
     height: 44,
     color: c.text,
-    backgroundColor: c.surface,
+    backgroundColor: c.glass,
   },
   filterBtn: {
     width: 44,
     height: 44,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: c.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: c.surface,
+    backgroundColor: c.glass,
   },
   filterBadge: {
     position: 'absolute',
@@ -316,7 +321,6 @@ const useStyles = makeStyles(c => ({
   filterBadgeText: {fontSize: 11, color: c.onAccent, fontWeight: '700'},
   modalBackdrop: {flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end'},
   modalCard: {
-    backgroundColor: c.surface,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.lg,

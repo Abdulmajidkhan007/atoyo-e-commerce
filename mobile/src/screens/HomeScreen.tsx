@@ -1,35 +1,15 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {FlatList, Image, Pressable, RefreshControl, Text, TextInput, View} from 'react-native';
-import {makeStyles, radius, spacing} from '../theme';
+import {glassShadow, makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {type Product} from '../types';
-import {useCategories} from '../categories';
 import {fetchShowcase, fetchNewProducts} from '../api';
 import {ProductCard} from '../components/ProductCard';
 import {Loading} from '../components/ui';
 import {Icon, type IconName} from '../components/Icon';
+import {CategoryChips} from '../components/CategoryChips';
+import {Testimonials} from '../components/Testimonials';
 import type {TabScreenProps} from '../navigation/types';
-
-/**
- * Standart kategoriyalar belgisi - SAYTDAGI bilan bir xil ikonkalar;
- * yangi kategoriyaga umumiy belgi qo'yiladi.
- */
-const CATEGORY_ICONS: Record<string, IconName> = {
-  pipes: 'pipes',
-  fittings: 'fittings',
-  faucets: 'faucets',
-  'shower-systems': 'shower',
-  boilers: 'boilers',
-  radiators: 'radiators',
-  pumps: 'pumps',
-  'sanitary-ware': 'bath',
-};
-
-/**
- * Bosh sahifada ko'rinadigan kategoriyalar soni - qolgani katalogda
- * (import bilan kategoriyalar o'nlab bo'lib ketdi).
- */
-const HOME_CATEGORIES = 12;
 
 /**
  * Bosh sahifa: qidiruv, brend banneri, kategoriyalar, namuna mahsulotlar
@@ -38,8 +18,6 @@ const HOME_CATEGORIES = 12;
 export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
   const styles = useStyles();
   const {t} = useI18n();
-  // Kategoriyalar saytdagi ro'yxatdan - yangilari ham ko'rinadi.
-  const categories = useCategories();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [term, setTerm] = useState('');
@@ -98,6 +76,12 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
             style={styles.search}
           />
 
+          {/* Kategoriya chiplari - qidiruv ostida (saytdagi kabi);
+              bosilsa katalog shu kategoriya bilan ochiladi. */}
+          <CategoryChips
+            onSelect={slug => navigation.navigate('Katalog', {category: slug})}
+          />
+
           {/* Saytdagi hero bilan bir xil tartib: nishon → sarlavha →
               matn → "Katalogni ko'rish" tugmasi. */}
           <View style={styles.hero}>
@@ -133,25 +117,11 @@ export function HomeScreen({navigation}: TabScreenProps<'Home'>) {
             />
           </View>
 
-          <Text style={styles.section}>{t.categories}</Text>
-          <View style={styles.categories}>
-            {categories.slice(0, HOME_CATEGORIES).map(item => (
-              <Pressable
-                key={item.slug}
-                onPress={() => navigation.navigate('Katalog', {category: item.slug})}
-                style={({pressed}) => [styles.category, pressed && {opacity: 0.85}]}>
-                <Icon
-                  name={CATEGORY_ICONS[item.slug] ?? 'category'}
-                  size={24}
-                  color={styles.c.accent}
-                />
-                <Text style={styles.categoryText}>{item.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-
           <Text style={styles.section}>{t.newProducts}</Text>
         </View>
+      }
+      ListFooterComponent={
+        <Testimonials onOpenProduct={id => navigation.navigate('Mahsulot', {productId: id})} />
       }
       renderItem={({item}) => (
         <ProductCard
@@ -205,12 +175,12 @@ const useStyles = makeStyles(c => ({
   search: {
     margin: spacing.xs,
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: c.glassBorder,
     borderRadius: 24,
     paddingHorizontal: spacing.lg,
     height: 44,
     color: c.text,
-    backgroundColor: c.surface,
+    backgroundColor: c.glass,
   },
   hero: {
     backgroundColor: c.brand,
@@ -229,9 +199,10 @@ const useStyles = makeStyles(c => ({
     gap: 2,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: c.glassBorder,
     borderRadius: radius.md,
-    backgroundColor: c.surface,
+    backgroundColor: c.glass,
+    ...glassShadow(c.shadow),
   },
   quickText: {color: c.text, fontSize: 11},
   section: {
@@ -242,17 +213,4 @@ const useStyles = makeStyles(c => ({
     marginBottom: spacing.sm,
     marginLeft: spacing.xs,
   },
-  categories: {flexDirection: 'row', flexWrap: 'wrap'},
-  category: {
-    width: '48%',
-    margin: '1%',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    backgroundColor: c.surface,
-  },
-  categoryText: {color: c.text, fontSize: 13},
 }));
