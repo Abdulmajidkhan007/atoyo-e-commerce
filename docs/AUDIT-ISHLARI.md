@@ -472,9 +472,11 @@ Ilova sayt bilan BIR XIL bo'lishi kerak — ko'rinish (shisha UI,
 `docs/UI-SHISHA.md`) va imkoniyatlar: kategoriya chiplari,
 "Xususiyatlari", 1 klikda buyurtma, kartaga o'tkazma + chek yuklash,
 "Bepul yetkazishga X so'm qoldi", Savol-javob va Yetkazib berish
-sahifalari, mijozlar fikri. Avval spetsifikatsiya (`ai/specs/`), keyin
-ishlab chiqish. Katalog bo'sh chiqishi allaqachon tuzatilgan (1.4,
-`ARXITEKTURA-TARIXI.md` 36).
+sahifalari, mijozlar fikri. Spetsifikatsiya: `ai/specs/2026-10-04-ilova-sayt-bilan-tenglashtirish.md`
+— 3 ta parallel oqim (A ko'rinish+bosh sahifa+katalog — Sonnet,
+B xarid oqimi — Opus, C ma'lumot sahifalari — Sonnet), keyin
+integratsiya (versiya 1.5) asosiy sessiyada. Katalog bo'sh chiqishi
+allaqachon tuzatilgan (1.4, `ARXITEKTURA-TARIXI.md` 36).
 
 ## 16) Haqiqiy mahsulotning 3D modeli (15-banddan keyin) 🟢
 
