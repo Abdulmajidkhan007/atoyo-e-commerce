@@ -1105,3 +1105,7 @@ A/B/C oqimlari parallel sessiyalarda bajarildi (spetsifikatsiya
 - Katalogda `CategoryChips` qatori FlatList bilan bir ustunda siqilib
   (ScrollView standart `flexShrink: 1`), chip matni pastdan kesilardi.
   Endi `flexShrink: 0`.
+- 1.5.2: header va pastki menyuda logo/ikonkalar atrofida oq "dog'"
+  (xiralik). Android `BlurView` ekranni o'zi ustidagi elementlar bilan
+  birga xiralashtiradi. Endi blur faqat iOS'da; Android'da `palette.chrome`
+  to'liq fon (`components/Glass.tsx`).

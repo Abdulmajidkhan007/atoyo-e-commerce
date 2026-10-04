@@ -452,7 +452,7 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   va katalog butunlay bo'sh qolgan edi (`ARXITEKTURA-TARIXI.md` 36).
   So'rov qatori: `mobile/src/query.ts` → `buildQuery()`.
 - **Shisha**: haqiqiy blur faqat header, pastki nav va modal'da
-  (`components/Glass.tsx`, `@react-native-community/blur`); boshqa
+  (`components/Glass.tsx`, `@react-native-community/blur`, FAQAT iOS — Android'da u ikonkalarni ham xiralashtiradi); boshqa
   joyda `palette.glass` (rgba) + `glassBorder`. **Yarim shaffof fonga
   Android `elevation` QO'YILMAYDI** — soya karta ichidan ko'rinadi
   (`glassShadow()` Android'da 0; `ARXITEKTURA-TARIXI.md` 46). Yangi karta/maydon

@@ -8,11 +8,14 @@ import {useTheme} from '../theme';
  *
  * RN'da `backdrop-filter` yo'q. Haqiqiy xiralik FAQAT header, pastki
  * navigatsiya va modalda (`BlurView`); qolgan joyda yarim shaffof rang
- * + chegara (`palette.glass`). Android < 31 da `BlurView` sekin/xira
- * bo'lgani uchun u ham shaffof rangga qaytadi - `palette.glassChrome`
- * (0.9) esa blur'siz ham matn o'qiladigan darajada qoplaydi (WCAG AA).
+ * + chegara (`palette.glass`).
+ *
+ * ANDROID'DA BLUR YO'Q: `BlurView` u yerda ekranni O'ZI USTIDAGI
+ * logo va ikonkalar bilan birga xiralashtiradi - 1.5 da header va
+ * pastki menyuda ikonkalar atrofida oq "dog'" (xiralik) chiqdi
+ * (ARXITEKTURA-TARIXI 46). Android'da to'liq `palette.chrome` fon.
  */
-const CAN_BLUR = Platform.OS === 'ios' || Number(Platform.Version) >= 31;
+const CAN_BLUR = Platform.OS === 'ios';
 
 /** Absolyut joylashgan fon: ota-ona `overflow` ni o'zi boshqaradi. */
 export function GlassBackground({style}: {style?: StyleProp<ViewStyle>}) {
@@ -20,7 +23,7 @@ export function GlassBackground({style}: {style?: StyleProp<ViewStyle>}) {
   return (
     <View
       pointerEvents="none"
-      style={[StyleSheet.absoluteFill, {backgroundColor: palette.glassChrome}, style]}>
+      style={[StyleSheet.absoluteFill, {backgroundColor: CAN_BLUR ? palette.glassChrome : palette.chrome}, style]}>
       {CAN_BLUR && (
         <BlurView
           style={StyleSheet.absoluteFill}
