@@ -1,4 +1,5 @@
 import {getIdToken} from './firebase';
+import {buildQuery} from './query';
 import type {CartItem, Product as AdminProduct, Review} from './types';
 
 /**
@@ -73,21 +74,23 @@ export async function fetchCatalog(
   limit = 20,
   cursor?: string | null,
 ): Promise<{products: AdminProduct[]; nextCursor: string | null; hasMore: boolean}> {
-  const params = new URLSearchParams({pageSize: String(limit)});
-  if (filters.category) params.set('category', filters.category);
-  if (filters.brand) params.set('brand', filters.brand);
-  if (filters.material) params.set('material', filters.material);
-  if (filters.country) params.set('manufacturerCountry', filters.country);
-  if (filters.minPrice) params.set('minPrice', String(filters.minPrice));
-  if (filters.maxPrice) params.set('maxPrice', String(filters.maxPrice));
-  params.set('sortBy', filters.sort ?? 'newest');
-  if (cursor) params.set('cursor', cursor);
+  const query = buildQuery({
+    pageSize: limit,
+    category: filters.category,
+    brand: filters.brand,
+    material: filters.material,
+    manufacturerCountry: filters.country,
+    minPrice: filters.minPrice || undefined,
+    maxPrice: filters.maxPrice || undefined,
+    sortBy: filters.sort ?? 'newest',
+    cursor: cursor ?? undefined,
+  });
 
   const data = await request<{
     products?: AdminProduct[];
     nextCursor?: string | null;
     hasMore?: boolean;
-  }>(`/api/products/list?${params.toString()}`);
+  }>(`/api/products/list?${query}`);
 
   return {
     products: data.products ?? [],
@@ -100,9 +103,8 @@ export async function fetchCatalog(
 export async function searchProducts(term: string, limit = 20): Promise<AdminProduct[]> {
   const trimmed = term.trim();
   if (!trimmed) return [];
-  const params = new URLSearchParams({q: trimmed, pageSize: String(limit)});
   const data = await request<{products?: AdminProduct[]}>(
-    `/api/products/search?${params.toString()}`,
+    `/api/products/search?${buildQuery({q: trimmed, pageSize: limit})}`,
   );
   return data.products ?? [];
 }
@@ -124,9 +126,8 @@ export async function fetchProductWithRelated(
 /** Sevimlilar uchun: ID lar bo'yicha (narx yangilanadi). */
 export async function fetchProductsByIds(ids: string[]): Promise<AdminProduct[]> {
   if (ids.length === 0) return [];
-  const params = new URLSearchParams({ids: ids.slice(0, 30).join(',')});
   const data = await request<{products?: AdminProduct[]}>(
-    `/api/products/by-ids?${params.toString()}`,
+    `/api/products/by-ids?${buildQuery({ids: ids.slice(0, 30).join(',')})}`,
   );
   return data.products ?? [];
 }

@@ -436,6 +436,9 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   dagi `APP_VERSION` va `android/app/build.gradle` dagi `versionName`
   (testi `version.test.ts`). Yangilanish oynasi `/api/app/version`
   dan o'qiladi, boshqaruvi Sozlamalar → "Ilova yangilanishi".
+- **Ilovada `URLSearchParams` ISHLATILMAYDI** — Hermes'da `set()` yo'q
+  va katalog butunlay bo'sh qolgan edi (`ARXITEKTURA-TARIXI.md` 36).
+  So'rov qatori: `mobile/src/query.ts` → `buildQuery()`.
 - Video pleyer: `mobile/src/components/VideoPlayer.tsx`
   (`react-native-video`) — mahsulot galereyasida va blog maqolasida.
   Yangi nativ paket qo'shilsa `scripts/check-codegen.mjs` ro'yxatiga

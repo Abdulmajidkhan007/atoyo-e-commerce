@@ -924,3 +924,14 @@ matnni FAQ natijasi qilib ko'rsatsa, mijozga yolg'on va'da bo'lardi.
   qo'yilmadi — Google do'konning o'zi haqidagi o'z sharhlarini rad
   etadi.
 
+
+## 36. Ilovada katalog bo'sh: "URLSearchParams.set is not implemented"
+
+React Native (Hermes) dagi `URLSearchParams` to'liq emas — `set()`
+chaqirilishi bilan xato otadi. Katalog so'rovi shu bilan yasalardi,
+shuning uchun ilova katalogi umuman ochilmasdi ("Ma'lumot yuklanmadi"),
+bosh sahifa esa ishlardi (u oddiy satr bilan so'rardi). Sayt testlari
+Node'da ishlaydi va u yerda `URLSearchParams` to'liq — nosozlik
+ko'rinmagan. Endi ilovada so'rov qatori faqat `mobile/src/query.ts`
+(`buildQuery`) bilan yasaladi, `URLSearchParams` ishlatilmaydi.
+Ilova versiyasi 1.4.
