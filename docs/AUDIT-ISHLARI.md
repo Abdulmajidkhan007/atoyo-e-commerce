@@ -205,6 +205,27 @@ Tekshiruv birlashtirilgandan keyin: `tsc`, `eslint`, `npm test`
 
 # Keyingi topshiriqlar (auditdan qolganlari)
 
+## Tartib va kim qiladi (2026-10-04)
+
+Har biri ALOHIDA yangi sessiya. Sessiyaga quyidagi bandning ```text
+blokini AYNAN nusxalab bering (oldiga hech narsa qo'shish shart emas —
+sessiya CLAUDE.md ni o'zi o'qiydi).
+
+| Navbat | Band | Model | Nega shu model |
+|---|---|---|---|
+| 1-to'lqin (bir vaqtda) | 8) CSV eksport | Sonnet | Aniq, bitta fayl |
+| 1-to'lqin | 11) `/k` himoyasi | Sonnet | Kichik, aniq |
+| 1-to'lqin | 13) Tungi rejim | **Opus** | Hydration/MUI — noaniq, ishlab turgan kodga tegadi |
+| 2-to'lqin (1-dan keyin) | 9) Foydalanuvchilar N+1 | **Opus** | Buyurtma tranzaksiyasi + migratsiya |
+| 2-to'lqin | 10) Jim xatolar | Sonnet | Aniq; `lib/orders/pricing.ts` ga tegadi |
+| 2-to'lqin | 14) Mehmon yo'li testlari | Sonnet | Test + kichik tranzaksiya |
+| 3-to'lqin (oxirida) | 12) Xato xabarlari | Sonnet | ~28 route'ga tegadi — boshqalar bilan to'qnashmasin deb OXIRIDA |
+
+To'lqin ichidagilar turli fayllarga tegadi — parallel yuborish mumkin.
+9 va 14 ikkalasi `create-order` atrofida: bir vaqtda yuborsangiz,
+ikkinchisi push'dan oldin `git pull` qilsin. Har sessiya tugagach
+diffni asosiy sessiyada tekshirtiring (tekshiruvchi).
+
 Har birini ALOHIDA yangi sessiyada yuboring. Bular aniq belgilangan
 ish — **Sonnet 5 yetadi** (arzonroq); Opus faqat noaniq/arxitektura
 qarorlari va chigal nosozliklar uchun kerak.
@@ -285,27 +306,23 @@ Tugagach: tsc + eslint + test + build.
 Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
-## 11) Upload huquqi va `/k/<id>` himoyasi (AUDIT 2.9 + 2.10)
+## 11) `/k/<id>` himoyasi (AUDIT 2.10)
+
+> Upload huquqi (2.9) allaqachon BAJARILGAN (`permissionForFolder`,
+> c0b40e3) — topshiriqda faqat `/k` qoldi.
 
 ```text
-- api/admin/upload/route.ts:17 faqat requireAdminUser() (xodimmi)
-  tekshiradi: masalan faqat "orders" huquqi bor admin ham Storage'ga
-  fayl yuklab, ochiq URL ola oladi.
-- app/k/[id]/route.ts ochiq va rate limit yo'q: skript
-  /k/<tasodifiy> ni chaqirib channelClicks ni cheksiz hujjat bilan
-  to'ldira oladi.
-Batafsil: docs/AUDIT.md 2.9, 2.10.
+app/k/[id]/route.ts ochiq va rate limit yo'q: skript /k/<tasodifiy>
+ni chaqirib channelClicks ni cheksiz hujjat bilan to'ldira oladi.
+Batafsil: docs/AUDIT.md 2.10.
 
 Vazifa:
-1. upload route: folder ga qarab huquq - "blog" bo'lsa
-   requirePermission("blog", request), qolganida
-   requirePermission("products", request). Ruxsat etilgan prefikslar
-   ro'yxatini qattiq belgila (products/, blog, site) - boshqasi 400.
-2. /k/[id]: checkRateLimit qo'sh va yozishdan oldin mahsulot
-   mavjudligini tekshir (yoki channelMessageId bor mahsulotlarga
-   yoz). Yo'naltirishni kutdirmaslik uchun trackChannelClick ni
-   redirect'dan keyin/parallel qil.
-3. Test: notanish ID ga yozilmasligi.
+1. /k/[id]: checkRateLimit qo'sh (IP bo'yicha, getClientIp) va
+   yozishdan oldin mahsulot mavjudligini tekshir (notanish ID ga
+   YOZILMAYDI, lekin yo'naltirish baribir ishlaydi - bosh sahifaga).
+2. Yo'naltirishni kutdirma: trackChannelClick redirect bilan
+   parallel yoki keyin (after() / waitUntil).
+3. Test: notanish ID ga yozilmasligi, limitdan oshganda yozilmasligi.
 Tugagach: tsc + eslint + test + build.
 Ishni main branchiga push qil (yangi branch OCHMA).
 ```
@@ -392,6 +409,22 @@ menga ayt.
 ---
 
 ## 14) 1-klik va o'tkazma: qolgan kichik ishlar 🟢
+
+```text
+Mehmon buyurtma yo'li (CLAUDE.md 15-band, ARXITEKTURA-TARIXI 33, 34,
+38) uchun QOLGAN ikki ish - quyidagi ro'yxatning 2- va 3-bandlari:
+1. /api/orders/quick uchun ROUTE darajasidagi test: bot tuzog'i
+   ({received:true}, saqlanmaydi), telefon/IP/umumiy limitlar (faqat
+   muvaffaqiyatli buyurtma sanaladi), takror qator rad, mehmon DONA
+   narx oladi. Admin chek route'i sarlavhalari (CSP sandbox,
+   no-store) uchun test.
+2. reviewTransferPayment (lib/orders/payment-transfer.ts) ni
+   tranzaksiyaga o'tkaz: holat qayta o'qiladi, allaqachon to'langan
+   bo'lsa ikkinchi marta yozilmaydi.
+GA (1-band) va umumiy limit (4-band) ga TEGMA.
+Tugagach: tsc + eslint + test + build.
+Ishni main branchiga push qil (yangi branch OCHMA).
+```
 
 Tekshiruvchi (reviewer, 2026-09-26) topgan, asosiy tuzatishlardan
 keyin QOLGAN nitlar. Hech biri hozir xavf emas.
