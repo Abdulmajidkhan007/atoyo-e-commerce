@@ -27,7 +27,7 @@ const GLOBAL_LIMIT = 30;
  * mijozdan hech narsani qayta so'ramaydi.
  *
  * Bu OCHIQ yozuv yo'li (tekshiruvchi topgan D1/D2 dan keyin):
- *   • sxema: BITTA mahsulot, ≤ 99 dona (zaxirani bir so'rovda nolga
+ *   • sxema: 1-20 qator (mahsulot sahifasi yoki butun savat), ≤ 99 dona (zaxirani bir so'rovda nolga
  *     tushirib bo'lmasin);
  *   • IP (IPv6 — /64 prefiks) bo'yicha soatiga 20 ta so'rov — har
  *     so'rov sanaladi; IP aniqlanmasa bu qadam o'tkaziladi, lekin

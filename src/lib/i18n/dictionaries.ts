@@ -87,6 +87,8 @@ export interface Dictionary {
     title: string;
     addFirst: string;
     loginRequired: string;
+    zone: string;
+    zoneNone: string;
     invalidName: string;
     invalidPhone: string;
     fullName: string;
@@ -273,6 +275,9 @@ export interface Dictionary {
     payTransfer: string;
     transferHint: string;
     quickBuy: string;
+    /** Checkout'da kirmagan mijoz uchun: butun savat, ro'yxatdan o'tmasdan. */
+    guestCheckout: string;
+    guestLimit: string;
     quickBuyTitle: string;
     quickBuySubtitle: string;
     submitQuick: string;
@@ -410,7 +415,9 @@ const uz: Dictionary = {
   checkout: {
     title: "Buyurtmani rasmiylashtirish",
     addFirst: "Buyurtma berish uchun avval savatga mahsulot qo'shing.",
-    loginRequired: "Buyurtma berish uchun avval tizimga kiring yoki ro'yxatdan o'ting.",
+    zone: "Yetkazish hududi",
+    zoneNone: "Tanlanmagan",
+    loginRequired: "Ro'yxatdan o'tmasdan buyurtma bering — ism, telefon va manzil kifoya. Yoki hisobingizga kiring.",
     invalidName: "To'liq ism-familiyangizni kiriting (kamida 2 ta harf).",
     invalidPhone: "Telefon raqamni to'g'ri kiriting. Masalan: +998 90 123 45 67",
     fullName: "Ism-familiya",
@@ -595,6 +602,8 @@ const uz: Dictionary = {
     payTransfer: "Kartaga o'tkazma (chek bilan)",
     transferHint: "Buyurtmadan keyin karta raqami ko'rsatiladi: pulni o'tkazib, chekni yuklaysiz.",
     quickBuy: "1 klikda sotib olish",
+    guestCheckout: "Ro'yxatdan o'tmasdan buyurtma berish",
+    guestLimit: "Ro'yxatdan o'tmasdan ko'pi bilan {lines} xil mahsulot va har biridan 99 donagacha buyurtma qilinadi. Kattaroq buyurtma uchun hisobingizga kiring yoki bizga qo'ng'iroq qiling.",
     quickBuyTitle: "Tez buyurtma",
     quickBuySubtitle: "Ro'yxatdan o'tish shart emas",
     submitQuick: "Buyurtma berish",
@@ -729,7 +738,9 @@ const en: Dictionary = {
   checkout: {
     title: "Checkout",
     addFirst: "Add products to your cart before placing an order.",
-    loginRequired: "Please sign in or create an account to place an order.",
+    zone: "Delivery area",
+    zoneNone: "Not selected",
+    loginRequired: "Order without signing up — your name, phone and address are enough. Or sign in to your account.",
     invalidName: "Enter your full name (at least 2 letters).",
     invalidPhone: "Enter a valid phone number, e.g. +998 90 123 45 67",
     fullName: "Full name",
@@ -912,6 +923,8 @@ const en: Dictionary = {
     payTransfer: "Card transfer (with receipt)",
     transferHint: "After ordering you will see the card number: transfer the money and upload the receipt.",
     quickBuy: "Buy in one click",
+    guestCheckout: "Order without signing up",
+    guestLimit: "Without an account you can order up to {lines} different products, 99 of each. For a larger order, sign in or call us.",
     quickBuyTitle: "Quick order",
     quickBuySubtitle: "No registration needed",
     submitQuick: "Place order",
@@ -1046,7 +1059,9 @@ const ru: Dictionary = {
   checkout: {
     title: "Оформление заказа",
     addFirst: "Сначала добавьте товары в корзину.",
-    loginRequired: "Чтобы оформить заказ, войдите или зарегистрируйтесь.",
+    zone: "Район доставки",
+    zoneNone: "Не выбран",
+    loginRequired: "Закажите без регистрации — достаточно имени, телефона и адреса. Или войдите в аккаунт.",
     invalidName: "Введите имя и фамилию (не менее 2 букв).",
     invalidPhone: "Введите корректный номер, например +998 90 123 45 67",
     fullName: "Имя и фамилия",
@@ -1229,6 +1244,8 @@ const ru: Dictionary = {
     payTransfer: "Перевод на карту (с чеком)",
     transferHint: "После заказа появится номер карты: переведите деньги и загрузите чек.",
     quickBuy: "Купить в 1 клик",
+    guestCheckout: "Заказать без регистрации",
+    guestLimit: "Без регистрации можно заказать до {lines} разных товаров, до 99 штук каждого. Для большего заказа войдите или позвоните нам.",
     quickBuyTitle: "Быстрый заказ",
     quickBuySubtitle: "Регистрация не нужна",
     submitQuick: "Оформить заказ",

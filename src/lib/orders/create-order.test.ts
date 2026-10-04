@@ -181,6 +181,22 @@ describe("zaxira tekshiruvi", () => {
     expect(stores.orders!.size).toBe(0);
   });
 
+  it("bir mahsulot ikki qatorda — zaxira JAMI bo'yicha tekshiriladi", async () => {
+    // Zaxira 5: 3 + 3 = 6 > 5 — har qator alohida o'tardi, jami o'tmasligi kerak.
+    await expect(
+      createOrder({
+        customerName: "Ali",
+        phoneNumber: "+998901234567",
+        items: [
+          { productId: "prod-1", name: "Kran", price: 10000, quantity: 3, thumbnailUrl: "" },
+          { productId: "prod-1", name: "Kran", price: 10000, quantity: 3, thumbnailUrl: "" },
+        ],
+        paymentMethod: "cash",
+      })
+    ).rejects.toBeInstanceOf(OrderValidationError);
+    expect(stores.products!.get("prod-1")!.stock).toBe(5);
+  });
+
   it("mahsulot faol bo'lmasa OrderValidationError otadi", async () => {
     stores.products!.set("prod-1", baseProduct({ isActive: false }));
     await expect(

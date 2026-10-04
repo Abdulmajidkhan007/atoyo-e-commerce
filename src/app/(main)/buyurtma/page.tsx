@@ -19,6 +19,7 @@ import { clearCart } from "@/redux/slices/cartSlice";
 import { ensureSessionCookie } from "@/lib/firebase/auth";
 import { normalizePhone, isValidName } from "@/lib/validation";
 import { deliveryFeeFor } from "@/lib/orders/promo";
+import { QuickBuyButton } from "@/components/checkout/QuickBuyButton";
 import { DeliveryNote } from "@/components/layout/DeliveryNote";
 import { DEFAULT_DELIVERY_SETTINGS, type DeliverySettings } from "@/types/promo";
 import { useI18n } from "@/lib/i18n/LocaleContext";
@@ -194,10 +195,15 @@ export default function CheckoutPage() {
         <h1 className="mb-4 text-2xl font-bold text-navy-900 dark:text-white">
           {dict.checkout.title}
         </h1>
-        <p className="mb-4 text-navy-300">{dict.checkout.loginRequired}</p>
-        <Button component={Link} href="/kirish" variant="contained" size="large">
-          {dict.nav.login}
-        </Button>
+        <p className="mb-6 text-navy-300">{dict.checkout.loginRequired}</p>
+        {/* Ro'yxatdan o'tmasdan — butun savat 1 klik oynasi orqali
+            (/api/orders/quick). Savat bo'sh bo'lsa tugma o'chiq. */}
+        <div className="flex flex-col items-center gap-3">
+          <QuickBuyButton cart={items} label={dict.payment.guestCheckout} disabled={items.length === 0} />
+          <Button component={Link} href="/kirish?redirect=/buyurtma" variant="text">
+            {dict.nav.login}
+          </Button>
+        </div>
       </section>
     );
   }
@@ -262,12 +268,12 @@ export default function CheckoutPage() {
         {(delivery.zones ?? []).length > 0 && (
           <TextField
             select
-            label="Yetkazish hududi"
+            label={dict.checkout.zone}
             value={zoneId}
             onChange={(e) => setZoneId(e.target.value)}
             helperText="Hududga qarab yetkazish narxi o'zgaradi"
           >
-            <MenuItem value="">Tanlanmagan</MenuItem>
+            <MenuItem value="">{dict.checkout.zoneNone}</MenuItem>
             {(delivery.zones ?? []).map((zone) => (
               <MenuItem key={zone.id} value={zone.id}>
                 {zone.name} — {zone.fee > 0 ? formatSom(zone.fee) : "bepul"}

@@ -19,7 +19,8 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { useAppSelector } from "@/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { clearCart, type CartItem } from "@/redux/slices/cartSlice";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 import { localeHref } from "@/lib/i18n/href";
 import { useDelivery } from "@/lib/delivery/useDelivery";
@@ -28,6 +29,7 @@ import { deliveryFeeFor } from "@/lib/orders/promo";
 import { isValidName, normalizePhone } from "@/lib/validation";
 import { formatSom } from "@/lib/format";
 import { usePricingSettings } from "@/lib/products/usePricing";
+import { MAX_GUEST_ITEMS } from "@/lib/orders/order-schema";
 
 export interface QuickBuyItem {
   productId: string;
@@ -53,8 +55,25 @@ export interface QuickBuyItem {
  * Yetkazish narxi OLDINDAN ko'rsatiladi (15 000 yoki bepul) — mijoz
  * summani buyurtmadan keyin emas, oldin bilsin.
  */
-export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem; disabled?: boolean }) {
+export function QuickBuyButton({
+  item,
+  cart,
+  label,
+  disabled = false,
+}: {
+  /** Mahsulot sahifasi: bitta mahsulot, sonini oynada tanlaydi. */
+  item?: QuickBuyItem;
+  /**
+   * Checkout (kirmagan mijoz): BUTUN SAVAT, sonlar savatdagidek.
+   * Ilgari kirmagan mijoz checkout'da faqat "Kirish" tugmasini ko'rardi
+   * va savatdagi tovarni ro'yxatdan o'tmasdan ola olmasdi.
+   */
+  cart?: CartItem[];
+  label?: string;
+  disabled?: boolean;
+}) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { dict, locale } = useI18n();
   const t = dict.payment;
   const titleId = useId();
@@ -68,6 +87,8 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
   const [address, setAddress] = useState("");
   const [website, setWebsite] = useState(""); // bot tuzog'i
   const [payment, setPayment] = useState<"cash" | "transfer">("cash");
+  /** Yetkazish hududi (sozlamada hududlar bo'lsa) — checkout'dagi kabi. */
+  const [zoneId, setZoneId] = useState("");
   const [transferEnabled, setTransferEnabled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,11 +130,28 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
     setOpen(true);
   };
 
-  const maxQuantity = Math.max(1, Math.min(item.stock, 99));
-  const subtotal = item.price * quantity;
-  const fee = deliveryFeeFor(delivery, subtotal);
+  const maxQuantity = Math.max(1, Math.min(item?.stock ?? 1, 99));
+  const lines: (QuickBuyItem & { quantity: number })[] = cart
+    ? cart.map((c) => ({
+        productId: c.productId,
+        variantId: c.variantId ?? null,
+        variantLabel: c.variantLabel ?? null,
+        name: c.name,
+        price: c.price,
+        thumbnailUrl: c.thumbnailUrl,
+        stock: c.stock,
+        quantity: c.quantity,
+      }))
+    : item
+      ? [{ ...item, quantity }]
+      : [];
+  const subtotal = lines.reduce((sum, line) => sum + line.price * line.quantity, 0);
+  const fee = deliveryFeeFor(delivery, subtotal, zoneId || null);
   const gap = freeDeliveryGap(delivery, subtotal);
   const belowMinimum = minOrder > 0 && subtotal < minOrder;
+  // Mehmon buyurtmasi chegaralari (server ham tekshiradi —
+  // `quickOrderSchema`): oldindan aniq aytamiz, umumiy xato emas.
+  const overLimit = Boolean(cart) && (lines.length > MAX_GUEST_ITEMS || lines.some((l) => l.quantity > 99));
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -137,17 +175,16 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
           phoneNumber: normalized,
           deliveryAddress: address.trim(),
           paymentMethod: payment,
+          deliveryZoneId: zoneId || null,
           website,
-          items: [
-            {
-              productId: item.productId,
-              variantId: item.variantId ?? null,
-              name: item.name,
-              price: item.price,
-              quantity,
-              thumbnailUrl: item.thumbnailUrl,
-            },
-          ],
+          items: lines.map((line) => ({
+            productId: line.productId,
+            variantId: line.variantId ?? null,
+            name: line.name,
+            price: line.price,
+            quantity: line.quantity,
+            thumbnailUrl: line.thumbnailUrl,
+          })),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -164,6 +201,8 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
         return;
       }
       if (!res.ok || !data.orderId) throw new Error(data.error ?? dict.checkout.submitError);
+      // Savatdan berilgan buyurtma — savat bo'shatiladi (oddiy checkout kabi).
+      if (cart) dispatch(clearCart());
       router.push(
         localeHref(`/buyurtma/${data.orderId}?t=${encodeURIComponent(data.accessToken ?? "")}`, locale)
       );
@@ -179,11 +218,11 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
         variant="outlined"
         size="large"
         startIcon={<BoltIcon />}
-        disabled={disabled || item.stock <= 0}
+        disabled={disabled || lines.length === 0 || (item ? item.stock <= 0 : false)}
         onClick={openDialog}
         className="!w-fit"
       >
-        {t.quickBuy}
+        {label ?? t.quickBuy}
       </Button>
 
       <Dialog
@@ -216,16 +255,32 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
             </Alert>
           ) : (
           <form onSubmit={submit} className="flex flex-col gap-3 pt-1">
+            {cart ? (
+              <ul className="flex max-h-48 flex-col gap-1 overflow-y-auto rounded-xl bg-navy-50 p-3 text-sm dark:bg-navy-800">
+                {lines.map((line) => (
+                  <li key={`${line.productId}:${line.variantId ?? ""}`} className="flex justify-between gap-2">
+                    <span className="min-w-0 text-navy-900 dark:text-white">
+                      {line.name}
+                      {line.variantLabel ? ` · ${line.variantLabel}` : ""}
+                      <span className="text-navy-300"> × {line.quantity}</span>
+                    </span>
+                    <span className="shrink-0 text-navy-500 dark:text-navy-100">
+                      {formatSom(line.price * line.quantity)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
             <div className="flex items-center justify-between gap-2 rounded-xl bg-navy-50 p-3 dark:bg-navy-800">
               <span className="min-w-0 text-sm text-navy-900 dark:text-white">
-                {item.name}
-                {item.variantLabel ? ` · ${item.variantLabel}` : ""}
-                <span className="block text-xs text-navy-300">{formatSom(item.price)}</span>
+                {item!.name}
+                {item!.variantLabel ? ` · ${item!.variantLabel}` : ""}
+                <span className="block text-xs text-navy-300">{formatSom(item!.price)}</span>
               </span>
               <span className="flex shrink-0 items-center" role="group" aria-label={t.quantity}>
                 <IconButton
                   size="small"
-                  aria-label={`${t.decrease} — ${item.name}`}
+                  aria-label={`${t.decrease} — ${item!.name}`}
                   onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                   disabled={quantity <= 1}
                 >
@@ -236,7 +291,7 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
                 </span>
                 <IconButton
                   size="small"
-                  aria-label={`${t.increase} — ${item.name}`}
+                  aria-label={`${t.increase} — ${item!.name}`}
                   onClick={() => setQuantity((value) => Math.min(maxQuantity, value + 1))}
                   disabled={quantity >= maxQuantity}
                 >
@@ -244,6 +299,7 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
                 </IconButton>
               </span>
             </div>
+            )}
 
             <TextField
               label={dict.checkout.fullName}
@@ -273,6 +329,23 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
               autoComplete="street-address"
               size="small"
             />
+            {(delivery.zones ?? []).length > 0 && (
+              <TextField
+                select
+                size="small"
+                label={dict.checkout.zone}
+                value={zoneId}
+                onChange={(e) => setZoneId(e.target.value)}
+                slotProps={{ select: { native: true } }}
+              >
+                <option value="">{dict.checkout.zoneNone}</option>
+                {(delivery.zones ?? []).map((zone) => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name} — {zone.fee > 0 ? formatSom(zone.fee) : t.free}
+                  </option>
+                ))}
+              </TextField>
+            )}
             {/* Bot tuzog'i: odam ko'rmaydi, ekran o'quvchi o'qimaydi. */}
             <input
               type="text"
@@ -326,11 +399,17 @@ export function QuickBuyButton({ item, disabled = false }: { item: QuickBuyItem;
               </Alert>
             )}
 
+            {overLimit && (
+              <Alert severity="warning">
+                {t.guestLimit.replace("{lines}", String(MAX_GUEST_ITEMS))}
+              </Alert>
+            )}
+
             <Button
               type="submit"
               variant="contained"
               size="large"
-              disabled={submitting || belowMinimum}
+              disabled={submitting || belowMinimum || overLimit}
               startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
             >
               {submitting ? t.sending : t.submitQuick}

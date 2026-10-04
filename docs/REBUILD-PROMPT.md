@@ -152,6 +152,9 @@ tushuntirishlar o'zbekcha bo'lsin, kod izohlari ham o'zbekcha.
   mahsuloti yashirin bo'lsa chiqmaydi. Sharh qayta yozilsa belgi
   tushadi. Bo'limni o'chirish: `SiteSettings.showTestimonials`.
 - Kafolat sahifasi ATAYLAB yo'q (do'kon shartlari tasdiqlanmagan).
+- Checkout'da kirmagan mijoz butun savatni ro'yxatdan o'tmasdan
+  buyurtma qiladi (1 klik oynasi, `/api/orders/quick`, ≤ 20 qator,
+  takror qator yo'q, hudud tanlovi).
 
 ## 1a. HISOBOT, OMBOR VA QAYTARISH
 

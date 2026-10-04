@@ -53,17 +53,35 @@ export const orderSchema = z.object({
  *   • `website` — BOT TUZOG'I (honeypot): odam uni ko'rmaydi va
  *     to'ldirmaydi, oddiy spam-bot esa har maydonni to'ldiradi.
  */
+/** Mehmon (1 klik / ro'yxatdan o'tmasdan) buyurtmasida eng ko'p qator. */
+export const MAX_GUEST_ITEMS = 20;
+
 export const quickOrderSchema = orderSchema.extend({
   deliveryAddress: z.string().trim().min(5, "Manzilni to'liqroq yozing").max(500),
   paymentMethod: z.enum(["cash", "transfer"]).default("cash"),
   /**
-   * BITTA mahsulot, ko'pi bilan 99 dona (oyna ham shuncha beradi).
+   * Ko'pi bilan 99 dona har qatorda (oyna ham shuncha beradi).
    * Ochiq (mehmon) yo'l: ilgari 5 ta mahsulot × 10 000 dona mumkin edi
    * — bitta so'rov bilan 5 ta mahsulotning zaxirasini nolga tushirib,
    * admin har birini qo'lda bekor qilguncha sotuvdan chiqarib qo'yish
    * mumkin edi (tekshiruvchi topgan, D1).
+   *
+   * Checkout'dagi "ro'yxatdan o'tmasdan" tugmasi BUTUN SAVATNI yuboradi,
+   * shuning uchun 1 emas — ko'pi bilan `MAX_GUEST_ITEMS` qator (har biri
+   * ≤ 99). Zaxirani "band qilib qo'yish" xavfi chegaralangan: qator soni
+   * cheklangan, sayt bo'yicha soatiga 30 ta va telefon bo'yicha sutkasiga
+   * 5 ta muvaffaqiyatli mehmon buyurtmasi (route'dagi limitlar).
    */
-  items: z.array(orderItemSchema.extend({ quantity: z.number().int().positive().max(99) })).length(1),
+  items: z
+    .array(orderItemSchema.extend({ quantity: z.number().int().positive().max(99) }))
+    .min(1)
+    .max(MAX_GUEST_ITEMS)
+    // Bir xil mahsulot+tur IKKI qatorda kelmaydi (savat ularni
+    // birlashtiradi) — takror qator faqat qo'lda yasalgan so'rovda bo'ladi.
+    .refine(
+      (items) => new Set(items.map((i) => `${i.productId}:${i.variantId ?? ""}`)).size === items.length,
+      { message: "Bir mahsulot ikki marta yozilgan" }
+    ),
   website: z.string().max(200).optional(),
 });
 

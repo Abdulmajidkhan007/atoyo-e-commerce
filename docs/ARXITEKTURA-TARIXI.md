@@ -947,3 +947,16 @@ eski nusxani olardi. Pul summasi keshdan ko'rsatilmaydi: endi javob
 `no-store`, server xotirasida 30 s (`getDeliverySettingsCached`),
 admin saqlaganda `clearDeliveryCache()`. Buyurtma narxi har doim
 keshsiz o'qiladi.
+
+## 38. Kirmagan mijoz savatdan buyurtma bera olmasdi
+
+1 klik faqat mahsulot sahifasida (bitta mahsulot) edi; savatdan
+checkout'ga o'tgan mehmon faqat "Kirish" tugmasini ko'rardi. Endi
+checkout'da "Ro'yxatdan o'tmasdan buyurtma berish" — butun savat shu
+oyna orqali `/api/orders/quick` ga ketadi. Mehmon yo'li kengaygani
+uchun tekshiruvchi topgan nuqson yopildi: bir mahsulot bir necha
+qatorda yuborilsa har qator zaxiraga ALOHIDA solishtirilardi (20 × 99
+dona, zaxira manfiyga tushardi). Endi sxema takror qatorni rad etadi
+va `createOrder` zaxirani mahsulot bo'yicha JAMI tekshiradi (testlari
+`order-schema.test.ts`, `create-order.test.ts`). Oynada hudud tanlovi
+bor (server bilan bir xil narx), chegara oshsa aniq ogohlantirish.

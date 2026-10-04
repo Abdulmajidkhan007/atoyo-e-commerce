@@ -123,6 +123,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     /** Turlari bo'lgan mahsulotlarda zaxira massiv ichida - shu yerda yig'iladi. */
     const variantUpdates = new Map<string, ProductVariant[]>();
 
+    const takenStock = new Map<string, number>();
     for (let i = 0; i < input.items.length; i += 1) {
       const requested = input.items[i]!;
       const snap = snaps[i]!;
@@ -169,11 +170,17 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
         continue;
       }
 
-      if (product.stock < requested.quantity) {
+      // Bir mahsulot bir necha qatorda kelsa (masalan, mehmon so'rovida
+      // takrorlangan qator) — oldingi qatorlar olgan son ham hisobga
+      // olinadi. Ilgari har qator ALOHIDA tekshirilardi va 20 × 99 dona
+      // zaxiradan oshib, uni manfiyga tushirardi (tekshiruvchi topgan).
+      const alreadyTaken = takenStock.get(product.id) ?? 0;
+      if (product.stock < alreadyTaken + requested.quantity) {
         throw new OrderValidationError(
           `"${product.name}" zaxirasi yetarli emas (mavjud: ${product.stock} dona).`
         );
       }
+      takenStock.set(product.id, alreadyTaken + requested.quantity);
       verifiedItems.push({
         productId: product.id,
         name: product.name,

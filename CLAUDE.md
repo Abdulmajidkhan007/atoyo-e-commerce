@@ -491,7 +491,11 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   buyurtmasi, aks holda 404. Bazada faqat kalit XESHI
   (`accessTokenHash`). Sahifa `noindex`.
 - **1 klikda** — `/api/orders/quick` (mehmon): manzil majburiy,
-  BITTA mahsulot ≤ 99 dona; IP (IPv6 — /64, `ipLimitKey`) soatiga 20
+  ≤ `MAX_GUEST_ITEMS` (20) qator, har biri ≤ 99 dona, TAKROR qator
+  rad etiladi (`createOrder` ham zaxirani mahsulot bo'yicha JAMI
+  tekshiradi). Mahsulot sahifasida — bitta mahsulot; checkout'da
+  kirmagan mijozga — butun savat ("Ro'yxatdan o'tmasdan buyurtma
+  berish"), hudud tanlovi bilan; IP (IPv6 — /64, `ipLimitKey`) soatiga 20
   so'rov; telefon sutkasiga 5 va butun sayt soatiga 30 — faqat
   MUVAFFAQIYATLI buyurtma sanaladi (`peekRateLimit` → buyurtma →
   `checkRateLimit`), aks holda begona odam birovning raqamini
