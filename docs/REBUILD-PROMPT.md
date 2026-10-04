@@ -666,6 +666,17 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
   tokeni `users/{uid}.pushTokens` da), yangi mahsulot/chegirma — hammaga
   `products` mavzusi orqali. Ilova ochiq turganda toast bo'lib chiqadi,
   bosilganda kerakli ekran ochiladi.
+- **Ma'lumot sahifalari (AUDIT-ISHLARI 15, C oqimi):** ilovada
+  `FaqScreen` (akkordeon — bittasi ochiq, `LayoutAnimation`) va
+  `DeliveryInfoScreen` (saytdagi `/yetkazib-berish` bilan bir xil:
+  `freeDeliveryText`, hududlar, o'rnatish, faqat YOQILGAN to'lov
+  usullari). Ma'lumot ochiq GET'lardan: `GET /api/content/faq?locale=uz|ru`
+  (`getPublicFaq` + `localizeFaq`, 5 daq. CDN kesh, faqat
+  `question/answer`), `/api/delivery`, `/api/payment-info`
+  (`{transfer, online}`), `/api/pricing`; so'rovlar
+  `mobile/src/content-api.ts` da. Havolalar `InfoLinks` komponentida
+  (Profil/Sozlamalar): Yetkazib berish, Savol-javob, Maxfiylik siyosati
+  (`https://atoyo.uz/maxfiylik` brauzerda).
 - Yangi versiya chiqqanda ilovada yangilanish banneri (GitHub
   release'dagi `latest` teg bilan solishtiradi).
 - APK GitHub Actions'da yig'iladi va `latest` release'ga yuklanadi;

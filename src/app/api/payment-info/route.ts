@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getTransferSettings } from "@/lib/payments/transfer";
+import { isAnyPaymentConfigured } from "@/lib/payments/config";
 import { isTransferUsable } from "@/types/payment-transfer";
 import { publicCacheHeaders } from "@/lib/http/cache";
 
@@ -24,5 +25,5 @@ export async function GET() {
         note: settings.note,
       }
     : null;
-  return NextResponse.json({ transfer }, { headers: publicCacheHeaders(60) });
+  return NextResponse.json({ transfer, online: isAnyPaymentConfigured() }, { headers: publicCacheHeaders(60) });
 }

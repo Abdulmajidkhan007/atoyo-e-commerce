@@ -7,6 +7,7 @@ import {subscribeToNewsletter} from '../api';
 import {useToast} from './Toast';
 import {refreshPushRegistration, type PushStatus} from '../push';
 import {useAuth} from '../auth';
+import {InfoLinks} from './InfoLinks';
 
 /**
  * SOZLAMALAR BO'LIMLARI (bildirishnoma, tema, shrift, til, obuna).
@@ -74,6 +75,8 @@ export function SettingsSections() {
 
   return (
     <>
+      <InfoLinks />
+
       <Card>
         <Text style={styles.cardTitle}>Bildirishnomalar</Text>
         <Text style={styles.hint}>

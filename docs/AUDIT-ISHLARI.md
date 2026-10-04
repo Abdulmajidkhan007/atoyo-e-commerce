@@ -478,6 +478,9 @@ B xarid oqimi — Opus, C ma'lumot sahifalari — Sonnet), keyin
 integratsiya (versiya 1.5) asosiy sessiyada. Katalog bo'sh chiqishi
 allaqachon tuzatilgan (1.4, `ARXITEKTURA-TARIXI.md` 36).
 
+> **C oqimi bajarildi (2026-10-04):** `/api/content/faq`, `FaqScreen`,
+> `DeliveryInfoScreen`, profil/sozlamalar havolalari.
+
 ## 16) Haqiqiy mahsulotning 3D modeli (15-banddan keyin) 🟢
 
 Egasining qarori (2026-10-04). Hozirgi 3D sahna (`/admin/3d`,

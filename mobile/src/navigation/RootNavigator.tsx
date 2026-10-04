@@ -19,6 +19,8 @@ import {BlogPostScreen} from '../screens/BlogPostScreen';
 import {ContactScreen} from '../screens/ContactScreen';
 import {AssistantScreen} from '../screens/AssistantScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
+import {DeliveryInfoScreen} from '../screens/DeliveryInfoScreen';
+import {FaqScreen} from '../screens/FaqScreen';
 import {AdminOrdersScreen} from '../screens/AdminOrdersScreen';
 import {AdminProductsScreen} from '../screens/AdminProductsScreen';
 import {AdminMoreScreen} from '../screens/AdminMoreScreen';
@@ -146,6 +148,16 @@ export function RootNavigator() {
         name="Sozlamalar"
         component={SettingsScreen}
         options={{header: () => <BrandHeader back title={t.titleSettings} />}}
+      />
+      <Stack.Screen
+        name="YetkazibBerish"
+        component={DeliveryInfoScreen}
+        options={{header: () => <BrandHeader back title={t.titleDeliveryInfo} />}}
+      />
+      <Stack.Screen
+        name="SavolJavob"
+        component={FaqScreen}
+        options={{header: () => <BrandHeader back title={t.titleFaq} />}}
       />
       {/* Xodimlar uchun: buyurtmalar va mahsulotlar boshqaruvi. Ekranlar
           har doim ro'yxatda turadi, lekin ularga faqat profil

@@ -55,6 +55,23 @@ export interface Dict {
   titleBlog: string;
   titleContact: string;
   titleSettings: string;
+  titleFaq: string;
+  titleDeliveryInfo: string;
+  infoSection: string;
+  privacyPolicy: string;
+  deliveryIntro: string;
+  deliveryTerms: string;
+  zonesTitle: string;
+  zoneFreeFrom: string;
+  installTitle: string;
+  paymentTitle: string;
+  infoPayCash: string;
+  payTransfer: string;
+  infoPayOnline: string;
+  minOrderInfo: string;
+  faqIntro: string;
+  faqEmpty: string;
+  retry: string;
   titleAssistant: string;
   assistantIntro: string;
   assistantPlaceholder: string;
@@ -221,6 +238,23 @@ const uz: Dict = {
   titleBlog: 'Blog',
   titleContact: 'Bog‘lanish',
   titleSettings: 'Sozlamalar',
+  titleFaq: 'Savol-javob',
+  titleDeliveryInfo: 'Yetkazib berish va to‘lov',
+  infoSection: 'Ma’lumot',
+  privacyPolicy: 'Maxfiylik siyosati',
+  deliveryIntro: 'Buyurtma qanday yetkaziladi, qancha turadi va qanday to‘lanadi.',
+  deliveryTerms: 'Yetkazib berish shartlari',
+  zonesTitle: 'Hududlar bo‘yicha narx',
+  zoneFreeFrom: '{sum}dan bepul',
+  installTitle: 'O‘rnatib berish',
+  paymentTitle: 'To‘lov usullari',
+  infoPayCash: 'Naqd pul — mahsulotni olganingizda',
+  payTransfer: 'Kartaga o‘tkazma — buyurtmadan keyin karta raqami ko‘rsatiladi, chek rasmini yuklaysiz',
+  infoPayOnline: 'Payme yoki Click orqali onlayn',
+  minOrderInfo: 'Eng kam buyurtma summasi: {sum}',
+  faqIntro: 'Mijozlarimiz eng ko‘p beradigan savollar va ularga javoblar.',
+  faqEmpty: 'Hozircha savollar yo‘q.',
+  retry: 'Qayta urinish',
   titleAssistant: 'Yordamchi',
   assistantIntro:
     'Assalomu alaykum! Men Atoyo yordamchisiman. Mahsulot, narx, yetkazib berish yoki buyurtma bo‘yicha savolingizni yozing.',
@@ -394,6 +428,23 @@ const en: Dict = {
   titleBlog: 'Blog',
   titleContact: 'Contact',
   titleSettings: 'Settings',
+  titleFaq: 'FAQ',
+  titleDeliveryInfo: 'Delivery and payment',
+  infoSection: 'Information',
+  privacyPolicy: 'Privacy policy',
+  deliveryIntro: 'How your order is delivered, what it costs and how to pay.',
+  deliveryTerms: 'Delivery terms',
+  zonesTitle: 'Prices by area',
+  zoneFreeFrom: 'free from {sum}',
+  installTitle: 'Installation',
+  paymentTitle: 'Payment methods',
+  infoPayCash: 'Cash — when you receive the goods',
+  payTransfer: 'Card transfer — the card number is shown after ordering, you upload a photo of the receipt',
+  infoPayOnline: 'Online via Payme or Click',
+  minOrderInfo: 'Minimum order: {sum}',
+  faqIntro: 'The questions our customers ask most often, with answers.',
+  faqEmpty: 'No questions yet.',
+  retry: 'Try again',
   titleAssistant: 'Assistant',
   assistantIntro:
     'Hello! I am the Atoyo assistant. Ask me about products, prices, delivery or orders.',
@@ -564,6 +615,23 @@ const ru: Dict = {
   titleBlog: 'Блог',
   titleContact: 'Связаться',
   titleSettings: 'Настройки',
+  titleFaq: 'Вопросы и ответы',
+  titleDeliveryInfo: 'Доставка и оплата',
+  infoSection: 'Информация',
+  privacyPolicy: 'Политика конфиденциальности',
+  deliveryIntro: 'Как доставляется заказ, сколько это стоит и как оплатить.',
+  deliveryTerms: 'Условия доставки',
+  zonesTitle: 'Цены по районам',
+  zoneFreeFrom: 'бесплатно от {sum}',
+  installTitle: 'Установка',
+  paymentTitle: 'Способы оплаты',
+  infoPayCash: 'Наличными — при получении товара',
+  payTransfer: 'Перевод на карту — после заказа показывается номер карты, вы загружаете фото чека',
+  infoPayOnline: 'Онлайн через Payme или Click',
+  minOrderInfo: 'Минимальная сумма заказа: {sum}',
+  faqIntro: 'Самые частые вопросы наших покупателей и ответы на них.',
+  faqEmpty: 'Пока вопросов нет.',
+  retry: 'Повторить',
   titleAssistant: 'Помощник',
   assistantIntro:
     'Здравствуйте! Я помощник Atoyo. Спросите о товарах, ценах, доставке или заказе.',

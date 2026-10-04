@@ -24,6 +24,9 @@ export type RootStackParamList = {
   Savat: undefined;
   Sevimlilar: undefined;
   Sozlamalar: undefined;
+  /** Ma'lumot sahifalari (sayt `/yetkazib-berish` va `/savol-javob`). */
+  YetkazibBerish: undefined;
+  SavolJavob: undefined;
   /** Faqat xodimlar uchun (profil sahifasidan ochiladi). */
   AdminBuyurtmalar: undefined;
   AdminMahsulotlar: undefined;
