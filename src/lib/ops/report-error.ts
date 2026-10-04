@@ -79,3 +79,24 @@ export async function reportError(
     // Xabar ketmadi - shu yerda to'xtaymiz, aks holda halqa hosil bo'ladi.
   }
 }
+
+/** Takroriy ogohlantirishlar orasidagi eng kam vaqt (kalit bo'yicha). */
+const lastThrottled = new Map<string, number>();
+
+/**
+ * Har so'rovda chaqiriladigan joylar uchun: shu `where` bo'yicha
+ * `intervalMs` (standart 5 daqiqa) ichida BIR marta yuboradi, qolgani
+ * jim o'tadi. `reportError` ning o'z 10 daqiqalik oynasidan farqli
+ * ravishda interval chaqiruvchi tomonidan beriladi.
+ */
+export async function reportErrorThrottled(
+  where: string,
+  error: unknown,
+  intervalMs = 5 * 60 * 1000
+): Promise<void> {
+  const now = Date.now();
+  const last = lastThrottled.get(where);
+  if (last !== undefined && now - last < intervalMs) return;
+  lastThrottled.set(where, now);
+  await reportError(where, error);
+}

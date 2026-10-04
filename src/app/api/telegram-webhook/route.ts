@@ -11,6 +11,7 @@ import { handleStickerCommand, handleStickerMessage } from "@/lib/telegram/stick
 import { handleForwardedChannelPost, type ForwardedPost } from "@/lib/telegram/channel-report";
 import { resolveTopicConfig } from "@/lib/telegram/topics";
 import { getTelegramSecrets } from "@/lib/telegram/secrets";
+import { reportError } from "@/lib/ops/report-error";
 
 interface TelegramChat {
   id: number;
@@ -340,8 +341,8 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     // Telegram xatoga 200 kutadi - aks holda bir xil update'ni qayta-qayta
-    // yuboraveradi. Sabab loglarda qoladi.
-    console.error("Webhook update'ini qayta ishlashda xato:", error);
+    // yuboraveradi. Sabab "Actions" topiciga va loglarga tushadi.
+    await reportError("Telegram webhook", error);
   }
 
   return NextResponse.json({ ok: true });

@@ -1025,3 +1025,17 @@ yorliq/matn o'z fonida AA).
 - CSV eksport oqim o'rtasida yiqilsa — `reportError` ("Actions").
   Javob 200 bilan ketib bo'lgan, admin esa yarim faylni sezmasdi.
 
+
+## 42. Jimgina yutilgan xatolar (AUDIT 2.7 + 2.8)
+
+- `getPricingSettings()` va `getDeliverySettings()` Firestore uzilsa
+  jimgina STANDARTga tushardi (ustama 30% o'rniga 5%, buyurtma shu
+  narxda qabul qilinardi). Endi: oxirgi MUVAFFAQIYATLI qiymat
+  xotirada saqlanadi (`lastGood`, kesh bekor qilinsa ham qoladi) va
+  xatoda o'shanisi qaytadi; u ham yo'q bo'lsagina standart. Xato
+  `reportErrorThrottled()` bilan "Actions"ga tushadi — 5 daqiqada
+  BIR marta (har so'rovda emas). Keshsiz `getDeliverySettings()`
+  buyurtma hisobi uchun o'z tabiatini saqlaydi.
+- Telegram webhook va `/api/contact` xatolari `reportError`ga
+  o'tdi (ilgari faqat `console.error`).
+- Testi: `settings-fallback.test.ts`.

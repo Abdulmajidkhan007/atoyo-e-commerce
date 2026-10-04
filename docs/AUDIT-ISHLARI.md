@@ -194,8 +194,8 @@ Tekshiruv birlashtirilgandan keyin: `tsc`, `eslint`, `npm test`
 | ~~2.5~~ | ~~Katalog indekslari + zaxira so'rov~~ | ✅ bajarildi: 15 ta yangi indeks (jumladan `stock`), zaxira yo'lda 4 barobar ortiqcha o'qish + filtrdan keyingi `hasMore`/kursor |
 | 3.1 | CSV eksport butun katalogni bir so'rovda o'qiydi | Kursor + `maxDuration` kerak |
 | 3.4 | Foydalanuvchilar ro'yxati N+1 (20 × 200 hujjat) | Izohi to'g'rilandi, kodi emas |
-| 2.7 | Narx/yetkazish sozlamasi jimgina standartga tushishi | `reportError` qo'shilmagan |
-| 2.8 | Telegram webhook xatosi faqat konsolga yozilishi | `reportError` qo'shilmagan |
+| 2.7 | Narx/yetkazish sozlamasi jimgina standartga tushishi | BAJARILDI (ARXITEKTURA-TARIXI 42) |
+| 2.8 | Telegram webhook xatosi faqat konsolga yozilishi | BAJARILDI (ARXITEKTURA-TARIXI 42) |
 | 2.9 | `/api/admin/upload` — huquq emas, faqat "xodimmi" tekshiriladi | Tegilmagan |
 | 2.10 | `/k/<id>` cheksiz yozuv (rate limit + mahsulot borligini tekshirish) | Faqat izoh to'g'rilandi |
 | 3.5 | `three.js` ikki chunk (946 KB × 2) | 3D o'chiq bo'lgani uchun mijozga tegmaydi |

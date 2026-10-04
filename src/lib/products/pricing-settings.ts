@@ -1,5 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { reportErrorThrottled } from "@/lib/ops/report-error";
 import { DEFAULT_PRICING_SETTINGS, type PricingSettings } from "./wholesale";
 
 /**
@@ -9,6 +10,8 @@ import { DEFAULT_PRICING_SETTINGS, type PricingSettings } from "./wholesale";
  */
 let cache: { value: PricingSettings; at: number } | null = null;
 const TTL = 60_000;
+/** Oxirgi MUVAFFAQIYATLI qiymat - kesh bekor qilinsa ham saqlanadi. */
+let lastGood: PricingSettings | null = null;
 
 export async function getPricingSettings(): Promise<PricingSettings> {
   if (cache && Date.now() - cache.at < TTL) return cache.value;
@@ -27,14 +30,23 @@ export async function getPricingSettings(): Promise<PricingSettings> {
           : DEFAULT_PRICING_SETTINGS.minOrderAmount,
     };
     cache = { value, at: Date.now() };
+    lastGood = value;
     return value;
-  } catch {
-    // Sozlama o'qilmasa standart qiymat bilan ishlayveramiz.
-    return DEFAULT_PRICING_SETTINGS;
+  } catch (error) {
+    // Firestore uzilsa ustama jimgina standartga (5%) tushib ketmasin:
+    // oxirgi muvaffaqiyatli qiymat, u ham yo'q bo'lsagina standart.
+    void reportErrorThrottled("Narx sozlamasini o'qish (settings/pricing)", error);
+    return lastGood ?? DEFAULT_PRICING_SETTINGS;
   }
 }
 
 /** Sozlama saqlangandan keyin kesh bekor qilinadi. */
 export function clearPricingCache(): void {
   cache = null;
+}
+
+/** Faqat testlar uchun: oxirgi muvaffaqiyatli qiymatni ham tozalaydi. */
+export function resetPricingStateForTests(): void {
+  cache = null;
+  lastGood = null;
 }

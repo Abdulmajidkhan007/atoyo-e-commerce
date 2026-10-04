@@ -3,6 +3,7 @@ import { z } from "zod";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePhone, isValidName } from "@/lib/validation";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { reportError } from "@/lib/ops/report-error";
 import { sendTopicMessage } from "@/lib/telegram/bot";
 import { formatContactMessage } from "@/lib/telegram/templates";
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       createdAt: Date.now(),
     });
   } catch (error) {
-    console.error("Kontakt arizasini saqlashda xato:", error);
+    await reportError("Kontakt arizasini saqlash", error);
     return NextResponse.json({ error: "Xatolik yuz berdi. Qayta urinib ko'ring." }, { status: 500 });
   }
 
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
     await sendTopicMessage("contact", formatContactMessage(parsed.data));
   } catch (error) {
     // Ariza allaqachon saqlangan - Telegram xatosi mijozga ta'sir qilmaydi.
-    console.error("Kontakt xabarini Telegramga yuborishda xato:", error);
+    await reportError("Kontakt xabarini Telegramga yuborish", error);
   }
 
   return NextResponse.json({ ok: true });

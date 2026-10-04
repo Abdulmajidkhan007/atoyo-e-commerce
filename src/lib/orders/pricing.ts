@@ -1,5 +1,6 @@
 import "server-only";
 import { getAdminDb } from "@/lib/firebase/admin";
+import { reportErrorThrottled } from "@/lib/ops/report-error";
 import { normalizePromoCode } from "@/lib/orders/promo";
 import { DEFAULT_DELIVERY_SETTINGS, type DeliverySettings, type PromoCode } from "@/types/promo";
 
@@ -8,13 +9,25 @@ export async function getPromoCode(code: string): Promise<PromoCode | null> {
   return snap.exists ? ({ ...snap.data(), code: snap.id } as PromoCode) : null;
 }
 
+/** Oxirgi MUVAFFAQIYATLI o'qilgan qiymat (xato bo'lganda standart o'rniga). */
+let lastGoodDelivery: DeliverySettings | null = null;
+
+export function resetDeliveryStateForTests(): void {
+  lastGoodDelivery = null;
+  deliveryCache = null;
+}
+
 export async function getDeliverySettings(): Promise<DeliverySettings> {
   try {
     const snap = await getAdminDb().doc("settings/delivery").get();
-    if (!snap.exists) return DEFAULT_DELIVERY_SETTINGS;
-    return { ...DEFAULT_DELIVERY_SETTINGS, ...(snap.data() as Partial<DeliverySettings>) };
-  } catch {
-    return DEFAULT_DELIVERY_SETTINGS;
+    const value = snap.exists
+      ? { ...DEFAULT_DELIVERY_SETTINGS, ...(snap.data() as Partial<DeliverySettings>) }
+      : DEFAULT_DELIVERY_SETTINGS;
+    lastGoodDelivery = value;
+    return value;
+  } catch (error) {
+    void reportErrorThrottled("Yetkazish sozlamasini o'qish (settings/delivery)", error);
+    return lastGoodDelivery ?? DEFAULT_DELIVERY_SETTINGS;
   }
 }
 
