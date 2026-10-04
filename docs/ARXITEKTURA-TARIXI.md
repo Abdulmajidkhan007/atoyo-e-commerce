@@ -1039,3 +1039,29 @@ yorliq/matn o'z fonida AA).
 - Telegram webhook va `/api/contact` xatolari `reportError`ga
   o'tdi (ilgari faqat `console.error`).
 - Testi: `settings-fallback.test.ts`.
+
+## 43. Foydalanuvchilar ro'yxati har sahifada 4000 tagacha hujjat o'qirdi (AUDIT 3.4)
+
+Admin "Foydalanuvchilar" ro'yxati (`api/admin/users`) sahifadagi HAR
+BIR foydalanuvchi uchun `orders` ga alohida so'rov yuborardi
+(`limit(200)`): 1 + 20 so'rov va 4000 tagacha hujjat o'qish. Izoh esa
+"aggregation so'rovi" deb yolg'on gapirardi.
+
+Endi `ordersCount`, `totalSpent`, `lastOrderAt` foydalanuvchi
+hujjatida yuritiladi (`lib/orders/user-stats.ts`) — buyurtma
+tranzaksiyasida, `stats/summary` bilan bir joyda. Qarorlar:
+
+- **Bekor qilingan buyurtma soni/summasiga KIRMAYDI** — `stats/summary`
+  qoidasi bilan bir xil: ayirish zaxira qaytgan payt, `stockReturned`
+  bilan BIR MARTA. `lastOrderAt` esa qoladi (faollik belgisi).
+- Qaytarish (`return`) `totalSpent` dan ayiriladi, soni o'zgarmaydi.
+- Mehmon va hujjati yo'q foydalanuvchiga yozilmaydi: `update` yo'q
+  hujjatda batch'ni yiqitardi, `set merge` esa `createdAt`siz skelet
+  hujjat yaratardi.
+- `firestore.rules`: mijoz o'z `users` hujjatini yarata/tahrirlay
+  oladi — shuning uchun bu uch maydon create'da ham, update'da ham
+  (`diff().affectedKeys()`) taqiqlangan, aks holda o'zini "katta
+  mijoz" qilib ko'rsata olardi.
+- Eski hisob bir martalik `/api/admin/maintenance/user-stats` bilan
+  to'ldiriladi; u ham `accumulateUserStats` dan o'tadi — increment
+  mantiqi bilan BIR XIL natija (testi `user-stats.test.ts`).

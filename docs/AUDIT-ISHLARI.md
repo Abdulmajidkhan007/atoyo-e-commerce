@@ -193,7 +193,7 @@ Tekshiruv birlashtirilgandan keyin: `tsc`, `eslint`, `npm test`
 |---|---|---|
 | ~~2.5~~ | ~~Katalog indekslari + zaxira so'rov~~ | ✅ bajarildi: 15 ta yangi indeks (jumladan `stock`), zaxira yo'lda 4 barobar ortiqcha o'qish + filtrdan keyingi `hasMore`/kursor |
 | 3.1 | CSV eksport butun katalogni bir so'rovda o'qiydi | Kursor + `maxDuration` kerak |
-| 3.4 | Foydalanuvchilar ro'yxati N+1 (20 × 200 hujjat) | Izohi to'g'rilandi, kodi emas |
+| ~~3.4~~ | ~~Foydalanuvchilar ro'yxati N+1 (20 × 200 hujjat)~~ | ✅ bajarildi: `users/{uid}` da `ordersCount/totalSpent/lastOrderAt` (buyurtma tranzaksiyasida), eski hisob Sozlamalardagi tugma bilan |
 | 2.7 | Narx/yetkazish sozlamasi jimgina standartga tushishi | BAJARILDI (ARXITEKTURA-TARIXI 42) |
 | 2.8 | Telegram webhook xatosi faqat konsolga yozilishi | BAJARILDI (ARXITEKTURA-TARIXI 42) |
 | 2.9 | `/api/admin/upload` — huquq emas, faqat "xodimmi" tekshiriladi | Tegilmagan |
@@ -262,7 +262,7 @@ Tugagach: tsc + eslint + test + build.
 Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
-## 9) Foydalanuvchilar ro'yxati N+1 (AUDIT 3.4)
+## 9) Foydalanuvchilar ro'yxati N+1 (AUDIT 3.4) ✅ BAJARILDI (2026-10-04)
 
 ```text
 api/admin/users/route.ts:45-56 har bir foydalanuvchi uchun alohida

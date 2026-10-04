@@ -108,6 +108,11 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     const refs = input.items.map((i) => db.collection("products").doc(i.productId));
     const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
     const promoSnap = promoRef ? await tx.get(promoRef) : null;
+    // Foydalanuvchi statistikasi (`user-stats.ts`) faqat hujjati BOR
+    // foydalanuvchiga yoziladi; mehmon buyurtmasida o'qilmaydi ham.
+    // Tranzaksiyada o'qishlar yozuvlardan OLDIN bo'lishi shart.
+    const userRef = input.userId ? db.collection("users").doc(input.userId) : null;
+    const userSnap = userRef ? await tx.get(userRef) : null;
 
     const verifiedItems: OrderItem[] = [];
     /**
@@ -267,6 +272,15 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
       { totalOrders: FieldValue.increment(1), totalRevenue: FieldValue.increment(total) },
       { merge: true }
     );
+    // Foydalanuvchining o'z hisobi - admin ro'yxati shuni o'qiydi (N+1
+    // so'rov o'rniga). Bekor qilinganda `update-status.ts` ayiradi.
+    if (userRef && userSnap?.exists) {
+      tx.update(userRef, {
+        ordersCount: FieldValue.increment(1),
+        totalSpent: FieldValue.increment(total),
+        lastOrderAt: now,
+      });
+    }
     // Tannarx - yopiq kolleksiyaga, buyurtma hujjatining o'zidan tashqarida.
     tx.set(db.collection("orderCosts").doc(orderRef.id), { items: costItems, createdAt: now });
 

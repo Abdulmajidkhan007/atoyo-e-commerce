@@ -53,7 +53,18 @@ export async function applyOrderStatusUpdate(orderId: string, status: OrderStatu
   // bayrog'i orqali takroriy qaytarishning oldi olinadi).
   const shouldReturnStock = status === "cancelled" && !current.stockReturned;
   if (shouldReturnStock) {
+    // Foydalanuvchi statistikasi ham ayiriladi (`user-stats.ts`): bekor
+    // qilingan buyurtma soni/summasiga kirmaydi, `lastOrderAt` qoladi.
+    // Hujjat yo'q bo'lsa yozilmaydi - `update` butun batch'ni yiqitardi.
+    const userRef = current.userId ? getAdminDb().collection("users").doc(current.userId) : null;
+    const userExists = userRef ? (await userRef.get()).exists : false;
     const batch = getAdminDb().batch();
+    if (userRef && userExists) {
+      batch.update(userRef, {
+        ordersCount: FieldValue.increment(-1),
+        totalSpent: FieldValue.increment(-current.totalAmount),
+      });
+    }
     for (const item of current.items) {
       const productRef = getAdminDb().collection("products").doc(item.productId);
       batch.update(productRef, {

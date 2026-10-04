@@ -166,6 +166,11 @@ ustama `settings/pricing`, standart 5%).
   `consumeChallenge()` avval oynani tekshiradi; shuning uchun
   route'larda `challengeId` BO'SH bo'lishi mumkin. Testi:
   `challenge.test.ts`.
+- **Foydalanuvchi buyurtma statistikasi** (`users/{uid}.ordersCount /
+  totalSpent / lastOrderAt`) faqat serverda, `lib/orders/user-stats.ts`
+  qoidasi bilan: yaratishda `+`, bekor qilishda (zaxira qaytgan payt)
+  `−`, qaytarishda `totalSpent −`. Admin ro'yxati `orders` ni
+  so'ramaydi. Mijoz bu maydonlarga yoza olmaydi (`firestore.rules`).
 - Admin API xatosi **qaysi maydon va nima uchun** rad etilganini
   aytadi: `lib/http/validation.ts` → `validationMessage`. Yangi admin
   route shundan foydalanadi.

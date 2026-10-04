@@ -157,3 +157,25 @@ describe("stockReturned", () => {
     expect(result).toBeNull();
   });
 });
+
+describe("foydalanuvchi statistikasi bekor qilinganda (user-stats.ts)", () => {
+  it("ordersCount va totalSpent BIR MARTA ayiriladi, lastOrderAt qoladi", async () => {
+    stores.orders!.set("order-1", baseOrder({ userId: "u1" }));
+    stores.users!.set("u1", { ordersCount: 2, totalSpent: 10000, lastOrderAt: 77 });
+
+    await applyOrderStatusUpdate("order-1", "cancelled");
+    await applyOrderStatusUpdate("order-1", "cancelled");
+
+    const user = stores.users!.get("u1")!;
+    expect(user.ordersCount).toBe(1);
+    expect(user.totalSpent).toBe(7000);
+    expect(user.lastOrderAt).toBe(77);
+  });
+
+  it("hujjati yo'q foydalanuvchi bekor qilishni to'xtatmaydi", async () => {
+    stores.orders!.set("order-1", baseOrder({ userId: "yoq" }));
+    await applyOrderStatusUpdate("order-1", "cancelled");
+    expect(stores.users!.has("yoq")).toBe(false);
+    expect(stores.products!.get("prod-1")!.stock).toBe(8);
+  });
+});

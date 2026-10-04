@@ -30,5 +30,13 @@ export interface AppUser {
    * Bir odamda bir nechta qurilma bo'lishi mumkin.
    */
   pushTokens?: string[];
+  /**
+   * Buyurtma statistikasi - faqat SERVER yuritadi (`lib/orders/user-stats.ts`),
+   * mijoz `firestore.rules` bo'yicha o'zgartira olmaydi. Bekor qilingan
+   * buyurtma soni/summasiga kirmaydi.
+   */
+  ordersCount?: number;
+  totalSpent?: number;
+  lastOrderAt?: number | null;
   createdAt: number;
 }

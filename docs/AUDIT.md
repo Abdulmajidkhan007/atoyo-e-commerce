@@ -645,7 +645,7 @@ chaqiradi va natijani o'chirishga ishlatadi.
 
 **Mehnat:** o'rta · **Xavf:** yuqori
 
-## 3.4. 🟠 Foydalanuvchilar ro'yxati — N+1, va izoh haqiqatga zid
+## 3.4. 🟠 Foydalanuvchilar ro'yxati — N+1, va izoh haqiqatga zid ✅ BAJARILDI
 
 **Fakt.** `src/app/api/admin/users/route.ts:45-56`: `PAGE_SIZE = 20`
 (`:10`) foydalanuvchining HAR BIRI uchun alohida so'rov —

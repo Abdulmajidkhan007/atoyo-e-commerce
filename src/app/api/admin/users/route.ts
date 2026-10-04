@@ -40,36 +40,18 @@ export async function GET(request: Request) {
       .map((d) => ({ uid: d.id, ...d.data() }) as AppUser)
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 
-    // Har bir foydalanuvchi bo'yicha buyurtmalar soni va umumiy summasi -
-    // "kim qanchalik faol" degan savolga javob beradi. `.select().get()`
-    // bilan — hujjatlar baribir o'qiladi, faqat kerakli maydonlar tortiladi.
-    const stats = await Promise.all(
-      users.map(async (user) => {
-        try {
-          const snapshot = await getAdminDb()
-            .collection("orders")
-            .where("userId", "==", user.uid)
-            .select("totalAmount", "createdAt")
-            .limit(200)
-            .get();
-
-          let total = 0;
-          let last = 0;
-          for (const doc of snapshot.docs) {
-            const data = doc.data() as { totalAmount?: number; createdAt?: number };
-            total += data.totalAmount ?? 0;
-            last = Math.max(last, data.createdAt ?? 0);
-          }
-          return { ordersCount: snapshot.size, totalSpent: total, lastOrderAt: last || null };
-        } catch {
-          return { ordersCount: 0, totalSpent: 0, lastOrderAt: null };
-        }
-      })
-    );
-
-    const enriched = users.map((user, i) => ({
+    // Buyurtmalar soni, summasi va oxirgi sanasi - foydalanuvchi
+    // hujjatining O'ZIDA (`lib/orders/user-stats.ts`, buyurtma
+    // tranzaksiyasida yuritiladi). Ilgari har foydalanuvchi uchun
+    // `orders` ga alohida so'rov bor edi: sahifaga 1 + 20 so'rov va
+    // 4000 tagacha hujjat o'qish (AUDIT 3.4). Eski hujjatlarda maydon
+    // bo'lmasa - 0; ularni Sozlamalardagi bir martalik to'ldirish
+    // (`/api/admin/maintenance/user-stats`) yozib qo'yadi.
+    const enriched = users.map((user) => ({
       ...user,
-      ...stats[i],
+      ordersCount: user.ordersCount ?? 0,
+      totalSpent: user.totalSpent ?? 0,
+      lastOrderAt: user.lastOrderAt ?? null,
       // Hisob qayerdan ochilgan: Telegram (uid `tg_...`) yoki sayt/ilova.
       source: user.uid.startsWith("tg_") || user.telegramId ? "telegram" : "site",
     }));

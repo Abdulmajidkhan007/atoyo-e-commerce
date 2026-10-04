@@ -379,6 +379,18 @@ Do'kon ham do'konlarga (optom), ham oddiy xaridorga (dona) sotadi va
   (`/api/admin/reports`) tannarxni o'shandan `db.getAll()` bilan
   o'qiydi. Eski buyurtmalar bir martalik
   `/api/admin/maintenance/order-costs` (faqat owner) bilan ko'chiriladi.
+- **Foydalanuvchi buyurtma statistikasi** `users/{uid}` ning O'ZIDA:
+  `ordersCount`, `totalSpent`, `lastOrderAt` (`lib/orders/user-stats.ts`).
+  Buyurtma tranzaksiyasida `FieldValue.increment` bilan yoziladi
+  (`stats/summary` yonida; mehmon va hujjati yo'q foydalanuvchiga
+  yozilmaydi). Bekor qilingan buyurtma (zaxira qaytgan payt, bir
+  marta) soni/summasidan AYIRILADI, `lastOrderAt` qoladi; qaytarish
+  (`orders/[id]/return`) `totalSpent` dan ayiriladi. Admin
+  "Foydalanuvchilar" ro'yxati shu tayyor qiymatni o'qiydi (ilgari
+  har foydalanuvchiga alohida `orders` so'rovi — N+1). Mijoz bu
+  maydonlarni o'zi yoza olmaydi (`firestore.rules`). Eski hisob
+  bir martalik `/api/admin/maintenance/user-stats` (faqat owner,
+  Sozlamalardagi tugma) bilan to'ldiriladi.
 - **Eng kam buyurtma summasi** (standart 100 000 so'm): savatda
   ogohlantirish chiqadi va rasmiylashtirish tugmasi bloklanadi,
   server esa buyurtmani baribir tekshiradi.

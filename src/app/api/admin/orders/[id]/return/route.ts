@@ -104,6 +104,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     { totalRevenue: FieldValue.increment(-refundAmount) },
     { merge: true }
   );
+  // Foydalanuvchining `totalSpent` i ham kamayadi (`lib/orders/user-stats.ts`);
+  // buyurtma soni o'zgarmaydi. Hujjat yo'q bo'lsa `update` batch'ni yiqitardi.
+  if (order.userId) {
+    const userRef = db.collection("users").doc(order.userId);
+    if ((await userRef.get()).exists) {
+      batch.update(userRef, { totalSpent: FieldValue.increment(-refundAmount) });
+    }
+  }
   batch.update(orderRef, {
     returnedItems: [
       ...alreadyReturned,

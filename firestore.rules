@@ -50,13 +50,20 @@ service cloud.firestore {
     // o'zini o'ziga admin qilib belgilab qo'yishining oldi olinadi).
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.role == 'user';
+      // Buyurtma statistikasi (`ordersCount`, `totalSpent`, `lastOrderAt`)
+      // FAQAT server (Admin SDK) yuritadi - `lib/orders/user-stats.ts`.
+      // Mijoz o'z hujjatini yaratishda ham, tahrirlashda ham ularga
+      // tegolmaydi (aks holda admin ro'yxatidagi "faol mijoz" soxta bo'lardi).
+      allow create: if isOwner(userId) && request.resource.data.role == 'user' &&
+        !request.resource.data.keys().hasAny(['ordersCount', 'totalSpent', 'lastOrderAt']);
       // Rol/huquq o'zgartirish FAQAT server (Admin SDK, /api/admin/users)
       // orqali - owner tekshiruvi o'sha yerda. Client faqat o'z profilini
       // (rolini o'zgartirmasdan) tahrirlashi mumkin.
       allow update: if isOwner(userId) &&
         request.resource.data.role == resource.data.role &&
-        request.resource.data.get('permissions', {}) == resource.data.get('permissions', {});
+        request.resource.data.get('permissions', {}) == resource.data.get('permissions', {}) &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['ordersCount', 'totalSpent', 'lastOrderAt']);
     }
 
     // SAQLANGAN KARTA TOKENLARI - mijozning o'ziga ham ochilmaydi.

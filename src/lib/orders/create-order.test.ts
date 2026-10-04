@@ -40,6 +40,7 @@ function resetStores() {
     orderCosts: new Map(),
     products: new Map(),
     stats: new Map(),
+    users: new Map(),
   };
   autoCounter = 0;
 }
@@ -219,5 +220,76 @@ describe("zaxira tekshiruvi", () => {
         paymentMethod: "cash",
       })
     ).rejects.toBeInstanceOf(OrderValidationError);
+  });
+});
+
+describe("foydalanuvchi statistikasi (users/{uid}, AUDIT 3.4)", () => {
+  const item = { productId: "prod-1", name: "Kran", price: 10000, quantity: 2, thumbnailUrl: "" };
+
+  it("kirgan mijoz buyurtmasida ordersCount/totalSpent/lastOrderAt yangilanadi", async () => {
+    stores.users!.set("u1", { role: "user", ordersCount: 2, totalSpent: 50000, lastOrderAt: 1 });
+    const first = await createOrder({
+      customerName: "Ali",
+      phoneNumber: "+998901234567",
+      items: [item],
+      paymentMethod: "cash",
+      userId: "u1",
+    });
+    const user = stores.users!.get("u1")!;
+    expect(user.ordersCount).toBe(3);
+    expect(user.totalSpent).toBe(50000 + first.totalAmount);
+    expect(user.lastOrderAt).toBe(first.createdAt);
+    expect(user.role).toBe("user"); // boshqa maydonlarga tegilmaydi
+  });
+
+  it("maydonlari yo'q eski hujjatda noldan boshlanadi", async () => {
+    stores.users!.set("u1", { role: "user" });
+    const order = await createOrder({
+      customerName: "Ali",
+      phoneNumber: "+998901234567",
+      items: [item],
+      paymentMethod: "cash",
+      userId: "u1",
+    });
+    expect(stores.users!.get("u1")!.ordersCount).toBe(1);
+    expect(stores.users!.get("u1")!.totalSpent).toBe(order.totalAmount);
+  });
+
+  it("mehmon buyurtmasi hech kimning hujjatiga yozilmaydi", async () => {
+    await createOrder({
+      customerName: "Ali",
+      phoneNumber: "+998901234567",
+      items: [item],
+      paymentMethod: "cash",
+      userId: null,
+      guest: true,
+    });
+    expect(stores.users!.size).toBe(0);
+  });
+
+  it("hujjati yo'q foydalanuvchiga skelet hujjat yaratilmaydi", async () => {
+    await createOrder({
+      customerName: "Ali",
+      phoneNumber: "+998901234567",
+      items: [item],
+      paymentMethod: "cash",
+      userId: "yoq",
+    });
+    expect(stores.users!.has("yoq")).toBe(false);
+    expect(stores.orders!.size).toBe(1); // buyurtma baribir saqlanadi
+  });
+
+  it("buyurtma rad etilsa statistika o'zgarmaydi", async () => {
+    stores.users!.set("u1", { role: "user", ordersCount: 2, totalSpent: 50000 });
+    await expect(
+      createOrder({
+        customerName: "Ali",
+        phoneNumber: "+998901234567",
+        items: [{ ...item, quantity: 99 }],
+        paymentMethod: "cash",
+        userId: "u1",
+      })
+    ).rejects.toBeInstanceOf(OrderValidationError);
+    expect(stores.users!.get("u1")).toEqual({ role: "user", ordersCount: 2, totalSpent: 50000 });
   });
 });

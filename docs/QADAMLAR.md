@@ -64,6 +64,25 @@ yo'q — allaqachon ko'chirilgani qayta yozilmaydi.
 
 ---
 
+## 2a. Foydalanuvchilar statistikasini to'ldirish (bir martalik) 🟡
+
+**Nega.** "Foydalanuvchilar" ro'yxatidagi buyurtmalar soni va summasi
+endi foydalanuvchi hujjatida saqlanadi (sahifa tezroq ochiladi). Yangi
+buyurtmalar avtomatik sanaladi, eskilari esa bir marta hisoblanishi
+kerak — aks holda ro'yxatda hamma "0 ta" bo'lib turadi.
+
+**Qadamlar.**
+1. Saytga **egasi (owner)** sifatida kiring.
+2. **Admin → Sozlamalar** → **«Foydalanuvchilar statistikasi»** →
+   «Statistikani to'ldirish».
+3. Natijada nechta buyurtma va foydalanuvchi ko'rilgani yoziladi.
+
+**Tekshiruv.** Admin → **Foydalanuvchilar** — buyurtma bergan
+mijozlarda son va summa chiqadi. Takror bosish zararsiz (qiymat
+qaytadan hisoblanadi). Bekor qilingan buyurtma soniga kirmaydi.
+
+---
+
 ## 3. Ilova 1.3 (widgetlar) relizini e'lon qilish 🟡
 
 **Nega yangilanish oynasi chiqmadi.** Oyna faqat **serverdagi versiya

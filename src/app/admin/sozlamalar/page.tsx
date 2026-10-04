@@ -18,6 +18,7 @@ import { AiUsagePanel } from "@/components/admin/AiUsagePanel";
 import { AppUpdateForm } from "@/components/admin/AppUpdateForm";
 import { StorageCleanupPanel } from "@/components/admin/StorageCleanupPanel";
 import { OrderCostsMigrationPanel } from "@/components/admin/OrderCostsMigrationPanel";
+import { UserStatsBackfillPanel } from "@/components/admin/UserStatsBackfillPanel";
 import { channelQueueSummary, getChannelPace } from "@/lib/telegram/channel-queue";
 
 export const dynamic = "force-dynamic";
@@ -171,6 +172,19 @@ export default async function AdminSettingsPage() {
             Bir martalik ish: eski buyurtmalardagi tannarxni yopiq kolleksiyaga ko&apos;chiradi.
           </p>
           <OrderCostsMigrationPanel />
+        </section>
+      )}
+
+      {/* Bir martalik to'ldirish - faqat loyiha egasiga. */}
+      {isOwner(user) && (
+        <section>
+          <h2 className="mb-2 text-2xl font-bold text-navy-900 dark:text-white">
+            Foydalanuvchilar statistikasi
+          </h2>
+          <p className="mb-6 text-sm text-navy-300">
+            Bir martalik ish: eski buyurtmalarni foydalanuvchilar ro&apos;yxatidagi hisobga kiritadi.
+          </p>
+          <UserStatsBackfillPanel />
         </section>
       )}
 
