@@ -291,12 +291,13 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
       deliveryFee: delivery,
       totalAmount: total,
       promoCode: appliedPromo,
+      userStatsCounted: Boolean(userRef && userSnap?.exists),
     };
   });
 
   await recordStockMoves(stockMoves);
 
-  const { items, subtotal, discountAmount, deliveryFee, totalAmount, promoCode } = totals;
+  const { items, subtotal, discountAmount, deliveryFee, totalAmount, promoCode, userStatsCounted } = totals;
 
   const zone = (deliverySettings.zones ?? []).find((item) => item.id === input.deliveryZoneId);
 
@@ -325,6 +326,7 @@ export async function createOrder(input: NewOrderInput): Promise<Order> {
     accessTokenHash: input.accessTokenHash ?? null,
     status: "pending",
     stockReturned: false,
+    ...(input.userId ? { userStatsCounted } : {}),
     telegramMessageId: null,
     customerChatId: input.customerChatId ?? null,
     createdAt: now,

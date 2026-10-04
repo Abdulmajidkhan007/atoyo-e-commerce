@@ -49,7 +49,7 @@ export async function POST() {
     let query = db
       .collection("orders")
       .orderBy("__name__")
-      .select("userId", "totalAmount", "refundAmount", "createdAt", "status", "stockReturned")
+      .select("userId", "totalAmount", "refundAmount", "createdAt", "status", "stockReturned", "userStatsCounted")
       .limit(PAGE);
     if (orderCursor) query = query.startAfter(orderCursor);
     const page = await query.get();

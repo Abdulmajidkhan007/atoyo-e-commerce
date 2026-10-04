@@ -50,6 +50,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!snap.exists) return NextResponse.json({ error: "Buyurtma topilmadi." }, { status: 404 });
 
   const order = snap.data() as Order;
+  // Bekor qilingan buyurtmada zaxira va tushum ALLAQACHON qaytgan —
+  // qaytarish ularni ikkinchi marta ayirardi (tekshiruvchi topgan).
+  if (order.status === "cancelled" || order.stockReturned) {
+    return NextResponse.json(
+      { error: "Buyurtma bekor qilingan — zaxira va summa allaqachon qaytarilgan." },
+      { status: 409 }
+    );
+  }
   const requested = parsed.data.items?.length
     ? parsed.data.items
     : order.items.map((item) => ({

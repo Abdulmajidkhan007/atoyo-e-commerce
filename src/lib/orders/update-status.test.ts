@@ -44,6 +44,25 @@ const fakeDb = {
       },
     }),
   }),
+  // Tranzaksiya: o'qish darhol, yozuvlar oxirida birdaniga (Firestore kabi).
+  runTransaction: async <T,>(fn: (tx: unknown) => Promise<T>): Promise<T> => {
+    const ops: { ref: Ref; patch: Record<string, unknown> }[] = [];
+    const tx = {
+      get: async (ref: Ref) => ({
+        exists: stores[ref.collection]!.has(ref.id),
+        data: () => stores[ref.collection]!.get(ref.id),
+      }),
+      update: (ref: Ref, patch: Record<string, unknown>) => ops.push({ ref, patch }),
+      set: (ref: Ref, patch: Record<string, unknown>) => ops.push({ ref, patch }),
+    };
+    const result = await fn(tx);
+    for (const op of ops) {
+      const store = stores[op.ref.collection]!;
+      const prev = store.get(op.ref.id) ?? {};
+      store.set(op.ref.id, { ...prev, ...applyFieldValues(prev, op.patch) });
+    }
+    return result;
+  },
   batch: () => {
     const ops: { ref: Ref; patch: Record<string, unknown> }[] = [];
     return {
@@ -177,5 +196,28 @@ describe("foydalanuvchi statistikasi bekor qilinganda (user-stats.ts)", () => {
     await applyOrderStatusUpdate("order-1", "cancelled");
     expect(stores.users!.has("yoq")).toBe(false);
     expect(stores.products!.get("prod-1")!.stock).toBe(8);
+  });
+
+  it("yaratilganda hisobga kirmagan buyurtma ayirilmaydi (manfiy son bo'lmasin)", async () => {
+    stores.orders!.set("order-1", baseOrder({ userId: "u1", userStatsCounted: false }));
+    stores.users!.set("u1", { ordersCount: 0, totalSpent: 0 });
+    await applyOrderStatusUpdate("order-1", "cancelled");
+    expect(stores.users!.get("u1")).toMatchObject({ ordersCount: 0, totalSpent: 0 });
+  });
+
+  it("qisman qaytarilgandan keyin bekor qilish — faqat QOLGAN qism ayiriladi va qaytadi", async () => {
+    // 3 dona × 1000 = 3000; 1 dona allaqachon qaytarilgan (refund 1000).
+    stores.orders!.set(
+      "order-1",
+      baseOrder({
+        userId: "u1",
+        refundAmount: 1000,
+        returnedItems: [{ productId: "prod-1", quantity: 1, price: 1000, returnedAt: 1 }],
+      })
+    );
+    stores.users!.set("u1", { ordersCount: 1, totalSpent: 2000 });
+    await applyOrderStatusUpdate("order-1", "cancelled");
+    expect(stores.users!.get("u1")).toMatchObject({ ordersCount: 0, totalSpent: 0 });
+    expect(stores.products!.get("prod-1")!.stock).toBe(7); // 5 + 2 (qaytarilgan 1 ta qayta qo'shilmaydi)
   });
 });

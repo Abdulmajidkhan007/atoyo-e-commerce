@@ -1065,3 +1065,19 @@ tranzaksiyasida, `stats/summary` bilan bir joyda. Qarorlar:
 - Eski hisob bir martalik `/api/admin/maintenance/user-stats` bilan
   to'ldiriladi; u ham `accumulateUserStats` dan o'tadi — increment
   mantiqi bilan BIR XIL natija (testi `user-stats.test.ts`).
+
+## 44. Foydalanuvchi statistikasi: tekshiruvchi topgan siljishlar (9-banddan keyin)
+
+- Qaytarilgan (qisman ham) buyurtma keyin bekor qilinsa, `totalSpent`,
+  `stats/summary.totalRevenue` va zaxira QAYTARILGAN qism uchun ikkinchi
+  marta tuzatilardi. Endi bekor qilish faqat QOLGAN qismni qaytaradi.
+- Bekor qilingan buyurtmani "qaytarish" mumkin edi (yana bir marta
+  ayirish) — endi 409.
+- Bekor qilish `stockReturned` ni tranzaksiyadan tashqarida o'qirdi:
+  mijoz, Payme/Click va bot bir vaqtda bekor qilsa zaxira va statistika
+  ikki marta qaytishi mumkin edi. Endi o'qish + yozuv bitta
+  tranzaksiyada.
+- Buyurtma paytida `users/{uid}` hujjati hali yo'q bo'lsa, increment
+  o'tkazib yuborilardi, bekor qilish esa AYIRARDI (manfiy son). Endi
+  buyurtmada `userStatsCounted`; `false` bo'lsa ayirilmaydi va
+  to'ldirish ham uni hisoblamaydi.

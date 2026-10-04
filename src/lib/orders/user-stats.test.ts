@@ -42,6 +42,14 @@ describe("accumulateUserStats", () => {
     ]);
     expect(stats.size).toBe(0);
   });
+
+  it("yaratilganda hisobga kirmagan (userStatsCounted=false) — to'ldirishda ham kirmaydi", () => {
+    const stats = collect([
+      { userId: "u1", totalAmount: 1000, createdAt: 1, userStatsCounted: false },
+      { userId: "u1", totalAmount: 500, createdAt: 2 },
+    ]);
+    expect(stats.get("u1")).toMatchObject({ ordersCount: 1, totalSpent: 500 });
+  });
 });
 
 describe("firestore.rules", () => {

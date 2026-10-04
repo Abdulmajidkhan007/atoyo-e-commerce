@@ -35,72 +35,93 @@ const STATUS_DM_TEXT: Record<OrderStatus, string> = {
  * admin paneldan qo'lda (`/api/admin/orders/[id]/status`) ham xuddi shu
  * funksiya chaqiriladi, ikkala joyda mantiqni takrorlamaslik uchun.
  */
+/** Shu qator bo'yicha oldin qaytarilgan dona (`orders/[id]/return`). */
+function returnedQty(order: Order, productId: string, variantId: string | null): number {
+  return (order.returnedItems ?? [])
+    .filter((row) => row.productId === productId && (row.variantId ?? null) === variantId)
+    .reduce((sum, row) => sum + row.quantity, 0);
+}
+
 export async function applyOrderStatusUpdate(orderId: string, status: OrderStatus): Promise<Order | null> {
-  const orderRef = getAdminDb().collection("orders").doc(orderId);
-  const snapshot = await orderRef.get();
+  const db = getAdminDb();
+  const orderRef = db.collection("orders").doc(orderId);
+  const now = Date.now();
 
-  if (!snapshot.exists) return null;
+  // BEKOR QILISH — TRANZAKSIYADA. Bir buyurtmani bir vaqtda mijoz,
+  // Payme/Click va admin bot bekor qilishi mumkin: ilgari `stockReturned`
+  // tranzaksiyadan tashqarida o'qilardi va zaxira/statistika IKKI marta
+  // qaytishi mumkin edi. Endi o'qish, tekshiruv va yozuv bitta
+  // tranzaksiyada (o'qishlar yozuvlardan OLDIN).
+  const result = await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(orderRef);
+    if (!snapshot.exists) return null;
+    const current = snapshot.data() as Order;
+    const shouldReturnStock = status === "cancelled" && !current.stockReturned;
 
-  const current = snapshot.data() as Order;
-  const updatedOrder: Order = {
-    ...current,
-    status,
-    updatedAt: Date.now(),
-  };
+    if (!shouldReturnStock) {
+      tx.update(orderRef, { status, updatedAt: now });
+      return { current, returned: false };
+    }
 
-  // Buyurtma BEKOR qilinganda mahsulotlar zaxirasi joyiga qaytariladi
-  // (va salesCount kamaytiriladi) - lekin faqat BIR MARTA (`stockReturned`
-  // bayrog'i orqali takroriy qaytarishning oldi olinadi).
-  const shouldReturnStock = status === "cancelled" && !current.stockReturned;
-  if (shouldReturnStock) {
-    // Foydalanuvchi statistikasi ham ayiriladi (`user-stats.ts`): bekor
-    // qilingan buyurtma soni/summasiga kirmaydi, `lastOrderAt` qoladi.
-    // Hujjat yo'q bo'lsa yozilmaydi - `update` butun batch'ni yiqitardi.
-    const userRef = current.userId ? getAdminDb().collection("users").doc(current.userId) : null;
-    const userExists = userRef ? (await userRef.get()).exists : false;
-    const batch = getAdminDb().batch();
-    if (userRef && userExists) {
-      batch.update(userRef, {
+    // Foydalanuvchi statistikasi (`user-stats.ts`): faqat yaratilganda
+    // QO'SHILGAN bo'lsa ayiriladi; qaytarilgan qismi allaqachon ayirilgan.
+    const countedForUser = Boolean(current.userId) && current.userStatsCounted !== false;
+    const userRef = countedForUser ? db.collection("users").doc(current.userId!) : null;
+    const userSnap = userRef ? await tx.get(userRef) : null;
+
+    if (userRef && userSnap?.exists) {
+      tx.update(userRef, {
         ordersCount: FieldValue.increment(-1),
-        totalSpent: FieldValue.increment(-current.totalAmount),
+        totalSpent: FieldValue.increment(-(current.totalAmount - (current.refundAmount ?? 0))),
       });
     }
+    // Qisman QAYTARILGAN qatorlar zaxiraga allaqachon qaytgan — faqat
+    // qolgan dona qaytadi (aks holda zaxira ikki marta ko'payardi).
     for (const item of current.items) {
-      const productRef = getAdminDb().collection("products").doc(item.productId);
-      batch.update(productRef, {
-        stock: FieldValue.increment(item.quantity),
-        salesCount: FieldValue.increment(-item.quantity),
+      const qty = item.quantity - returnedQty(current, item.productId, item.variantId ?? null);
+      if (qty <= 0) continue;
+      tx.update(db.collection("products").doc(item.productId), {
+        stock: FieldValue.increment(qty),
+        salesCount: FieldValue.increment(-qty),
       });
     }
-    batch.set(
-      getAdminDb().collection("stats").doc("summary"),
+    tx.set(
+      db.collection("stats").doc("summary"),
       {
         totalOrders: FieldValue.increment(-1),
-        totalRevenue: FieldValue.increment(-current.totalAmount),
+        totalRevenue: FieldValue.increment(-(current.totalAmount - (current.refundAmount ?? 0))),
       },
       { merge: true }
     );
-    batch.update(orderRef, { status, updatedAt: updatedOrder.updatedAt, stockReturned: true });
-    await batch.commit();
+    tx.update(orderRef, { status, updatedAt: now, stockReturned: true });
+    return { current, returned: true };
+  });
+
+  if (!result) return null;
+  const { current } = result;
+  const updatedOrder: Order = { ...current, status, updatedAt: now };
+
+  if (result.returned) {
     updatedOrder.stockReturned = true;
 
     // Ombor tarixi: zaxira qaytgani yozib qo'yiladi.
     await recordStockMoves(
-      current.items.map((item) => ({
+      current.items
+        .map((item) => ({ item, qty: item.quantity - returnedQty(current, item.productId, item.variantId ?? null) }))
+        .filter(({ qty }) => qty > 0)
+        .map(({ item, qty }) => ({
         productId: item.productId,
         productName: item.name,
         variantId: item.variantId ?? null,
         variantLabel: item.variantLabel ?? null,
         type: "return" as const,
-        qty: item.quantity,
+        qty,
         stockBefore: 0,
         stockAfter: 0,
         refId: current.id,
         note: "Buyurtma bekor qilindi",
       }))
     );
-  } else {
-    await orderRef.update({ status: updatedOrder.status, updatedAt: updatedOrder.updatedAt });
   }
 
   await refreshOrderTelegramMessage(updatedOrder);

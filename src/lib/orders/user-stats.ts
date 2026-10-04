@@ -9,13 +9,16 @@
  *
  * - **Yangi buyurtma** (`create-order.ts`, o'sha tranzaksiyada):
  *   `ordersCount +1`, `totalSpent +totalAmount`, `lastOrderAt = createdAt`.
- * - **Bekor qilish** (`update-status.ts`, zaxira qaytgan payt — BIR
- *   MARTA, `stockReturned` bayrog'i bilan): `ordersCount -1`,
- *   `totalSpent -totalAmount`. Ya'ni bekor qilingan buyurtma
+ * - **Bekor qilish** (`update-status.ts`, TRANZAKSIYADA, zaxira qaytgan
+ *   payt — BIR MARTA, `stockReturned` bayrog'i bilan): `ordersCount -1`,
+ *   `totalSpent -(totalAmount - refundAmount)` (qaytarilgan qismi
+ *   allaqachon ayirilgan). `userStatsCounted === false` bo'lsa ayirilmaydi. Ya'ni bekor qilingan buyurtma
  *   foydalanuvchining soni va summasiga KIRMAYDI — `stats/summary`
  *   bilan bir xil qoida.
  * - **Qaytarish** (`orders/[id]/return`): `totalSpent -refundAmount`
  *   (buyurtma soni o'zgarmaydi — buyurtma bo'lgan, qisman qaytgan).
+ *   Bekor qilingan buyurtmani qaytarib BO'LMAYDI (409) — ikki marta
+ *   ayirilardi.
  * - `lastOrderAt` bekor qilinganda O'ZGARMAYDI: u "oxirgi marta qachon
  *   buyurtma bergan" — faollik belgisi, bekor qilingani ham faollik.
  *
@@ -44,6 +47,7 @@ export interface OrderForStats {
   createdAt?: number;
   status?: string;
   stockReturned?: boolean;
+  userStatsCounted?: boolean;
 }
 
 /**
@@ -67,6 +71,9 @@ export function accumulateUserStats(
   order: OrderForStats
 ): Map<string, UserOrderStats> {
   if (!order.userId) return acc;
+  // Yaratilganda hisobga kirmagan (hujjat yo'q edi) — jonli increment
+  // mantiqi bilan bir xil bo'lishi uchun bu yerda ham kiritilmaydi.
+  if (order.userStatsCounted === false) return acc;
   const stats = acc.get(order.userId) ?? { ordersCount: 0, totalSpent: 0, lastOrderAt: null };
   if (!isCancelledForStats(order)) {
     stats.ordersCount += 1;

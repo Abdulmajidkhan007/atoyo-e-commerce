@@ -78,6 +78,13 @@ export interface Order {
   /** Bekor qilinganda zaxira bir marta qaytariladi - ikki marta qaytmasligi uchun bayroq. */
   stockReturned: boolean;
   /**
+   * Buyurtma `users/{uid}` statistikasiga QO'SHILGANMI (`user-stats.ts`).
+   * `false` — yaratilganda foydalanuvchi hujjati hali yo'q edi, shuning
+   * uchun bekor qilishda ham AYIRILMAYDI (manfiy son bo'lmasin). Eski
+   * buyurtmalarda yo'q (`undefined`) — qo'shilgan deb hisoblanadi.
+   */
+  userStatsCounted?: boolean;
+  /**
    * QAYTARILGAN qatorlar (qisman qaytarish ham mumkin). Bekor qilishdan
    * farqi: buyurtma allaqachon berilgan/yetkazilgan, mijoz mahsulotni
    * qaytardi - zaxira va tushum shu qatorlar bo'yicha tuzatiladi.
