@@ -9,6 +9,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 let stored: Record<string, unknown> | null = null;
 let allowed = false;
 
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: async () => ({ allowed: true, remaining: 1 }),
+  getClientIp: () => "203.0.113.7",
+  ipLimitKey: (ip: string) => ip,
+}));
 vi.mock("@/lib/firebase/admin", () => ({
   getAdminDb: () => ({
     collection: () => ({

@@ -9,7 +9,7 @@ import {Button, Field} from '../components/ui';
 import {validatePromo} from '../api';
 import {
   fetchCheckoutDelivery,
-  fetchTransferCard,
+  fetchPaymentMethods,
   saveOrderAccess,
   submitOrder,
   type CheckoutDelivery,
@@ -52,6 +52,7 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
   const [delivery, setDelivery] = useState<CheckoutDelivery>({fee: 0, freeFrom: 0, enabled: false, zones: []});
   const [paymentMethod, setPaymentMethod] = useState<PaymentChoice>('cash');
   const [transferEnabled, setTransferEnabled] = useState(false);
+  const [onlineEnabled, setOnlineEnabled] = useState(false);
   const [zoneId, setZoneId] = useState('');
   const [guestOpen, setGuestOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -64,8 +65,10 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
       })
       .catch(() => {});
     // O'tkazma faqat sozlamada yoqilgan bo'lsa ko'rinadi.
-    fetchTransferCard().then(card => {
-      if (active) setTransferEnabled(card !== null);
+    fetchPaymentMethods().then(({card, online}) => {
+      if (!active) return;
+      setTransferEnabled(card !== null);
+      setOnlineEnabled(online);
     });
     return () => {
       active = false;
@@ -75,7 +78,11 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const discount = promo?.discount ?? 0;
   const deliveryFee = deliveryFeeForZone(delivery, subtotal - discount, zoneId || null);
-  const methods: PaymentChoice[] = transferEnabled ? ['cash', 'transfer', 'online'] : ['cash', 'online'];
+  const methods: PaymentChoice[] = [
+    'cash',
+    ...(transferEnabled ? (['transfer'] as const) : []),
+    ...(onlineEnabled ? (['online'] as const) : []),
+  ];
   const methodLabel = (method: PaymentChoice) =>
     method === 'cash' ? t.payCash : method === 'transfer' ? c.payTransfer : t.payOnline;
   const total = subtotal - discount + deliveryFee;

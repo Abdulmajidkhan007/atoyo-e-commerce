@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { canAccessOrder } from "@/lib/orders/order-access";
 import { NO_STORE_HEADERS } from "@/lib/http/cache";
+import { checkRateLimit, getClientIp, ipLimitKey } from "@/lib/rate-limit";
 import type { Order } from "@/types/order";
 
 export const runtime = "nodejs";
@@ -24,6 +25,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { id: orderId } = await params;
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(orderId)) {
     return NextResponse.json({ error: "Topilmadi." }, { status: 404, headers: NO_STORE_HEADERS });
+  }
+
+  // Bazaga murojaatdan OLDIN IP chegarasi (chek route'i kabi): kalit
+  // taxmin qilinmaydi, lekin cheksiz Firestore o'qishga yo'l qo'yilmaydi.
+  const ip = getClientIp(request);
+  if (ip !== "unknown") {
+    const limit = await checkRateLimit({ key: `orderpay:ip:${ipLimitKey(ip)}`, limit: 120, windowMs: 3_600_000 });
+    if (!limit.allowed) {
+      return NextResponse.json({ error: "Juda ko'p so'rov. Keyinroq urinib ko'ring." }, { status: 429, headers: NO_STORE_HEADERS });
+    }
   }
 
   const token = new URL(request.url).searchParams.get("t") ?? "";

@@ -72,6 +72,7 @@ export interface CheckoutDict {
   failed: string;
   cancelled: string;
   cashNote: string;
+  onlineNote: string;
   transferOff: string;
   loadFailed: string;
   retry: string;
@@ -140,6 +141,7 @@ const uz: CheckoutDict = {
   failed: "To'lov topilmadi. Chekni qayta yuklang yoki bizga qo'ng'iroq qiling.",
   cancelled: 'Buyurtma bekor qilingan.',
   cashNote: "To'lov — yetkazib berilganda naqd. Operator tez orada qo'ng'iroq qiladi.",
+  onlineNote: "Onlayn to'lov — to'lov sahifasida yakunlang. Operator tez orada qo'ng'iroq qiladi.",
   transferOff: "Kartaga o'tkazma hozir o'chirilgan. Bizga qo'ng'iroq qiling.",
   loadFailed: "Buyurtma ma'lumotini olib bo'lmadi.",
   retry: 'Qayta urinish',
@@ -208,6 +210,7 @@ const en: CheckoutDict = {
   failed: 'Payment not found. Upload the receipt again or call us.',
   cancelled: 'The order has been cancelled.',
   cashNote: 'Pay in cash on delivery. Our operator will call you shortly.',
+  onlineNote: 'Online payment — complete it on the payment page. Our operator will call you shortly.',
   transferOff: 'Card transfer is currently unavailable. Please call us.',
   loadFailed: 'Could not load the order.',
   retry: 'Try again',
@@ -275,6 +278,7 @@ const ru: CheckoutDict = {
   failed: 'Оплата не найдена. Загрузите чек ещё раз или позвоните нам.',
   cancelled: 'Заказ отменён.',
   cashNote: 'Оплата наличными при доставке. Оператор скоро позвонит.',
+  onlineNote: 'Онлайн-оплата — завершите её на странице оплаты. Оператор скоро позвонит.',
   transferOff: 'Перевод на карту сейчас недоступен. Позвоните нам.',
   loadFailed: 'Не удалось загрузить заказ.',
   retry: 'Повторить',

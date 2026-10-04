@@ -177,7 +177,7 @@ export function OrderPaymentScreen({route, navigation}: StackScreenProps<'Tolov'
       ) : !isTransfer ? (
         <>
           <AmountRow label={c.amountToPay} value={money(order.totalAmount)} />
-          <Notice tone="info" text={c.cashNote} />
+          <Notice tone="info" text={order.paymentMethod === 'online' ? c.onlineNote : c.cashNote} />
         </>
       ) : order.paymentStatus === 'paid' ? (
         <Notice tone="success" text={c.paid} />

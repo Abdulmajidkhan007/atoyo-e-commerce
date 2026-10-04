@@ -48,16 +48,27 @@ export interface TransferCard {
   note: string;
 }
 
-/** Kartaga o'tkazma — faqat sozlamada YOQILGAN bo'lsa karta keladi, aks holda `null`. */
-export async function fetchTransferCard(): Promise<TransferCard | null> {
+/**
+ * To'lov usullari (`/api/payment-info`): kartaga o'tkazma — faqat
+ * sozlamada YOQILGAN bo'lsa karta keladi (aks holda `null`); onlayn
+ * (Payme/Click) — faqat kalitlar ulangan bo'lsa `true`. Ilgari ilova
+ * "Onlayn" ni doim ko'rsatardi va mijoz to'lab bo'lmaydigan buyurtma
+ * berardi (tekshiruvchi).
+ */
+export async function fetchPaymentMethods(): Promise<{card: TransferCard | null; online: boolean}> {
   try {
     const response = await fetch(`${SITE_URL}/api/payment-info`);
-    if (!response.ok) return null;
-    const data = (await response.json()) as {transfer?: TransferCard | null};
-    return data.transfer?.cardNumber ? data.transfer : null;
+    if (!response.ok) return {card: null, online: false};
+    const data = (await response.json()) as {transfer?: TransferCard | null; online?: boolean};
+    return {card: data.transfer?.cardNumber ? data.transfer : null, online: data.online === true};
   } catch {
-    return null;
+    return {card: null, online: false};
   }
+}
+
+/** Kartaga o'tkazma — faqat sozlamada YOQILGAN bo'lsa karta keladi, aks holda `null`. */
+export async function fetchTransferCard(): Promise<TransferCard | null> {
+  return (await fetchPaymentMethods()).card;
 }
 
 export interface CheckoutDelivery {

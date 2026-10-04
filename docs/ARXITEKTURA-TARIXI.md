@@ -1081,3 +1081,15 @@ tranzaksiyasida, `stats/summary` bilan bir joyda. Qarorlar:
   o'tkazib yuborilardi, bekor qilish esa AYIRARDI (manfiy son). Endi
   buyurtmada `userStatsCounted`; `false` bo'lsa ayirilmaydi va
   to'ldirish ham uni hisoblamaydi.
+
+## 45. Ilova 1.5: 15-band integratsiyasi va tekshiruvchi tuzatishlari
+
+A/B/C oqimlari parallel sessiyalarda bajarildi (spetsifikatsiya
+`ai/specs/2026-10-04-ilova-sayt-bilan-tenglashtirish.md`), so'ng:
+- `/api/orders/[id]/payment` ga IP chegarasi (soatiga 120) — bazaga
+  murojaatdan OLDIN, chek route'i kabi.
+- Ilova checkout'i "Onlayn" ni doim ko'rsatardi — Payme/Click kalitlari
+  yo'q paytda mijoz to'lab bo'lmaydigan buyurtma berardi. Endi faqat
+  `/api/payment-info.online === true` bo'lsa (`fetchPaymentMethods`).
+- To'lov ekrani onlayn buyurtmaga "naqd" deb yozardi — alohida matn.
+- Versiya 1.5 (versionCode 6).
