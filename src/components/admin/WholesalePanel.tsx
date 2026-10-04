@@ -20,6 +20,7 @@ import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import AddIcon from "@mui/icons-material/Add";
 import { WHOLESALE_STATUS_LABELS, type WholesaleClient } from "@/types/wholesale";
 import { fileToBase64 } from "@/lib/files/base64";
 
@@ -44,6 +45,8 @@ export function WholesalePanel() {
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const [form, setForm] = useState(EMPTY);
+  /** "Yangi optom mijoz" oynasi (blogdagi "Yangi maqola" kabi). */
+  const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -100,7 +103,16 @@ export function WholesalePanel() {
       { method: "POST", body: JSON.stringify({ ...form, shopName: form.shopName || form.name }) },
       "Mijoz qo'shildi — endi kalitni yuboring."
     );
-    if (body) setForm(EMPTY);
+    if (body) {
+      setForm(EMPTY);
+      setCreating(false);
+      // Qo'shilgan mijozga kalitni darhol yuborish oynasi ochiladi —
+      // keyingi qadam aynan shu.
+      if (body.client) {
+        setInviting(body.client as WholesaleClient);
+        setEmailAddress("");
+      }
+    }
   };
 
   /** Excel/CSV faylini yuklash (1C ro'yxati). */
@@ -187,6 +199,21 @@ export function WholesalePanel() {
   return (
     <div className="flex flex-col gap-6">
       {message && <Alert severity={message.kind === "ok" ? "success" : "error"}>{message.text}</Alert>}
+
+      {/* ---- Asosiy tugma: ro'yxat TEPASIDA (ilgari forma sahifaning
+           eng pastida edi va telefonda topish qiyin edi). ---- */}
+      <div>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => {
+            setMessage(null);
+            setCreating(true);
+          }}
+        >
+          Yangi optom mijoz
+        </Button>
+      </div>
 
       {/* ---- Yuqori qator: qidiruv + import ---- */}
       <div className="flex flex-wrap items-center gap-2">
@@ -338,22 +365,34 @@ export function WholesalePanel() {
         </table>
       </div>
 
-      {/* ---- Yangi mijoz ---- */}
-      <div className="flex flex-col gap-3 rounded-xl2 border border-navy-100 p-4 dark:border-navy-500">
-        <p className="text-sm font-medium text-navy-700 dark:text-navy-100">Yangi optom mijoz</p>
-        <div className="grid gap-3 md:grid-cols-3">
-          <TextField size="small" label="Ismi" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <TextField size="small" label="Telefon" placeholder="901234567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <TextField size="small" label="Do'kon nomi" value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} />
-          <TextField size="small" label="Manzil" className="md:col-span-2" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-          <TextField size="small" label="Telegram (ixtiyoriy)" placeholder="@sardor" value={form.telegramUsername} onChange={(e) => setForm({ ...form, telegramUsername: e.target.value })} />
-        </div>
-        <div>
+      {/* ---- Yangi mijoz oynasi ---- */}
+      <Dialog
+        open={creating}
+        onClose={() => !busy && setCreating(false)}
+        fullWidth
+        maxWidth="sm"
+        slotProps={{ paper: { className: "!rounded-2xl" } }}
+      >
+        <DialogTitle>Yangi optom mijoz</DialogTitle>
+        <DialogContent>
+          <div className="flex flex-col gap-3 pt-2">
+            <TextField size="small" label="Ismi" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
+            <TextField size="small" label="Telefon" required placeholder="901234567" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <TextField size="small" label="Do'kon nomi" helperText="Bo'sh bo'lsa — ismi yoziladi" value={form.shopName} onChange={(e) => setForm({ ...form, shopName: e.target.value })} />
+            <TextField size="small" label="Manzil" multiline minRows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            <TextField size="small" label="Telegram (ixtiyoriy)" placeholder="@sardor" value={form.telegramUsername} onChange={(e) => setForm({ ...form, telegramUsername: e.target.value })} />
+            {message?.kind === "error" && <Alert severity="error">{message.text}</Alert>}
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreating(false)} disabled={busy}>
+            Bekor qilish
+          </Button>
           <Button variant="contained" disabled={busy} onClick={addClient}>
             Qo&apos;shish va kalit yaratish
           </Button>
-        </div>
-      </div>
+        </DialogActions>
+      </Dialog>
 
       {/* ---- Kalit yuborish oynasi ---- */}
       <Dialog open={inviting !== null} onClose={() => setInviting(null)} fullWidth maxWidth="xs">
