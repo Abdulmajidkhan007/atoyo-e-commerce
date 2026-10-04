@@ -60,13 +60,36 @@ interface ClickDoc {
  * tasodifiy ID lar bilan `channelClicks` ni axlatga to'ldirardi
  * (docs/AUDIT.md 2.10). Mahsulot nomi hujjatdan olinadi.
  */
-export async function trackChannelClick(productId: string): Promise<void> {
+/**
+ * Mahsulot bormi va nomi (`/k/<id>` yo'naltirishdan OLDIN chaqiradi:
+ * notanish ID bosh sahifaga ketadi, 404 ga emas). O'qib bo'lmasa —
+ * `undefined` (bor deb hisoblanadi, mijoz mahsulot sahifasiga ketadi).
+ */
+export async function channelProductName(productId: string): Promise<string | null | undefined> {
+  try {
+    const snap = await getAdminDb().collection("products").doc(productId).get();
+    if (!snap.exists) return null;
+    const name = (snap.data() as { name?: unknown } | undefined)?.name;
+    return typeof name === "string" ? name : "";
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * `knownName` berilsa mahsulot qayta o'qilmaydi (route allaqachon
+ * `channelProductName` bilan tekshirgan).
+ */
+export async function trackChannelClick(productId: string, knownName?: string): Promise<void> {
   const now = Date.now();
   try {
     const db = getAdminDb();
-    const product = await db.collection("products").doc(productId).get();
-    if (!product.exists) return;
-    const name = (product.data() as { name?: unknown } | undefined)?.name;
+    let name: unknown = knownName;
+    if (knownName === undefined) {
+      const product = await db.collection("products").doc(productId).get();
+      if (!product.exists) return;
+      name = (product.data() as { name?: unknown } | undefined)?.name;
+    }
     await db
       .collection("channelClicks")
       .doc(productId)

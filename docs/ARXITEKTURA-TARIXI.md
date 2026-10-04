@@ -1011,3 +1011,17 @@ Yechim — tema redux holatiga bog'lanmaydi:
 
 Testi: `src/theme/muiTheme.test.ts` (selektor `.dark &`, har sxemada
 yorliq/matn o'z fonida AA).
+
+## 41. `/k` va CSV eksport: tekshiruvchi tuzatishlari (8, 11-bandlardan keyin)
+
+- `/k/<id>` sanashni `after()` da qilardi. App Hosting (Cloud Run)
+  javob ketgach CPU'ni cheklaydi, shuning uchun sanash jimgina
+  yo'qolishi mumkin edi. Endi sanash yo'naltirishdan OLDIN kutiladi
+  (~2 ta Firestore so'rovi).
+- Notanish ID 404 sahifaga emas, bosh sahifaga yo'naltiriladi
+  (`channelProductName`).
+- IP o'qilmasa (`unknown`) limit qo'llanmaydi. Ilgari bunday
+  mijozlarning hammasi bitta umumiy 120 talik chelakka tushardi.
+- CSV eksport oqim o'rtasida yiqilsa — `reportError` ("Actions").
+  Javob 200 bilan ketib bo'lgan, admin esa yarim faylni sezmasdi.
+

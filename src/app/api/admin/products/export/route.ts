@@ -1,3 +1,4 @@
+import { reportError } from "@/lib/ops/report-error";
 import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase/admin";
@@ -7,6 +8,9 @@ import type { Product } from "@/types/product";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Next.js'ning umumiy chegarasi. Haqiqiy chegara — App Hosting (Cloud
+// Run) va atoyo.uz dagi Hosting rewrite'ning so'rov vaqti (~60 s);
+// 10 000 mahsulot 500 tadan ~20 so'rov, odatda bir necha soniya.
 export const maxDuration = 300;
 
 const PAGE = 500;
@@ -44,6 +48,9 @@ export async function GET() {
         cursor = snap.docs[snap.docs.length - 1];
         if (snap.size < PAGE) controller.close();
       } catch (error) {
+        // Javob (200) allaqachon ketgan — admin yarim fayl oladi.
+        // Jim qolmasin: "Actions" ga yoziladi.
+        await reportError("CSV eksport", error);
         controller.error(error);
       }
     },
