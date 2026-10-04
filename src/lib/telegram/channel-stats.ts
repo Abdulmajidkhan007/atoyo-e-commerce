@@ -55,11 +55,19 @@ interface ClickDoc {
 /**
  * Bosilishni sanaydi. XATO YUTILADI: statistika yordamchi vosita,
  * u yiqilsa ham mijoz mahsulot sahifasiga borishi kerak.
+ *
+ * Notanish ID ga YOZILMAYDI: `/k/<id>` ochiq, aks holda skript
+ * tasodifiy ID lar bilan `channelClicks` ni axlatga to'ldirardi
+ * (docs/AUDIT.md 2.10). Mahsulot nomi hujjatdan olinadi.
  */
-export async function trackChannelClick(productId: string, name?: string): Promise<void> {
+export async function trackChannelClick(productId: string): Promise<void> {
   const now = Date.now();
   try {
-    await getAdminDb()
+    const db = getAdminDb();
+    const product = await db.collection("products").doc(productId).get();
+    if (!product.exists) return;
+    const name = (product.data() as { name?: unknown } | undefined)?.name;
+    await db
       .collection("channelClicks")
       .doc(productId)
       .set(
@@ -67,7 +75,7 @@ export async function trackChannelClick(productId: string, name?: string): Promi
           total: FieldValue.increment(1),
           days: { [dayKey(now)]: FieldValue.increment(1) },
           lastAt: now,
-          ...(name ? { name } : {}),
+          ...(typeof name === "string" && name ? { name } : {}),
         },
         { merge: true }
       );

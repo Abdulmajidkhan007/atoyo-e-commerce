@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { checkRateLimit, getClientIp, ipLimitKey } from "@/lib/rate-limit";
 import { trackChannelClick } from "@/lib/telegram/channel-stats";
 
 /**
@@ -17,6 +18,10 @@ import { trackChannelClick } from "@/lib/telegram/channel-stats";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Bitta IP dan soatiga nechta bosilish sanaladi (oshgani FAQAT sanalmaydi). */
+export const CLICK_IP_LIMIT = 120;
+const HOUR_MS = 3_600_000;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -26,9 +31,19 @@ export async function GET(
   // Manba ko'rinib tursin (sayt analitikasi uchun ham qulay).
   target.searchParams.set("manba", "telegram");
 
-  // Sanash `await` bilan kutiladi (redirect'dan oldin) — shuning uchun
-  // mijozni ozgina kutdiradi, lekin yiqilsa ham yo'naltirish ishlaydi.
-  await trackChannelClick(id);
+  // Sanash redirect'dan KEYIN (`after`) — mijoz kutmaydi. Limit
+  // oshsa yoki ID notanish bo'lsa hech narsa yozilmaydi, lekin
+  // yo'naltirish baribir ishlaydi. Tekshiruv tartibi: avval IP limit
+  // (arzon), keyin mahsulot mavjudligi (`trackChannelClick` ichida).
+  after(async () => {
+    const limit = await checkRateLimit({
+      key: `channel-click:${ipLimitKey(getClientIp(request))}`,
+      limit: CLICK_IP_LIMIT,
+      windowMs: HOUR_MS,
+    });
+    if (!limit.allowed) return;
+    await trackChannelClick(id);
+  });
 
   const response = NextResponse.redirect(target, 302);
   response.headers.set("Cache-Control", "no-store");

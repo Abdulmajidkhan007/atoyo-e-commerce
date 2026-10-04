@@ -960,3 +960,13 @@ dona, zaxira manfiyga tushardi). Endi sxema takror qatorni rad etadi
 va `createOrder` zaxirani mahsulot bo'yicha JAMI tekshiradi (testlari
 `order-schema.test.ts`, `create-order.test.ts`). Oynada hudud tanlovi
 bor (server bilan bir xil narx), chegara oshsa aniq ogohlantirish.
+
+## 39. `/k/<id>` cheksiz yozuv yaratardi
+
+`/k/<id>` ochiq edi: skript tasodifiy ID bilan `channelClicks` ni
+axlatga to'ldira olardi, sanash esa redirect'ni kutdirardi. Endi
+sanash `after()` ichida (mijoz kutmaydi): avval IP bo'yicha
+`checkRateLimit` (soatiga 120), keyin `trackChannelClick` mahsulot
+mavjudligini tekshiradi — notanish ID ga yozilmaydi. Yo'naltirish
+har holda ishlaydi. Testlari: `app/k/[id]/route.test.ts`,
+`channel-stats.test.ts`.
