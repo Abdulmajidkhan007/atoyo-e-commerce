@@ -440,11 +440,11 @@ keyin QOLGAN nitlar. Hech biri hozir xavf emas.
    { page_location: <t olib tashlangan URL> })` va SPA o'tishlari
    uchun ham shu. Manzildan `t` ni o'chirish yo'li EMAS — mijoz
    sahifani saqlab/yangilab qaytib kira olmay qoladi.
-2. **Testlar.** `/api/orders/quick` (bot tuzog'i, limitlar, mehmon
+2. **Testlar — BAJARILDI (2026-10).** `/api/orders/quick/route.test.ts` va admin chek `route.test.ts` qo'shildi. Eski izoh: `/api/orders/quick` (bot tuzog'i, limitlar, mehmon
    dona narx oladi) va admin chek route sarlavhalari uchun route
    darajasidagi test yo'q — sof qismlari (`order-schema`,
    `order-access`, `receipt`, `ipLimitKey`) qoplangan.
-3. **Chek tasdig'i tranzaksiyasiz.** `reviewTransferPayment` o'qib,
+3. **Chek tasdig'i — BAJARILDI (2026-10):** `reviewTransferPayment` tranzaksiyada (`payment-transfer.test.ts`). Eski izoh: tranzaksiyasiz edi. `reviewTransferPayment` o'qib,
    keyin yozadi; `attachReceipt` tranzaksiyada va "to'langan"ni
    qayta tekshiradi, shuning uchun amalda poyga yo'q. Baribir
    tranzaksiyaga o'tkazish toza bo'lardi.

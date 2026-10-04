@@ -139,26 +139,35 @@ export async function attachReceipt(orderId: string, bytes: Buffer): Promise<Ord
  */
 export async function reviewTransferPayment(orderId: string, paid: boolean, who: string): Promise<Order | null> {
   const ref = getAdminDb().collection("orders").doc(orderId);
-  const snap = await ref.get();
-  if (!snap.exists) return null;
-  const order = { id: snap.id, ...snap.data() } as Order;
-  if (order.paymentMethod !== "transfer" || order.paymentStatus === "paid") return order;
-
   const paymentStatus: Order["paymentStatus"] = paid ? "paid" : "failed";
   const now = Date.now();
-  await ref.update({ paymentStatus, updatedAt: now });
-  const updated: Order = { ...order, paymentStatus, updatedAt: now };
+  // Holat tranzaksiyada qayta o'qiladi: parallel ikki bosish (yoki
+  // `attachReceipt`) bilan "to'langan" ikkinchi marta yozilmaydi.
+  const result = await getAdminDb().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return null;
+    const order = { id: snap.id, ...snap.data() } as Order;
+    if (order.paymentMethod !== "transfer" || order.paymentStatus === "paid") {
+      return { order, changed: false };
+    }
+    tx.update(ref, { paymentStatus, updatedAt: now });
+    return { order: { ...order, paymentStatus, updatedAt: now } as Order, changed: true };
+  });
+  if (!result) return null;
+  // Allaqachon to'langan — yozuv ham, xabar ham, SMS ham takrorlanmaydi.
+  if (!result.changed) return result.order;
+  const updated = result.order;
 
   await refreshOrderTelegramMessage(updated);
   await logAction(
-    `${paid ? "✅ To'lov tasdiqlandi" : "❌ To'lov topilmadi"} — #${orderId.slice(0, 8)}, ${formatSom(order.totalAmount)} (${escapeHtml(who)})`
+    `${paid ? "✅ To'lov tasdiqlandi" : "❌ To'lov topilmadi"} — #${orderId.slice(0, 8)}, ${formatSom(updated.totalAmount)} (${escapeHtml(who)})`
   ).catch(() => {});
 
   if (isSmsConfigured()) {
     const text = paid
-      ? `Atoyo: ${formatSom(order.totalAmount)} to'lovingiz qabul qilindi. Buyurtma #${orderId.slice(0, 8)} tayyorlanmoqda.`
+      ? `Atoyo: ${formatSom(updated.totalAmount)} to'lovingiz qabul qilindi. Buyurtma #${orderId.slice(0, 8)} tayyorlanmoqda.`
       : `Atoyo: buyurtma #${orderId.slice(0, 8)} bo'yicha to'lov topilmadi. Chekni qayta yuboring yoki bizga qo'ng'iroq qiling.`;
-    await sendSms(order.phoneNumber, text).catch(() => false);
+    await sendSms(updated.phoneNumber, text).catch(() => false);
   }
   return updated;
 }
