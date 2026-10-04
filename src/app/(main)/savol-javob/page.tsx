@@ -43,18 +43,21 @@ export default async function FaqPage() {
         {faq.map((item, index) => (
           <details
             key={index}
-            className="group rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-700"
+            // `name` — brauzerning o'z "akkordeoni": bittasi ochilsa
+            // oldingisi o'zi yopiladi (JS'siz).
+            name="faq"
+            className="faq-item group rounded-xl2 border border-navy-100 bg-white p-4 dark:border-navy-500 dark:bg-navy-700"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-navy-900 dark:text-white">
               <span>{item.question}</span>
               <span
                 aria-hidden="true"
-                className="text-xl leading-none text-aqua-500 transition-transform group-open:rotate-45"
+                className="text-xl leading-none text-aqua-500 transition-transform duration-300 group-open:rotate-45"
               >
                 +
               </span>
             </summary>
-            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-navy-600 dark:text-navy-100">
+            <p className="faq-answer mt-3 whitespace-pre-line text-sm leading-6 text-navy-600 dark:text-navy-100">
               {item.answer}
             </p>
           </details>

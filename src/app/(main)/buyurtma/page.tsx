@@ -43,7 +43,7 @@ export default function CheckoutPage() {
   const [zoneId, setZoneId] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/delivery")
+    fetch("/api/delivery", { cache: "no-store" })
       .then((res) => res.json())
       .then((data: { delivery?: DeliverySettings }) => data.delivery && setDelivery(data.delivery))
       .catch(() => {});

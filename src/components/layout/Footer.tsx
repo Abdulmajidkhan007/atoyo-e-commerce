@@ -32,7 +32,7 @@ export async function Footer() {
     { href: "/yetkazib-berish", label: dict.pages.deliveryTitle },
     { href: "/savol-javob", label: dict.pages.faqTitle },
     // Play Store va Google talab qiladigan ochiq havola.
-    { href: "/maxfiylik", label: "Maxfiylik siyosati" },
+    { href: "/maxfiylik", label: dict.pages.privacyTitle },
   ];
 
   return (

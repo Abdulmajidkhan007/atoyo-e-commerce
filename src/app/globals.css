@@ -392,3 +392,49 @@ html[data-ui-mode="3d-modern"] body {
   transform: translateY(18px);
   filter: blur(10px);
 }
+
+/* SAVOL-JAVOB AKKORDEONI (/savol-javob). Ochilish SILLIQ: yangi
+   brauzerlarda balandlik o'zi suriladi (`::details-content` +
+   `interpolate-size`), eskilarida javob yumshoq paydo bo'ladi.
+   Harakatni kamaytirish tanlangan bo'lsa - animatsiyasiz. */
+.faq-item {
+  interpolate-size: allow-keywords;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.faq-item[open] {
+  border-color: rgb(0 210 196 / 0.55);
+  box-shadow: 0 6px 24px -12px rgb(0 210 196 / 0.45);
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 0.3s ease, content-visibility 0.3s allow-discrete;
+}
+.faq-item[open]::details-content {
+  block-size: auto;
+}
+.faq-item[open] .faq-answer {
+  animation: faq-reveal 0.3s ease;
+}
+@keyframes faq-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-item,
+  .faq-item::details-content {
+    transition: none;
+  }
+  .faq-item[open] .faq-answer {
+    animation: none;
+  }
+}

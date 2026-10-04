@@ -295,6 +295,7 @@ export interface Dictionary {
   /** "Savol-javob" va "Yetkazib berish" sahifalari (matnning o'zi sozlamadan). */
   pages: {
     faqTitle: string;
+    privacyTitle: string;
     faqIntro: string;
     deliveryTitle: string;
     deliveryIntro: string;
@@ -614,6 +615,7 @@ const uz: Dictionary = {
   },
   pages: {
     faqTitle: "Savol-javob",
+    privacyTitle: "Maxfiylik siyosati",
     faqIntro: "Mijozlarimiz eng ko'p beradigan savollar va ularga javoblar.",
     deliveryTitle: "Yetkazib berish va to'lov",
     deliveryIntro: "Buyurtma qanday yetkaziladi, qancha turadi va qanday to'lanadi.",
@@ -930,6 +932,7 @@ const en: Dictionary = {
   },
   pages: {
     faqTitle: "FAQ",
+    privacyTitle: "Privacy policy",
     faqIntro: "The questions our customers ask most often, with answers.",
     deliveryTitle: "Delivery and payment",
     deliveryIntro: "How your order is delivered, what it costs and how to pay.",
@@ -1246,6 +1249,7 @@ const ru: Dictionary = {
   },
   pages: {
     faqTitle: "Вопросы и ответы",
+    privacyTitle: "Политика конфиденциальности",
     faqIntro: "Самые частые вопросы наших покупателей и ответы на них.",
     deliveryTitle: "Доставка и оплата",
     deliveryIntro: "Как доставляется заказ, сколько это стоит и как оплатить.",

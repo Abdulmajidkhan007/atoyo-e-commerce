@@ -13,6 +13,9 @@ import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import LoginIcon from "@mui/icons-material/Login";
 import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
+import PrivacyTipOutlinedIcon from "@mui/icons-material/PrivacyTipOutlined";
 import { useAppSelector } from "@/redux/hooks";
 import { useI18n } from "@/lib/i18n/LocaleContext";
 
@@ -44,6 +47,9 @@ export function MobileMenu() {
     { href: "/blog", label: dict.nav.blog, Icon: ArticleOutlinedIcon },
     { href: "/about", label: dict.nav.about, Icon: InfoOutlinedIcon },
     { href: "/kontakt", label: dict.nav.contact, Icon: SupportAgentOutlinedIcon },
+    { href: "/yetkazib-berish", label: dict.pages.deliveryTitle, Icon: LocalShippingOutlinedIcon },
+    { href: "/savol-javob", label: dict.pages.faqTitle, Icon: QuizOutlinedIcon },
+    { href: "/maxfiylik", label: dict.pages.privacyTitle, Icon: PrivacyTipOutlinedIcon },
   ];
 
   const account = userProfile

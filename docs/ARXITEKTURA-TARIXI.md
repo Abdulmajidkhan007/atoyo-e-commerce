@@ -935,3 +935,15 @@ Node'da ishlaydi va u yerda `URLSearchParams` to'liq — nosozlik
 ko'rinmagan. Endi ilovada so'rov qatori faqat `mobile/src/query.ts`
 (`buildQuery`) bilan yasaladi, `URLSearchParams` ishlatilmaydi.
 Ilova versiyasi 1.4.
+
+## 37. Checkout boshqa yetkazish narxini ko'rsatdi (130 900 vs 95 900)
+
+Admin yetkazish sozlamasini o'zgartirgach, mijoz bitta xarid
+davomida UCH xil narx ko'rdi: bosh sahifada 15 000, checkout'da
+"Qo'qon — 50 000" (jami 130 900), buyurtma sahifasida esa to'g'ri
+95 900 (server hisobi). Sabab: `/api/delivery` CDN'da 300 s +
+stale-while-revalidate 1200 s keshlanardi, har sahifa turli vaqtdagi
+eski nusxani olardi. Pul summasi keshdan ko'rsatilmaydi: endi javob
+`no-store`, server xotirasida 30 s (`getDeliverySettingsCached`),
+admin saqlaganda `clearDeliveryCache()`. Buyurtma narxi har doim
+keshsiz o'qiladi.

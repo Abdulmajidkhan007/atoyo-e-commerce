@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getAdminDb } from "@/lib/firebase/admin";
 import { validationMessage } from "@/lib/http/validation";
 import { requirePermission } from "@/lib/firebase/session";
-import { getDeliverySettings } from "@/lib/orders/pricing";
+import { clearDeliveryCache, getDeliverySettings } from "@/lib/orders/pricing";
 
 export const runtime = "nodejs";
 
@@ -57,5 +57,6 @@ export async function PATCH(request: Request) {
   }
 
   await getAdminDb().doc("settings/delivery").set(parsed.data, { merge: true });
+  clearDeliveryCache();
   return NextResponse.json({ ok: true });
 }
