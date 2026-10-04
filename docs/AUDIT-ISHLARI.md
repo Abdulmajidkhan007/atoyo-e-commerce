@@ -422,3 +422,14 @@ keyin QOLGAN nitlar. Hech biri hozir xavf emas.
    `checkRateLimit`: parallel so'rovlar limitdan bir nechtaga oshib
    ketishi mumkin; IP limiti buni chegaralaydi.
 
+
+## 15) Android ilovani sayt bilan tenglashtirish (8-14 tugagach) 🟢
+
+Egasining qarori: saytdagi qolgan ishlar (8-14) tugagandan KEYIN.
+Ilova sayt bilan BIR XIL bo'lishi kerak — ko'rinish (shisha UI,
+`docs/UI-SHISHA.md`) va imkoniyatlar: kategoriya chiplari,
+"Xususiyatlari", 1 klikda buyurtma, kartaga o'tkazma + chek yuklash,
+"Bepul yetkazishga X so'm qoldi", Savol-javob va Yetkazib berish
+sahifalari, mijozlar fikri. Avval spetsifikatsiya (`ai/specs/`), keyin
+ishlab chiqish. Katalog bo'sh chiqishi allaqachon tuzatilgan (1.4,
+`ARXITEKTURA-TARIXI.md` 36).
