@@ -31,6 +31,8 @@ export type RootStackParamList = {
   AdminBuyurtmalar: undefined;
   AdminMahsulotlar: undefined;
   AdminQolgan: undefined;
+  /** Buyurtmadan keyingi to'lov ekrani (o'tkazma + chek). Kalit faqat qurilmada. */
+  Tolov: {orderId: string; accessToken?: string};
 };
 
 /** Tab ekranlari stack'ga ham o'ta oladi - shuning uchun composite. */

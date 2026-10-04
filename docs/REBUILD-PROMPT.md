@@ -652,6 +652,23 @@ API'si orqali yuboradi (`Authorization: Bearer <Firebase ID token>`).
 - **Mahsulot turlari** (o'lcham/qalinlik) segment tanlagich ko'rinishida:
   variantlar bitta ramka ichida, tanlangani ramka ichida rang bilan
   ajraladi (sayt va ilovada bir xil).
+- **Xarid oqimi saytdagidek** (AUDIT-ISHLARI 15, B oqimi):
+  mahsulot ekranida "Xususiyatlari" (`mobile/src/specs.ts` — sayt
+  `lib/products/specs.ts` nusxasi, parity testi
+  `specs-mobile-parity.test.ts`) va "1 klikda sotib olish"
+  (`components/QuickBuySheet.tsx` → `/api/orders/quick`); savatda
+  "Bepul yetkazishga X so'm qoldi" + farqni yopadigan 2-4 mahsulot
+  (`components/FreeDeliveryProgress.tsx`, `freeDeliveryGap` —
+  `delivery-text.ts`, `/api/products/gap-fillers`); checkout'da hudud
+  tanlovi, kartaga o'tkazma (faqat `/api/payment-info` yoqilgan bo'lsa)
+  va kirmagan mijozga "Ro'yxatdan o'tmasdan buyurtma berish" (butun
+  savat, ≤ 20 qator, ≤ 99 dona). Buyurtmadan keyin `OrderPaymentScreen`
+  (`Tolov`): summa va holat SERVERDAN (`/api/orders/<id>/payment?t=`),
+  karta raqami (nusxa), CHEK YUKLASH (multipart, `?t=` kaliti,
+  `Content-Length` — 411/413/404 xatolari o'zbekcha). Buyurtma kaliti
+  faqat qurilmada (AsyncStorage, `saveOrderAccess`); Buyurtmalarim'dan
+  ham shu ekranga kiriladi (mehmon — qurilmadagi ro'yxatdan). API
+  `mobile/src/checkout-api.ts`, matnlar `mobile/src/checkout-i18n.ts`.
 - **Shrift o'lchami sozlamada** (Sozlamalar > Shrift o'lchami):
   tizim bo'yicha / kichik / standart / katta / juda katta. Telefon
   sozlamasidagi katta shrift menyu yozuvlarini qirqib qo'yardi

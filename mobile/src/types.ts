@@ -65,6 +65,10 @@ export interface Product {
   isDraft?: boolean;
   /** O'rnatib berish xizmati bor mahsulot (moyka, dush kabina...). */
   installService?: boolean;
+  /** Sotish turi slug'i (dona, metr...) — nomi `/api/taxonomy` dagi `units` da. */
+  unit?: string;
+  /** O'lchamlar — "Xususiyatlari" ro'yxati uchun (`specs.ts`). */
+  dimensions?: {diameterMm?: number; lengthMm?: number; weightKg?: number};
   /** Mahsulot tartib raqami (saytdagi "№" ustuni). */
   code?: number;
   /** Kimdan kelgan (kirim uchun). */
@@ -102,7 +106,9 @@ export interface Order {
   deliveryFee?: number;
   totalAmount: number;
   deliveryAddress: string | null;
-  paymentMethod: 'cash' | 'online';
+  paymentMethod: 'cash' | 'online' | 'transfer';
+  /** O'tkazmada: "pending" (chek kutilmoqda/tekshirilmoqda) → "paid" / "failed". */
+  paymentStatus?: 'not_required' | 'pending' | 'paid' | 'failed';
   status: OrderStatus;
   createdAt: number;
 }

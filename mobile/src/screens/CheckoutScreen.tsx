@@ -1,18 +1,23 @@
 import React, {useEffect, useState} from 'react';
-import {ScrollView, Text, View, Pressable} from 'react-native';
+import {ScrollView, Text, View} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import {makeStyles, radius, spacing} from '../theme';
 import {useI18n} from '../i18n';
 import {useAppDispatch, useAppSelector} from '../store';
 import {clearCart} from '../store/cartSlice';
 import {Button, Field} from '../components/ui';
+import {validatePromo} from '../api';
 import {
-  createOrder,
-  deliveryFeeFor,
-  fetchDeliverySettings,
-  validatePromo,
-  type DeliverySettings,
-} from '../api';
+  fetchCheckoutDelivery,
+  fetchTransferCard,
+  saveOrderAccess,
+  submitOrder,
+  type CheckoutDelivery,
+  type PaymentChoice,
+} from '../checkout-api';
+import {deliveryFeeForZone} from '../delivery-text';
+import {useCheckoutI18n} from '../checkout-i18n';
+import {QuickBuySheet, Radio, ZonePicker} from '../components/QuickBuySheet';
 import {useAuth} from '../auth';
 import type {Order} from '../types';
 import type {StackScreenProps} from '../navigation/types';
@@ -23,11 +28,18 @@ import {writeOrderWidget} from '../widgets';
 /**
  * Buyurtmani rasmiylashtirish. Hisob faqat ko'rsatish uchun - yakuniy
  * summani server (createOrder) o'zi qayta chiqaradi.
+ *
+ * To'lov usullari: naqd, onlayn va KARTAGA O'TKAZMA (faqat
+ * `/api/payment-info` da yoqilgan bo'lsa). Hududlar bo'lsa — tanlov.
+ * Kirmagan mijozga: "Ro'yxatdan o'tmasdan buyurtma berish" (butun savat
+ * `/api/orders/quick` ga) yoki hisobga kirish. O'tkazmada buyurtmadan
+ * keyin to'lov ekrani (karta + chek) ochiladi.
  */
 export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
   const styles = useStyles();
   const toast = useToast();
   const {t, money} = useI18n();
+  const {c} = useCheckoutI18n();
   const dispatch = useAppDispatch();
   const items = useAppSelector(s => s.cart.items);
   const {user} = useAuth();
@@ -37,19 +49,35 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
   const [address, setAddress] = useState(user?.homeAddress ?? '');
   const [promoInput, setPromoInput] = useState('');
   const [promo, setPromo] = useState<{code: string; discount: number} | null>(null);
-  const [delivery, setDelivery] = useState<DeliverySettings>({fee: 0, freeFrom: 0, enabled: false});
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
+  const [delivery, setDelivery] = useState<CheckoutDelivery>({fee: 0, freeFrom: 0, enabled: false, zones: []});
+  const [paymentMethod, setPaymentMethod] = useState<PaymentChoice>('cash');
+  const [transferEnabled, setTransferEnabled] = useState(false);
+  const [zoneId, setZoneId] = useState('');
+  const [guestOpen, setGuestOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetchDeliverySettings()
-      .then(setDelivery)
+    let active = true;
+    fetchCheckoutDelivery()
+      .then(found => {
+        if (active) setDelivery(found);
+      })
       .catch(() => {});
+    // O'tkazma faqat sozlamada yoqilgan bo'lsa ko'rinadi.
+    fetchTransferCard().then(card => {
+      if (active) setTransferEnabled(card !== null);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const discount = promo?.discount ?? 0;
-  const deliveryFee = deliveryFeeFor(delivery, subtotal - discount);
+  const deliveryFee = deliveryFeeForZone(delivery, subtotal - discount, zoneId || null);
+  const methods: PaymentChoice[] = transferEnabled ? ['cash', 'transfer', 'online'] : ['cash', 'online'];
+  const methodLabel = (method: PaymentChoice) =>
+    method === 'cash' ? t.payCash : method === 'transfer' ? c.payTransfer : t.payOnline;
   const total = subtotal - discount + deliveryFee;
 
   const applyPromo = async () => {
@@ -81,18 +109,25 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
 
     setBusy(true);
     try {
-      const {orderId} = await createOrder({
+      const method = paymentMethod === 'transfer' && !transferEnabled ? 'cash' : paymentMethod;
+      const {orderId, accessToken} = await submitOrder({
         customerName: name.trim(),
         phoneNumber: phone.trim(),
         items,
         deliveryAddress: address.trim() || null,
-        location: null,
-        paymentMethod,
+        paymentMethod: method,
         promoCode: promo?.code ?? null,
+        deliveryZoneId: zoneId || null,
       });
       dispatch(clearCart());
+      await saveOrderAccess(orderId, accessToken);
       toast.success(t.orderNumber(orderId.slice(0, 8)));
-      navigation.navigate('Buyurtmalarim');
+      if (method === 'transfer') {
+        // Karta raqami va chek yuklash — summa serverdan o'qiladi.
+        navigation.replace('Tolov', {orderId, accessToken});
+      } else {
+        navigation.navigate('Buyurtmalarim');
+      }
 
       // Widget uchun - narx serverda qayta hisoblangani uchun hujjatning
       // o'zi o'qiladi, mahalliy hisoblangan `total` ishlatilmaydi.
@@ -111,6 +146,41 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
     }
   };
 
+  if (!user) {
+    // KIRMAGAN MIJOZ: butun savat ro'yxatdan o'tmasdan (saytdagi kabi)
+    // yoki hisobga kirib odatdagi buyurtma.
+    return (
+      <ScrollView style={styles.screen} contentContainerStyle={{padding: spacing.lg, gap: spacing.md}}>
+        <View style={styles.card}>
+          <Row label={t.itemsTotal} value={money(subtotal)} />
+          <Text style={{color: styles.c.muted, fontSize: 13}}>{c.guestCheckoutHint}</Text>
+        </View>
+        <DeliveryNote />
+        <Button title={c.guestCheckout} icon="send" onPress={() => setGuestOpen(true)} disabled={items.length === 0} />
+        <Button
+          title={c.orLogin}
+          variant="outline"
+          onPress={() => navigation.navigate('Tabs', {screen: 'Profil'})}
+        />
+        <QuickBuySheet
+          visible={guestOpen}
+          onClose={() => setGuestOpen(false)}
+          lines={items}
+          onDone={result => {
+            setGuestOpen(false);
+            dispatch(clearCart());
+            if (!result) {
+              toast.success(c.orderReceivedShort);
+              navigation.navigate('Tabs', {screen: 'Home'});
+              return;
+            }
+            navigation.replace('Tolov', {orderId: result.orderId, accessToken: result.accessToken});
+          }}
+        />
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{padding: spacing.lg, gap: spacing.md}}>
       <Field label={t.fullName} value={name} onChangeText={setName} />
@@ -126,16 +196,26 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
 
       <Field label={t.deliveryAddress} value={address} onChangeText={setAddress} multiline />
 
+      {delivery.zones.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{c.zone}</Text>
+          <ZonePicker zones={delivery.zones} value={zoneId} onChange={setZoneId} />
+        </View>
+      )}
+
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t.paymentMethod}</Text>
-        {(['cash', 'online'] as const).map(method => (
-          <Pressable key={method} onPress={() => setPaymentMethod(method)} style={styles.radioRow}>
-            <View style={[styles.radio, paymentMethod === method && styles.radioActive]} />
-            <Text style={{color: styles.c.text}}>
-              {method === 'cash' ? t.payCash : t.payOnline}
-            </Text>
-          </Pressable>
+        {methods.map(method => (
+          <Radio
+            key={method}
+            label={methodLabel(method)}
+            active={paymentMethod === method}
+            onPress={() => setPaymentMethod(method)}
+          />
         ))}
+        {paymentMethod === 'transfer' && (
+          <Text style={{color: styles.c.muted, fontSize: 12}}>{c.transferHint}</Text>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -161,7 +241,7 @@ export function CheckoutScreen({navigation}: StackScreenProps<'Buyurtma'>) {
       <View style={styles.card}>
         <Row label={t.itemsTotal} value={money(subtotal)} />
         {discount > 0 && <Row label={t.discount} value={`−${money(discount)}`} />}
-        {delivery.enabled && delivery.fee > 0 && (
+        {delivery.enabled && (delivery.fee > 0 || delivery.zones.length > 0) && (
           <Row label={t.deliveryFee} value={deliveryFee > 0 ? money(deliveryFee) : t.free} />
         )}
         <View style={styles.totalRow}>
@@ -206,7 +286,4 @@ const useStyles = makeStyles(c => ({
   },
   totalLabel: {fontWeight: '700', color: c.text},
   total: {fontWeight: '800', fontSize: 18, color: c.text},
-  radioRow: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 6},
-  radio: {width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: c.border},
-  radioActive: {borderColor: c.accent, backgroundColor: c.accent},
 }));

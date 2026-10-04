@@ -483,6 +483,10 @@ allaqachon tuzatilgan (1.4, `ARXITEKTURA-TARIXI.md` 36).
 > **A oqimi bajarildi (2026-10-04):** shisha UI, kategoriya chiplari,
 > mijozlar fikri, `/api/products/chip-categories` va
 > `/api/content/testimonials`.
+> **B oqimi bajarildi (2026-10-04):** Xususiyatlari, 1 klikda, bepul
+> yetkazish chizig'i + tavsiyalar, checkout (hudud, o'tkazma, mehmon
+> buyurtmasi), `OrderPaymentScreen` + chek yuklash; saytga
+> `GET /api/orders/[id]/payment` (testi bor). Versiya ko'tarilmagan.
 
 ## 16) Haqiqiy mahsulotning 3D modeli (15-banddan keyin) 🟢
 

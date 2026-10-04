@@ -41,6 +41,10 @@ import {Breadcrumbs} from '../components/Breadcrumbs';
 import {DeliveryNote} from '../components/DeliveryNote';
 import {fetchTaxonomy} from '../api';
 import {SegmentedPicker} from '../components/SegmentedPicker';
+import {QuickBuySheet} from '../components/QuickBuySheet';
+import {productSpecs} from '../specs';
+import {fetchSpecTaxonomy, type SpecTaxonomy} from '../checkout-api';
+import {useCheckoutI18n} from '../checkout-i18n';
 
 /** Galereya slaydining balandligi (rasm ham, video ham bir xil). */
 const GALLERY_HEIGHT = 300;
@@ -70,6 +74,11 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
   const [related, setRelated] = useState<Product[]>([]);
   /** Kategoriyaning ko'rinadigan nomi ("faucets" emas, "Kranlar"). */
   const [categoryLabel, setCategoryLabel] = useState('');
+  /** "1 klikda sotib olish" oynasi. */
+  const [quickOpen, setQuickOpen] = useState(false);
+  /** Xususiyatlar uchun nomlar (material, sotish turi) — `/api/taxonomy`. */
+  const [specTaxonomy, setSpecTaxonomy] = useState<SpecTaxonomy | null>(null);
+  const {c} = useCheckoutI18n();
   /** Galereyada ochiq turgan rasm (to'liq ekran uchun). */
   const [zoomUrl, setZoomUrl] = useState<string | null>(null);
   /** Galereya rasmi ekran kengligida bo'ladi (foiz bilan ishlamaydi). */
@@ -103,6 +112,16 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
       active = false;
     };
   }, [product?.category]);
+
+  useEffect(() => {
+    let active = true;
+    fetchSpecTaxonomy().then(found => {
+      if (active) setSpecTaxonomy(found);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -150,6 +169,31 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
     withVariants ? (variant ? variantPrice(variant) : product.price) : effectivePrice(product),
   );
   const stock = withVariants ? (variant?.stock ?? 0) : product.stock;
+
+  // "XUSUSIYATLARI" — saytdagi ro'yxat bilan bir xil (`specs.ts`, parity testi).
+  const labelOf = (items: {slug: string; label: string}[] | undefined, slug?: string) =>
+    slug ? (items?.find(item => item.slug === slug)?.label ?? slug) : '';
+  const specs = productSpecs(
+    {...product, sku: variant?.sku || product.sku},
+    {
+      categoryLabel: product.category
+        ? t.categoryLabels[product.category] ?? (categoryLabel || labelOf(specTaxonomy?.categories, product.category))
+        : '',
+      materialLabel: product.material ? labelOf(specTaxonomy?.materials, product.material) : '',
+      unitLabel: labelOf(specTaxonomy?.units, product.unit) || c.defaultUnit,
+    },
+    {
+      category: c.specCategory,
+      brand: c.specBrand,
+      country: c.specCountry,
+      material: c.specMaterial,
+      saleUnit: c.specSaleUnit,
+      diameter: c.specDiameter,
+      length: c.specLength,
+      weight: c.specWeight,
+      code: c.specCode,
+    },
+  );
 
   const handleAddToCart = () => {
     dispatch(
@@ -312,11 +356,6 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           {isWholesale && <Text style={styles.wholesaleTag}>optom</Text>}
         </View>
 
-        {/* Tanlangan turning KODI - mijoz shu kod bilan buyurtma beradi. */}
-        {!!(variant?.sku || product.sku) && (
-          <Text style={styles.muted}>Kod: {variant?.sku || product.sku}</Text>
-        )}
-
         <Text style={styles.muted}>
           {stock > 0 ? t.inStockCount(stock) : t.notAvailable}
         </Text>
@@ -325,11 +364,34 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
           <Text style={styles.description}>{localizedDescription(product, locale)}</Text>
         )}
 
+        {/* XUSUSIYATLARI — saytdagidek tavsifdan keyin; tanlangan turning KODI
+            ham shu yerda (mijoz shu kod bilan buyurtma beradi). */}
+        {specs.length > 0 && (
+          <View style={styles.specs}>
+            <Text style={styles.specsTitle}>{c.specsTitle}</Text>
+            {specs.map(row => (
+              <View key={row.label} style={styles.specRow}>
+                <Text style={styles.specLabel}>{row.label}</Text>
+                <Text style={styles.specValue}>{row.value}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         <Button
           title={stock > 0 ? t.addToCart : t.outOfStock}
           onPress={handleAddToCart}
           disabled={stock <= 0 || (withVariants && !variant)}
         />
+        {/* 1 KLIKDA: ro'yxatdan o'tmasdan, ism/telefon/manzil bilan. */}
+        <Button
+          title={c.quickBuy}
+          variant="outline"
+          icon="send"
+          onPress={() => setQuickOpen(true)}
+          disabled={stock <= 0 || (withVariants && !variant)}
+        />
+
 
         {/* Yetkazib berish va'dasi - saytdagi bilan bir xil matn.
             O'rnatish qatori faqat shu mahsulotda xizmat belgilangan
@@ -408,6 +470,30 @@ export function ProductScreen({route, navigation}: StackScreenProps<'Mahsulot'>)
         )}
       </View>
 
+      <QuickBuySheet
+        visible={quickOpen}
+        onClose={() => setQuickOpen(false)}
+        stock={stock}
+        lines={[
+          {
+            productId: product.id,
+            ...(variant ? {variantId: variant.id, variantLabel: variantLabel(product, variant)} : {}),
+            name: localizedName(product, locale),
+            price,
+            quantity: 1,
+            thumbnailUrl: product.thumbnailUrl,
+          },
+        ]}
+        onDone={result => {
+          setQuickOpen(false);
+          if (!result) {
+            toast.success(c.orderReceivedShort);
+            return;
+          }
+          navigation.navigate('Tolov', {orderId: result.orderId, accessToken: result.accessToken});
+        }}
+      />
+
       {/* To'liq ekranda rasm */}
       <Modal visible={zoomUrl !== null} transparent animationType="fade">
         <Pressable style={styles.zoomBackdrop} onPress={() => setZoomUrl(null)}>
@@ -485,5 +571,18 @@ const useStyles = makeStyles(c => ({
     backgroundColor: c.surface,
   },
   reviewAuthor: {fontWeight: '600', color: c.text},
+  specs: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: 6,
+    marginTop: spacing.sm,
+    backgroundColor: c.surface,
+  },
+  specsTitle: {fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 2},
+  specRow: {flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md},
+  specLabel: {color: c.muted, fontSize: 13},
+  specValue: {flex: 1, color: c.text, fontSize: 13, fontWeight: '600', textAlign: 'right'},
   reviewText: {color: c.text, fontSize: 13},
 }));

@@ -25,6 +25,7 @@ import {FaqScreen} from '../screens/FaqScreen';
 import {AdminOrdersScreen} from '../screens/AdminOrdersScreen';
 import {AdminProductsScreen} from '../screens/AdminProductsScreen';
 import {AdminMoreScreen} from '../screens/AdminMoreScreen';
+import {OrderPaymentHeader, OrderPaymentScreen} from '../screens/OrderPaymentScreen';
 import type {RootStackParamList, TabParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -179,6 +180,11 @@ export function RootNavigator() {
         name="AdminQolgan"
         component={AdminMoreScreen}
         options={{header: () => <BrandHeader back title="Boshqaruv" />}}
+      />
+      <Stack.Screen
+        name="Tolov"
+        component={OrderPaymentScreen}
+        options={{header: () => <OrderPaymentHeader />}}
       />
     </Stack.Navigator>
   );

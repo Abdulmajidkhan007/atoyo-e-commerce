@@ -455,6 +455,14 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
   (`components/Glass.tsx`, `@react-native-community/blur`); boshqa
   joyda `palette.glass` (rgba) + `glassBorder`. Yangi karta/maydon
   `ui.tsx` komponentlaridan olinadi (`docs/UI-SHISHA.md` 6).
+- **Xarid oqimi API'si `mobile/src/checkout-api.ts` da** (`api.ts` da
+  EMAS), matnlari `mobile/src/checkout-i18n.ts` da. Ilova narx/summa
+  HISOBLAMAYDI: to'lov ekrani summani `/api/orders/<id>/payment` dan
+  oladi. Buyurtma kaliti (`accessToken`) FAQAT qurilmada (AsyncStorage)
+  va serverga faqat shu route hamda chek yuklashda (`?t=`) ketadi; chek
+  multipart `file://` bilan (RN `Content-Length` ni o'zi qo'yadi —
+  server usiz 411). Sof nusxalar (`specs.ts`, `freeDeliveryGap`,
+  `deliveryFeeForZone`) sayt bilan parity testi bilan qulflangan.
 - Video pleyer: `mobile/src/components/VideoPlayer.tsx`
   (`react-native-video`) — mahsulot galereyasida va blog maqolasida.
   Yangi nativ paket qo'shilsa `scripts/check-codegen.mjs` ro'yxatiga
@@ -535,6 +543,9 @@ bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
 - **`orders` ni client SDK bilan YARATISH qoidalarda yopiq** — faqat
   server. Ilgari kirgan mijoz o'zi `paymentStatus: "paid"` yozib
   qo'yishi mumkin edi.
+- **Ilova to'lov ekrani** `GET /api/orders/[id]/payment?t=` — kirish chek
+  yuklash bilan bir xil (`canAccessOrder`, aks holda 404), javobda faqat
+  summa va to'lov holati (telefon, manzil, chek yo'li YO'Q), `no-store`.
 - `/api/orders/[id]/...` ostida segment nomi HAR DOIM `[id]` — Next.js
   bir darajada ikki xil nomni (`[id]` va `[orderId]`) qabul qilmaydi.
 

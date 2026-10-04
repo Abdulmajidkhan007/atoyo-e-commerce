@@ -90,3 +90,48 @@ export function installServiceText(settings?: Partial<DeliveryTextSettings> | nu
   const near = city ? `${city} va atrofidagi mijozlarga` : 'yaqin mijozlarga';
   return `Moyka, dush kabina va shunga o'xshash mahsulotlarni o'rnatib berish xizmati bor — ${near}. Buyurtma berayotganda ayting.`;
 }
+
+/**
+ * "BEPUL YETKAZISHGA X SO'M QOLDI" — saytdagi `freeDeliveryGap` nusxasi
+ * (savatdagi chiziq). Yetkazish bepul yoki chegara yo'q bo'lsa `null`.
+ * Faqat KO'RSATISH uchun — yakuniy summa baribir serverda.
+ */
+export function freeDeliveryGap(
+  settings: Partial<DeliveryTextSettings> | null | undefined,
+  payable: number,
+): {remaining: number; progress: number; freeFrom: number; fee: number} | null {
+  const terms = paidTerms(withDefaults(settings));
+  if (!terms || terms.freeFrom <= 0) return null;
+  const remaining = Math.max(0, Math.ceil(terms.freeFrom - Math.max(0, payable)));
+  const progress = Math.min(100, Math.max(0, Math.round((payable / terms.freeFrom) * 100)));
+  return {remaining, progress, freeFrom: terms.freeFrom, fee: terms.fee};
+}
+
+/** Yetkazish hududi — saytdagi `DeliveryZone` bilan bir xil shakl. */
+export interface DeliveryZoneLite {
+  id: string;
+  name: string;
+  fee: number;
+  freeFrom?: number;
+}
+
+/**
+ * Yetkazish narxi (hudud bilan) — saytdagi `lib/orders/promo.ts` →
+ * `deliveryFeeFor` nusxasi. Checkout va 1 klik oynasida OLDINDAN
+ * ko'rsatish uchun; server buyurtmada o'zi qayta hisoblaydi.
+ */
+export function deliveryFeeForZone(
+  settings: {enabled: boolean; fee: number; freeFrom: number; zones?: DeliveryZoneLite[]},
+  payableAmount: number,
+  zoneId?: string | null,
+): number {
+  if (!settings.enabled) return 0;
+
+  const zone = zoneId ? (settings.zones ?? []).find(item => item.id === zoneId) : undefined;
+  const fee = zone ? zone.fee : settings.fee;
+  const freeFrom = zone?.freeFrom && zone.freeFrom > 0 ? zone.freeFrom : settings.freeFrom;
+
+  if (fee <= 0) return 0;
+  if (freeFrom > 0 && payableAmount >= freeFrom) return 0;
+  return fee;
+}

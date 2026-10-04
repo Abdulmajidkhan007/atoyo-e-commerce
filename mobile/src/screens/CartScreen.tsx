@@ -8,6 +8,7 @@ import {Button, EmptyState} from '../components/ui';
 import type {StackScreenProps} from '../navigation/types';
 import {Icon} from '../components/Icon';
 import {usePricingSettings} from '../pricing';
+import {FreeDeliveryProgress} from '../components/FreeDeliveryProgress';
 
 /** Savat: soni +/−, o'chirish va rasmiylashtirishga o'tish. */
 export function CartScreen({navigation}: StackScreenProps<'Savat'>) {
@@ -38,6 +39,8 @@ export function CartScreen({navigation}: StackScreenProps<'Savat'>) {
         data={items}
         keyExtractor={item => `${item.productId}:${item.variantId ?? ''}`}
         contentContainerStyle={{padding: spacing.md, gap: spacing.sm}}
+        // "Bepul yetkazishga X so'm qoldi" + farqni yopadigan mahsulotlar.
+        ListFooterComponent={<FreeDeliveryProgress />}
         renderItem={({item}) => (
           <View style={styles.row}>
             <Pressable onPress={() => navigation.navigate('Mahsulot', {productId: item.productId})}>
