@@ -243,7 +243,7 @@ menga ayt (men birlashtiraman).
 > boshqa branchda qolib ketdi. Shunda hech bo'lmasa branch nomi
 > ma'lum bo'ladi.
 
-## 8) CSV eksportni kursorga o'tkazish (AUDIT 3.1)
+## 8) CSV eksportni kursorga o'tkazish (AUDIT 3.1) ✅ BAJARILDI (2026-10-04)
 
 ```text
 api/admin/products/export/route.ts:15 butun katalogni bitta so'rovda

@@ -243,12 +243,21 @@ function productRow(p: Product, variant?: ProductVariant): string {
  * qilinsa turlar ham tiklanadi.
  */
 export function productsToCsv(products: Product[]): string {
-  const rows = products.flatMap((p) => {
+  return `${csvHeaderLine()}${productsToCsvRows(products).join("\n")}\n`;
+}
+
+/** Sarlavha qatori (BOM + ustunlar + yangi qator) - oqimda bir marta yoziladi. */
+export function csvHeaderLine(): string {
+  return `\uFEFF${CSV_COLUMNS.join(",")}\n`;
+}
+
+/** Mahsulotlar qatorlari (sarlavhasiz); turlari bor mahsulot bir necha qator. */
+export function productsToCsvRows(products: Product[]): string[] {
+  return products.flatMap((p) => {
     const variants = p.variants ?? [];
     const hasAxes = (p.variantAxes?.length ?? 0) > 0 && variants.length > 0;
     return hasAxes ? variants.map((variant) => productRow(p, variant)) : [productRow(p)];
   });
-  return `﻿${CSV_COLUMNS.join(",")}\n${rows.join("\n")}\n`;
 }
 
 /** Bitta CSV qatorini ustunlarga ajratadi (qo'shtirnoq ichidagi vergulni hisobga oladi). */
