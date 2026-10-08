@@ -1,5 +1,8 @@
 # Loyiha holati: hisobot (2026-08-19)
 
+> ⚠️ Bu — 2026-08-19 holatidagi tarixiy hisobot. Amaldagi holat va qolgan
+> ishlar: `docs/AUDIT-ISHLARI.md` → "UMUMIY HOLAT" bo'limi.
+
 Bu hujjat uchta savolga javob beradi:
 
 1. nima **bajarildi**;

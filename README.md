@@ -1,6 +1,6 @@
 # Atoyo Santexnika — E-Commerce Platformasi
 
-"Santexnika & Otopleniye" onlayn do'koni: 10,000+ mahsulot, Telegram bot integratsiyasi va rolga asoslangan admin panel.
+"Santexnika & Otopleniye" onlayn do'koni: 10 000+ mahsulotga mo'ljallangan katalog, Telegram bot integratsiyasi va rolga asoslangan admin panel.
 
 **Jonli sayt:** https://atoyo.uz
 
@@ -19,7 +19,7 @@
 ## Asosiy imkoniyatlar
 
 - **Katalog** — cursor-based pagination (`startAfter` + `limit`), Infinite Scroll, kompozit indeksli filtrlar (kategoriya/material/brend/davlat/narx), typo-tolerant qidiruv (Firestore prefiks + Fuse.js)
-- **Buyurtma** — savat (localStorage'da saqlanadi), geolokatsiya bilan checkout, buyurtma statusini real-vaqtda kuzatish (`onSnapshot`)
+- **Buyurtma** — savat (localStorage'da saqlanadi), geolokatsiya bilan checkout, buyurtma statusini real-vaqtda kuzatish (`onSnapshot`); ro'yxatdan o'tmagan mijoz uchun 1 klikda buyurtma, kartaga o'tkazma + chek yuklash
 - **Telegram bot** — har bir buyurtma/kontakt/obuna guruhning tegishli forum topic'iga boradi; buyurtma xabari ostidagi [✅ Qabul qilish] [🚚 Yetkazishda] [🎉 Yakunlandi] tugmalari webhook orqali Firestore statusini yangilaydi
 - **Auth** — Sign in with Google + Email/Parol; birinchi kirishda Firestore `users`ga `{role:'user'}` yoziladi
 - **Admin panel** (`/admin`) — dashboard (tushum/eng ko'p sotilganlar), katalog boshqaruvi (inline narx/zaxira, bulk narx, rasm yuklash), buyurtmalar nazorati, foydalanuvchi rollari, bot Thread ID sozlamalari
@@ -105,3 +105,8 @@ docs/                  # Deploy, kirim/import, TV, desktop, stikerlar, zaxira...
 | `docs/UI-3D.md` | Klassik/3D dizayn rejimi, 3D sahna va tezlik qoidalari |
 | `docs/QULAYLIK.md` | Ekran o'quvchi va klaviatura qoidalari (a11y) |
 | `docs/BACKUP.md` / `docs/PLAY-STORE.md` / `docs/TYPESENSE.md` | Zaxira, ilova relizi, qidiruv motori |
+| `docs/UI-SHISHA.md` | Shisha (glass) ko'rinish qoidalari — sayt va ilova uchun |
+| `docs/KIRIM-REJASI.md` | Har kuni nima kiritiladi — mahsulot kirimi tartibi |
+| `docs/ISH-ARXITEKTURASI.md` | Topshiriqni qaysi yo'l bilan bajarish (sessiya/model marshruti) |
+| `docs/LOYIHA-HAQIDA.md` | Mijoz va hamkorlar uchun tayyor tanishtiruv matni |
+| `docs/HISOBOT.md` | 2026-08-19 holatidagi tarixiy hisobot (amaldagi holat — `AUDIT-ISHLARI.md`) |

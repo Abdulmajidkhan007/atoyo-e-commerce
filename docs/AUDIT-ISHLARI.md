@@ -7,9 +7,27 @@ xavfli edi — 3 va 5-ishga qarang).
 **Ishlatish:** har bir blokni ALOHIDA yangi sessiyada yuboring.
 Tugagach sessiyani yoping. `CLAUDE.md` avtomatik o'qiladi.
 
-> ⚠️ **1-ish tugamaguncha Sozlamalardagi "Storage tozalash"
-> tugmasini BOSMANG** — hozirgi holatda u 30 kundan eski hamma
-> mahsulot rasmini o'chirib yuborishi mumkin.
+> ✅ 1-ish (Storage tozalash qalqoni) bajarilgan — Sozlamalardagi
+> "Storage tozalash" tugmasi endi xavfsiz.
+
+## UMUMIY HOLAT (2026-10-08)
+
+Kod bo'yicha 1-15 bandlarning **hammasi bajarilgan** (har biri kodda
+tekshirildi: `reportErrorThrottled`, `/k` rate limit, `permissionForFolder`,
+CSV kursor, ilova `versionName 1.5.2`).
+
+**Kodda qolgan ishlar:**
+| # | Ish | Holat |
+|---|---|---|
+| 16 | Haqiqiy mahsulotning 3D modeli | Egasi image→3D xizmatida hisob ochib API kalit berishi kerak; avval `ai/specs/` |
+| 3.7 | 800+ qatorli fayllarni bo'lish (`customer-bot.ts` 1783, `admin-session.ts` 1676, `ProductForm.tsx` 1106 ...) | Alohida rejalashtiriladi |
+| 3.5 | `three.js` ikki chunk | 3D mijozga yoqilganda (16-band bilan) |
+| 14-nit 1 | GA yoqilishidan OLDIN `page_location` dan `t` ni olib tashlash | Faqat GA yoqilsa |
+
+**Egasi qiladigan ishlar (konsolda, kod emas):**
+- Ilova 1.5.2 ni Admin → Sozlamalar → «Ilova yangilanishi» da e'lon qilish (`QADAMLAR.md` 3-bo'lim).
+- Production'da XFF zanjirini bir marta tekshirish (5-band).
+- Payme/Click merchant kalitlari kelgach test kabinetida sinash (7-band).
 
 ---
 
@@ -192,12 +210,12 @@ Tekshiruv birlashtirilgandan keyin: `tsc`, `eslint`, `npm test`
 | # | Ish | Nega qoldi |
 |---|---|---|
 | ~~2.5~~ | ~~Katalog indekslari + zaxira so'rov~~ | ✅ bajarildi: 15 ta yangi indeks (jumladan `stock`), zaxira yo'lda 4 barobar ortiqcha o'qish + filtrdan keyingi `hasMore`/kursor |
-| 3.1 | CSV eksport butun katalogni bir so'rovda o'qiydi | Kursor + `maxDuration` kerak |
+| ~~3.1~~ | ~~CSV eksport butun katalogni bir so'rovda o'qiydi~~ | ✅ bajarildi (8-band, 2026-10-04) |
 | ~~3.4~~ | ~~Foydalanuvchilar ro'yxati N+1 (20 × 200 hujjat)~~ | ✅ bajarildi: `users/{uid}` da `ordersCount/totalSpent/lastOrderAt` (buyurtma tranzaksiyasida), eski hisob Sozlamalardagi tugma bilan |
 | 2.7 | Narx/yetkazish sozlamasi jimgina standartga tushishi | BAJARILDI (ARXITEKTURA-TARIXI 42) |
 | 2.8 | Telegram webhook xatosi faqat konsolga yozilishi | BAJARILDI (ARXITEKTURA-TARIXI 42) |
-| 2.9 | `/api/admin/upload` — huquq emas, faqat "xodimmi" tekshiriladi | Tegilmagan |
-| 2.10 | `/k/<id>` cheksiz yozuv (rate limit + mahsulot borligini tekshirish) | Faqat izoh to'g'rilandi |
+| ~~2.9~~ | ~~`/api/admin/upload` — huquq emas, faqat "xodimmi" tekshiriladi~~ | ✅ bajarildi (`permissionForFolder`, c0b40e3) |
+| ~~2.10~~ | ~~`/k/<id>` cheksiz yozuv~~ | ✅ bajarildi (11-band: IP rate limit, notanish ID ga yozmaslik) |
 | 3.5 | `three.js` ikki chunk (946 KB × 2) | 3D o'chiq bo'lgani uchun mijozga tegmaydi |
 | 3.7 | 800 qatordan katta 7 ta faylni bo'lish | Katta ish, alohida rejalashtiriladi |
 
@@ -213,13 +231,13 @@ sessiya CLAUDE.md ni o'zi o'qiydi).
 
 | Navbat | Band | Model | Nega shu model |
 |---|---|---|---|
-| 1-to'lqin (bir vaqtda) | 8) CSV eksport | Sonnet | Aniq, bitta fayl |
-| 1-to'lqin | 11) `/k` himoyasi | Sonnet | Kichik, aniq |
+| 1-to'lqin (bir vaqtda) | ~~8) CSV eksport~~ ✅ | Sonnet | Aniq, bitta fayl |
+| 1-to'lqin | ~~11) `/k` himoyasi~~ ✅ | Sonnet | Kichik, aniq |
 | 1-to'lqin | ~~13) Tungi rejim~~ ✅ | **Opus** | Hydration/MUI — noaniq, ishlab turgan kodga tegadi |
-| 2-to'lqin (1-dan keyin) | 9) Foydalanuvchilar N+1 | **Opus** | Buyurtma tranzaksiyasi + migratsiya |
-| 2-to'lqin | 10) Jim xatolar | Sonnet | Aniq; `lib/orders/pricing.ts` ga tegadi |
-| 2-to'lqin | 14) Mehmon yo'li testlari | Sonnet | Test + kichik tranzaksiya |
-| 3-to'lqin (oxirida) | 12) Xato xabarlari | Sonnet | ~28 route'ga tegadi — boshqalar bilan to'qnashmasin deb OXIRIDA |
+| 2-to'lqin (1-dan keyin) | ~~9) Foydalanuvchilar N+1~~ ✅ | **Opus** | Buyurtma tranzaksiyasi + migratsiya |
+| 2-to'lqin | ~~10) Jim xatolar~~ ✅ | Sonnet | Aniq; `lib/orders/pricing.ts` ga tegadi |
+| 2-to'lqin | ~~14) Mehmon yo'li testlari~~ ✅ | Sonnet | Test + kichik tranzaksiya |
+| 3-to'lqin (oxirida) | ~~12) Xato xabarlari~~ ✅ | Sonnet | ~28 route'ga tegadi — boshqalar bilan to'qnashmasin deb OXIRIDA |
 
 To'lqin ichidagilar turli fayllarga tegadi — parallel yuborish mumkin.
 9 va 14 ikkalasi `create-order` atrofida: bir vaqtda yuborsangiz,
@@ -283,7 +301,7 @@ Tugagach: tsc + eslint + test + build.
 Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
-## 10) Jimgina yutilgan xatolar (AUDIT 2.7 + 2.8)
+## 10) Jimgina yutilgan xatolar (AUDIT 2.7 + 2.8) ✅ BAJARILDI (2026-10-04)
 
 ```text
 Ikki joyda xato hech kimga ko'rinmaydi:
@@ -306,7 +324,7 @@ Tugagach: tsc + eslint + test + build.
 Ishni main branchiga push qil (yangi branch OCHMA).
 ```
 
-## 11) `/k/<id>` himoyasi (AUDIT 2.10)
+## 11) `/k/<id>` himoyasi (AUDIT 2.10) ✅ BAJARILDI (2026-10-04)
 
 > Upload huquqi (2.9) allaqachon BAJARILGAN (`permissionForFolder`,
 > c0b40e3) — topshiriqda faqat `/k` qoldi.
@@ -417,7 +435,7 @@ menga ayt.
 
 ---
 
-## 14) 1-klik va o'tkazma: qolgan kichik ishlar 🟢
+## 14) 1-klik va o'tkazma: qolgan kichik ishlar 🟢 ✅ BAJARILDI (2026-10-04; nit 1, 4, 5 — kelishuv/ogohlantirish sifatida qoladi)
 
 ```text
 Mehmon buyurtma yo'li (CLAUDE.md 15-band, ARXITEKTURA-TARIXI 33, 34,
@@ -465,7 +483,7 @@ keyin QOLGAN nitlar. Hech biri hozir xavf emas.
    ketishi mumkin; IP limiti buni chegaralaydi.
 
 
-## 15) Android ilovani sayt bilan tenglashtirish (8-14 tugagach) 🟢
+## 15) Android ilovani sayt bilan tenglashtirish (8-14 tugagach) 🟢 ✅ BAJARILDI (ilova 1.5 → 1.5.2, 2026-10-04)
 
 Egasining qarori: saytdagi qolgan ishlar (8-14) tugagandan KEYIN.
 Ilova sayt bilan BIR XIL bo'lishi kerak — ko'rinish (shisha UI,
@@ -486,7 +504,8 @@ allaqachon tuzatilgan (1.4, `ARXITEKTURA-TARIXI.md` 36).
 > **B oqimi bajarildi (2026-10-04):** Xususiyatlari, 1 klikda, bepul
 > yetkazish chizig'i + tavsiyalar, checkout (hudud, o'tkazma, mehmon
 > buyurtmasi), `OrderPaymentScreen` + chek yuklash; saytga
-> `GET /api/orders/[id]/payment` (testi bor). Versiya ko'tarilmagan.
+> `GET /api/orders/[id]/payment` (testi bor).
+> **Integratsiya bajarildi:** ilova 1.5 (6ea1d05), keyin 1.5.1 va 1.5.2 tuzatishlari.
 
 ## 16) Haqiqiy mahsulotning 3D modeli (15-banddan keyin) 🟢
 

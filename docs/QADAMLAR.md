@@ -83,11 +83,14 @@ qaytadan hisoblanadi). Bekor qilingan buyurtma soniga kirmaydi.
 
 ---
 
-## 3. Ilova 1.3 (widgetlar) relizini e'lon qilish 🟡
+## 3. Ilova 1.5.2 relizini e'lon qilish 🟡
+
+> Yangilangan (2026-10-08): ilova 1.3 dan 1.5.2 ga yetdi. Quyidagi qadamlar
+> o'sha, faqat versiya raqami va "Nima o'zgardi" matni yangi.
 
 **Nega yangilanish oynasi chiqmadi.** Oyna faqat **serverdagi versiya
 telefondagisidan YANGI** bo'lganda chiqadi. Siz o'zingizga 1.3 ni
-o'rnatgansiz — sizga oyna chiqmasligi to'g'ri. Odamlarda 1.2 turibdi,
+o'rnatgansiz — sizga oyna chiqmasligi to'g'ri. Odamlarda eski versiya turibdi,
 lekin **serverda versiya hali e'lon qilinmagan**, shuning uchun
 ularga ham chiqmayapti.
 
@@ -96,12 +99,13 @@ ularga ham chiqmayapti.
    https://github.com/Abdulmajidkhan007/atoyo-e-commerce/releases/latest
    — `app-release.apk` turgan bo'lishi kerak (CI o'zi qo'yadi).
 2. **Admin → Sozlamalar → «Ilova yangilanishi (Android)»**.
-3. **Versiya:** `1.3` (aynan `mobile/android/app/build.gradle` dagi
+3. **Versiya:** `1.5.2` (aynan `mobile/android/app/build.gradle` dagi
    `versionName` bilan bir xil).
 4. **Nima o'zgardi** (har qatori alohida band), masalan:
-   - Bosh ekranga widgetlar qo'shildi (buyurtmalar, savat)
-   - Video pleyer
-   - Tezlik va mayda tuzatishlar
+   - Yangi ko'rinish: kategoriya chiplari va mijozlar fikri
+   - 1 klikda buyurtma, kartaga o'tkazma va chek yuklash
+   - Savol-javob va Yetkazib berish sahifalari
+   - Katalog bo'sh chiqishi va ko'rinishdagi xatolar tuzatildi
 5. «Majburiy yangilanish» — **yoqmang** (odamni majburlamang).
 6. **Saqlash** → shu payt obunachilarga **push** ham ketadi.
 

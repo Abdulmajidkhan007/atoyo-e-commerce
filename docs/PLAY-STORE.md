@@ -103,7 +103,7 @@ Keyin chap menyuda to'ldiriladigan bo'limlar:
 Tayyor matnlar (nusxalab qo'ying):
 
 **Qisqa tavsif:**
-> Santexnika va isitish tizimlari: 10 000+ mahsulot, tez yetkazib berish.
+> Santexnika va isitish tizimlari: keng tanlov, tez yetkazib berish.
 
 **To'liq tavsif:**
 > Atoyo Santexnika & Otopleniye — quvurlar, muftalar, kranlar, dush
