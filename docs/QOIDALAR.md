@@ -1,0 +1,590 @@
+# Atoyo — qoidalar va xarita (to'liq matn)
+
+> 2026-10-21 da `CLAUDE.md` dan ko'chirildi (har sessiyada o'qiladigan fayl qisqa
+> bo'lsin). `CLAUDE.md` da shu bo'limlarning qisqa mazmuni bor; bo'limga tegishli
+> kod o'zgarsa — shu yerdagi to'liq qoidani o'qing. Bo'lim raqamlari bir xil.
+
+# BUZILMAS QOIDALAR
+
+## 1. Narx maxfiyligi (eng muhim)
+
+Bazadagi `price` — **OPTOM**, `costPrice` — **TANNARX**. Dona narx
+`priceForRole()` bilan hisoblanadi (`lib/products/wholesale.ts`,
+ustama `settings/pricing`, standart 5%).
+
+- **Mahsulot mijozga chiqishdan oldin `lib/products/viewer.ts` dagi
+  `toViewerProduct()` / `toViewerProducts()` dan O'TISHI SHART.** U
+  narxni rolga moslaydi va `costPrice`, `retailMarkupPercent`,
+  `supplier` ni olib tashlaydi.
+- **`products` kolleksiyasi `firestore.rules` da YOPIQ.** Mijoz —
+  sayt ham, ilova ham — Firestore'dan mahsulot o'qimaydi; hammasi
+  `/api/products/*` orqali (`lib/products/catalog-server.ts`).
+- **Ustama foizi mijozga BERILMAYDI** (`/api/pricing` faqat
+  `minOrderAmount`) — bilinsa optom narx teskari hisoblanadi.
+- **Katalog va bosh sahifaning BIRINCHI sahifasi SERVERDA chiziladi**
+  (`lib/products/storefront.ts` → `loadStorefrontPage`,
+  `loadShowcaseForViewer`). Ilgari ikkalasi ham client edi va HTMLda
+  "Hech qanday mahsulot topilmadi" turardi — Google bo'sh do'kon
+  ko'rardi. Server yo'li ham `toViewerProducts()` dan O'TADI; testi
+  `storefront.test.ts` (tannarx/supplier chiqmasligi qulflangan).
+  Showcase mantiqi BITTA joyda — route ham shu funksiyani chaqiradi.
+- **Katalogning BIRINCHI ekrani ARALASH** (`SiteSettings.catalogMix`,
+  standart yoqilgan): filtrsiz va "yangilari" tartibida ochilganda
+  `loadMixedCatalogRaw()` har kategoriyadan navbatma-navbat oladi
+  (`roundRobin`, 5 daqiqa kesh). Kursor `null` qaytadi — keyingi
+  sahifa odatdagi yangilaridan davom etadi, takrorlangani esa
+  `ProductGrid` da ID bo'yicha tashlanadi. Filtr/qidiruv/boshqa
+  saralash bo'lsa aralashtirish ISHLAMAYDI. Testi:
+  `storefront.test.ts`.
+- **Server birinchi sahifasi faqat FILTR MOS KELSA ishlatiladi**
+  (`catalogFiltersKey`, `lib/products/filters-key.ts`): ilgari bosh
+  sahifadagi kategoriya kartochkasi filtrni faqat Redux'ga yozardi,
+  server esa filtrsiz ro'yxat chizardi va `ProductGrid` uni qayta
+  so'ramasdi — mijoz "Kranlar" bosib har xil mahsulot ko'rardi.
+  Kategoriyaga o'tish HAR DOIM `?category=` bilan; `CatalogContent`
+  manzildagi filtrni Redux'ga BIR MARTA ko'chiradi
+  (`filters.urlSyncedFor`).
+- **Kategoriya chiplari** (`CategoryChips`) — bosh sahifa va katalog
+  boshida, header ICHIDA EMAS (yopishqoq header telefonda 3 qator
+  bo'lib qolardi). Faqat mahsuloti bor kategoriyalar
+  (`loadChipCategories`, 5 daqiqa kesh). Katalog ichida
+  `history.pushState` bilan — server so'rovisiz.
+- Mahsulot qaytaradigan YANGI route: `toViewerProducts()` +
+  `no-store` (`lib/http/cache.ts`). Rolga bog'liq javob keshlanmaydi.
+- Mijoz tomonidagi hook'lar (`usePricing.ts`, `mobile/src/pricing.ts`)
+  HISOB QILMAYDI — serverdan kelgan narxni faqat yaxlitlaydi.
+- **Vitrina hamma uchun MIJOZ oynasi** (`storefrontRole()`): xodim
+  ham saytda/botda DONA narxni ko'radi. Optom narx faqat optom
+  mijozga va admin panelga (`/api/products/list?raw=1`).
+- **Kanal va push — har doim DONA narx** (`forChannel()`).
+- Server tomoni (bot, AI, `/tv`, buyurtma) XOM hujjat bilan ishlaydi
+  va `priceForRole()` ni o'zi qo'llaydi. Buyurtmada narx serverda
+  qayta hisoblanadi (`lib/orders/create-order.ts`).
+- **`orders` hujjatida `costPrice` YO'Q** — mijoz o'z buyurtmasini
+  profilida client SDK bilan o'qiydi, tannarx u yerda bo'lsa
+  raqobatchi o'zi buyurtma berib o'lchab oladi. Tannarx alohida
+  yopiq `orderCosts/{orderId}` hujjatiga yoziladi (bir xil
+  tranzaksiyada, `lib/orders/create-order.ts`), hisobot esa
+  o'shandan `db.getAll()` bilan o'qiydi (`api/admin/reports/route.ts`).
+  Eski buyurtmalar bir martalik `/api/admin/maintenance/order-costs`
+  (faqat owner) bilan ko'chiriladi.
+- Admin formada maydon **"Optom narx"**, ostida hisoblangan dona narx.
+- Yopiq kolleksiyalar: `products`, `deletedProducts`, `secrets/**`,
+  `wholesaleClients`, `socialQueue`, `channelQueue`, `channelClicks`,
+  `oauthStates`, `aiUsage`, `orderCosts`.
+
+## 2. Server tomoni
+
+- **`src/proxy.ts` edge-safe** — firebase-admin import QILINMAYDI.
+  U faqat session-cookie borligini tekshiradi; haqiqiy `role: admin`
+  tekshiruvi `src/app/admin/layout.tsx` da (Node). Ikkalasi ham rad
+  etganda **bosh sahifaga emas, `/kirish?redirect=...&reason=...` ga**
+  yuboradi (`reason`: `login` — umuman kirmagan, `forbidden` — kirgan
+  lekin xodim emas). `redirect` faqat ICHKI yo'l bo'lishi mumkin —
+  `loginUrl()` tekshiradi (ochiq yo'naltirish zaifligi), testi
+  `src/proxy.test.ts`.
+- **Barcha admin yozuvlari server route'lari orqali** (`/api/admin/*`,
+  Admin SDK). Client Firestore yozuvi admin panelda osilib qoladi.
+- Rasm/video yuklash: Admin SDK Storage +
+  `firebaseStorageDownloadTokens` → ochiq URL. Papkalar:
+  `products/<id>`, `blog`, `site`.
+- Dinamik kontentli sahifalarga `export const dynamic = "force-dynamic"`.
+- **Server komponentga FUNKSIYA prop berilmaydi** (`component={Link}`
+  kabi) — sahifa 500 bo'ladi. MUI tugmasi kerak bo'lsa alohida
+  `"use client"` komponent.
+- OG rasmlar `next/og` bilan, `runtime="nodejs"`, tashqi API'siz.
+  **Emoji renderlanmaydi** — matn/harf ishlating.
+- **Jumboq (`lib/security/challenge.ts`)**: to'g'ri javobdan keyin
+  shu uid uchun **10 daqiqalik ishonch oynasi** ochiladi
+  (`adminChallengeGrants/{uid}`) — ilgari har saqlashda oyna chiqib,
+  admin bitta sozlamani tuzatishda o'nlab marta javob berardi.
+  `consumeChallenge()` avval oynani tekshiradi; shuning uchun
+  route'larda `challengeId` BO'SH bo'lishi mumkin. Testi:
+  `challenge.test.ts`.
+- **Foydalanuvchi buyurtma statistikasi** (`users/{uid}.ordersCount /
+  totalSpent / lastOrderAt`) faqat serverda, `lib/orders/user-stats.ts`
+  qoidasi bilan: yaratishda `+`, bekor qilishda (zaxira qaytgan payt)
+  `−`, qaytarishda `totalSpent −`. Admin ro'yxati `orders` ni
+  so'ramaydi. Mijoz bu maydonlarga yoza olmaydi (`firestore.rules`).
+- Admin API xatosi **qaysi maydon va nima uchun** rad etilganini
+  aytadi: `lib/http/validation.ts` → `validationMessage`. Yangi admin
+  route shundan foydalanadi.
+
+- **MUI temasi redux holatidan TANLANMAYDI** (`src/theme/muiTheme.ts`
+  — bitta CSS o'zgaruvchili tema, palitrani `<html>` dagi `.dark`
+  tanlaydi). Render natijasi localStorage'ga bog'liq bo'lsa (tema,
+  ikonka) — server HTML bilan farq qiladi va React production'da
+  klassni TUZATMAYDI; bunday joyda `dark:` CSS yoki `rehydrated`
+  dan keyingi effekt ishlating (`ARXITEKTURA-TARIXI.md` 40-band).
+
+## 3. CSP va cookie
+
+- Sayt CSP yuboradi (`lib/http/csp.ts`, testi `csp.test.ts`).
+  **CSP'da ko'rsatilmagan tur jimgina bloklanadi.** Yangi tashqi
+  manba qo'shilsa — ro'yxatga qo'shing va testga yozing. Rasm/video
+  uchun `https:` ochiq.
+- **CSP `src/proxy.ts` da yasaladi, `next.config.ts` da EMAS** — har
+  so'rovga bir martalik `nonce` kerak, konfigdagi sarlavha esa build
+  vaqtida qotib qoladi. Nonce ikki joyga qo'yiladi: `x-nonce`
+  (bizning layout o'qiydi) va SO'ROV `content-security-policy`
+  sarlavhasi (Next.js o'zining hydration skriptlariga o'zi qo'yadi).
+- **Yangi inline `<script>` ga `nonce` QO'YISH SHART** — usiz
+  zamonaviy brauzer uni bloklaydi (nonce bor bo'lsa `'unsafe-inline'`
+  e'tiborsiz qoladi). Nonce server komponentda
+  `(await headers()).get("x-nonce")` dan olinadi.
+  `type="application/ld+json"` bloklari — istisno: ular bajarilmaydi
+  va CSP ularga tegmaydi (`components/seo/JsonLd.tsx` client
+  komponentlardan ham chaqiriladi, `next/headers` ni o'qiy olmaydi).
+- Style tomonida nonce YO'Q va bo'lmaydi: kodda `style={{...}}`
+  atributlari bor, ularni nonce qoplamaydi.
+- Firebase Hosting rewrite backendga **faqat `__session` cookie**
+  ni o'tkazadi. Shuning uchun OAuth `state`, bir martalik kodlar
+  cookie'da EMAS, Firestore'da (`lib/social/oauth-state.ts`).
+
+## 4. Telegram kanal
+
+- **POSTNI ALMASHTIRISH TARTIBI: avval YANGISI yuboriladi, eskisi
+  FAQAT shundan keyin o'chiriladi.** Media soni o'zgarsa albomni
+  tahrirlab bo'lmaydi va post qayta tashlanadi. Yiqilsa
+  `announceProduct` `"failed"` qaytaradi, eski post joyida qoladi,
+  sabab "Actions" topikiga yoziladi. Videoli albom o'tmasa —
+  ikkinchi urinish faqat rasmlar bilan (`degraded: "no-video"`).
+  Testi: `channel-announce.test.ts`.
+- **UZUN MATN `truncateHtml()` BILAN KESILADI** (`html-truncate.ts`),
+  oddiy `slice()` bilan EMAS: post matni HTML, teg o'rtasidan
+  kesilsa Telegram butun postni rad etadi (`Can't find end tag
+  corresponding to start tag "b"`). Cheklov: rasm/video izohi 1024,
+  matnli xabar 4096 belgi. Testi: `html-truncate.test.ts`.
+- **VIDEO HAVOLA BILAN YUBORILMAYDI.** Telegram video havolasini
+  rad etadi (`Wrong file identifier/HTTP URL specified`), shuning
+  uchun `sendMediaGroup`/`sendVideo` videoni o'zi yuklab olib
+  multipart (`attach://mediaN`) bilan yuboradi; rasmlar havola
+  bilan ketaveradi. Testi: `bot-media.test.ts`.
+- `channelMessageId` bo'lsa YANGI post tashlanmaydi — eskisi
+  tahrirlanadi. Natija: `posted` / `edited` / `unchanged` /
+  `queued` / `failed` / `skipped` — UI va bot buni ochiq yozadi.
+- **Post tezligi**: standart 10 daqiqada 5 ta YANGI post
+  (`settings/telegram`). Oshgani `channelQueue` ga tushadi va
+  avtomatik chiqadi (`lib/telegram/channel-queue.ts`,
+  `/api/cron/channel` + har e'lon oldidan 2 tadan). Tahrir
+  (`refresh`) chegaraga tushmaydi.
+- **Navbat XILMA-XIL tartibda bo'shatiladi** (`orderByVariety`):
+  ketma-ket bir xil kategoriyadagi post chiqmaydi — iloji bo'lsa
+  oldingisidan BOSHQA kategoriyadagi eng eski yozuv olinadi (oxirgi
+  post kategoriyasi `settings/telegram.channelLastCategory` da).
+  Hech narsa kechiktirilmaydi va tashlanmaydi, faqat TARTIB
+  o'zgaradi; navbatda bitta kategoriya bo'lsa tartib avvalgidek
+  (FIFO). Testi: `channel-queue.test.ts`.
+- Telegram bitta kanalga daqiqasiga ~20 ta tahrirga ruxsat beradi:
+  `refresh-channel` 15 tadan oladi, orasida 3 s kutadi;
+  `callTelegramApi` 429 dagi `retry_after` ni o'qib qayta uriniladi.
+- **Tahrir tugamaguncha kanalga post ketmaydi**: har o'zgarish
+  `session.pendingAnnounce` ni belgilaydi, e'lon "✅ Tugatish" da
+  BIR MARTA ketadi (`pendingAnnounceMode` — narx o'zgarsa sarlavha
+  "♻️ Mahsulot yangilandi").
+- Kanal postidagi tur qatori: **QIYMAT → NARX → KOD**
+  (`Satin Gold — 91 400 so'm · kod: SJ-03`). Post tartibi: nomi →
+  brend/davlat → kategoriya → narx → turlar → material
+  (`buildProductText`, testi `channel.test.ts`).
+- **Footer havolalari `normalizeOwnLink()` dan o'tadi**: admin
+  qo'lda yozgan havolada BIZNING eski domenimiz bo'lsa (masalan
+  `atoyo-uz.web.app`) joriy manzilga almashtiriladi. Begona saytlarga
+  (t.me, instagram.com) tegilmaydi. Sabab: domen almashganda kod
+  yangilanadi, bazadagi matn esa eski holicha qolardi.
+- **Statistika**: Telegram postni kim ko'rganini bermaydi. O'lchanadigan
+  narsa — tugma bosilishi: tugma `/k/<id>` ga qaraydi va
+  `channelClicks/{productId}` ga yoziladi (`click-days.ts`, 90 kundan
+  eski kunlar tozalanadi). Postni guruhga **forward** qilsangiz bot
+  hisobini beradi (`channel-report.ts`); **`/kanal`** — obunachilar,
+  bot foydalanuvchilari, 7 kunda faollar.
+
+## 5. Storage
+
+- Mahsulotdan olib tashlangan rasm/video Storage'da **ATAYLAB
+  qoladi** (savatdan tiklanganda kerak) — faqat bog'lanish uziladi.
+- Joy bo'shatish: **Sozlamalar → "Storage tozalash"**
+  (`lib/storage/cleanup.ts`). Faqat `products/`, `blog/`, `site/`;
+  **30 kundan yosh fayllarga tegilmaydi**; o'chirish ro'yxati
+  serverda qayta hisoblanadi; tasdiq so'zi `TOZALASH`. Havolalar
+  kolleksiyalardan kursor bilan (500 tadan) yig'iladi; biror
+  kolleksiya o'qilmasa funksiya THROW qiladi (to'liqsiz ro'yxat
+  bilan o'chirish YO'Q). **QALQON**: yetimlar skanerlangan
+  fayllarning 40% dan oshsa — havolalar noto'liq yig'ilgan bo'lishi
+  mumkinligi belgisi — o'chirish bloklanadi va sabab panelda
+  ko'rsatiladi.
+
+## 6. Mahsulot ma'lumotlari
+
+- **Majburiy maydonlar**: Nomi, Kodi/artikul, Tannarx, Optom narx,
+  Soni, Kategoriya. **Material MAJBURIY EMAS** (1C narxnomasida
+  ko'pincha yo'q). Tekshiruv formada; server bag'rikeng qoladi —
+  bot kirimi va import ham shu route'lardan o'tadi.
+- **Brend va davlat qo'lda yozilmaydi** — `metadata/facets` dan
+  tanlanadi (`lib/products/facets.ts`, `/admin/katalog/turlar`).
+  Mahsulotda MATNNING O'ZI saqlanadi, shuning uchun qayta nomlash
+  mahsulotlarni ham yangilaydi (`renameFacetValue`).
+- **Ichki ma'lumot mijozga chiqmaydi**: mijozga ko'rinadigan har
+  qanday joy `publicDescription()` dan o'tadi (1C kodi kabi xizmat
+  matnlari olib tashlanadi). Mobil nusxasi `mobile/src/types.ts` da.
+- **Mahsulot raqami** `metadata/counters.productCode` dan:
+  `bumpProductCodeCounter()` faqat KO'TARADI,
+  `setProductCodeCounter()` ANIQ qiymatga qo'yadi (qayta
+  raqamlashda shu ishlatiladi — aks holda hisoblagich eski qiymatda
+  qolib ketadi). `reindex` route hamma mahsulotni kursor bilan
+  aylanadi, yozuvlar 400 tadan.
+- **O'chirilganlar savati**: mahsulot `deletedProducts/{id}` ga
+  ko'chadi va 30 kun turadi (`lib/products/trash.ts`), muddati
+  o'tgani ro'yxat ochilganda tozalanadi. Tiklangan mahsulot
+  **`isActive: false`** bilan qaytadi.
+- **Chernovik (`isDraft`) — nashr qilinmagan mahsulot.** U saytda
+  ham, kanalda ham yo'q. Ommaviy e'lon uni ANIQ sabab bilan
+  o'tkazib yuboradi ("chernovik — hali nashr qilinmagan"; ilgari
+  "sotuvda emas" deb chalg'itardi). Paneldan topish: Katalog →
+  **"Chernoviklar"** filtri; nashr qilish: **"Saytda ochish"**
+  (u `isActive: true` bilan birga `isDraft: false` ham yuboradi).
+- **Import qilingan mahsulot saytda darhol ko'rinmaydi** —
+  `isActive: false`; ochish `/admin/katalog/tartib` dan. `isActive`
+  — yagona ko'rinish filtri, yangi "yashirin" maydon qo'shilmaydi.
+- **Katalog indeksi**: `where isActive == true` + filtr + `orderBy`
+  uchun kompozit indeks kerak (`firestore.indexes.json`, 35 ta).
+  Indeks yo'q bo'lsa `queryProductsPage` zaxira so'rovga o'tadi
+  (tenglik + `__name__`, saralash xotirada) — katalog ishlaydi,
+  lekin tartib to'liq to'g'ri emas. Yechim:
+  `firebase deploy --only firestore:indexes`.
+  **Zaxira yo'lda zaxira/narx filtri XOTIRADA qo'llanadi**, shuning
+  uchun bazadan `pageSize` ning 4 barobari o'qiladi va sahifa
+  filtrdan KEYIN to'ldiriladi; `hasMore` va kursor ham filtrdan
+  keyingi holatga qarab beriladi (ilgari mijozga 24 ta o'rniga 3 ta
+  mahsulot chiqib qolardi). Testi: `catalog-server.test.ts`.
+
+## 7. Turlar (variantlar)
+
+- Excel/CSV importda **har bir tur alohida qator** (`variantGroup`,
+  `variantValue`, `variantSku` + o'sha qatordagi narx/zaxira);
+  mantiq `lib/products/csv.ts`, testi `csv.test.ts`.
+- Telegram kirimida `Tur nomi:` + `Turlar:` bloki
+  (`intake-parser.ts`), **3 qatordan ko'p emas**, qiymatlar soni mos
+  kelmasa qator tashlanadi va bot sababini aytadi. Tur qatori:
+  `qiymatlar - NARX - soni - kod - TANNARX` (oxirgi ikkitasi
+  ixtiyoriy). Tur tannarxi yozilmasa mahsulotning umumiy tannarxi
+  ishlatiladi (`variant.costPrice ?? product.costPrice`,
+  `create-order.ts`). **Qator FAQAT `parseVariantLine()` bilan
+  o'qiladi** — ilgari `parseIntakeCaption` ichida uning nusxasi bor
+  edi va format o'zgarganda faqat bittasi yangilangan.
+- **Mavjud bo'lmagan kombinatsiya** `Product.variantsExcluded` ga
+  tushadi va `normalizeVariants()` uni QAYTA YASAMAYDI.
+- **Tur tanlagich** (`SegmentedPicker`, sayt va ilovada bir xil):
+  yostiq surilib boradi, sudrab tanlash mumkin, ko'p bo'lsa keyingi
+  qatorga o'tadi. **Track'da `touch-pan-y` bo'lishi SHART** — busiz
+  telefonda sudrash ishlamaydi. O'chirilgan tur qiymati chizilmaydi.
+
+## 8. Kategoriya nomini tanish (`matchTaxonomy`)
+
+Solishtirish oldidan ikkala tomon `foldForMatch()` dan o'tadi:
+kichik harf, apostrofsiz, **kirill egizak harflari lotinga
+o'girilgan** (`е→e`, `а→a`, `о→o`). Keyin: ichida uchrashi → 1-2
+harf xatosi (Levenshtein). Topilmasa `suggestTaxonomy()` eng yaqin
+5 ta nomni xato xabarida ko'rsatadi.
+
+## 9. Yetkazib berish va o'rnatish va'dasi
+
+Matn kodda QATTIQ YOZILMAYDI: `settings/delivery` da saqlanadi,
+matnni `lib/delivery/text.ts` yasaydi (`freeDeliveryText`,
+`freeDeliveryShort`, `installServiceText`; testi `text.test.ts`).
+Boshqaruvi: Sozlamalar → Promokod va yetkazib berish.
+Chiqadigan joylar: bosh sahifa/about "Bizning ustunligimiz", savat,
+checkout, kontakt, footer, mahsulot sahifasi, ilova, bot va kanal
+posti. **Ilova nusxasi `mobile/src/delivery-text.ts` da (sof, hech
+narsa import qilmaydi) va sayt bilan bir xilligi TEST bilan
+qulflangan** (`src/lib/delivery/mobile-parity.test.ts`) — bittasini
+o'zgartirsangiz ikkinchisini ham o'zgartiring, aks holda test yiqiladi.
+
+- **Matn yetkazish NARXINI aytadi**: `enabled && fee > 0` bo'lsa
+  "…15 km gacha: 50 000 so'mdan boshlab yetkazib berish bepul, undan
+  kam buyurtmaga — 15 000 so'm." (`paidDeliveryTerms`). Ilgari hisob
+  bor edi, matn esa shartsiz "bepul" derdi.
+- **"Bepul yetkazishga X so'm qoldi"** (`FreeDeliveryProgress`,
+  savatda): chiziq + BITTA qo'shish bilan farqni yopadigan mahsulotlar
+  (`/api/products/gap-fillers`, tartibi `rankGapFillers` —
+  savatdagi kategoriya, farqdan ko'p oshmagani, arzoni). Javob
+  `toViewerProducts()` + `no-store`.
+- "Eng kam buyurtma" (`settings/pricing.minOrderAmount`) — undan kam
+  buyurtmani UMUMAN qabul qilmaydi; bu bepul yetkazish chegarasi
+  EMAS. Chegara — `settings/delivery.freeFrom`. `O'rnatib berish` mahsulotga bog'liq
+(`Product.installService`) VA sozlamada yoqilgan bo'lishi kerak.
+
+## 10. Dizayn rejimi: klassik / 3D
+
+- **3D MIJOZGA STANDART HOLDA KO'RINMAYDI.** `SiteSettings.show3dMode`
+  (standart `false`, Sozlamalar → "Sayt ko'rinishi"). O'chiq bo'lsa
+  almashtirgich ham, `WorldCanvas` ham chizilmaydi — `three`/`gsap`
+  mijozga umuman yuborilmaydi; ilgari 3D tanlagan mijozni `Ui3dGate`
+  klassikka qaytaradi. Admin `/admin/3d` da sinaydi.
+- **Shart bitta joyda** — `useImmersive()`. Komponentda qayta
+  yozilmaydi. Qurilma pog'onasi: `low` / `mid` (telefon, yengil) /
+  `high`. **Telefonni chiqarib tashlamang**; 3D o'chirilsa sababi
+  ekranda yoziladi va "Baribir yoqish" tugmasi bo'ladi.
+- **`three` / `gsap` / `framer-motion` statik import QILINMAYDI** —
+  faqat dinamik.
+- **3D uchun tashqi fayl yo'q** (`.glb`, `.hdr`) — shakllar koddan,
+  yorug'lik `Lightformer` bilan. CSP tashqi hostni bloklaydi va bu
+  ataylab yumshatilmaydi.
+- 3D rejimda tema HAR DOIM to'q; kontent HTML'da qoladi (SEO).
+  Yangi 3D bezakka `data-immersive-only` atributini bering.
+  Batafsil: `docs/UI-3D.md`.
+
+## 11. Blog va ijtimoiy tarmoqlar
+
+- **Maqola qayerga yuboriladi — har maqolada tanlanadi**
+  (`BlogPost.destinations`: telegram/youtube/instagram/facebook).
+  Eski hujjatlarda maydon yo'q — `DEFAULT_BLOG_DESTINATIONS`.
+  Tarmoq Sozlamalarda ham yoqilgan bo'lishi shart; YouTube uchun
+  video, Instagram/Facebook uchun rasm kerak (`blogNetworks()`).
+- Navbat `socialQueue` (kunlik chegara, 3 martalik qayta urinish),
+  bo'shatish `/api/cron/social` (`CRON_SECRET`). Ijtimoiy tarmoqda
+  faqat DONA narx. Kalitlar `secrets/social`.
+- Blog **kontent videosi** (`BlogPost.videoUrl`) kanalga video posti
+  bo'lib chiqadi va YouTube navbatiga tushadi; natija
+  `youtubeVideoId` ga yoziladi (faqat YouTube uchun cheklov).
+
+## 12. AI qatlami (`src/lib/ai/`)
+
+- `config.ts` — Anthropic klienti (`ANTHROPIC_API_KEY`, standart
+  model `claude-opus-5`). Kalit yo'q bo'lsa yordamchi o'chiq (503).
+- `guard.ts` — mavzu chegarasi va jailbreak naqshlari (testi bor).
+- `context.ts` — **narx/zaxira faqat shu yerdan** keladi, modeldan
+  emas. `assistant.ts` — uchala kanal (sayt/ilova/bot) shu funksiyani
+  chaqiradi. `tools.ts` — savatni SERVER o'zgartirmaydi, `actions`
+  qaytaradi.
+- `images.ts` + `usage.ts` — Gemini rasm PULLIK (~0.04 $): har rasm
+  `aiUsage/<YYYY-MM>` da sanaladi, `settings/ai.monthlyImageLimit`
+  to'lganda to'xtaydi. **Anthropic tokenlari ham shu hujjatda**
+  (`requests/inputTokens/outputTokens/costUsd`): har `messages.create`
+  dan keyin `recordTokenUse()` chaqiriladi, narx `MODEL_PRICES` dan
+  (notanish model — eng qimmat narx). Anthropic "qolgan balans" ni
+  API orqali BERMAYDI (Usage & Cost API faqat sarfni beradi va
+  tashkilot hisobini talab qiladi) — panelda shuning uchun O'ZIMIZ
+  sanagan taxminiy summa ko'rsatiladi. **Oylik $ chegarasi**
+  (`settings/ai.monthlyCostLimitUsd`, standart 25 $, 0 — cheksiz):
+  `assertTokenQuota()` yordamchi, rasm tahlili va rasm qidiruvining
+  BOSHIDA chaqiriladi, to'lgan bo'lsa `QuotaError` va route 429 bilan
+  SABABINI aytadi ("band" degan chalg'ituvchi xabar emas). Hisob
+  o'qilmasa ish TO'XTAMAYDI.
+
+## 13. Mobil ilova (`mobile/`)
+
+React Native CLI (bare, RN 0.76) — faqat mijozlar uchun; sayt bilan
+bir xil API. Root tooling'dan chiqarilgan (`tsconfig` exclude,
+`eslint.config.mjs` ignores). APK sandbox'da yig'ilmaydi — CI
+(`.github/workflows/ci.yml`) yig'ib `latest` relizga qo'yadi.
+`google-services.json` repoda YO'Q.
+
+- **Versiya ikki joyda bir xil bo'lishi shart**: `mobile/src/update.ts`
+  dagi `APP_VERSION` va `android/app/build.gradle` dagi `versionName`
+  (testi `version.test.ts`). Yangilanish oynasi `/api/app/version`
+  dan o'qiladi, boshqaruvi Sozlamalar → "Ilova yangilanishi".
+- **Ilovada `URLSearchParams` ISHLATILMAYDI** — Hermes'da `set()` yo'q
+  va katalog butunlay bo'sh qolgan edi (`ARXITEKTURA-TARIXI.md` 36).
+  So'rov qatori: `mobile/src/query.ts` → `buildQuery()`.
+- **Shisha**: haqiqiy blur faqat header, pastki nav va modal'da
+  (`components/Glass.tsx`, `@react-native-community/blur`, FAQAT iOS — Android'da u ikonkalarni ham xiralashtiradi); boshqa
+  joyda `palette.glass` (rgba) + `glassBorder`. **Yarim shaffof fonga
+  Android `elevation` QO'YILMAYDI** — soya karta ichidan ko'rinadi
+  (`glassShadow()` Android'da 0; `ARXITEKTURA-TARIXI.md` 46). Yangi karta/maydon
+  `ui.tsx` komponentlaridan olinadi (`docs/UI-SHISHA.md` 6).
+- **Xarid oqimi API'si `mobile/src/checkout-api.ts` da** (`api.ts` da
+  EMAS), matnlari `mobile/src/checkout-i18n.ts` da. Ilova narx/summa
+  HISOBLAMAYDI: to'lov ekrani summani `/api/orders/<id>/payment` dan
+  oladi. Buyurtma kaliti (`accessToken`) FAQAT qurilmada (AsyncStorage)
+  va serverga faqat shu route hamda chek yuklashda (`?t=`) ketadi; chek
+  multipart `file://` bilan (RN `Content-Length` ni o'zi qo'yadi —
+  server usiz 411). Sof nusxalar (`specs.ts`, `freeDeliveryGap`,
+  `deliveryFeeForZone`) sayt bilan parity testi bilan qulflangan.
+- Video pleyer: `mobile/src/components/VideoPlayer.tsx`
+  (`react-native-video`) — mahsulot galereyasida va blog maqolasida.
+  Yangi nativ paket qo'shilsa `scripts/check-codegen.mjs` ro'yxatiga
+  ham qo'shing.
+
+## 14. Ko'p tillik (i18n) va URL marshrutlari
+
+- **Tilni URL BERADI, cookie EMAS.** O'zbekcha — asosiy, prefiks'siz
+  manzilda (`/katalog`); ruscha — `/ru` prefiksida (`/ru/katalog`).
+  Sahifa kodi TAKRORLANMAGAN: `src/proxy.ts` `/ru/...` so'rovini
+  ICHKI ravishda prefiks'siz manzilga `rewrite` qiladi va qaysi
+  tilda chizish kerakligini `x-locale` sarlavhasida uzatadi.
+  `getLocale()` (`lib/i18n/server.ts`) AVVAL shu sarlavhadan, keyin
+  (zaxira sifatida) cookie'dan o'qiydi. `/admin`, `/api`, `/k`, `/tv`
+  ga `/ru` prefiksi TEGMAYDI (`docs/ARXITEKTURA-TARIXI.md` 24-band).
+- **Ichki havola YOZILGANDA doim "mantiqiy" (o'zbekcha, prefiks'siz)
+  yo'l ishlatiladi** ("/katalog", "/mahsulot/123"), tilga moslash esa
+  avtomatik: client komponentda `next/link` o'rniga
+  `import { Link } from "@/lib/i18n/LocaleLink"`, server komponentda
+  `localeHref(yo'l, locale)` (`lib/i18n/href.ts`). Qo'lda
+  `` `/ru${yo'l}` `` yozish TAQIQLANADI.
+  `Breadcrumbs` `locale` ni PROP sifatida oladi (o'zi `getLocale()`
+  chaqirmaydi) — u client sahifalarda ham ishlatiladi va
+  `next/headers` bog'lagan modul client bog'lamiga sizib kirsa build
+  yiqiladi.
+- **Har sahifa `alternates`ni `localeAlternates()` bilan o'zi
+  beradi** (`lib/seo/locale-alternates.ts`) — root layout'da umumiy
+  `alternates` YO'Q (ilgari bor edi va hammasi "/" ga qarab turardi).
+  `sitemap.ts` har sahifa uchun uz VA ru yozuvini chiqaradi.
+- Inglizcha lug'ati tayyor, marshruti YO'Q. Qo'shilganda faqat
+  `ROUTED_LOCALES` ga (`lib/i18n/config.ts`) `"en"` qo'shiladi —
+  proxy, sitemap, `LanguageSwitcher`, `localeAlternates()` hammasi
+  shu ro'yxatdan o'qiydi.
+
+## 15. To'lov: kartaga o'tkazma va 1 klikda buyurtma
+
+- **Mijoz kartasi SAQLANMAYDI va undan to'g'ridan-to'g'ri yechilmaydi.**
+  Uzcard/Humo/Visa'dan pul faqat litsenziyali processing orqali
+  (Payme Subscribe API, `lib/payments/cards.ts` — faqat token). "Payme/
+  Click'siz karta ulash" so'ralsa — bu imkonsiz va noqonuniy, sababi
+  `docs/ARXITEKTURA-TARIXI.md` 33-band.
+- **Kartaga o'tkazma** (`paymentMethod: "transfer"`): do'kon kartasi
+  `settings/payment` da, saqlash JUMBOQ bilan, karta almashsa "Actions"
+  ga ogohlantirish. O'chiq bo'lsa `createOrder` o'tkazmani rad etadi.
+- **Chek** Storage'da `receipts/<orderId>/` — `firebaseStorageDownloadTokens`
+  QO'YILMAYDI (ochiq URL yo'q, unda mijozning bank ma'lumoti). Turi
+  BAYTLARIDAN (`detectReceiptType`), ≤ 8 MB. Admin faqat
+  `/api/admin/orders/<id>/receipt` orqali ko'radi.
+- **Buyurtma sahifasi** `/buyurtma/<id>?t=<kalit>`: kalit yoki o'z
+  buyurtmasi, aks holda 404. Bazada faqat kalit XESHI
+  (`accessTokenHash`). Sahifa `noindex`.
+- **1 klikda** — `/api/orders/quick` (mehmon): manzil majburiy,
+  ≤ `MAX_GUEST_ITEMS` (20) qator, har biri ≤ 99 dona, TAKROR qator
+  rad etiladi (`createOrder` ham zaxirani mahsulot bo'yicha JAMI
+  tekshiradi). Mahsulot sahifasida — bitta mahsulot; checkout'da
+  kirmagan mijozga — butun savat ("Ro'yxatdan o'tmasdan buyurtma
+  berish"), hudud tanlovi bilan; IP (IPv6 — /64, `ipLimitKey`) soatiga 20
+  so'rov; telefon sutkasiga 5 va butun sayt soatiga 30 — faqat
+  MUVAFFAQIYATLI buyurtma sanaladi (`peekRateLimit` → buyurtma →
+  `checkRateLimit`), aks holda begona odam birovning raqamini
+  bloklab qo'yardi. Umumiy chegara to'lsa — "Actions" ga ogohlantirish.
+  `website` bot tuzog'i → `{ received: true }` (saqlanmaydi). Narx
+  `createOrder` da qayta hisoblanadi.
+- **Chek yuklash tartibi**: `Content-Length` SHART (411) → IP limit →
+  kalit (`?t=`, MANZILDA) + buyurtma → faqat shundan keyin tana
+  o'qiladi. Buyurtmaga umrbod 5 ta chek (`MAX_RECEIPTS_PER_ORDER`).
+  Yakuniy yozuv tranzaksiyada ("to'langan" qayta tekshiriladi).
+  Guruhga rasm o'tmasa — hujjat sifatida, u ham o'tmasa `reportError`.
+- **`settings/payment` ga client SDK bilan yozish qoidalarda yopiq**
+  (`settingId != 'payment'`) — faqat jumboqli server route.
+- To'langan (o'tkazma/onlayn) buyurtmani mijoz o'zi bekor qila
+  olmaydi — operator orqali (pul qaytariladi).
+- Guruhdagi buyurtma xabarini yangilash BITTA joyda —
+  `refreshOrderTelegramMessage` (`lib/orders/telegram-message.ts`).
+- Buyurtma sxemasi BITTA joyda (`lib/orders/order-schema.ts`),
+  mijozga xato `orderErrorMessage` bilan (admin `validationMessage`
+  ichki yorliqlarni aytadi — mijozga EMAS).
+- **`orders` ni client SDK bilan YARATISH qoidalarda yopiq** — faqat
+  server. Ilgari kirgan mijoz o'zi `paymentStatus: "paid"` yozib
+  qo'yishi mumkin edi.
+- **Ilova to'lov ekrani** `GET /api/orders/[id]/payment?t=` — kirish chek
+  yuklash bilan bir xil (`canAccessOrder`, aks holda 404), javobda faqat
+  summa va to'lov holati (telefon, manzil, chek yo'li YO'Q), `no-store`.
+- `/api/orders/[id]/...` ostida segment nomi HAR DOIM `[id]` — Next.js
+  bir darajada ikki xil nomni (`[id]` va `[orderId]`) qabul qilmaydi.
+
+## 16. Ma'lumot sahifalari va mijozlar fikri
+
+- **`/savol-javob` va `/yetkazib-berish` da qattiq yozilgan va'da
+  YO'Q.** FAQ — `settings/faq` (admin `/admin/sahifalar`), saqlanmagan
+  bo'lsa `defaultFaqItems()` sozlamadan yasaydi; yetkazish sahifasi —
+  `settings/delivery` + faqat YOQILGAN to'lov usullari. Kafolat
+  sahifasi ataylab yo'q (`docs/ARXITEKTURA-TARIXI.md` 35-band).
+- **"Mijozlar fikri" faqat HAQIQIY sharhdan** (`reviews.featured`,
+  admin tanlaydi, yozmaydi). Mijozga `pickTestimonials()` ko'rinishi
+  chiqadi — `userId` va familiya yo'q. Soxta sharh qo'shilmaydi.
+
+---
+
+# XARITA (qayerda nima turadi)
+
+## Telegram bot (`src/lib/telegram/`)
+
+- `bot.ts` — Bot API wrapper (xabar, albom, video, tugma, 429 retry).
+- `customer-bot.ts` — mijoz chati: ro'yxatdan o'tish + kanal gate →
+  katalog/savat/checkout, `/profil`.
+- `admin-commands.ts` + `admin-session.ts` — yopiq guruh: interaktiv
+  `/yangi`, `/tahrir` (rasm va video menyusi bilan), `/narx /zaxira
+  /top /uchir /tikla /buyurtmalar /stat /kanal /namuna`.
+- `product-intake.ts` + `intake-parser.ts` — "Kirim" topic'i: rasm +
+  izoh → mahsulot. Izohda HAMMA maydon bo'lishi mumkin (tannarx,
+  kalit so'zlar, o'rnatish, chegirma, tarjimalar); namunani bot
+  `/namuna` bilan ko'rsatadi (`INTAKE_SAMPLE` `FIELD_ALIASES` bilan
+  MOS bo'lishi shart). Albom holati `intakeAlbums/{mediaGroupId}`.
+  **"✅ Yetarli, tayyor" tugmasi mahsulot ID sini O'ZIDA olib
+  yuradi** (`ap|done|<id>`): sessiya yo'qolgan bo'lsa ham nashr
+  ishlaydi va eski xabardagi tugma NOTO'G'RI mahsulotni chiqarib
+  yubormaydi. Ilgari bunday holatda bot "Sessiya tugagan" derdi va
+  mahsulot chernovik bo'lib abadiy osilib qolardi.
+- `channel.ts`, `channel-queue.ts`, `channel-stats.ts`,
+  `channel-report.ts` — kanal posti, navbat va statistika.
+- Sirlar: `secrets/telegram` (`lib/telegram/secrets.ts`) env'dan
+  ustun; sozlamani saqlash "jumboq" bilan himoyalangan. **Bot useri**
+  ham shu yerda (`botUsername`) — bot almashtirilganda `t.me/<bot>`
+  havolalari (sayt kirishi, ilovadagi tugma) deploy'siz yangilanadi.
+  Botni almashtirish tartibi: `docs/DEPLOY.md` oxirida.
+- Stikerlar: `settings/stickers`, yuborish hech qachon asosiy oqimni
+  to'xtatmaydi. Sayt stikerni o'zi chizadi (`lib/stickers/`, `next/og`)
+  va `.tgs` ni ham o'zi yasaydi (`node:zlib`, ffmpeg kerak emas;
+  `.tgs` da matn qatlami TAQIQLANGAN). Tartib: `docs/STICKERS.md`.
+
+## Boshqa
+
+- **`/tv`** — do'kon televizori uchun sahifa (narx doim DONA,
+  rasmsiz mahsulot chiqmaydi, slaydlar 2 daq. kesh). `docs/TV.md`.
+- **`desktop/`** — Electron: saytning O'ZINI ochadi, UI
+  takrorlanmaydi. `docs/DESKTOP.md`.
+- Pochta: `secrets/email` (env `SMTP_*` zaxira),
+  `isEmailConfigured()` — ASINXRON, sozlanmagan bo'lsa email jim
+  o'tkaziladi. **Lekin YUBORISHDAGI XATO jim qolmaydi**: har
+  muvaffaqiyatsiz `sendMail` `reportError()` orqali "Actions"
+  topic'iga tushadi va `emailHint()` sababni o'zbekcha aytadi
+  (535 — Gmail paroli almashtirilgan, App password bekor bo'lgan).
+  Gmail App password hisob paroliga BOG'LIQ — barqaror yechim
+  Brevo/Resend (`docs/QADAMLAR.md` 10-band).
+
+## Hujjatlar
+
+| Fayl | Nima haqida |
+|---|---|
+| `docs/ARXITEKTURA-TARIXI.md` | Qoidalarning sababi: qaysi nosozlikdan keyin paydo bo'lgani |
+| `docs/REBUILD-PROMPT.md` | Loyihaning to'liq holati (boshqa AI ga topshiriq) |
+| `docs/DEPLOY.md` | Deploy, env, sirlar, cron, ijtimoiy tarmoq ulash |
+| `docs/TEXNOLOGIYALAR.md` | Loyiha nimadan qurilgan (stack) va nega aynan shunday |
+| `docs/QADAMLAR.md` | Egasi QO'LDA bajaradigan qadamlar (GitHub secret, migratsiya, domen, ilova relizi, cron) |
+| `docs/HISOBOT.md` | Bajarilgan / kutilayotgan ish va kod sifati bahosi |
+| `docs/AUDIT.md` + `docs/AUDIT-ISHLARI.md` | Mustaqil audit va undan chiqqan ishlar navbati (tayyor topshiriqlar) |
+| `docs/KIRIM-VA-IMPORT.md` | Kirim va Excel import tartibi |
+| `docs/KIRIM-REJASI.md` | Har kuni QAYSI kategoriyadan kiritish (kanal va katalog bir xil tovarga to'lib qolmasin) |
+| `docs/ISH-ARXITEKTURASI.md` | Topshiriqni marshrutlash: 8 holat, rollar, tekshiruv oynalari |
+| `ai/specs/` | Katta ishlar spetsifikatsiyalari (R10) |
+| `docs/UI-SHISHA.md` | Shisha (glass) ko'rinish qoidalari — sayt va ilova |
+| `/admin/sahifalar` | FAQ matni va bosh sahifaga chiqadigan sharhlar (kod emas, admin bo'limi) |
+| `docs/QULAYLIK.md` | Ekran o'quvchi va klaviatura qoidalari (a11y) — yangi komponent yozganda |
+| `docs/UI-3D.md`, `docs/TV.md`, `docs/DESKTOP.md`, `docs/STICKERS.md` | Bo'limga xos |
+| `docs/TYPESENSE.md` | Tezkor qidiruvni yoqish |
+| `docs/BACKUP.md`, `docs/PLAY-STORE.md` | Zaxira, Play Store |
+| `mobile/README.md` | Ilova: yig'ish va yangilanish chiqarish |
+| `docs/SESSION-PROMPT.md` | Yangi sessiyaga beriladigan tayyor prompt |
+| `docs/PROMPTLAR.md` | Rejalashtiruvchi sessiya + boshqa loyihani tahlil qilish prompti |
+| `docs/PROMPTLAR-UMUMIY.md` | Umumiy (istalgan loyihaga mos) promptlar kutubxonasi |
+| `docs/PROMPTLAR-ATOYO.md` | Shu loyihaga xos promptlar + **loyiha auditi** topshirig'i |
+| `docs/YANGI-LOYIHA-NAMUNASI.md` + `docs/PROMPT-ORGANICK-PLATFORMA.md` | Ish tartibini boshqa loyihaga ko'chirish; organick uchun bosh prompt |
+
+# MA'LUM BLOKLAR VA KUTILAYOTGAN ISHLAR
+
+- **Firebase Storage yoqilmagan bo'lsa** rasm yuklash ishlamaydi
+  (Firebase konsolida "Get Started").
+- **Firestore qoidalari/indekslari sandbox'dan deploy qilinmaydi**;
+  ular default branch'ga push bo'lganda CI orqali qo'llanadi
+  (`FIREBASE_SERVICE_ACCOUNT` secret'i kerak). `firestore.rules` va
+  `firestore.indexes.json` ni yangilab, commit qilib qo'ying.
+- Payme/Click: kod tayyor, merchant kalitlari kutilmoqda.
+- Ko'p tillik: uz/ru URL marshruti ishlaydi (14-band). Inglizcha
+  lug'ati tayyor, `/en` marshruti hali YO'Q. Mahsulot uchun ixtiyoriy
+  `nameRu/nameEn/descriptionRu/descriptionEn` (`lib/products/i18n.ts`).
+- Keyingi bosqichlar: rasmsiz mahsulotlar ish navbati → Typesense →
+  PWA → to'lov testlari → `customer-bot.ts` ni bo'lish → Uzum Pay.
