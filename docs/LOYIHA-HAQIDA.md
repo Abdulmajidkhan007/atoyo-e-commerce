@@ -56,7 +56,23 @@ Karta ma'lumotlari bizda saqlanmaydi.
 
 ---
 
-## Oxirgi yangilanishlar (2026, avgust)
+## Oxirgi yangilanishlar (2026, sentyabr–oktyabr)
+
+- **Asosiy manzil — atoyo.uz**; sayt rus tilida `/ru` manzillari bilan,
+  katalog va bosh sahifa serverda chiziladi (qidiruv tizimlari uchun).
+- **Ro'yxatdan o'tmasdan buyurtma** — 1 klikda sotib olish va butun
+  savatni mehmon sifatida buyurtma qilish.
+- **Kartaga o'tkazma + chek** — mijoz chekni yuklaydi, admin tasdiqlaydi.
+- **Savol-javob va Yetkazib berish sahifalari**, "Mijozlar fikri" bo'limi.
+- **"Bepul yetkazishga X so'm qoldi"** — savatda shart ochiq yoziladi.
+- **Android ilova 1.5.2** — sayt bilan tenglashtirildi: shisha ko'rinish,
+  kategoriya chiplari, xarid oqimi saytdagidek, Savol-javob ekrani.
+  Onlayn to'lov (Payme/Click) faqat admin yoqqanda ko'rinadi — hozircha
+  ulanish jarayonida.
+- Sayt ekran o'quvchi va klaviatura bilan to'liq ishlatiladi; tungi
+  rejimda forma yozuvlari endi o'qiladi.
+
+## Avvalgi yangilanishlar (2026, avgust)
 
 - **Kanal postlari endi navbat bilan chiqadi** — bir vaqtda ko'p
   mahsulot kirim qilinsa ham kanal spam bo'lmaydi (10 daqiqada 5 ta,
@@ -75,3 +91,5 @@ Karta ma'lumotlari bizda saqlanmaydi.
 - **Yangi 3D ko'rinish sinovda** — hozircha faqat ichki foydalanishda,
   mijozlarga standart holda klassik (tez va yengil) ko'rinish
   ochiladi.
+
+*Oxirgi yangilanish: 2026-10-21*
